@@ -1,9 +1,6 @@
 #!/bin/bash
 
 base_os_main() {
-    if (( $EUID != 0 )); then
-        install_err 'must be run as root'
-    fi
     local i=$(sysctl -n net.ipv6.conf.all.disable_ipv6)
     rsconf_install_access 400 root root
     rsconf_install etc/sysctl.d/60-rsconf-base.conf 400
