@@ -1,0 +1,14 @@
+[Unit]
+Description=sirepo
+Requires=docker.service
+After=docker.service
+
+[Service]
+Restart=on-failure
+RestartSec=10
+ExecStartPre=/var/lib/sirepo/remove
+ExecStart=/var/lib/sirepo/start
+ExecStop=-/var/lib/sirepo/stop
+
+[Install]
+WantedBy=multi-user.target
