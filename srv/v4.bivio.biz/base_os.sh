@@ -64,6 +64,13 @@ base_os_main() {
     if ! grep -s -q ^AddressFamily.inet /etc/ssh/sshd_config; then
         perl -pi -e 's{^#AddressFamily any}{AddressFamily inet}' /etc/ssh/sshd_config
     fi
+    # Binding to IPv6 address not available since kernel does not support IPv6.
+    # https://bugzilla.redhat.com/show_bug.cgi?id=1402961
+    if grep -s -q BindIPv6Only /usr/lib/systemd/system/rpcbind.socket; then
+        perl -pi -e 'm{\[::\]:|BindIPv6Only} && ($_ = q{})' /usr/lib/systemd/system/rpcbind.socket
+        systemctl daemon-reload
+        systemctl restart rpcbind.socket
+    fi
     base_os_chrony
     if (( $i == 0 )); then
         rsconf_reboot

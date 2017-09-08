@@ -16,6 +16,9 @@
 # curl "$install_server" | bash -s /rsconf
 #
 rsconf_install() {
+    if [[ -z ${rsconf_install_access[group]} ]]; then
+        install_err 'rsconf_install_access: must be called before rsconf_install'
+    fi
     local path tmp abs
     for path in "$@"; do
         if [[ $path =~ ^/ ]]; then
@@ -56,7 +59,7 @@ rsconf_install() {
     done
 }
 
-declare -A rsconf_install_access=( [mode]=400 [user]=root [group]=root )
+declare -A rsconf_install_access=()
 
 rsconf_install_access() {
     if [[ ! $1 =~ ^[[:digit:]]{1,4}$ ]]; then
@@ -128,6 +131,7 @@ rsconf_run() {
     if ! type "$f" >& /dev/null; then
         install_script_eval "$op.sh"
     fi
+    rsconf_install_access=()
     "$f" "$@"
 }
 
