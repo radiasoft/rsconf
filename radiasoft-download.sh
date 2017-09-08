@@ -1,15 +1,27 @@
 #!/bin/bash
 #
-# To run: curl radia.run | bash -s rsconf host
+# To run: curl radia.run | bash -s /rsconf
+#
+# Development server:
+# cd ~/src
+# ln -s radiasoft/download/bin/index.sh index.html
+# python -m SimpleHTTPServer 8000
+#
+# Development box:
+# export install_server=http://z50.bivio.biz:8000 install_channel=dev
+# curl "$install_server" | bash -s vagrant-centos7
+# vssh
+# sudo su -
+# export install_server=http://z50.bivio.biz:8000 install_channel=dev
+# curl "$install_server" | bash -s /rsconf
 #
 rsconf_install() {
-    local f
+    local path tmp abs
     for path in "$@"; do
-        local path=$1
         if [[ $path =~ ^/ ]]; then
             install_err "$path: path must not be absolute"
         fi
-        local abs=/$path
+        abs=/$path
         if [[ $path =~ /$ ]]; then
             if [[ -L $abs ]]; then
                 install_err "$abs: is a symbolic link, expecting a directory"
@@ -22,17 +34,22 @@ rsconf_install() {
                 mkdir "$abs"
             fi
             rsconf_install_chxxx "$abs"
-            return
+            continue
         fi
         if [[ -d "$abs" ]]; then
             install_err "$abs: is a directory, must be a file (remove first)"
         fi
-        local tmp=$abs-tmp
-        install_download "$file" > "$tmp"
+        tmp=$abs-tmp
+        install_download "$path" > "$tmp"
+        # Unlikely we are downloading HTML so this is a sanity check on SimpleHTTPServer
+        # returning something that's a directory listing or not found
+        if grep -s -q -i '^<title>' "$tmp"; then
+            install_err "$path: unexpected HTML file (directory listing?)"
+        fi
         if cmp "$tmp" "$abs" >& /dev/null; then
             rm -f "$tmp"
             rsconf_install_chxxx "$abs"
-            return
+            continue
         fi
         rsconf_install_chxxx "$tmp"
         mv -f "$tmp" "$abs"
@@ -42,7 +59,7 @@ rsconf_install() {
 declare -A rsconf_install_access=( [mode]=400 [user]=root [group]=root )
 
 rsconf_install_access() {
-    if [[ $1 =~ ^[[:digit:]]{1,4}$ ]]; then
+    if [[ ! $1 =~ ^[[:digit:]]{1,4}$ ]]; then
         install_err "$1: invalid or empty mode"
     fi
     rsconf_install_access[mode]=$1
@@ -57,13 +74,13 @@ rsconf_install_chxxx() {
     local path=$1
     local actual=( $(stat --format '%a %U %G' "$path") )
     if [[ ${rsconf_install_access[user]} != ${actual[1]} ]]; then
-        chown "$owner" "$path"
+        chown "${rsconf_install_access[user]}" "$path"
     fi
     if [[ ${rsconf_install_access[group]} != ${actual[2]} ]]; then
-        chgrp "$group" "$path"
+        chgrp "${rsconf_install_access[group]}" "$path"
     fi
     if [[ ${rsconf_install_access[mode]} != ${actual[0]} ]]; then
-        chmod "$mode" "$path"
+        chmod "${rsconf_install_access[mode]}" "$path"
     fi
 }
 
@@ -74,13 +91,12 @@ rsconf_main() {
     fi
     install_url radiasoft/rsconf "srv/$host"
     install_script_eval 00.sh
-    rsconf_run "${a[@]}"
 }
 
 rsconf_radia_run_as_user() {
     local user=$1
     shift
-    (cat <<EOF; curl "$install_server") | su - "$user" -c bash -s "$@"
+    (cat <<EOF; curl "$install_server") | su - "$user" -c "bash -s $*"
 install_channel=$install_channel
 install_debug=$install_debug
 install_server=$install_server
@@ -99,6 +115,10 @@ rsconf_require() {
             rsconf_require[$x]=done
         fi
     done
+}
+
+rsconf_reboot() {
+    install_err "Reboot required"
 }
 
 rsconf_run() {

@@ -2,6 +2,7 @@
 
 docker_main() {
     if [[ -e /var/lib/docker ]]; then
+#TODO(robnagler) update docker rpm
         install_info '/var/lib/docker: exists, docker already installed'
         return
     fi
