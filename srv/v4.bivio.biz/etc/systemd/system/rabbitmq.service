@@ -1,0 +1,14 @@
+[Unit]
+Description=rabbitmq
+Requires=docker.service
+After=docker.service
+
+[Service]
+Restart=on-failure
+RestartSec=10
+ExecStartPre=/var/lib/rabbitmq/remove
+ExecStart=/var/lib/rabbitmq/start
+ExecStop=-/var/lib/rabbitmq/stop
+
+[Install]
+WantedBy=multi-user.target

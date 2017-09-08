@@ -48,8 +48,9 @@ base_os_main() {
         bind-utils # rsconf (dig)
         emacs-nox
         git # rsconf (dig)
+        lsof # debugging
         patch # python/pyenv
-        perl # general
+        perl # general and git
         readline-devel # python/pyenv
         sqlite-devel # python/pyenv
         strace # debugging
@@ -57,7 +58,7 @@ base_os_main() {
         wget # many tools
     )
 
-    yum install -y -q "${x[@]}"
+    rsconf_yum_install "${x[@]}"
     # https://access.redhat.com/solutions/8709
     # breaks SSH Xforwarding unless AddressFamily inet is set in sshd_config
     # idempotent so ok to repeat and the file might get updated with a new release.

@@ -1,7 +1,7 @@
 [Unit]
 Description=sirepo
-Requires=docker.service
-After=docker.service
+Requires=celery_sirepo.service docker.service rabbitmq.service
+After=celery_sirepo.service docker.service rabbitmq.service
 
 [Service]
 Restart=on-failure

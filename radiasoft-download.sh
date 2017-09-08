@@ -42,7 +42,7 @@ rsconf_install() {
         if [[ -d "$abs" ]]; then
             install_err "$abs: is a directory, must be a file (remove first)"
         fi
-        tmp=$abs-tmp
+        tmp=$abs-rsconf-tmp
         install_download "$path" > "$tmp"
         # Unlikely we are downloading HTML so this is a sanity check on SimpleHTTPServer
         # returning something that's a directory listing or not found
@@ -93,7 +93,7 @@ rsconf_main() {
         install_err "$host: invalid host name"
     fi
     install_url radiasoft/rsconf "srv/$host"
-    install_script_eval 00.sh
+    install_script_eval 000.sh
 }
 
 rsconf_radia_run_as_user() {
@@ -133,6 +133,18 @@ rsconf_run() {
     fi
     rsconf_install_access=()
     "$f" "$@"
+}
+
+rsconf_yum_install() {
+    local x todo=()
+    for x in "$@"; do
+        if ! rpm -q "$x" >& /dev/null; then
+            todo+=( $x )
+        fi
+    done
+    if (( ${#todo[@]} > 0 )); then
+        yum install -y -q "${todo[@]}"
+    fi
 }
 
 rsconf_main "${install_extra_args[@]}"

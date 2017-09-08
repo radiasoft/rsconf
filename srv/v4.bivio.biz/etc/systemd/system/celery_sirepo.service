@@ -1,0 +1,14 @@
+[Unit]
+Description=celery_sirepo
+Requires=docker.service rabbitmq.service
+After=docker.service rabbitmq.service
+
+[Service]
+Restart=on-failure
+RestartSec=10
+ExecStartPre=/var/lib/celery_sirepo/remove
+ExecStart=/var/lib/celery_sirepo/start
+ExecStop=-/var/lib/celery_sirepo/stop
+
+[Install]
+WantedBy=multi-user.target
