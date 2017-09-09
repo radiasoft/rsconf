@@ -27,11 +27,13 @@ EOF
 
 base_os_main() {
     local i=$(sysctl -n net.ipv6.conf.all.disable_ipv6)
+    local reboot=
     rsconf_install_access 400 root root
     rsconf_install etc/sysctl.d/60-rsconf-base.conf
 #TODO(robnagler) return result to test install?
     sysctl -p --system
     if (( $i == 0 )); then
+        reboot=1
         # https://access.redhat.com/solutions/8709
         # Must be done first time
         install_info 'Rebuilding initrd to disable ipv6'
@@ -62,18 +64,22 @@ base_os_main() {
     # https://access.redhat.com/solutions/8709
     # breaks SSH Xforwarding unless AddressFamily inet is set in sshd_config
     # idempotent so ok to repeat and the file might get updated with a new release.
-    if ! grep -s -q ^AddressFamily.inet /etc/ssh/sshd_config; then
-        perl -pi -e 's{^#AddressFamily any}{AddressFamily inet}' /etc/ssh/sshd_config
-    fi
+    rsconf_edit /etc/ssh/sshd_config ^AddressFamily.inet \
+        's{^#(AddressFamily) any}{$1 inet}' || true
     # Binding to IPv6 address not available since kernel does not support IPv6.
     # https://bugzilla.redhat.com/show_bug.cgi?id=1402961
-    if grep -s -q BindIPv6Only /usr/lib/systemd/system/rpcbind.socket; then
-        perl -pi -e 'm{\[::\]:|BindIPv6Only} && ($_ = q{})' /usr/lib/systemd/system/rpcbind.socket
+    if rsconf_edit /usr/lib/systemd/system/rpcbind.socket '! BindIPv6Only' \
+        'm{\[::\]:|BindIPv6Only} && ($_ = q{})'; then
         systemctl daemon-reload
         systemctl restart rpcbind.socket
     fi
+#TODO(robnagler) consider permissive on back end and enforcing on front end
+    if rsconf_edit /etc/selinux/config ^SELINUX=disabled \
+        's{(?<=^SELINUX=).*}{disabled}'; then
+        reboot=1
+    fi
     base_os_chrony
-    if (( $i == 0 )); then
+    if [[ -n $reboot ]]; then
         rsconf_reboot
     fi
 }

@@ -8,13 +8,34 @@
 # python -m SimpleHTTPServer 8000
 #
 # Development box:
-# export install_server=http://z50.bivio.biz:8000 install_channel=dev
+# export install_server=http://v5.bivio.biz:8000 install_channel=dev
 # curl "$install_server" | bash -s vagrant-centos7
 # vssh
 # sudo su -
-# export install_server=http://z50.bivio.biz:8000 install_channel=dev
+# export install_server=http://v5.bivio.biz:8000 install_channel=dev
 # curl "$install_server" | bash -s /rsconf
 #
+rsconf_edit() {
+    local file=$1
+    local grep=$2
+    local perl=$3
+    local need=
+    if [[ $grep =~ ^![[:space:]]*(.+) ]]; then
+        need=1
+        grep=${BASH_REMATCH[1]}
+    fi
+    local g=$( set +e; grep -s -q "$grep" "$file" && echo 1 )
+    if [[ $g != $need ]]; then
+        return 1
+    fi
+    perl -pi -e "$perl" "$file"
+    g=$( set +e; grep -s -q "$grep" "$file" && echo 1 )
+    if [[ $g == $need ]]; then
+        install_err "$perl: failed to modify: $file"
+    fi
+    return 0
+}
+
 rsconf_install() {
     if [[ -z ${rsconf_install_access[group]} ]]; then
         install_err 'rsconf_install_access: must be called before rsconf_install'
@@ -139,7 +160,7 @@ rsconf_yum_install() {
     local x todo=()
     for x in "$@"; do
         if ! rpm -q "$x" >& /dev/null; then
-            todo+=( $x )
+            todo+=( "$x" )
         fi
     done
     if (( ${#todo[@]} > 0 )); then
