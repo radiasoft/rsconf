@@ -1,0 +1,14 @@
+[Unit]
+Description={{ name }}
+Requires={{ after }}
+After={{ after }}
+
+[Service]
+Restart=on-failure
+RestartSec=10
+ExecStartPre={{ remove }}
+ExecStart={{ start }}
+ExecStop=-{{ stop }}
+
+[Install]
+WantedBy=multi-user.target

@@ -14,11 +14,17 @@ class T(pkcollections.Dict):
         """Build one host"""
         from pykern import pkio
 
-        self.rsconf_require(self.dbt.zdb[host].components)
+        self.require_component(self.dbt.zdb[host].components)
         self.write_root_bash(
             '000.sh',
             ['rsconf_require ' + x for x in self.components_required],
         )
+
+    def install_file(self, files, mode, owner, group=None):
+        if not group:
+            group = owner
+        build_ctx.
+        'rsconf_install_access {} {} {}'.format(mode, owner, group),
 
     def require_component(self, components):
         from rsconf import component
@@ -30,7 +36,10 @@ class T(pkcollections.Dict):
                     '{}: invalidate state for component.{}'.format(r, c)
                 continue
             self.components_required[c] = 'start'
+            build_ctx.component_ctx[c].lines = [c + '() {']
             component.import_module(c).rsconf_build(self)
+            build_ctx.component_ctx[c].lines.append('}')
+            self.write_root_bash(c, build_ctx.component_ctx[c].lines)
             self.components_required[c] = 'done'
 
     def write_root_bash(self, basename, lines):
