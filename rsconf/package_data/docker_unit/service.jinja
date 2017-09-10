@@ -1,7 +1,9 @@
 [Unit]
 Description={{ name }}
+{%- if after %}
 Requires={{ after }}
 After={{ after }}
+{% endif -%}
 
 [Service]
 Restart=on-failure

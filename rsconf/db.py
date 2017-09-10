@@ -7,11 +7,14 @@ u"""Database
 from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
 from pykern import pkconfig
+from pykern import pkio
 
 
+_ZERO_YML = '000.yml'
 _SRV_SUBDIR = 'srv'
 _DEFAULT_DB_SUBDIR = 'run'
 _SECRET_SUBDIR = 'secret'
+_LEVELS = ('default', 'channel', 'host')
 
 class T(pkcollections.Dict):
 
@@ -19,12 +22,45 @@ class T(pkcollections.Dict):
         from pykern import pkyaml
 
         super(T, self).__init__(*args, **kwargs)
-        self.zdb = pkyaml.load_file(cfg.root.join('000.yml'))
-        self.root = cfg.root
-        self.srv = self.root(_SRV_SUBDIR)
-        self.guest_run_d = pkio.py_path('/var/lib')
-        self.guest_user = 'vagrant'
-        self.root_user = 'root'
+        self.base = pkyaml.load_file(cfg.root_d.join(_ZERO_YML))
+        self.secret = pkyaml.load_file(
+            cfg.root.join(_SECRET_SUBDIR)).join(_ZERO_YML))
+
+    def host_db(self, host):
+        channel = self.base.host[host].channel
+        res = pkcollections.Dict(
+            # Common defaults we allow overrides for
+            guest_run_d=pkio.py_path('/var/lib'),
+            guest_u='vagrant',
+            root_u='root',
+        )
+        #TODO(robnagler) optimize by caching default and channels
+        for l in levels:
+            for x in self.base, self.secret:
+                v = x[l]
+                if l == 'host':
+                    v = x[host]
+                elif l == 'channel':
+                    v = v['channel']
+                pkconfig.flatten_values(res, v)
+        # Can't override th
+        res.host = host.lower()
+        res.channel = channel
+        res.dst_d = res.srv_d.join(res.host)
+        res.root_d = pkio.py_path(cfg.root)
+        res.secret_d = res.root_d.join(_SECRET_SUBDIR)
+        res.srv_d = res.root_d.join(_SRV_SUBDIR)
+        return res
+
+    def host_list(self):
+        res = []
+        for c in pkconfig.VALID_CHANNELS:
+            res.extend(
+                sorted(
+                    self.base.host.get(c, pkcollections.Dict()).keys(),
+                ),
+            )
+        return res
 
 
 @pkconfig.parse_none
@@ -70,7 +106,6 @@ def _setup_dev(root):
     for f in 'radiasoft', 'biviosoftware':
         _sym(pkio.py_path('~/src').join(f), srv.join(f))
     _sym(pkio.py_path('~/src/radiasoft/download/bin/index.sh'), srv.join('index.html'))
-    pkio.mkdir_parent(root.join(_SECRET_SUBDIR))
     dev_root = pkio.py_path(pkresource.filename('dev'))
     for f in pkio.walk_tree(dev_root):
         # TODO(robnagler) ignore backup files

@@ -6,19 +6,37 @@ u"""Build the tree
 """
 from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
+from pykern import pkio
 
 
 class T(pkcollections.Dict):
 
-    def create_host(self):
-        """Build one host"""
-        from pykern import pkio
+    def __init__(self, dbt, host):
+        super(T, self).__init__({
+            components=pkcollections.Dict(),
+            components_required=[],
+            dbt=dbt,
+            hdb=dbt.host_db(),
+        })
 
-        self.require_component(self.dbt.zdb[host].components)
+    def create_host(self):
+        dst_d = self.hdb.dst_d
+        new = dst_d + '-new'
+        old = dst_d + '-old'
+        pkio.unchecked_remove(new, old)
+        self.require_component(self.hdb.components)
         self.write_root_bash(
             '000.sh',
             ['rsconf_require ' + x for x in self.components_required],
         )
+        if dst_d.check():
+            dst_d.rename(old)
+        else:
+            old = None
+        new.rename(dst_d)
+        if old:
+            pkio.unchecked_remove(old)
+
 
     def require_component(self, *components):
         from rsconf import component
@@ -30,7 +48,7 @@ class T(pkcollections.Dict):
                 continue
             self.components[c] = component.create(c, self)
             self.components[c].build()
-            self.components_required.append(c),
+            self.components_required.append(c)
 
     def write_root_bash(self, basename, lines):
         # python and perl scripts?
@@ -43,28 +61,7 @@ class T(pkcollections.Dict):
 def default_command():
     """Build the distribution tree"""
     from rsconf import db
-    from pykern import pkio
 
     dbt = db.T()
-    srv_d = self.srv
-    for host in dbt.zdb.keys():
-        dst_d = self.srv.join(host)
-        new = dst_d + '-new'
-        old = dst_d + '-old'
-        pkio.unchecked_remove(new, old)
-        h = dbt.zdb[host].clone()
-        h.name = host
-        T(
-            components=pkcollections.Dict(),
-            components_required=[],
-            dbt=dbt,
-            dst_d=dst_d,
-            host=h,
-        ).create_host()
-        if dst_d.check():
-            dst_d.rename(old)
-        else:
-            old = None
-        new.rename(dst_d)
-        if old:
-            pkio.unchecked_remove(old)
+    for host in dbt.host_list():
+        T(dbt, host).create_host()

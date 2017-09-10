@@ -9,4 +9,4 @@ if (( $# > 0 )); then
     flags='-i '
     cmd=( $@ )
 fi
-exec docker run $flags --tty --rm --user={{ guest_user }} --net host {{ volumes }} {{ image }} "${cmd[@]}"
+exec docker run $flags --tty --rm --user={{ run_u }} --net host {{ volumes }} {{ image }} "${cmd[@]}"
