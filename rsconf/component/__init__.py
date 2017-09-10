@@ -53,21 +53,39 @@ class T(pkcollections.Dict):
             "rsconf_install_access '{mode}' '{owner}' '{group}'".format(**self._install_access),
         )
 
-    def install_resource(self, name, jinja_values, rel_path):
+    def install_directory(self, host_path):
+        assert int(self._install_access.mode, 8) & 0700 == 0700, \
+            '{}: directory must be at least 700 mode (u=rwx)'
+        self._bash_append(host_path, is_file=False)
+
+    def install_resource(self, name, jinja_values, host_path):
         from pykern import pkjinja
 
-        rel_path = str(rel_path)
-        if rel_path.startswith('/'):
-            rel_path = rel_path[1:]
-        assert not "'" in rel_path, \
-            "{}: rel_path contains single quote (')".format(rel_path)
-        self.root_bash.append("rsconf_install '{}'".format(rel_path))
-        dst = compt.buildt.dst_d.join(rel_path)
-        assert not dst.check(), \
-            '{}: dst already exists'.format(dst)
+        dst = self._bash_append_and_dst(host_path)
         dst.write(
             pkjinja.render_resource('name', values=jinja_values),
         )
+
+    def install_secret(self, filename, host_path):
+        dst = self._bash_append_and_dst(host_path)
+        hdb.secret_d.join(filename).copy(dst, mode=True)
+
+    def _bash_append(self, host_path, is_file=True):
+        assert not "'" in host_path, \
+            "{}: host_path contains single quote (')".format(rel_path)
+        self.root_bash.append(
+            "rsconf_install_{} '{}'".format(
+                'file' if is_file else 'directory',
+                host_path,
+            ),
+        )
+
+    def _bash_append_and_dst(self, host_path):
+        self._bash_append(host_path)
+        dst = self.hdb.dst_d.join(host_path)
+        assert not dst.check(), \
+            '{}: dst already exists'.format(dst)
+        return dst
 
 
 def create_t(name, buildt):
