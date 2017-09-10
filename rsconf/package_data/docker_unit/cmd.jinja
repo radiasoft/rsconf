@@ -1,0 +1,6 @@
+#!/bin/bash
+. ~/.bashrc
+set -euo pipefail
+cd '/var/lib/sirepo'
+. ./env
+exec sirepo service uwsgi

@@ -1,3 +1,7 @@
 ---
 v4.bivio.biz:
   components: [ sirepo ]
+  channel: dev
+  sirepo_cores: 2
+  sirepo_port: 7000
+  broker_url: "amqp://guest@v4.bivio.biz//"

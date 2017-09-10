@@ -1,0 +1,12 @@
+#!/bin/bash
+#
+# Usage: run [bash -l]
+#
+set -euo pipefail
+cmd=( /var/lib/{{ name }}/cmd )
+flags='--name {{ name }} '
+if (( $# > 0 )); then
+    flags='-i '
+    cmd=( $@ )
+fi
+exec docker run $flags --tty --rm --user={{ guest_user }} --net host {{ volumes }} {{ image }} "${cmd[@]}"

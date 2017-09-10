@@ -10,7 +10,7 @@ from pykern import pkcollections
 
 class T(pkcollections.Dict):
 
-    def build_host(self):
+    def create_host(self):
         """Build one host"""
         from pykern import pkio
 
@@ -20,27 +20,17 @@ class T(pkcollections.Dict):
             ['rsconf_require ' + x for x in self.components_required],
         )
 
-    def install_file(self, files, mode, owner, group=None):
-        if not group:
-            group = owner
-        build_ctx.
-        'rsconf_install_access {} {} {}'.format(mode, owner, group),
-
-    def require_component(self, components):
+    def require_component(self, *components):
         from rsconf import component
 
         for c in components:
-            r = self.components_required.get(c)
-            if r:
-                assert r == 'done', \
-                    '{}: invalidate state for component.{}'.format(r, c)
+            compt = self.components.get(c)
+            if compt:
+                compt.assert_done()
                 continue
-            self.components_required[c] = 'start'
-            build_ctx.component_ctx[c].lines = [c + '() {']
-            component.import_module(c).rsconf_build(self)
-            build_ctx.component_ctx[c].lines.append('}')
-            self.write_root_bash(c, build_ctx.component_ctx[c].lines)
-            self.components_required[c] = 'done'
+            self.components[c] = component.create(c, self)
+            self.components[c].build()
+            self.components_required.append(c),
 
     def write_root_bash(self, basename, lines):
         # python and perl scripts?
@@ -57,21 +47,24 @@ def default_command():
 
     dbt = db.T()
     srv_d = self.srv
-    for host in db.keys():
-        dst = self.srv.join(host)
-        new = dst + '-new'
-        old = dst + '-old'
+    for host in dbt.zdb.keys():
+        dst_d = self.srv.join(host)
+        new = dst_d + '-new'
+        old = dst_d + '-old'
         pkio.unchecked_remove(new, old)
+        h = dbt.zdb[host].clone()
+        h.name = host
         T(
-            host=host,
+            components=pkcollections.Dict(),
+            components_required=[],
             dbt=dbt,
-            dst=dst,
-            components_required=pkcollections.OrderedMapping(),
-        ).build_host()
-        if dst.check():
-            dst.rename(old)
+            dst_d=dst_d,
+            host=h,
+        ).create_host()
+        if dst_d.check():
+            dst_d.rename(old)
         else:
             old = None
-        new.rename(dst)
+        new.rename(dst_d)
         if old:
             pkio.unchecked_remove(old)

@@ -11,7 +11,7 @@ from pykern import pkconfig
 
 _SRV_SUBDIR = 'srv'
 _DEFAULT_DB_SUBDIR = 'run'
-
+_SECRET_SUBDIR = 'secret'
 
 class T(pkcollections.Dict):
 
@@ -22,6 +22,9 @@ class T(pkcollections.Dict):
         self.zdb = pkyaml.load_file(cfg.root.join('000.yml'))
         self.root = cfg.root
         self.srv = self.root(_SRV_SUBDIR)
+        self.guest_run_d = pkio.py_path('/var/lib')
+        self.guest_user = 'vagrant'
+        self.root_user = 'root'
 
 
 @pkconfig.parse_none
@@ -67,7 +70,7 @@ def _setup_dev(root):
     for f in 'radiasoft', 'biviosoftware':
         _sym(pkio.py_path('~/src').join(f), srv.join(f))
     _sym(pkio.py_path('~/src/radiasoft/download/bin/index.sh'), srv.join('index.html'))
-    secret = pkio.mkdir_parent(root.join('secret'))
+    pkio.mkdir_parent(root.join(_SECRET_SUBDIR))
     dev_root = pkio.py_path(pkresource.filename('dev'))
     for f in pkio.walk_tree(dev_root):
         # TODO(robnagler) ignore backup files
