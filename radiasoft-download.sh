@@ -36,6 +36,27 @@ rsconf_edit() {
     return 0
 }
 
+rsconf_prepare_service() {
+    nginx files come from lots of places so we would need to make
+    the commit at the end. Maybe this is a completion operation
+    save status, make sure not called twice
+}
+rsconf_commit_service() {
+    if any file changes, restart; else just enable and start if not started
+    consider reload for nginx
+    queued operation
+    single systemctl daemon-reload (if any changes to service)
+    rpms may affect files so perhaps just match a list of directories associated with the
+    service
+}
+
+
+rsconf_install_directory() {
+}
+
+rsconf_install_file() {
+}
+
 rsconf_install() {
     if [[ -z ${rsconf_install_access[group]} ]]; then
         install_err 'rsconf_install_access: must be called before rsconf_install'

@@ -6,8 +6,9 @@ u"""sirepo configuration commands
 """
 from __future__ import absolute_import, division, print_function
 
-def create_beaker_secret(path):
-    """Generate flask beaker secret
+
+def gen_beaker_secret(path):
+    """Create a flask beaker secret
 
     Args:
         path (str): where to write the secret
@@ -20,6 +21,6 @@ def create_beaker_secret(path):
 
     y = string.digits + string.letters + string.punctuation
     x = ''.join(random.choice(y) for _ in range(64))
-    with open(path, 'wb') as f:
+    with open(str(path), 'wb') as f:
         f.write(x)
     return path

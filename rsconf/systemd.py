@@ -6,21 +6,26 @@ u"""create systemd files
 """
 from __future__ import absolute_import, division, print_function
 from pykern import pkio
+from pykern import pkcollections
 
 SYSTEMD_DIR = pkio.py_path('/etc/systemd/system')
 
 
-def docker_unit_run_d(compt):
-    return compt.hdb.guest_root_d.join(compt.name)
+def docker_unit_prepare(compt):
+    """Must be first call"""
+    compt.append_root_bash("rsconf_prepare_service '{}'".format(compt.name))
+    compt.docker_unit_run_d = compt.hdb.host_run_d.join(compt.name)
+    return compt.docker_unit_run_d
 
 
 def docker_unit(compt, image, env, volumes=None, after=None):
-    from pykern import pkcollections
+    """Must be last call"""
 
     v = pkcollections.Dict(
         name=compt.name,
-        run_u=compt.hdb.guest_u,
-        run_d=docker_unit_run_d(compt),
+        run_u=compt.hdb.run_u,
+        # Asserts that docker_unit_prepare was called
+        run_d=compt.docker_unit_run_d,
     )
     v.exports = '\n'.join(
         ["export '{}={}'".format(k, env[k]) for k in sorted(env.keys())],
@@ -45,3 +50,4 @@ def docker_unit(compt, image, env, volumes=None, after=None):
         values=values,
         SYSTEMD_DIR.join('{}.service'.format(compt.name))
     )
+    compt.append_root_bash("rsconf_commit_service '{}'".format(compt.name))

@@ -6,6 +6,7 @@ u"""Load components
 """
 from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
+from pykern import pkio
 import re
 
 _DONE = 'done'
@@ -22,15 +23,18 @@ class T(pkcollections.Dict):
             state=_START,
         )
 
+    def append_root_bash(self, *line):
+        self._root_bash.extend(line)
+
     def assert_done(self):
         assert self.state == _DONE, \
             '{}: invalidate state for component.{}'.format(self.state, self.name)
 
     def build(self):
-        self.root_bash = [self.name + '() {'],
+        self._root_bash = [self.name + '() {'],
         self.internal_build(self)
-        self.root_bash.append('}')
-        self.buildt.write_root_bash(self.name, self.root_bash)
+        self.append_root_bash('}')
+        self.buildt.write_root_bash(self.name, self._root_bash)
         self.state = _DONE
         self._install_access = pkcollections.Dict(
             mode='400',
@@ -40,6 +44,8 @@ class T(pkcollections.Dict):
 
     def install_access(self, mode=None, owner=None, group=None):
         if not mode is None:
+            assert not isinstance(mode, int), \
+                '{}: mode must be a string, not int'.format(mode)
             assert _MODE_RE.search(mode), \
                 '{}: invalid mode'.format(mode)
             self._install_access.mode = mode
@@ -49,7 +55,7 @@ class T(pkcollections.Dict):
             self._install_access.group = group
         elif owner:
             self._install_access.group = owner
-        self.root_bash.append(
+        self.append_root_bash(
             "rsconf_install_access '{mode}' '{owner}' '{group}'".format(**self._install_access),
         )
 
@@ -66,14 +72,23 @@ class T(pkcollections.Dict):
             pkjinja.render_resource('name', values=jinja_values),
         )
 
-    def install_secret(self, filename, host_path):
+    def install_secret(self, basename, host_path, gen_secret=None, host_private=False):
         dst = self._bash_append_and_dst(host_path)
-        hdb.secret_d.join(filename).copy(dst, mode=True)
+        src = self.hdb.secret_d.join(
+            self.hdb.host if host_private else hdb.channel,
+            basename,
+        )
+        if not src.check():
+            assert gen_secret, \
+                '{}: unable to generate secret: {}'.format(src, host_path)
+            pkio.mkdir_parent_only(src)
+            gen_secret(src)
+        src.copy(dst, mode=True)
 
     def _bash_append(self, host_path, is_file=True):
         assert not "'" in host_path, \
             "{}: host_path contains single quote (')".format(rel_path)
-        self.root_bash.append(
+        self.append_root_bash(
             "rsconf_install_{} '{}'".format(
                 'file' if is_file else 'directory',
                 host_path,
@@ -85,6 +100,7 @@ class T(pkcollections.Dict):
         dst = self.hdb.dst_d.join(host_path)
         assert not dst.check(), \
             '{}: dst already exists'.format(dst)
+        pkio.mkdir_parent_only(dst)
         return dst
 
 

@@ -30,8 +30,8 @@ class T(pkcollections.Dict):
         channel = self.base.host[host].channel
         res = pkcollections.Dict(
             # Common defaults we allow overrides for
-            guest_run_d=pkio.py_path('/var/lib'),
-            guest_u='vagrant',
+            host_run_d=pkio.py_path('/var/lib'),
+            run_u='vagrant',
             root_u='root',
         )
         #TODO(robnagler) optimize by caching default and channels
