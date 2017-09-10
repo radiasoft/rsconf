@@ -7,6 +7,7 @@ docker_main() {
         return
     fi
     rsconf_require base_users
+#TODO(robnagler) need a list of repos and RPMs.
     yum-config-manager \
         --add-repo https://download.docker.com/linux/centos/docker-ce.repo
     yum makecache fast
@@ -23,6 +24,7 @@ docker_main() {
         -c 512K \
         --thinpool "$vg"/thinpool \
         --poolmetadata "$vg"/thinpoolmeta
+    #TODO(robnagler) Do we really want autoextend?
     dd of=/etc/lvm/profile/"$vg"-thinpool.profile <<EOF
 activation {
     thin_pool_autoextend_threshold=80
@@ -32,6 +34,10 @@ EOF
     lvchange --metadataprofile "$vg"-thinpool "$vg"/thinpool
     lvs -o+seg_monitor
     mkdir /etc/docker
+#TODO(robnagler) add live-restore?
+    # live restore: https://docs.docker.com/engine/admin/live-restore
+    # "live-restore": true,
+#TODO(robnagler) allow updates of daemon.json
     dd of=/etc/docker/daemon.json <<EOF
 {
     "iptables": false,

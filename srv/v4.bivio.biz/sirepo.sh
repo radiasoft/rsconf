@@ -8,7 +8,8 @@ sirepo_main() {
     rsconf_install_access 444 root
     rsconf_install etc/systemd/system/sirepo.service
     rsconf_install_access 700 vagrant
-    rsconf_install var/lib/sirepo/{,db/}
+    # Must be created so that celery_sirepo can see it as vagrant
+    rsconf_install var/lib/sirepo/ var/lib/sirepo/db var/lib/sirepo/db/user
     rsconf_install_access 400
     rsconf_install var/lib/sirepo/db/beaker_secret
     rsconf_install_access 500
