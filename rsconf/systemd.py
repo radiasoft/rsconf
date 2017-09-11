@@ -8,35 +8,43 @@ from __future__ import absolute_import, division, print_function
 from pykern import pkio
 from pykern import pkcollections
 
-SYSTEMD_DIR = pkio.py_path('/etc/systemd/system')
-
+_SYSTEMD_DIR = pkio.py_path('/etc/systemd/system')
 
 def docker_unit_prepare(compt):
     """Must be first call"""
-    compt.append_root_bash("rsconf_service_prepare '{}'".format(compt.name))
-    compt.docker_unit_run_d = compt.hdb.host_run_d.join(compt.name)
+    compt.docker_unit = pkcollections.Dict(
+        run_d=compt.hdb.host_run_d.join(compt.name),
+        service_f=_SYSTEMD_DIR.join('{}.service'.format(compt.name)),
+    )
+    compt.append_root_bash(
+        "rsconf_service_prepare '{}' '{}' '{}'".format(
+            compt.name,
+            compt.docker_unit.run_d,
+            compt.docker_unit.service_f,
+        ),
+    )
     return compt.docker_unit_run_d
 
 
 def docker_unit(compt, image, env, volumes=None, after=None):
     """Must be last call"""
-
-    v = pkcollections.Dict(
+    v = compt.docker_unit.copy()
+    v.update(
+        after=' '.join(after or []),
+        exports='\n'.join(
+            ["export '{}={}'".format(k, env[k]) for k in sorted(env.keys())],
+        ),
+        image=image + ':' + compt.hdb.channel,
         name=compt.name,
         run_u=compt.hdb.run_u,
-        # Asserts that docker_unit_prepare was called
-        run_d=compt.docker_unit_run_d,
+        volumes=' '.join(
+            ["-v '{}:{}'".format(x, x) for x in [v.run_d] + (volumes or [])],
+        ),
     )
-    v.exports = '\n'.join(
-        ["export '{}={}'".format(k, env[k]) for k in sorted(env.keys())],
-    )
-    v.volumes = ' '.join(["-v '{}:{}'".format(x, x) for x in [v.run_d] + (volumes or [])])
-    v.image = image + ':' + compt.hdb.channel
-    v.after = ' '.join(after or [])
+    scripts = ('cmd', 'env', 'remove', 'start', 'stop')
     compt.install_access(mode='700', owner=v.run_u)
     compt.install_directory(v.run_d)
     compt.install_access(mode='500')
-    scripts = ('cmd', 'env', 'remove', 'start', 'stop')
     for s in scripts:
         v[s] = v.run_d.join(s)
         compt.install_resource('docker_unit/' + s, v, v[s])
@@ -48,6 +56,6 @@ def docker_unit(compt, image, env, volumes=None, after=None):
     compt.install_resource(
         'docker_unit/service',
         v,
-        SYSTEMD_DIR.join('{}.service'.format(compt.name)),
+        compt.docker_unit.service_f,
     )
     compt.append_root_bash("rsconf_commit_service '{}'".format(compt.name))

@@ -33,6 +33,7 @@ rsconf_edit() {
     if [[ $g == $need ]]; then
         install_err "$perl: failed to modify: $file"
     fi
+    rsconf_service_file_check "$file"
     return 0
 }
 
@@ -49,22 +50,29 @@ rsconf_install_access() {
 }
 
 rsconf_install_chxxx() {
+    local no_check=
+    if [[ $1 =~ ^-no_check$ ]]; then
+        shift
+        no_check=1
+    fi
     local path=$1
     local actual=( $(stat --format '%a %U %G' "$path") )
-    local res=1
+    local change=
     if [[ ${rsconf_install_access[user]} != ${actual[1]} ]]; then
         chown "${rsconf_install_access[user]}" "$path"
-        res=0
+        change=1
     fi
     if [[ ${rsconf_install_access[group]} != ${actual[2]} ]]; then
         chgrp "${rsconf_install_access[group]}" "$path"
-        res=0
+        change=1
     fi
     if [[ ${rsconf_install_access[mode]} != ${actual[0]} ]]; then
         chmod "${rsconf_install_access[mode]}" "$path"
-        res=0
+        change=1
     fi
-    return "$res"
+    if [[ -z $no_check && -n $change ]]; then
+        rsconf_service_file_check "$path"
+    fi
 }
 
 rsconf_install_directory() {
@@ -73,16 +81,15 @@ rsconf_install_directory() {
         install_err "$path: is a symbolic link, expecting a directory"
     fi
     if [[ -d $path ]]; then
-        if ! rsconf_install_chxxx "$path"; then
-            return
-        fi
-    else
-        if [[ -e $path ]]; then
-            install_err "$path: exists but is not a directory"
-        fi
-        # parent directory must already exist
-        mkdir "$path"
+        rsconf_install_chxxx "$path"
+        return
     fi
+    if [[ -e $path ]]; then
+        install_err "$path: exists but is not a directory"
+    fi
+    # parent directory must already exist
+    mkdir "$path"
+    rsconf_install_chxxx -no_check "$path"
     rsconf_service_file_check "$path"
 }
 
@@ -101,13 +108,11 @@ rsconf_install_file() {
     fi
     if cmp "$tmp" "$path" >& /dev/null; then
         rm -f "$tmp"
-        if ! rsconf_install_chxxx "$path"; then
-            return
-        fi
-    else
-        rsconf_install_chxxx "$tmp"
-        mv -f "$tmp" "$path"
+        rsconf_install_chxxx "$path"
+        return
     fi
+    rsconf_install_chxxx -no_check "$tmp"
+    mv -f "$tmp" "$path"
     rsconf_service_file_check "$path"
 }
 
@@ -117,11 +122,11 @@ rsconf_main() {
         install_err "$host: invalid host name"
     fi
     install_url radiasoft/rsconf "srv/$host"
-    # Dynamically scoped
-    local -A rsconf_service_watch=()
-    local -A rsconf_service_status=()
-    local -a rsconf_service_order=()
+    # Dynamically scoped; must be inline here
     local -A rsconf_install_access=()
+    local -A rsconf_service_status=()
+    local -A rsconf_service_watch=()
+    local -a rsconf_service_order=()
     install_script_eval 000.sh
     rsconf_service_restart
 }
@@ -152,6 +157,19 @@ rsconf_run() {
     "$f" "$@"
 }
 
+rsconf_service_file_check() {
+    local path=$1
+    local s
+    while [[ $path != / ]]; do
+        s=${rsconf_service_watch[$path]}
+        if [[ -n $s ]]; then
+            rsconf_service_status[$s]=restart
+            return
+        fi
+        path=$(dirname "$path")
+    done
+}
+
 rsconf_service_prepare() {
     local s=$1
     local w
@@ -175,23 +193,15 @@ rsconf_service_restart() {
             fi
             # Just restart, most daemons are fast
             systemctl restart "$s"
+            install_info "$s: restarting"
         else
-            systemctl start "$s"
+            # test is really only necessary for the msg
+            if ! systemctl is-active "$s" >&/dev/null; then
+                install_info "$s: starting"
+                systemctl start "$s"
+            fi
         fi
         systemctl enable "$s"
-    done
-}
-
-rsconf_service_file_check() {
-    local path=$1
-    local s
-    while [[ $path != / ]]; do
-        s=${rsconf_service_watch[$path]}
-        if [[ -n $s ]]; then
-            rsconf_service_status[$s]=restart
-            return
-        fi
-        path=$(dirname "$path")
     done
 }
 
