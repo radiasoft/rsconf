@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 u"""Build the tree
 
-:copyright: Copyright (c) 2017 Bivio Software, Inc.  All Rights Reserved.
+:copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
@@ -26,6 +26,7 @@ class T(pkcollections.Dict):
         self.hdb.dst_d = new
         old = dst_d + '-old'
         pkio.unchecked_remove(new, old)
+        pkio.mkdir_parent(new)
         self.require_component(*self.hdb.components)
         self.write_root_bash(
             '000',

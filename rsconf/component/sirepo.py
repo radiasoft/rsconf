@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 u"""create sirepo configuration
 
-:copyright: Copyright (c) 2017 Bivio Software, Inc.  All Rights Reserved.
+:copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
@@ -14,7 +14,8 @@ _BEAKER_SECRET_BASE = 'sirepo_beaker_secret'
 class T(component.T):
     def internal_build(self):
         from rsconf import systemd
-        #TODO(robnagler) import
+
+        self.buildt.require_component('base_os')
         #self.buildt.require_component('docker', 'rabbitmq', 'celery_sirepo', 'nginx')
         run_d = systemd.docker_unit_prepare(self)
         db_d = run_d.join(_DB_SUBDIR)

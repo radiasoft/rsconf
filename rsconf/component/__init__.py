@@ -7,6 +7,7 @@ u"""Load components
 from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
 from pykern import pkio
+from pykern.pkdebug import pkdp, pkdc
 import re
 
 _DONE = 'done'
@@ -27,6 +28,13 @@ class T(pkcollections.Dict):
     def append_root_bash(self, *line):
         self._root_bash.extend(line)
 
+    def append_root_bash_with_resource(self, script, jinja_values, bash_func):
+        from pykern import pkjinja
+
+        v = pkjinja.render_resource(script, values=jinja_values)
+        self._root_bash_aux.append(v)
+        self.append_root_bash(bash_func)
+
     def assert_done(self):
         assert self.state == _DONE, \
             '{}: invalidate state for component.{}'.format(self.state, self.name)
@@ -35,8 +43,10 @@ class T(pkcollections.Dict):
         self.state = _DONE
         self._install_access = pkcollections.Dict()
         self._root_bash = [self.name + _BASH_FUNC_SUFFIX + '() {']
+        self._root_bash_aux = []
         self.internal_build()
         self.append_root_bash('}')
+        self._root_bash.extend(self._root_bash_aux)
         self.buildt.write_root_bash(self.name, self._root_bash)
 
     def install_access(self, mode=None, owner=None, group=None):
