@@ -1,0 +1,39 @@
+#!/bin/bash
+
+docker_main() {
+    if [[ -e /var/lib/docker ]]; then
+#TODO(robnagler) update docker rpm?
+        install_info '/var/lib/docker: exists, docker already installed'
+        return
+    fi
+    rsconf_require base_users
+#TODO(robnagler) need a list of repos and RPMs.
+    yum-config-manager \
+        --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+    yum makecache fast
+#TODO(robnagler) how to update
+    rsconf_yum_install docker-ce-17.06.0.ce-1.el7.centos
+    while [[ $(lvs --noheadings --nameprefixes '{{ volume_group }}') =~ LVM2_LV_NAME=.([^\']+) ]]; do
+        lvremove -f "{{ volume_group }}/${BASH_REMATCH[1]}"
+    done
+    lvcreate --wipesignatures y -n thinpool '{{ volume_group }}' -l 95%VG
+    lvcreate --wipesignatures y -n thinpoolmeta '{{ volume_group }}' -l 1%VG
+    lvconvert -y \
+        --zero n \
+        -c 512K \
+        --thinpool '{{ volume_group }}'/thinpool \
+        --poolmetadata '{{ volume_group }}'/thinpoolmeta
+    #TODO(robnagler) Do we really want autoextend?
+    dd of=/etc/lvm/profile/'{{ volume_group }}'-thinpool.profile <<EOF
+activation {
+    thin_pool_autoextend_threshold=80
+    thin_pool_autoextend_percent=20
+}
+EOF
+    lvchange --metadataprofile '{{ volume_group }}'-thinpool '{{ volume_group }}'/thinpool
+    lvs -o+seg_monitor
+    # Give vagrant user access in dev mode only
+    if [[ $install_channel == dev ]]; then
+       usermod -aG docker vagrant
+    fi
+}

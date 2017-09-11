@@ -49,14 +49,14 @@ def docker_unit(compt, image, env, volumes=None, after=None):
     compt.install_access(mode='500')
     for s in scripts:
         v[s] = v.run_d.join(s)
-        compt.install_resource('docker_unit/' + s, v, v[s])
+        compt.install_resource('systemd/' + s, v, v[s])
     # See Poettering's omniscience about what's good for all of us here:
     # https://github.com/systemd/systemd/issues/770
     # I would want these files to be 400, since there's no value in making them
     # public. The machines are inaccessiable to anybody who doesn't have root access.
     compt.install_access(mode='444', owner=compt.hdb.root_u)
     compt.install_resource(
-        'docker_unit/service',
+        'systemd/service',
         v,
         compt.docker_unit.service_f,
     )

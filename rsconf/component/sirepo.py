@@ -15,7 +15,7 @@ class T(component.T):
     def internal_build(self):
         from rsconf import systemd
 
-        self.buildt.require_component('base_os')
+        self.buildt.require_component('docker')
         #self.buildt.require_component('docker', 'rabbitmq', 'celery_sirepo', 'nginx')
         run_d = systemd.docker_unit_prepare(self)
         db_d = run_d.join(_DB_SUBDIR)
