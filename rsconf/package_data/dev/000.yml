@@ -4,6 +4,7 @@ default:
     pkcli:
       service_processes: 1
       service_threads: 20
+      service_port: 7000
     oauth:
       github_key: ""
       github_secret: ""
@@ -15,8 +16,6 @@ channel:
     sirepo:
       mpi.cores: 2
       celery_tasks.broker_url: "amqp://guest@v4.bivio.biz//"
-    pykern:
-      pkdebug.control: {{ component }}
 
 host:
   dev:

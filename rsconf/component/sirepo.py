@@ -5,6 +5,8 @@ u"""create sirepo configuration
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
+from rsconf import component
+from pykern import pkcollections
 
 _DB_SUBDIR = 'db'
 _BEAKER_SECRET_BASE = 'sirepo_beaker_secret'
@@ -12,8 +14,8 @@ _BEAKER_SECRET_BASE = 'sirepo_beaker_secret'
 class T(component.T):
     def internal_build(self):
         from rsconf import systemd
-
-        self.buildt.require_component('docker', 'rabbitmq', 'celery_sirepo', 'nginx')
+        #TODO(robnagler) import
+        #self.buildt.require_component('docker', 'rabbitmq', 'celery_sirepo', 'nginx')
         run_d = systemd.docker_unit_prepare(self)
         db_d = run_d.join(_DB_SUBDIR)
         #TODO(robnagler) from sirepo or flask(?)
@@ -28,10 +30,9 @@ class T(component.T):
             SIREPO_SERVER_BEAKER_SESSION_KEY='sirepo_{}'.format(self.hdb.channel),
             SIREPO_SERVER_BEAKER_SESSION_SECRET=beaker_secret_f,
             SIREPO_SERVER_DB_DIR=db_d,
-            SIREPO_SERVER_JOB_QUEUE=Celery,
+            SIREPO_SERVER_JOB_QUEUE='Celery',
         )
         for f in (
-            'pykern_pkdebug_control',
             'sirepo_celery_tasks_broker_url',
             'sirepo_mpi_cores',
             'sirepo_pkcli_service_port',
@@ -49,7 +50,7 @@ class T(component.T):
         self.install_secret(
             _BEAKER_SECRET_BASE,
             host_path=beaker_secret_f,
-            gen_secret=self.gen_beaker_secret,
+            gen_secret=self._gen_beaker_secret,
         )
         systemd.docker_unit(
             self,

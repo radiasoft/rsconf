@@ -7,24 +7,26 @@ u"""Build the tree
 from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
 from pykern import pkio
+from pykern.pkdebug import pkdp, pkdc
 
 
 class T(pkcollections.Dict):
 
-    def __init__(self, dbt, host):
-        super(T, self).__init__({
+    def __init__(self, dbt, channel, host):
+        super(T, self).__init__(
             components=pkcollections.Dict(),
             components_required=[],
             dbt=dbt,
-            hdb=dbt.host_db(),
-        })
+            hdb=dbt.host_db(channel, host),
+        )
 
     def create_host(self):
-        dst_d = self.hdb.dst_d
+        dst_d = self.hdb.srv_d.join(self.hdb.host)
         new = dst_d + '-new'
+        self.hdb.dst_d = new
         old = dst_d + '-old'
         pkio.unchecked_remove(new, old)
-        self.require_component(self.hdb.components)
+        self.require_component(*self.hdb.components)
         self.write_root_bash(
             '000.sh',
             ['rsconf_require ' + x for x in self.components_required],
@@ -46,14 +48,14 @@ class T(pkcollections.Dict):
             if compt:
                 compt.assert_done()
                 continue
-            self.components[c] = component.create(c, self)
+            self.components[c] = component.create_t(c, self)
             self.components[c].build()
             self.components_required.append(c)
 
     def write_root_bash(self, basename, lines):
         # python and perl scripts?
         pkio.write_text(
-            self.dst.join(basename + '.sh'),
+            self.hdb.dst_d.join(basename + '.sh'),
             '\n'.join(['#!/bin/bash'] + lines) + '\n',
         )
 
@@ -63,5 +65,6 @@ def default_command():
     from rsconf import db
 
     dbt = db.T()
-    for host in dbt.host_list():
-        T(dbt, host).create_host()
+    for c, hosts in pkcollections.map_items(dbt.channel_hosts()):
+        for h in hosts:
+            T(dbt, c, h).create_host()

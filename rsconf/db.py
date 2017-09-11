@@ -8,7 +8,7 @@ from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
 from pykern import pkconfig
 from pykern import pkio
-
+from pykern.pkdebug import pkdc, pkdp
 
 _ZERO_YML = '000.yml'
 _SRV_SUBDIR = 'srv'
@@ -22,12 +22,12 @@ class T(pkcollections.Dict):
         from pykern import pkyaml
 
         super(T, self).__init__(*args, **kwargs)
-        self.base = pkyaml.load_file(cfg.root_d.join(_ZERO_YML))
+        self.base = pkyaml.load_file(cfg.root_dir.join(_ZERO_YML))
         self.secret = pkyaml.load_file(
-            cfg.root.join(_SECRET_SUBDIR)).join(_ZERO_YML))
+            cfg.root_dir.join(_SECRET_SUBDIR).join(_ZERO_YML),
+        )
 
-    def host_db(self, host):
-        channel = self.base.host[host].channel
+    def host_db(self, channel, host):
         res = pkcollections.Dict(
             # Common defaults we allow overrides for
             host_run_d=pkio.py_path('/var/lib'),
@@ -35,30 +35,30 @@ class T(pkcollections.Dict):
             root_u='root',
         )
         #TODO(robnagler) optimize by caching default and channels
-        for l in levels:
+        for l in _LEVELS:
             for x in self.base, self.secret:
                 v = x[l]
-                if l == 'host':
-                    v = x[host]
-                elif l == 'channel':
-                    v = v['channel']
+                if l != 'default':
+                    v = v.get(channel)
+                    if not v:
+                        continue
+                    if l == 'host':
+                        v = v.get(host)
+                        if not v:
+                            continue
                 pkconfig.flatten_values(res, v)
-        # Can't override th
         res.host = host.lower()
         res.channel = channel
-        res.dst_d = res.srv_d.join(res.host)
-        res.root_d = pkio.py_path(cfg.root)
+        res.root_d = pkio.py_path(cfg.root_dir)
         res.secret_d = res.root_d.join(_SECRET_SUBDIR)
         res.srv_d = res.root_d.join(_SRV_SUBDIR)
         return res
 
-    def host_list(self):
-        res = []
+    def channel_hosts(self):
+        res = pkcollections.OrderedMapping()
         for c in pkconfig.VALID_CHANNELS:
-            res.extend(
-                sorted(
-                    self.base.host.get(c, pkcollections.Dict()).keys(),
-                ),
+            res[c] = sorted(
+                self.base.host.get(c, pkcollections.Dict()).keys(),
             )
         return res
 
@@ -117,5 +117,5 @@ def _setup_dev(root):
 
 
 cfg = pkconfig.init(
-    root=(None, _cfg_root, 'Top of rsonf tree'),
+    root_dir=(None, _cfg_root, 'Top of rsonf tree'),
 )

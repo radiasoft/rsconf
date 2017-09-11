@@ -31,16 +31,12 @@ class T(pkcollections.Dict):
             '{}: invalidate state for component.{}'.format(self.state, self.name)
 
     def build(self):
-        self._root_bash = [self.name + '() {'],
-        self.internal_build(self)
+        self.state = _DONE
+        self._install_access = pkcollections.Dict()
+        self._root_bash = [self.name + '() {']
+        self.internal_build()
         self.append_root_bash('}')
         self.buildt.write_root_bash(self.name, self._root_bash)
-        self.state = _DONE
-        self._install_access = pkcollections.Dict(
-            mode='400',
-            owner=self.hdb.guest_u,
-            group=self.hdb.guest_u,
-        )
 
     def install_access(self, mode=None, owner=None, group=None):
         if not mode is None:
@@ -69,13 +65,13 @@ class T(pkcollections.Dict):
 
         dst = self._bash_append_and_dst(host_path)
         dst.write(
-            pkjinja.render_resource('name', values=jinja_values),
+            pkjinja.render_resource(name, values=jinja_values),
         )
 
     def install_secret(self, basename, host_path, gen_secret=None, host_private=False):
         dst = self._bash_append_and_dst(host_path)
         src = self.hdb.secret_d.join(
-            self.hdb.host if host_private else hdb.channel,
+            self.hdb.host if host_private else self.hdb.channel,
             basename,
         )
         if not src.check():
@@ -86,8 +82,8 @@ class T(pkcollections.Dict):
         src.copy(dst, mode=True)
 
     def _bash_append(self, host_path, is_file=True):
-        assert not "'" in host_path, \
-            "{}: host_path contains single quote (')".format(rel_path)
+        assert not "'" in str(host_path), \
+            "{}: host_path contains single quote (')".format(host_path)
         self.append_root_bash(
             "rsconf_install_{} '{}'".format(
                 'file' if is_file else 'directory',

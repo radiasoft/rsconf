@@ -33,21 +33,21 @@ def docker_unit(compt, image, env, volumes=None, after=None):
     v.volumes = ' '.join(["-v '{}:{}'".format(x, x) for x in [v.run_d] + (volumes or [])])
     v.image = image + ':' + compt.hdb.channel
     v.after = ' '.join(after or [])
-    compt.install_access(mode=700, owner=v.run_u)
-    compt.install_dir(v.run_d)
-    compt.install_access(mode=500)
+    compt.install_access(mode='700', owner=v.run_u)
+    compt.install_directory(v.run_d)
+    compt.install_access(mode='500')
     scripts = ('cmd', 'env', 'remove', 'start', 'stop')
     for s in scripts:
-        v[s] = run_d.join(s)
-        compt.install_resource('docker_unit/' + s, v, value[s])
+        v[s] = v.run_d.join(s)
+        compt.install_resource('docker_unit/' + s, v, v[s])
     # See Poettering's omniscience about what's good for all of us here:
     # https://github.com/systemd/systemd/issues/770
     # I would want these files to be 400, since there's no value in making them
     # public. The machines are inaccessiable to anybody who doesn't have root access.
-    compt.install_access(mode=444, owner=v.root_u)
+    compt.install_access(mode='444', owner=compt.hdb.root_u)
     compt.install_resource(
         'docker_unit/service',
-        values=values,
-        SYSTEMD_DIR.join('{}.service'.format(compt.name))
+        v,
+        SYSTEMD_DIR.join('{}.service'.format(compt.name)),
     )
     compt.append_root_bash("rsconf_commit_service '{}'".format(compt.name))
