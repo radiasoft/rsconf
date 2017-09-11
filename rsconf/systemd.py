@@ -23,12 +23,14 @@ def docker_unit_prepare(compt):
             compt.docker_unit.service_f,
         ),
     )
-    return compt.docker_unit_run_d
+    return compt.docker_unit.run_d
 
 
 def docker_unit(compt, image, env, volumes=None, after=None):
     """Must be last call"""
-    v = compt.docker_unit.copy()
+    compt.docker_unit.run_d
+    v = pkcollections.Dict(compt.docker_unit)
+    v.run_d
     v.update(
         after=' '.join(after or []),
         exports='\n'.join(
@@ -37,9 +39,9 @@ def docker_unit(compt, image, env, volumes=None, after=None):
         image=image + ':' + compt.hdb.channel,
         name=compt.name,
         run_u=compt.hdb.run_u,
-        volumes=' '.join(
-            ["-v '{}:{}'".format(x, x) for x in [v.run_d] + (volumes or [])],
-        ),
+    )
+    v.volumes = ' '.join(
+        ["-v '{}:{}'".format(x, x) for x in [v.run_d] + (volumes or [])],
     )
     scripts = ('cmd', 'env', 'remove', 'start', 'stop')
     compt.install_access(mode='700', owner=v.run_u)
@@ -58,4 +60,3 @@ def docker_unit(compt, image, env, volumes=None, after=None):
         v,
         compt.docker_unit.service_f,
     )
-    compt.append_root_bash("rsconf_commit_service '{}'".format(compt.name))

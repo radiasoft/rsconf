@@ -28,7 +28,7 @@ class T(pkcollections.Dict):
         pkio.unchecked_remove(new, old)
         self.require_component(*self.hdb.components)
         self.write_root_bash(
-            '000.sh',
+            '000',
             ['rsconf_require ' + x for x in self.components_required],
         )
         if dst_d.check():

@@ -43,6 +43,13 @@ class T(component.T):
             'sirepo_server_oauth_login',
         ):
             env[f.upper()] = self.hdb[f]
+        systemd.docker_unit(
+            self,
+            image='radiasoft/sirepo',
+            env=env,
+            after=['celery_sirepo.service'],
+            #TODO(robnagler) wanted by nginx
+        )
         self.install_access(mode='700', owner=self.hdb.run_u)
         self.install_directory(db_d)
         #TODO(robnagler) import from sirepo directly
@@ -51,13 +58,6 @@ class T(component.T):
             _BEAKER_SECRET_BASE,
             host_path=beaker_secret_f,
             gen_secret=self._gen_beaker_secret,
-        )
-        systemd.docker_unit(
-            self,
-            image='radiasoft/sirepo',
-            env=env,
-            after=['celery_sirepo.service'],
-            #TODO(robnagler) wanted by nginx
         )
 
     def _gen_beaker_secret(self, tgt):

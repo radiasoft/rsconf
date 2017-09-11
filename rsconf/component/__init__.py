@@ -12,6 +12,7 @@ import re
 _DONE = 'done'
 _START = 'start'
 _MODE_RE = re.compile(r'^\d{3,4}$')
+_BASH_FUNC_SUFFIX = '_rsconf_component'
 
 class T(pkcollections.Dict):
 
@@ -33,7 +34,7 @@ class T(pkcollections.Dict):
     def build(self):
         self.state = _DONE
         self._install_access = pkcollections.Dict()
-        self._root_bash = [self.name + '() {']
+        self._root_bash = [self.name + _BASH_FUNC_SUFFIX + '() {']
         self.internal_build()
         self.append_root_bash('}')
         self.buildt.write_root_bash(self.name, self._root_bash)

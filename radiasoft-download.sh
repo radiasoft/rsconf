@@ -50,14 +50,12 @@ rsconf_install_access() {
 }
 
 rsconf_install_chxxx() {
-    local no_check=
-    if [[ $1 =~ ^-no_check$ ]]; then
-        shift
-        no_check=1
-    fi
     local path=$1
     local actual=( $(stat --format '%a %U %G' "$path") )
     local change=
+    if [[ -z ${rsconf_install_access[group]} ]]; then
+        install_err 'rsconf_install_access must be called first'
+    fi
     if [[ ${rsconf_install_access[user]} != ${actual[1]} ]]; then
         chown "${rsconf_install_access[user]}" "$path"
         change=1
@@ -70,7 +68,7 @@ rsconf_install_chxxx() {
         chmod "${rsconf_install_access[mode]}" "$path"
         change=1
     fi
-    if [[ -z $no_check && -n $change ]]; then
+    if [[ -z $rsconf_no_check && -n $change ]]; then
         rsconf_service_file_check "$path"
     fi
 }
@@ -89,7 +87,7 @@ rsconf_install_directory() {
     fi
     # parent directory must already exist
     mkdir "$path"
-    rsconf_install_chxxx -no_check "$path"
+    rsconf_no_check=1 rsconf_install_chxxx "$path"
     rsconf_service_file_check "$path"
 }
 
@@ -111,7 +109,7 @@ rsconf_install_file() {
         rsconf_install_chxxx "$path"
         return
     fi
-    rsconf_install_chxxx -no_check "$tmp"
+    rsconf_no_check=1 rsconf_install_chxxx "$tmp"
     mv -f "$tmp" "$path"
     rsconf_service_file_check "$path"
 }
@@ -121,7 +119,7 @@ rsconf_main() {
     if [[ $host =~ / ]]; then
         install_err "$host: invalid host name"
     fi
-    install_url radiasoft/rsconf "srv/$host"
+    install_url radiasoft/rsconf "run/srv/$host"
     # Dynamically scoped; must be inline here
     local -A rsconf_install_access=()
     local -A rsconf_service_status=()
@@ -146,12 +144,18 @@ rsconf_reboot() {
     install_err "Reboot required"
 }
 
+rsconf_require() {
+    rsconf_only_once=1 rsconf_run "$1"
+}
+
 rsconf_run() {
-    local op=$1
+    local script=$1
     shift
-    local f=${op}_main
+    local f=${script}_rsconf_component
     if ! type "$f" >& /dev/null; then
-        install_script_eval "$op.sh"
+        install_script_eval "$script.sh"
+    elif [[ -n $rsconf_only_once ]]; then
+        return
     fi
     rsconf_install_access=()
     "$f" "$@"
