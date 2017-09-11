@@ -13,7 +13,7 @@ SYSTEMD_DIR = pkio.py_path('/etc/systemd/system')
 
 def docker_unit_prepare(compt):
     """Must be first call"""
-    compt.append_root_bash("rsconf_prepare_service '{}'".format(compt.name))
+    compt.append_root_bash("rsconf_service_prepare '{}'".format(compt.name))
     compt.docker_unit_run_d = compt.hdb.host_run_d.join(compt.name)
     return compt.docker_unit_run_d
 

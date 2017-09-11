@@ -36,73 +36,6 @@ rsconf_edit() {
     return 0
 }
 
-rsconf_prepare_service() {
-    nginx files come from lots of places so we would need to make
-    the commit at the end. Maybe this is a completion operation
-    save status, make sure not called twice
-}
-rsconf_commit_service() {
-    if any file changes, restart; else just enable and start if not started
-    consider reload for nginx
-    queued operation
-    single systemctl daemon-reload (if any changes to service)
-    rpms may affect files so perhaps just match a list of directories associated with the
-    service
-}
-
-
-rsconf_install_directory() {
-}
-
-rsconf_install_file() {
-}
-
-rsconf_install() {
-    if [[ -z ${rsconf_install_access[group]} ]]; then
-        install_err 'rsconf_install_access: must be called before rsconf_install'
-    fi
-    local path tmp abs
-    for path in "$@"; do
-        if [[ $path =~ ^/ ]]; then
-            install_err "$path: path must not be absolute"
-        fi
-        abs=/$path
-        if [[ $path =~ /$ ]]; then
-            if [[ -L $abs ]]; then
-                install_err "$abs: is a symbolic link, expecting a directory"
-            fi
-            if [[ ! -d $abs ]]; then
-                if [[ -e $abs ]]; then
-                    install_err "$abs: exists but is not a directory"
-                fi
-                # parent directory must exist
-                mkdir "$abs"
-            fi
-            rsconf_install_chxxx "$abs"
-            continue
-        fi
-        if [[ -d "$abs" ]]; then
-            install_err "$abs: is a directory, must be a file (remove first)"
-        fi
-        tmp=$abs-rsconf-tmp
-        install_download "$path" > "$tmp"
-        # Unlikely we are downloading HTML so this is a sanity check on SimpleHTTPServer
-        # returning something that's a directory listing or not found
-        if grep -s -q -i '^<title>' "$tmp"; then
-            install_err "$path: unexpected HTML file (directory listing?)"
-        fi
-        if cmp "$tmp" "$abs" >& /dev/null; then
-            rm -f "$tmp"
-            rsconf_install_chxxx "$abs"
-            continue
-        fi
-        rsconf_install_chxxx "$tmp"
-        mv -f "$tmp" "$abs"
-    done
-}
-
-declare -A rsconf_install_access=()
-
 rsconf_install_access() {
     if [[ ! $1 =~ ^[[:digit:]]{1,4}$ ]]; then
         install_err "$1: invalid or empty mode"
@@ -118,15 +51,64 @@ rsconf_install_access() {
 rsconf_install_chxxx() {
     local path=$1
     local actual=( $(stat --format '%a %U %G' "$path") )
+    local res=1
     if [[ ${rsconf_install_access[user]} != ${actual[1]} ]]; then
         chown "${rsconf_install_access[user]}" "$path"
+        res=0
     fi
     if [[ ${rsconf_install_access[group]} != ${actual[2]} ]]; then
         chgrp "${rsconf_install_access[group]}" "$path"
+        res=0
     fi
     if [[ ${rsconf_install_access[mode]} != ${actual[0]} ]]; then
         chmod "${rsconf_install_access[mode]}" "$path"
+        res=0
     fi
+    return "$res"
+}
+
+rsconf_install_directory() {
+    local path=$1
+    if [[ -L $path ]]; then
+        install_err "$path: is a symbolic link, expecting a directory"
+    fi
+    if [[ -d $path ]]; then
+        if ! rsconf_install_chxxx "$path"; then
+            return
+        fi
+    else
+        if [[ -e $path ]]; then
+            install_err "$path: exists but is not a directory"
+        fi
+        # parent directory must already exist
+        mkdir "$path"
+    fi
+    rsconf_service_file_check "$path"
+}
+
+rsconf_install_file() {
+    local path=$1
+    local tmp
+    if [[ -d "$path" ]]; then
+        install_err "$path: is a directory, must be a file (remove first)"
+    fi
+    tmp=$path-rsconf-tmp
+    install_download "$path" > "$tmp"
+    # Unlikely we are downloading HTML so this is a sanity check on SimpleHTTPServer
+    # returning something that's a directory listing or not found
+    if grep -s -q -i '^<title>' "$tmp"; then
+        install_err "$path: unexpected HTML file (directory listing?)"
+    fi
+    if cmp "$tmp" "$path" >& /dev/null; then
+        rm -f "$tmp"
+        if ! rsconf_install_chxxx "$path"; then
+            return
+        fi
+    else
+        rsconf_install_chxxx "$tmp"
+        mv -f "$tmp" "$path"
+    fi
+    rsconf_service_file_check "$path"
 }
 
 rsconf_main() {
@@ -135,7 +117,13 @@ rsconf_main() {
         install_err "$host: invalid host name"
     fi
     install_url radiasoft/rsconf "srv/$host"
+    # Dynamically scoped
+    local -A rsconf_service_watch=()
+    local -A rsconf_service_status=()
+    local -a rsconf_service_order=()
+    local -A rsconf_install_access=()
     install_script_eval 000.sh
+    rsconf_service_restart
 }
 
 rsconf_radia_run_as_user() {
@@ -147,19 +135,6 @@ install_debug=$install_debug
 install_server=$install_server
 install_verbose=$install_verbose
 EOF
-}
-
-declare -A rsconf_require
-
-rsconf_require() {
-    local x
-    for x in "$@"; do
-        if [[ -z ${rsconf_require[$x]} ]]; then
-            rsconf_require[$x]=start
-            rsconf_run "$x"
-            rsconf_require[$x]=done
-        fi
-    done
 }
 
 rsconf_reboot() {
@@ -175,6 +150,49 @@ rsconf_run() {
     fi
     rsconf_install_access=()
     "$f" "$@"
+}
+
+rsconf_service_prepare() {
+    local s=$1
+    local w
+    rsconf_service_status[$s]=start
+    rsconf_service_order+=( $s )
+    for w in "$@"; do
+        if [[ -n ${rsconf_service_watch[$w]} ]]; then
+            install_err "$w: already being watched by ${rsconf_service_watch[$w]}, also wanted by $s"
+        fi
+        rsconf_service_watch[$w]=$s
+    done
+}
+
+rsconf_service_restart() {
+    local reloaded= s
+    for s in ${rsconf_service_order[@]}; do
+        if [[ ${rsconf_service_status[$s]} == restart ]]; then
+            if [[ $reloaded ]]; then
+               reloaded=1
+               systemctl daemon-reload
+            fi
+            # Just restart, most daemons are fast
+            systemctl restart "$s"
+        else
+            systemctl start "$s"
+        fi
+        systemctl enable "$s"
+    done
+}
+
+rsconf_service_file_check() {
+    local path=$1
+    local s
+    while [[ $path != / ]]; do
+        s=${rsconf_service_watch[$path]}
+        if [[ -n $s ]]; then
+            rsconf_service_status[$s]=restart
+            return
+        fi
+        path=$(dirname "$path")
+    done
 }
 
 rsconf_yum_install() {
