@@ -14,6 +14,7 @@ _ZERO_YML = '000.yml'
 _SRV_SUBDIR = 'srv'
 _DEFAULT_DB_SUBDIR = 'run'
 _SECRET_SUBDIR = 'secret'
+_NGINX_SUBDIR = 'nginx'
 _LEVELS = ('default', 'channel', 'host')
 
 class T(pkcollections.Dict):
@@ -92,12 +93,34 @@ def _cfg_root(value):
     return value
 
 
+def add_host(channel, host, passwd_file):
+    import subprocess
+    p = subprocess.Popen(
+        ['openssl', 'passwd', '-stdin', '-apr1'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        stdin=subprocess.PIPE,
+    )
+    pw = gen_password()
+    out, err = p.communicate(input=pw)
+    with open(passwd_file, 'a') as f:
+        f.write('{}:{}\n'.format(host, pw.rstrip()))
+    return pw
+
+
+def gen_password():
+    import random
+    import string
+
+    chars = string.ascii_lowercase + string.digits + string.ascii_uppercase
+    return ''.join(random.choice(chars) for _ in range(32))
+
+
 def _setup_dev(root):
     from pykern import pkresource
     from pykern import pkio
     from pykern import pkjinja
-    import subprocess
-    import StringIO
+    import re
 
     def _sym(old, new):
         assert old.check(), \
@@ -105,34 +128,34 @@ def _setup_dev(root):
         new.mksymlinkto(old, absolute=False)
 
     srv = pkio.mkdir_parent(root.join(_SRV_SUBDIR))
-    secret_d = root.join(_SECRET_SUBDIR)
-    p = subprocess.Popen(
-        ['openssl', 'passwd', '-stdin', '-apr1'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        stdin=subprocess.PIPE,
-    )
-    pw, err = p.communicate(input='password')
+    secret_d = pkio.mkdir_parent(root.join(_SECRET_SUBDIR))
+    nginx_d = pkio.mkdir_parent(root.join(_NGINX_SUBDIR))
     env = pkcollections.Dict(
         srv_d=str(srv),
         port=8000,
-        nginx_passwd=str(),
         host='v4.bivio.biz',
-        passwd=pw.rstrip(),
+        channel='dev',
+        master='v5.bivio.biz',
+        passwd_file=str(secret_d.join('dev-nginx-passwd')),
     )
-    _sym(pkio.py_path('~/src/radiasoft/download/bin/install.sh'), srv.join('index.html'))
-    _sym(pkio.py_path('~/src/radiasoft/rsconf/rsconf/package_data/rsconf.sh'), srv.join('rsconf.sh'))
+    env.passwd = add_host(env.channel, env.host, env.passwd_file)
+    _sym(
+        pkio.py_path('~/src/radiasoft/download/bin/install.sh'),
+        srv.join('index.html'),
+    )
+    _sym(
+        pkio.py_path(pkresource.filename('rsconf.sh')),
+        srv.join('rsconf.sh'),
+    )
     dev_root = pkio.py_path(pkresource.filename('dev'))
     for f in pkio.walk_tree(dev_root):
         # TODO(robnagler) ignore backup files
         if str(f).endswith('~') or str(f).startswith('#'):
             continue
-        dst = root.join(f.relto(dev_root))
+        x = f.relto(dev_root)
+        dst = root.join(re.sub('.jinja$', '', x))
         pkio.mkdir_parent_only(dst)
-        pkjinja.render_resource(f, env, output=dst)
-        _sym(f, dst)
-    pkjinja.render_resource('nginx.conf', env)
-
+        pkjinja.render_file(f, env, output=dst)
 
 
 cfg = pkconfig.init(

@@ -1,10 +1,11 @@
-worker_processes auto;
+daemon off;
+worker_processes 1;
 error_log /dev/stderr info;
 pid nginx.pid;
 include /usr/share/nginx/modules/*.conf;
 
 events {
-    worker_connections 1024;
+    worker_connections 32;
 }
 
 http {
@@ -49,7 +50,7 @@ http {
 
         location ~ ^/host/([^/]+)/ {
             auth_basic "*";
-            auth_basic_user_file {{ nginx_passwd }};
+            auth_basic_user_file {{ passwd_file }};
             if ($remote_user != $1) {
                 return 403;
             }

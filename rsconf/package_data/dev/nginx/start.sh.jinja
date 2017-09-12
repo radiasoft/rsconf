@@ -1,0 +1,9 @@
+#!/bin/bash
+set -x
+set -e
+cd "$(dirname "${BASH_SOURCE[0]}")"
+if [[ -r nginx.pid ]]; then
+    kill -QUIT "$(cat nginx.pid)"
+fi
+echo 'Ignore alert "/var/log/nginx/error.log"'
+exec nginx -p "$PWD" -c nginx.conf

@@ -12,12 +12,12 @@ default:
       oauth_login: false
 
 channel:
-  dev:
+  {{ channel }}:
     sirepo:
       mpi.cores: 2
       celery_tasks.broker_url: "amqp://guest@{{ host }}//"
 
 host:
-  dev:
+  {{ channel }}:
     {{ host }}:
       components: [ sirepo ]
