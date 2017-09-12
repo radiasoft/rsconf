@@ -15,6 +15,7 @@ _SRV_SUBDIR = 'srv'
 _DEFAULT_DB_SUBDIR = 'run'
 _SECRET_SUBDIR = 'secret'
 _NGINX_SUBDIR = 'nginx'
+_HOST_SUBDIR = 'host'
 _LEVELS = ('default', 'channel', 'host')
 
 class T(pkcollections.Dict):
@@ -53,6 +54,7 @@ class T(pkcollections.Dict):
         res.root_d = pkio.py_path(cfg.root_dir)
         res.secret_d = res.root_d.join(_SECRET_SUBDIR)
         res.srv_d = res.root_d.join(_SRV_SUBDIR)
+        res.srv_host_d = res.srv_d.join(_HOST_SUBDIR)
         return res
 
     def channel_hosts(self):
@@ -104,7 +106,7 @@ def add_host(channel, host, passwd_file):
     pw = gen_password()
     out, err = p.communicate(input=pw)
     with open(passwd_file, 'a') as f:
-        f.write('{}:{}\n'.format(host, pw.rstrip()))
+        f.write('{}:{}\n'.format(host, out.rstrip()))
     return pw
 
 

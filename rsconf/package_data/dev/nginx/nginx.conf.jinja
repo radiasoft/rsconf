@@ -1,5 +1,6 @@
 daemon off;
 worker_processes 1;
+# use "debug" instead of "info" for noisy debugging
 error_log /dev/stderr info;
 pid nginx.pid;
 include /usr/share/nginx/modules/*.conf;

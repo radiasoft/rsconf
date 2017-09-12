@@ -21,7 +21,7 @@ class T(pkcollections.Dict):
         )
 
     def create_host(self):
-        dst_d = self.hdb.srv_d.join(self.hdb.host)
+        dst_d = self.hdb.srv_host_d.join(self.hdb.host)
         new = dst_d + '-new'
         self.hdb.dst_d = new
         old = dst_d + '-old'

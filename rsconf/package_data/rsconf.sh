@@ -114,6 +114,7 @@ rsconf_main() {
     if [[ $host =~ / ]]; then
         install_err "$host: invalid host name"
     fi
+    install_curl_flags+=( -n )
     install_url host/$host
     # Dynamically scoped; must be inline here
     local -A rsconf_install_access=()
