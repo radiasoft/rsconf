@@ -1,6 +1,8 @@
 #!/bin/bash
 
 base_os_chrony() {
+    #TODO(robnagler) needs to be run when vagrant wakes up:
+    #   systemctl restart rsconf-chrony-makestep.service
     if [[ ! -f /vagrant/Vagrantfile ]]; then
         # only needed for vagrant
         return

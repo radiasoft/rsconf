@@ -95,7 +95,8 @@ def _cfg_root(value):
     return value
 
 
-def add_host(channel, host, passwd_file):
+#TODO(robnagler) needs to moved
+def _add_host(channel, host, passwd_file):
     import subprocess
     p = subprocess.Popen(
         ['openssl', 'passwd', '-stdin', '-apr1'],
@@ -103,14 +104,14 @@ def add_host(channel, host, passwd_file):
         stderr=subprocess.PIPE,
         stdin=subprocess.PIPE,
     )
-    pw = gen_password()
+    pw = _gen_password()
     out, err = p.communicate(input=pw)
     with open(passwd_file, 'a') as f:
         f.write('{}:{}\n'.format(host, out.rstrip()))
     return pw
 
 
-def gen_password():
+def _gen_password():
     import random
     import string
 
@@ -118,6 +119,7 @@ def gen_password():
     return ''.join(random.choice(chars) for _ in range(32))
 
 
+#TODO(robnagler) happen in a pkcli
 def _setup_dev(root):
     from pykern import pkresource
     from pykern import pkio
@@ -140,7 +142,7 @@ def _setup_dev(root):
         master='v5.bivio.biz',
         passwd_file=str(secret_d.join('dev-nginx-passwd')),
     )
-    env.passwd = add_host(env.channel, env.host, env.passwd_file)
+    env.passwd = _add_host(env.channel, env.host, env.passwd_file)
     _sym(
         pkio.py_path('~/src/radiasoft/download/bin/install.sh'),
         srv.join('index.html'),

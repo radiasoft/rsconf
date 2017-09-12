@@ -6,16 +6,22 @@ u"""create sirepo configuration
 """
 from __future__ import absolute_import, division, print_function
 from rsconf import component
+from rsconf import systemd
 from pykern import pkcollections
 
 _DB_SUBDIR = 'db'
+#TODO(robnagler) import from sirepo directly
+_USER_SUBDIR = 'user'
 _BEAKER_SECRET_BASE = 'sirepo_beaker_secret'
+
+def user_d(hdb):
+    return systemd.docker_unit_run_d(hdb, 'sirepo').join(_DB_SUBDIR, _USER_SUBDIR)
+
 
 class T(component.T):
     def internal_build(self):
-        from rsconf import systemd
 
-        self.buildt.require_component('docker')
+        self.buildt.require_component('celery_sirepo')
         #self.buildt.require_component('docker', 'rabbitmq', 'celery_sirepo', 'nginx')
         run_d = systemd.docker_unit_prepare(self)
         db_d = run_d.join(_DB_SUBDIR)
@@ -35,7 +41,6 @@ class T(component.T):
         )
         for f in (
             'sirepo_celery_tasks_broker_url',
-            'sirepo_mpi_cores',
             'sirepo_pkcli_service_port',
             'sirepo_pkcli_service_processes',
             'sirepo_pkcli_service_threads',
@@ -48,13 +53,13 @@ class T(component.T):
             self,
             image='radiasoft/sirepo',
             env=env,
+            cmd='sirepo service uwsgi',
             after=['celery_sirepo.service'],
             #TODO(robnagler) wanted by nginx
         )
         self.install_access(mode='700', owner=self.hdb.run_u)
         self.install_directory(db_d)
-        #TODO(robnagler) import from sirepo directly
-        self.install_directory(db_d.join('user'))
+        self.install_directory(user_d(self.hdb))
         self.install_secret(
             _BEAKER_SECRET_BASE,
             host_path=beaker_secret_f,
@@ -65,8 +70,3 @@ class T(component.T):
         from rsconf.pkcli import sirepo
 
         sirepo.gen_beaker_secret(tgt)
-
-
-#TODO(robnagler) when to download new version of docker container?
-#TODO(robnagler) docker pull happens explicitly
-#TODO(robnagler) only reload if a change, restart if a change

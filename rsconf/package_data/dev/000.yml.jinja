@@ -1,5 +1,7 @@
 ---
 default:
+  celery_sirepo:
+    queues: "sequential,parallel"
   sirepo:
     pkcli:
       service_processes: 1
@@ -14,8 +16,10 @@ default:
 channel:
   {{ channel }}:
     sirepo:
+      celery_tasks:
+        celeryd_concurrency: 1
+        broker_url: "amqp://guest@{{ host }}//"
       mpi.cores: 2
-      celery_tasks.broker_url: "amqp://guest@{{ host }}//"
 
 host:
   {{ channel }}:

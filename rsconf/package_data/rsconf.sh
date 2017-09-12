@@ -157,6 +157,21 @@ rsconf_run() {
     "$f" "$@"
 }
 
+rsconf_service_docker_pull() {
+    local service=$1
+    local image=$2
+    local container_image_id=$(docker inspect --format='{{.Image}}' "$service" 2>/dev/null || true)
+    local prev_id=$(docker inspect --format='{{.Id}}' "$image" 2>/dev/null || true)
+    install_info "docker pull $image (may take awhile)..."
+    install_exec docker pull "$image"
+    local curr_id=$(docker inspect --format='{{.Id}}' "$image" 2>/dev/null || true)
+    if [[ $prev_id != $curr_id || -n $container_image_id && $container_image_id != $curr_id ]]; then
+        install_info "$image: new image, restart $service required"
+        rsconf_service_status[$service]=restart
+    fi
+}
+
+
 rsconf_service_file_check() {
     local path=$1
     local s

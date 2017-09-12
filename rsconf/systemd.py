@@ -8,29 +8,17 @@ from __future__ import absolute_import, division, print_function
 from pykern import pkio
 from pykern import pkcollections
 
+
 _SYSTEMD_DIR = pkio.py_path('/etc/systemd/system')
 
-def docker_unit_prepare(compt):
-    """Must be first call"""
-    compt.docker_unit = pkcollections.Dict(
-        run_d=compt.hdb.host_run_d.join(compt.name),
-        service_f=_SYSTEMD_DIR.join('{}.service'.format(compt.name)),
-    )
-    compt.append_root_bash(
-        "rsconf_service_prepare '{}' '{}' '{}'".format(
-            compt.name,
-            compt.docker_unit.run_d,
-            compt.docker_unit.service_f,
-        ),
-    )
-    return compt.docker_unit.run_d
 
+#TODO(robnagler) when to download new version of docker container?
+#TODO(robnagler) docker pull happens explicitly, probably
 
-def docker_unit(compt, image, env, volumes=None, after=None):
+def docker_unit(compt, image, env, cmd, volumes=None, after=None):
     """Must be last call"""
     compt.docker_unit.run_d
     v = pkcollections.Dict(compt.docker_unit)
-    v.run_d
     if 'TZ' not in env:
         # Tested on CentOS 7, and it does have the localtime stat problem
         # https://blog.packagecloud.io/eng/2017/02/21/set-environment-variable-save-thousands-of-system-calls/
@@ -63,3 +51,24 @@ def docker_unit(compt, image, env, volumes=None, after=None):
         v,
         compt.docker_unit.service_f,
     )
+    compt.append_root_bash("rsconf_service_docker_pull '{}' '{}'".format(v.name, v.image))
+
+
+def docker_unit_prepare(compt):
+    """Must be first call"""
+    compt.docker_unit = pkcollections.Dict(
+        run_d=docker_unit_run_d(compt.hdb, compt.name),
+        service_f=_SYSTEMD_DIR.join('{}.service'.format(compt.name)),
+    )
+    compt.append_root_bash(
+        "rsconf_service_prepare '{}' '{}' '{}'".format(
+            compt.name,
+            compt.docker_unit.run_d,
+            compt.docker_unit.service_f,
+        ),
+    )
+    return compt.docker_unit.run_d
+
+
+def docker_unit_run_d(hdb, unit_name):
+    return hdb.host_run_d.join(unit_name)

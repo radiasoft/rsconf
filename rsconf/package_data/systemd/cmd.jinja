@@ -1,6 +1,8 @@
 #!/bin/bash
-. ~/.bashrc
+if [[ -r ~/.bashrc ]]; then
+    . ~/.bashrc
+fi
 set -euo pipefail
-cd '/var/lib/sirepo'
+cd '{{ run_d }}'
 . ./env
-exec sirepo service uwsgi
+exec {{ cmd }}
