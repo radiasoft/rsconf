@@ -31,6 +31,10 @@ def docker_unit(compt, image, env, volumes=None, after=None):
     compt.docker_unit.run_d
     v = pkcollections.Dict(compt.docker_unit)
     v.run_d
+    if 'TZ' not in env:
+        # Tested on CentOS 7, and it does have the localtime stat problem
+        # https://blog.packagecloud.io/eng/2017/02/21/set-environment-variable-save-thousands-of-system-calls/
+        env['TZ'] = ':/etc/localtime'
     v.update(
         after=' '.join(after or []),
         exports='\n'.join(
@@ -52,8 +56,7 @@ def docker_unit(compt, image, env, volumes=None, after=None):
         compt.install_resource('systemd/' + s, v, v[s])
     # See Poettering's omniscience about what's good for all of us here:
     # https://github.com/systemd/systemd/issues/770
-    # I would want these files to be 400, since there's no value in making them
-    # public. The machines are inaccessiable to anybody who doesn't have root access.
+    # These files should be 400, since there's no value in making them public.
     compt.install_access(mode='444', owner=compt.hdb.root_u)
     compt.install_resource(
         'systemd/service',

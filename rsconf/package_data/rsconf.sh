@@ -1,19 +1,14 @@
 #!/bin/bash
 #
-# To run: curl radia.run | bash -s /rsconf
-#
 # Development server:
-# cd ~/src
-# ln -s radiasoft/download/bin/index.sh index.html
 # python -m SimpleHTTPServer 8000
 #
 # Development box:
-# export install_server=http://v5.bivio.biz:8000 install_channel=dev
-# curl "$install_server" | bash -s vagrant-centos7
+# curl radia.run | bash -s vagrant-centos7
 # vssh
 # sudo su -
 # export install_server=http://v5.bivio.biz:8000 install_channel=dev
-# curl "$install_server" | bash -s /rsconf
+# curl "$install_server" | bash -s rsconf.sh
 #
 rsconf_edit() {
     local file=$1
@@ -119,7 +114,7 @@ rsconf_main() {
     if [[ $host =~ / ]]; then
         install_err "$host: invalid host name"
     fi
-    install_url radiasoft/rsconf "run/srv/$host"
+    install_url host/$host
     # Dynamically scoped; must be inline here
     local -A rsconf_install_access=()
     local -A rsconf_service_status=()
@@ -132,10 +127,10 @@ rsconf_main() {
 rsconf_radia_run_as_user() {
     local user=$1
     shift
-    (cat <<EOF; curl "$install_server") | su - "$user" -c "bash -s $*"
+    (cat <<EOF; curl -L -S -s http://radia.run) | su - "$user" -c "bash -s $*"
+install_server=''
 install_channel=$install_channel
 install_debug=$install_debug
-install_server=$install_server
 install_verbose=$install_verbose
 EOF
 }

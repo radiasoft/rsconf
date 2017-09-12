@@ -74,7 +74,7 @@ def _cfg_root(value):
         assert os.path.isabs(value), \
             '{}: must be absolute'.format(value)
         value = pkio.py_path(value)
-        assert value.ensure(dir=1), \
+        assert value.check(dir=1), \
             '{}: must be a directory and exist'.format(value)
     else:
         assert pkconfig.channel_in('dev'), \
@@ -95,6 +95,9 @@ def _cfg_root(value):
 def _setup_dev(root):
     from pykern import pkresource
     from pykern import pkio
+    from pykern import pkjinja
+    import subprocess
+    import StringIO
 
     def _sym(old, new):
         assert old.check(), \
@@ -102,10 +105,23 @@ def _setup_dev(root):
         new.mksymlinkto(old, absolute=False)
 
     srv = pkio.mkdir_parent(root.join(_SRV_SUBDIR))
-    #TODO(robnagler) be more discriminating with ~/src/radiasoft/download
-    for f in 'radiasoft', 'biviosoftware':
-        _sym(pkio.py_path('~/src').join(f), srv.join(f))
-    _sym(pkio.py_path('~/src/radiasoft/download/bin/index.sh'), srv.join('index.html'))
+    secret_d = root.join(_SECRET_SUBDIR)
+    p = subprocess.Popen(
+        ['openssl', 'passwd', '-stdin', '-apr1'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        stdin=subprocess.PIPE,
+    )
+    pw, err = p.communicate(input='password')
+    env = pkcollections.Dict(
+        srv_d=str(srv),
+        port=8000,
+        nginx_passwd=str(),
+        host='v4.bivio.biz',
+        passwd=pw.rstrip(),
+    )
+    _sym(pkio.py_path('~/src/radiasoft/download/bin/install.sh'), srv.join('index.html'))
+    _sym(pkio.py_path('~/src/radiasoft/rsconf/rsconf/package_data/rsconf.sh'), srv.join('rsconf.sh'))
     dev_root = pkio.py_path(pkresource.filename('dev'))
     for f in pkio.walk_tree(dev_root):
         # TODO(robnagler) ignore backup files
@@ -113,7 +129,10 @@ def _setup_dev(root):
             continue
         dst = root.join(f.relto(dev_root))
         pkio.mkdir_parent_only(dst)
+        pkjinja.render_resource(f, env, output=dst)
         _sym(f, dst)
+    pkjinja.render_resource('nginx.conf', env)
+
 
 
 cfg = pkconfig.init(

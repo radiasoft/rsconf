@@ -1,0 +1,15 @@
+#DEBUG: put #DEBUG in front of the next line
+#yum update
+bind-utils
+emacs-nox
+git
+lsof
+nginx
+patch
+perl
+readline-devel
+sqlite-devel
+strace
+unzip
+wget
+yum-utils

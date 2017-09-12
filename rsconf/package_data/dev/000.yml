@@ -15,9 +15,9 @@ channel:
   dev:
     sirepo:
       mpi.cores: 2
-      celery_tasks.broker_url: "amqp://guest@v4.bivio.biz//"
+      celery_tasks.broker_url: "amqp://guest@{{ host }}//"
 
 host:
   dev:
-    v4.bivio.biz:
+    {{ host }}:
       components: [ sirepo ]
