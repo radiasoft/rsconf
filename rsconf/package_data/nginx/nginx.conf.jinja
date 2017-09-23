@@ -1,9 +1,10 @@
 user nginx;
-worker_processes 1;
-error_log /var/log/nginx/error.log warn;
+worker_processes {{ worker_processes }};
+error_log /var/log/nginx/error.log info;
 pid /run/nginx.pid;
 
 events {
+    # This is the maximum
     worker_connections 1024;
 }
 
@@ -14,15 +15,44 @@ http {
     access_log /var/log/nginx/access.log  main;
     include /etc/nginx/mime.types;
     default_type application/octet-stream;
+    # http://www.techrepublic.com/article/how-to-configure-gzip-compression-with-nginx/
+    # https://www.nginx.com/resources/admin-guide/compression-and-decompression/
     gzip on;
-    gzip_types text/plain text/css application/x-javascript text/xml application/xml application/xml+rss text/javascript application/json;
+    # gzip_proxied no-cache no-store private expired auth;
+    # 256 bytes of nginx.conf gzips to 194, seems reasonable
+    gzip_min_length 256;
+    # We don't cache much so just gzip everything
+    gzip_proxied any;
+    gzip_vary on;
+    # https://mattstauffer.com/blog/enabling-gzip-on-nginx-servers-including-laravel-forge/
+    gzip_comp_level 5;
+    gzip_types
+        application/atom+xml
+        application/javascript
+        application/json
+        application/rss+xml
+        application/vnd.ms-fontobject
+        application/x-font-ttf
+        application/x-javascript
+        application/x-web-app-manifest+json
+        application/xhtml+xml
+        application/xml
+        application/xml+rss
+        font/opentype
+        image/svg+xml
+        image/x-icon
+        text/css
+        text/javascript
+        text/plain
+        text/x-component
+        text/xml
+        ;
     # https://t37.net/nginx-optimization-understanding-sendfile-tcp_nodelay-and-tcp_nopush.html
     sendfile on;
     tcp_nopush on;
     tcp_nodelay on;
     keepalive_timeout 65;
     types_hash_max_size 2048;
-
     ssl_prefer_server_ciphers on;
     ssl_ciphers 'EECDH+ECDSA+AESGCM EECDH+aRSA+AESGCM EECDH+ECDSA+SHA384 EECDH+ECDSA+SHA256 EECDH+aRSA+SHA384 EECDH+aRSA+SHA256 EECDH+AESGCM EECDH EDH+AESGCM EDH+aRSA HIGH !MEDIUM !LOW !aNULL !eNULL !LOW !RC4 !MD5 !EXP !PSK !SRP !DSS';
     ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
@@ -39,12 +69,9 @@ http {
     # [warn] "ssl_stapling" ignored, issuer certificate not found
     ssl_stapling on;
     ssl_stapling_verify on;
-
-#TODO Is this necessary?
-    # ssl only
+#TODO(robnagler) Is this necessary?
 #    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload";
 #    add_header X-Frame-Options DENY;
 #    add_header X-Content-Type-Options nosniff;
-
     include /etc/nginx/conf.d/*.conf;
 }

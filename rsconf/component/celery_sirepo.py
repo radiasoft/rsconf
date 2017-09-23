@@ -29,7 +29,7 @@ class T(component.T):
         ):
             env[f.upper()] = self.hdb[f]
         #TODO(robnagler) need to set hostname so celery flower shows up right
-        systemd.docker_unit(
+        systemd.docker_unit_enable(
             self,
             image='radiasoft/sirepo',
             cmd="celery worker --app=sirepo.celery_tasks --no-color -Ofair '--queue={}'".format(self.hdb.celery_sirepo_queues),

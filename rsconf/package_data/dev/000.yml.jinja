@@ -2,6 +2,8 @@
 default:
   celery_sirepo:
     queues: "sequential,parallel"
+  nginx:
+    worker_processes: 1
   sirepo:
     pkcli:
       service_processes: 1
@@ -20,6 +22,9 @@ channel:
         celeryd_concurrency: 1
         broker_url: "amqp://guest@{{ host }}//"
       mpi.cores: 2
+      nginx:
+        vhost: {{ host }}
+        ssl_base: sirepo
 
 host:
   {{ channel }}:

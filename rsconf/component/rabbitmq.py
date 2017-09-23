@@ -22,7 +22,7 @@ class T(component.T):
             RABBITMQ_LOG_BASE=run_d.join('log'),
             RABBITMQ_MNESIA_BASE=run_d.join('mnesia'),
         )
-        systemd.docker_unit(
+        systemd.docker_unit_enable(
             self,
             image='radiasoft/rabbitmq',
             env=env,

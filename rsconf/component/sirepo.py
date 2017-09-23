@@ -20,9 +20,9 @@ def user_d(hdb):
 
 class T(component.T):
     def internal_build(self):
+        from rsconf.component import nginx
 
-        self.buildt.require_component('celery_sirepo')
-        #self.buildt.require_component('docker', 'rabbitmq', 'celery_sirepo', 'nginx')
+        self.buildt.require_component('celery_sirepo', 'nginx')
         run_d = systemd.docker_unit_prepare(self)
         db_d = run_d.join(_DB_SUBDIR)
         #TODO(robnagler) from sirepo or flask(?)
@@ -47,9 +47,10 @@ class T(component.T):
             'sirepo_oauth_github_key',
             'sirepo_oauth_github_secret',
             'sirepo_server_oauth_login',
+            'sirepo_host',
         ):
             env[f.upper()] = self.hdb[f]
-        systemd.docker_unit(
+        systemd.docker_unit_enable(
             self,
             image='radiasoft/sirepo',
             env=env,
@@ -65,6 +66,10 @@ class T(component.T):
             host_path=beaker_secret_f,
             gen_secret=self._gen_beaker_secret,
         )
+        nginx.install_virtual_host(
+            compt,
+            self.hdb.sirepo_host,
+
 
     def _gen_beaker_secret(self, tgt):
         from rsconf.pkcli import sirepo

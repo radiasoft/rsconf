@@ -1,0 +1,23 @@
+server {
+    listen {{ nginx_vhost }}:80;
+    server_name {{ nginx_vhost }};
+    return 301 https://$http_host$request_uri;
+}
+
+server {
+    listen {{ nginx_vhost }}:443 ssl;
+    server_name {{ nginx_vhost }};
+    root {{ nginx_default_root }};
+    {% if nginx_ssl_crt -%}
+    ssl_certificate {{ nginx_ssl_crt }};
+    ssl_certificate_key {{ nginx_ssl_key }};
+    {%- endif %}
+    location / {
+        allow all;
+        include uwsgi_params;
+        client_max_body_size 50m;
+        uwsgi_read_timeout 300s;
+        uwsgi_send_timeout 300s;
+        uwsgi_pass {{ nginx_vhost }}:7000;
+    }
+}

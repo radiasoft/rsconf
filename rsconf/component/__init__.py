@@ -10,6 +10,9 @@ from pykern import pkio
 from pykern.pkdebug import pkdp, pkdc
 import re
 
+VISIBILITY_LIST = ('global', 'channel', 'host')
+VISIBILITY_DEFAULT = VISIBILITY_LIST[1]
+
 _DONE = 'done'
 _START = 'start'
 _MODE_RE = re.compile(r'^\d{3,4}$')
@@ -79,11 +82,10 @@ class T(pkcollections.Dict):
             pkjinja.render_resource(name, values=jinja_values),
         )
 
-    def install_secret(self, basename, host_path, gen_secret=None, host_private=False):
+    def install_secret(self, basename, host_path, gen_secret=None, visibility=VISIBILITY_DEFAULT):
         dst = self._bash_append_and_dst(host_path)
         src = self.hdb.secret_d.join(
-            self.hdb.host if host_private else self.hdb.channel,
-            basename,
+            self._secret_base(self, basename, visibility),
         )
         if not src.check():
             assert gen_secret, \
@@ -109,6 +111,16 @@ class T(pkcollections.Dict):
             '{}: dst already exists'.format(dst)
         pkio.mkdir_parent_only(dst)
         return dst
+
+    def _secret_base(self, basename, visibility):
+        if visibility == VISIBILITY_LIST[0]:
+            return basename
+        assert visibility in VISIBILITY_LIST, \
+            '{}: invalid visibility, must be {}'.format(
+                visibility,
+                VISIBILITY_LIST,
+            )
+        return '{}-{}'.format(basename, self.hdb[visibility])
 
 
 def create_t(name, buildt):

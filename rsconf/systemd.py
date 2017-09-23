@@ -15,9 +15,8 @@ _SYSTEMD_DIR = pkio.py_path('/etc/systemd/system')
 #TODO(robnagler) when to download new version of docker container?
 #TODO(robnagler) docker pull happens explicitly, probably
 
-def docker_unit(compt, image, env, cmd, volumes=None, after=None):
+def docker_unit_enable(compt, image, env, cmd, volumes=None, after=None):
     """Must be last call"""
-    compt.docker_unit.run_d
     v = pkcollections.Dict(compt.docker_unit)
     if 'TZ' not in env:
         # Tested on CentOS 7, and it does have the localtime stat problem
@@ -49,26 +48,37 @@ def docker_unit(compt, image, env, cmd, volumes=None, after=None):
     compt.install_resource(
         'systemd/service',
         v,
-        compt.docker_unit.service_f,
+        compt.systemd.service_f,
     )
     compt.append_root_bash("rsconf_service_docker_pull '{}' '{}'".format(v.name, v.image))
 
 
 def docker_unit_prepare(compt):
     """Must be first call"""
-    compt.docker_unit = pkcollections.Dict(
-        run_d=docker_unit_run_d(compt.hdb, compt.name),
+    run_d = docker_unit_run_d(compt.hdb, compt.name)
+    compt.unit_prepare(compt, run_d)
+    compt.systemd.run_d = run_d
+    return run_d
+
+
+def docker_unit_run_d(hdb, unit_name):
+    return hdb.host_run_d.join(unit_name)
+
+
+def unit_enable(compt):
+    # rsconf.sh does the actual work of enabling
+    pass
+
+
+def unit_prepare(compt, *watch_files):
+    """Must be first call"""
+    compt.systemd = pkcollections.Dict(
         service_f=_SYSTEMD_DIR.join('{}.service'.format(compt.name)),
     )
     compt.append_root_bash(
         "rsconf_service_prepare '{}' '{}' '{}'".format(
             compt.name,
-            compt.docker_unit.run_d,
-            compt.docker_unit.service_f,
+            compt.systemd.service_f,
+            *watch_files,
         ),
     )
-    return compt.docker_unit.run_d
-
-
-def docker_unit_run_d(hdb, unit_name):
-    return hdb.host_run_d.join(unit_name)
