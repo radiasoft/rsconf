@@ -3,8 +3,8 @@
 # Usage: run [bash -l]
 #
 set -euo pipefail
-cmd=( /var/lib/{{ name }}/cmd )
-flags='--name {{ name }} '
+cmd=( {{ cmd }} )
+flags='--name {{ service }} '
 if (( $# > 0 )); then
     flags='-i '
     cmd=( $@ )

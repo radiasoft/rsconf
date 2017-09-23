@@ -31,10 +31,10 @@ class T(pkcollections.Dict):
     def append_root_bash(self, *line):
         self._root_bash.extend(line)
 
-    def append_root_bash_with_resource(self, script, jinja_values, bash_func):
+    def append_root_bash_with_resource(self, script, j2_ctx, bash_func):
         from pykern import pkjinja
 
-        v = pkjinja.render_resource(script, values=jinja_values)
+        v = pkjinja.render_resource(script, j2_ctx, strict_undefined=True)
         self._root_bash_aux.append(v)
         self.append_root_bash(bash_func)
 
@@ -74,18 +74,18 @@ class T(pkcollections.Dict):
             '{}: directory must be at least 700 mode (u=rwx)'
         self._bash_append(host_path, is_file=False)
 
-    def install_resource(self, name, jinja_values, host_path):
+    def install_resource(self, name, j2_ctx, host_path):
         from pykern import pkjinja
 
         dst = self._bash_append_and_dst(host_path)
         dst.write(
-            pkjinja.render_resource(name, values=jinja_values),
+            pkjinja.render_resource(name, j2_ctx, strict_undefined=True),
         )
 
     def install_secret(self, basename, host_path, gen_secret=None, visibility=VISIBILITY_DEFAULT):
         dst = self._bash_append_and_dst(host_path)
         src = self.hdb.secret_d.join(
-            self._secret_base(self, basename, visibility),
+            self._secret_base(basename, visibility),
         )
         if not src.check():
             assert gen_secret, \

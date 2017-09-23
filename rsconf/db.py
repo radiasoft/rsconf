@@ -134,7 +134,7 @@ def _setup_dev(root):
     srv = pkio.mkdir_parent(root.join(_SRV_SUBDIR))
     secret_d = pkio.mkdir_parent(root.join(_SECRET_SUBDIR))
     nginx_d = pkio.mkdir_parent(root.join(_NGINX_SUBDIR))
-    env = pkcollections.Dict(
+    j2_ctx = pkcollections.Dict(
         srv_d=str(srv),
         port=8000,
         host='v4.bivio.biz',
@@ -142,7 +142,7 @@ def _setup_dev(root):
         master='v5.bivio.biz',
         passwd_file=str(secret_d.join('dev-nginx-passwd')),
     )
-    env.passwd = _add_host(env.channel, env.host, env.passwd_file)
+    j2_ctx.passwd = _add_host(j2_ctx.channel, j2_ctx.host, j2_ctx.passwd_file)
     _sym(
         pkio.py_path('~/src/radiasoft/download/bin/install.sh'),
         srv.join('index.html'),
@@ -159,7 +159,7 @@ def _setup_dev(root):
         x = f.relto(dev_root)
         dst = root.join(re.sub('.jinja$', '', x))
         pkio.mkdir_parent_only(dst)
-        pkjinja.render_file(f, env, output=dst)
+        pkjinja.render_file(f, j2_ctx, output=dst, strict_undefined=True)
 
 
 cfg = pkconfig.init(

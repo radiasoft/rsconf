@@ -1,5 +1,5 @@
 user nginx;
-worker_processes {{ worker_processes }};
+worker_processes {{ nginx_worker_processes }};
 error_log /var/log/nginx/error.log info;
 pid /run/nginx.pid;
 

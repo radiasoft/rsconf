@@ -47,9 +47,8 @@ class T(component.T):
             'sirepo_oauth_github_key',
             'sirepo_oauth_github_secret',
             'sirepo_server_oauth_login',
-            'sirepo_host',
         ):
-            env[f.upper()] = self.hdb[f]
+            env[f.upper()] = _env_value(self.hdb[f])
         systemd.docker_unit_enable(
             self,
             image='radiasoft/sirepo',
@@ -66,12 +65,16 @@ class T(component.T):
             host_path=beaker_secret_f,
             gen_secret=self._gen_beaker_secret,
         )
-        nginx.install_virtual_host(
-            compt,
-            self.hdb.sirepo_host,
-
+        nginx.install_vhost(self)
 
     def _gen_beaker_secret(self, tgt):
         from rsconf.pkcli import sirepo
 
         sirepo.gen_beaker_secret(tgt)
+
+
+#TODO(robnagler) pkconfig needs to handle False, True, etc.
+def _env_value(v):
+    if isinstance(v, bool):
+        return '1' if v else ''
+    return str(v)

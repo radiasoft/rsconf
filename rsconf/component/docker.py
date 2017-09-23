@@ -20,18 +20,21 @@ class T(component.T):
                 _DAEMON_JSON,
             ),
         )
-        v = pkcollections.Dict(volume_group='docker')
-        self.install_access(mode='700', owner=self.hdb.root_u)
+        j2_ctx = pkcollections.Dict(self.hdb)
+        j2_ctx.update(
+            volume_group='docker',
+        )
+        self.install_access(mode='700', owner=j2_ctx.root_u)
         self.install_directory('/etc/docker')
-        self.install_access(mode='400', owner=self.hdb.root_u)
+        self.install_access(mode='400', owner=j2_ctx.root_u)
         self.install_resource(
             'docker/daemon.json',
-            v,
+            j2_ctx,
             _DAEMON_JSON,
         )
         self.append_root_bash_with_resource(
             'docker/main.sh',
-            v,
+            j2_ctx,
             'docker_main',
         )
         #TODO(robnagler) add live-restore?
