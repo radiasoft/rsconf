@@ -1,34 +1,12 @@
 #!/bin/bash
 
 base_os_chrony() {
-    #TODO(robnagler) needs to be run when vagrant wakes up:
-    #   systemctl restart rsconf-chrony-makestep.service
     if [[ ! -f /vagrant/Vagrantfile ]]; then
         # only needed for vagrant
         return
     fi
-    local x=/etc/systemd/system/rsconf-chrony-makestep.service
-    if [[ -r $x ]]; then
-        return
-    fi
-cat > "$x" <<'EOF'
-[Unit]
-Description=Force chrony to synchronize (makestep) system clock
-After=chronyd.service
-Requires=chronyd.service
-Before=time-sync.target
-Wants=time-sync.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/bin/chronyc -a makestep
-RemainAfterExit=yes
-
-[Install]
-WantedBy=multi-user.target
-EOF
-    systemctl enable rsconf-chrony-makestep
-    systemctl start rsconf-chrony-makestep
+    systemctl stop chronyd
+    systemctl disable chronyd
 }
 
 base_os_main() {
