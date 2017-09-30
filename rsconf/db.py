@@ -126,12 +126,16 @@ def _setup_dev(root):
     from pykern import pkjinja
     import re
 
-    def _sym(old, new):
+    srv = pkio.mkdir_parent(root.join(_SRV_SUBDIR))
+
+    def _sym(old, new_base=None):
+        old = pkio.py_path(old)
+        if not new_base:
+            new_base = old.basename
         assert old.check(), \
             '{}: does not exist'.format(old)
-        new.mksymlinkto(old, absolute=False)
+        srv.join(new_base).mksymlinkto(old, absolute=False)
 
-    srv = pkio.mkdir_parent(root.join(_SRV_SUBDIR))
     secret_d = pkio.mkdir_parent(root.join(_SECRET_SUBDIR))
     nginx_d = pkio.mkdir_parent(root.join(_NGINX_SUBDIR))
     j2_ctx = pkcollections.Dict(
@@ -143,15 +147,10 @@ def _setup_dev(root):
         passwd_file=str(secret_d.join('dev-nginx-passwd')),
     )
     j2_ctx.passwd = _add_host(j2_ctx.channel, j2_ctx.host, j2_ctx.passwd_file)
-    _sym(
-        pkio.py_path('~/src/radiasoft/download/bin/install.sh'),
-        srv.join('index.html'),
-    )
-    _sym(
-        pkio.py_path(pkresource.filename('rsconf.sh')),
-        srv.join('rsconf.sh'),
-    )
+    _sym('~/src/radiasoft/download/bin/install.sh', 'index.html')
+    _sym(pkresource.filename('rsconf.sh'), 'rsconf.sh')
     dev_root = pkio.py_path(pkresource.filename('dev'))
+    netrc = None
     for f in pkio.walk_tree(dev_root):
         # TODO(robnagler) ignore backup files
         if str(f).endswith('~') or str(f).startswith('#'):
@@ -160,6 +159,12 @@ def _setup_dev(root):
         dst = root.join(re.sub('.jinja$', '', x))
         pkio.mkdir_parent_only(dst)
         pkjinja.render_file(f, j2_ctx, output=dst, strict_undefined=True)
+        if 'dev-netrc' in str(dst):
+            netrc = dst
+    # dev only, really insecure, but makes consistent builds easy
+    _sym(netrc)
+    _sym('~/src/radiasoft')
+    _sym('~/src/biviosoftware')
 
 
 cfg = pkconfig.init(

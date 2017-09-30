@@ -28,23 +28,7 @@ base_os_main() {
     if [[ ! -e /etc/yum.repos.d/epel.repo ]]; then
         yum --enablerepo=extras install -y -q epel-release
     fi
-    local x=(
-#TODO(robnagler) hardwire versions
-#TODO(robnagler) local check of rpm so don't hit slow net unless necessary
-        bind-utils # rsconf (dig)
-        emacs-nox
-        git # rsconf (dig)
-        lsof # debugging
-        patch # python/pyenv
-        perl # general and git
-        readline-devel # python/pyenv
-        sqlite-devel # python/pyenv
-        strace # debugging
-        unzip # rsconf
-        wget # many tools
-    )
-
-    rsconf_yum_install "${x[@]}"
+    rsconf_radia_run_as_user root code base_rpm
     # https://access.redhat.com/solutions/8709
     # breaks SSH Xforwarding unless AddressFamily inet is set in sshd_config
     # idempotent so ok to repeat and the file might get updated with a new release.

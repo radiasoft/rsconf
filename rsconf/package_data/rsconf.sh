@@ -228,7 +228,7 @@ rsconf_yum_install() {
         fi
     done
     if (( ${#todo[@]} > 0 )); then
-        yum install -y -q "${todo[@]}"
+        yum install --color=never -y -q "${todo[@]}"
     fi
 }
 

@@ -1,5 +1,9 @@
 ---
 default:
+  base_os:
+    ip_forward: false
+  docker:
+    iptables: true
   celery_sirepo:
     queues: "sequential,parallel"
   nginx:
@@ -17,6 +21,8 @@ default:
 
 channel:
   {{ channel }}:
+    base_os:
+      ip_forward: true
     sirepo:
       celery_tasks:
         celeryd_concurrency: 1

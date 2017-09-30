@@ -13,27 +13,29 @@ docker_main() {
     yum makecache fast
 #TODO(robnagler) how to update
     rsconf_yum_install docker-ce-17.06.0.ce-1.el7.centos
-    while [[ $(lvs --noheadings --nameprefixes '{{ volume_group }}') =~ LVM2_LV_NAME=.([^\']+) ]]; do
-        lvremove -f "{{ volume_group }}/${BASH_REMATCH[1]}"
+    while [[ $(lvs --noheadings --nameprefixes '{{ docker_volume_group }}') =~ LVM2_LV_NAME=.([^\']+) ]]; do
+        lvremove -f "{{ docker_volume_group }}/${BASH_REMATCH[1]}"
     done
-    lvcreate --wipesignatures y -n thinpool '{{ volume_group }}' -l 95%VG
-    lvcreate --wipesignatures y -n thinpoolmeta '{{ volume_group }}' -l 1%VG
+    lvcreate --wipesignatures y -n thinpool '{{ docker_volume_group }}' -l 95%VG
+    lvcreate --wipesignatures y -n thinpoolmeta '{{ docker_volume_group }}' -l 1%VG
     lvconvert -y \
         --zero n \
         -c 512K \
-        --thinpool '{{ volume_group }}'/thinpool \
-        --poolmetadata '{{ volume_group }}'/thinpoolmeta
+        --thinpool '{{ docker_volume_group }}'/thinpool \
+        --poolmetadata '{{ docker_volume_group }}'/thinpoolmeta
     #TODO(robnagler) Do we really want autoextend?
-    dd of=/etc/lvm/profile/'{{ volume_group }}'-thinpool.profile <<EOF
+    dd of=/etc/lvm/profile/'{{ docker_volume_group }}'-thinpool.profile <<EOF
 activation {
     thin_pool_autoextend_threshold=80
     thin_pool_autoextend_percent=20
 }
 EOF
-    lvchange --metadataprofile '{{ volume_group }}'-thinpool '{{ volume_group }}'/thinpool
+    lvchange --metadataprofile '{{ docker_volume_group }}'-thinpool '{{ docker_volume_group }}'/thinpool
     lvs -o+seg_monitor
     # Give vagrant user access in dev mode only
     if [[ $install_channel == dev ]]; then
        usermod -aG docker vagrant
     fi
+    systemctl start docker
+    systemctl enable docker
 }

@@ -14,6 +14,8 @@ class T(component.T):
     def internal_build(self):
         self.buildt.require_component('base_users')
 
+        #TODO(robnagler) if /etc/docker changes restart daemon
+        #  coordinate with main.sh which may have just started daemon
         self.append_root_bash(
             "rsconf_service_prepare '{}' '{}'".format(
                 self.name,
@@ -22,7 +24,7 @@ class T(component.T):
         )
         j2_ctx = pkcollections.Dict(self.hdb)
         j2_ctx.update(
-            volume_group='docker',
+            docker_volume_group='docker',
         )
         self.install_access(mode='700', owner=j2_ctx.root_u)
         self.install_directory('/etc/docker')

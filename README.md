@@ -1,10 +1,34 @@
 ### rsconf
 
-RadiaSoft host configuration
+Under development.
 
-Learn more at https://github.com/radiasoft/rsconf.
+On the master (v5.bivio.biz):
 
-Documentation: http://rsconf.readthedocs.org/en/latest/
+```bash
+cd ~/src/radiasoft/rsconf
+pip install -e .
+rm -rf run
+rsconf build
+bash run/nginx/start.sh
+```
+
+On the client:
+
+```bash
+vssh
+sudo su -
+export install_channel=dev install_server=http://v5.bivio.biz:8000
+curl "$install_server/dev-netrc" > ~/.netrc
+chmod 400 ~/.netrc
+curl "$install_server" | bash -s rsconf.sh v4.bivio.biz
+exit
+exit
+vagrant reload
+vssh
+sudo su -
+export install_channel=dev install_server=http://v5.bivio.biz:8000
+curl "$install_server" | bash -s rsconf.sh v4.bivio.biz
+```
 
 #### License
 
