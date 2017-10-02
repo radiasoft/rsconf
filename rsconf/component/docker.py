@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-u"""create base os configuration
+u"""create docker configuration
 
 :copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -7,8 +7,10 @@ u"""create base os configuration
 from __future__ import absolute_import, division, print_function
 from rsconf import component
 from pykern import pkcollections
+from pykern import pkio
 
-_DAEMON_JSON = '/etc/docker/daemon.json'
+_CONF_DIR = pkio.py_path('/etc/docker')
+_DAEMON_JSON = _CONF_DIR.join('daemon.json')
 
 class T(component.T):
     def internal_build(self):
@@ -26,9 +28,9 @@ class T(component.T):
         j2_ctx.update(
             docker_volume_group='docker',
         )
-        self.install_access(mode='700', owner=j2_ctx.root_u)
-        self.install_directory('/etc/docker')
-        self.install_access(mode='400', owner=j2_ctx.root_u)
+        self.install_access(mode='700', owner=j2_ctx.rsconf_db_root_u)
+        self.install_directory(_CONF_DIR)
+        self.install_access(mode='400', owner=j2_ctx.rsconf_db_root_u)
         self.install_resource(
             'docker/daemon.json',
             j2_ctx,
@@ -42,3 +44,4 @@ class T(component.T):
         #TODO(robnagler) add live-restore?
         # live restore: https://docs.docker.com/engine/admin/live-restore
         # "live-restore": true,
+        # live-restore does interrupt network due to proxies, --net=host

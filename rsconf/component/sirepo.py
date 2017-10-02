@@ -28,13 +28,13 @@ class T(component.T):
         #TODO(robnagler) from sirepo or flask(?)
         beaker_secret_f = db_d.join('beaker_secret')
         env = pkcollections.Dict(
-            PYKERN_PKCONFIG_CHANNEL=self.hdb.channel,
+            PYKERN_PKCONFIG_CHANNEL=self.hdb.rsconf_db_channel,
             PYKERN_PKDEBUG_REDIRECT_LOGGING=1,
             PYKERN_PKDEBUG_WANT_PID_TIME=1,
             PYTHONUNBUFFERED=1,
             SIREPO_PKCLI_SERVICE_IP='0.0.0.0',
             SIREPO_PKCLI_SERVICE_RUN_DIR=run_d,
-            SIREPO_SERVER_BEAKER_SESSION_KEY='sirepo_{}'.format(self.hdb.channel),
+            SIREPO_SERVER_BEAKER_SESSION_KEY='sirepo_{}'.format(self.hdb.rsconf_db_channel),
             SIREPO_SERVER_BEAKER_SESSION_SECRET=beaker_secret_f,
             SIREPO_SERVER_DB_DIR=db_d,
             SIREPO_SERVER_JOB_QUEUE='Celery',
@@ -57,7 +57,7 @@ class T(component.T):
             after=['celery_sirepo.service'],
             #TODO(robnagler) wanted by nginx
         )
-        self.install_access(mode='700', owner=self.hdb.run_u)
+        self.install_access(mode='700', owner=self.hdb.rsconf_db_run_u)
         self.install_directory(db_d)
         self.install_directory(user_d(self.hdb))
         self.install_secret(

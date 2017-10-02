@@ -3,6 +3,6 @@ if [[ -r ~/.bashrc ]]; then
     . ~/.bashrc
 fi
 set -euo pipefail
-cd '{{ run_d }}'
+cd '{{ systemd_run_d }}'
 . ./env
-exec {{ service_exec }}
+exec {{ systemd_service_exec }}

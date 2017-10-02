@@ -10,7 +10,7 @@ from pykern import pkcollections
 
 class T(component.T):
     def internal_build(self):
-        self.install_access(mode='400', owner=self.hdb.root_u)
+        self.install_access(mode='400', owner=self.hdb.rsconf_db_root_u)
         j2_ctx = pkcollections.Dict(self.hdb)
         self.install_resource(
             'base_os/60-rsconf-base.conf',

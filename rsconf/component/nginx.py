@@ -48,7 +48,7 @@ class T(component.T):
         self.append_root_bash('rsconf_yum_install nginx')
         systemd.unit_prepare(self, _CONF_ROOT_D)
         j2_ctx = pkcollections.Dict(self.hdb)
-        self.install_access(mode='400', owner=self.hdb.root_u)
+        self.install_access(mode='400', owner=self.hdb.rsconf_db_root_u)
         self.install_resource('nginx/global.conf', j2_ctx, _GLOBAL_CONF)
         systemd.unit_enable(self)
 
@@ -57,7 +57,7 @@ def _setup_ssl(compt, j2_ctx):
     b = compt.hdb.get('{}_nginx_ssl_base'.format(compt.name))
     if not b:
         return
-    compt.install_access(mode='400', owner=compt.hdb.root_u)
+    compt.install_access(mode='400', owner=compt.hdb.rsconf_db_root_u)
     for suffix in 'key', 'crt':
         ds = '.' + suffix
         p = _CONF_D.join(b) + ds

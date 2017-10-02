@@ -1,2 +1,2 @@
 #!/bin/bash
-docker rm -f {{ service }} >& /dev/null || true
+docker rm -f {{ systemd_service_name }} >& /dev/null || true

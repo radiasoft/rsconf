@@ -3,10 +3,10 @@
 # Usage: run [bash -l]
 #
 set -euo pipefail
-cmd=( {{ cmd }} )
-flags='--name {{ service }} '
+cmd=( {{ systemd_cmd }} )
+flags='--name {{ systemd_service_name }} '
 if (( $# > 0 )); then
     flags='-i '
     cmd=( $@ )
 fi
-exec docker run $flags --tty --rm --user={{ run_u }} --net host {{ volumes }} {{ image }} "${cmd[@]}"
+exec docker run $flags --tty --rm --user={{ systemd_run_u }} --net host {{ systemd_volumes }} {{ systemd_image }} "${cmd[@]}"

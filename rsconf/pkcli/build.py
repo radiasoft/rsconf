@@ -21,13 +21,13 @@ class T(pkcollections.Dict):
         )
 
     def create_host(self):
-        dst_d = self.hdb.srv_host_d.join(self.hdb.host)
+        dst_d = self.hdb.rsconf_db_srv_host_d.join(self.hdb.rsconf_db_host)
         new = dst_d + '-new'
-        self.hdb.dst_d = new
+        self.hdb.build_dst_d = new
         old = dst_d + '-old'
         pkio.unchecked_remove(new, old)
         pkio.mkdir_parent(new)
-        self.require_component(*self.hdb.components)
+        self.require_component(*self.hdb.rsconf_db_components)
         self.write_root_bash(
             '000',
             ['rsconf_require ' + x for x in self.components_required],
@@ -56,7 +56,7 @@ class T(pkcollections.Dict):
     def write_root_bash(self, basename, lines):
         # python and perl scripts?
         pkio.write_text(
-            self.hdb.dst_d.join(basename + '.sh'),
+            self.hdb.build_dst_d.join(basename + '.sh'),
             '\n'.join(['#!/bin/bash'] + lines) + '\n',
         )
 

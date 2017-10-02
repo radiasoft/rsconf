@@ -1,16 +1,16 @@
 [Unit]
-Description={{ service }}
-{%- if after %}
-Requires={{ after }}
-After={{ after }}
+Description={{ systemd_service_name }}
+{%- if systemd_after %}
+Requires={{ systemd_after }}
+After={{ systemd_after }}
 {% endif -%}
 
 [Service]
 Restart=on-failure
 RestartSec=10
-ExecStartPre={{ remove }}
-ExecStart={{ start }}
-ExecStop=-{{ stop }}
+ExecStartPre={{ systemd_remove }}
+ExecStart={{ systemd_start }}
+ExecStop=-{{ systemd_stop }}
 
 [Install]
 WantedBy=multi-user.target

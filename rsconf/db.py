@@ -30,12 +30,16 @@ class T(pkcollections.Dict):
         )
 
     def host_db(self, channel, host):
-        res = pkcollections.Dict(
-            # Common defaults we allow overrides for
-            host_run_d=pkio.py_path('/var/lib'),
-            run_u='vagrant',
-            root_u='root',
+        res = pkcollections.Dict()
+        v = pkcollections.Dict(
+            rsconf_db=pkcollections.Dict(
+                # Common defaults we allow overrides for
+                host_run_d=pkio.py_path('/var/lib'),
+                run_u='vagrant',
+                root_u='root',
+            )
         )
+        pkconfig.flatten_values(res, v)
         #TODO(robnagler) optimize by caching default and channels
         for l in _LEVELS:
             for x in self.base, self.secret:
@@ -49,12 +53,19 @@ class T(pkcollections.Dict):
                         if not v:
                             continue
                 pkconfig.flatten_values(res, v)
-        res.host = host.lower()
-        res.channel = channel
-        res.root_d = pkio.py_path(cfg.root_dir)
-        res.secret_d = res.root_d.join(_SECRET_SUBDIR)
-        res.srv_d = res.root_d.join(_SRV_SUBDIR)
-        res.srv_host_d = res.srv_d.join(_HOST_SUBDIR)
+        root_d = pkio.py_path(cfg.root_dir)
+        srv_d = root_d.join(_SRV_SUBDIR)
+        v = pkcollections.Dict(
+            rsconf_db=pkcollections.Dict(
+                host=host.lower(),
+                channel=channel,
+                root_d=root_d,
+                secret_d=root_d.join(_SECRET_SUBDIR),
+                srv_d=srv_d,
+                srv_host_d=srv_d.join(_HOST_SUBDIR),
+            )
+        )
+        pkconfig.flatten_values(res, v)
         return res
 
     def channel_hosts(self):

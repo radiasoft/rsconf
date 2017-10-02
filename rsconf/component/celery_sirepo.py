@@ -17,7 +17,7 @@ class T(component.T):
         self.buildt.require_component('docker', 'rabbitmq')
         systemd.docker_unit_prepare(self)
         env = pkcollections.Dict(
-            PYKERN_PKCONFIG_CHANNEL=self.hdb.channel,
+            PYKERN_PKCONFIG_CHANNEL=self.hdb.rsconf_db_channel,
             PYKERN_PKDEBUG_REDIRECT_LOGGING=1,
             PYKERN_PKDEBUG_WANT_PID_TIME=1,
             PYTHONUNBUFFERED=1,

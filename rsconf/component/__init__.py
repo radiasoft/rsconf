@@ -84,7 +84,7 @@ class T(pkcollections.Dict):
 
     def install_secret(self, basename, host_path, gen_secret=None, visibility=VISIBILITY_DEFAULT):
         dst = self._bash_append_and_dst(host_path)
-        src = self.hdb.secret_d.join(
+        src = self.hdb.rsconf_db_secret_d.join(
             self._secret_base(basename, visibility),
         )
         if not src.check():
@@ -106,7 +106,7 @@ class T(pkcollections.Dict):
 
     def _bash_append_and_dst(self, host_path):
         self._bash_append(host_path)
-        dst = self.hdb.dst_d.join(host_path)
+        dst = self.hdb.build_dst_d.join(host_path)
         assert not dst.check(), \
             '{}: dst already exists'.format(dst)
         pkio.mkdir_parent_only(dst)
@@ -120,7 +120,7 @@ class T(pkcollections.Dict):
                 visibility,
                 VISIBILITY_LIST,
             )
-        return '{}-{}'.format(basename, self.hdb[visibility])
+        return '{}-{}'.format(basename, self.hdb['rsconf_db_' + visibility])
 
 
 def create_t(name, buildt):

@@ -29,7 +29,7 @@ class T(component.T):
             cmd='/usr/lib/rabbitmq/bin/rabbitmq-server',
             after=['docker.service'],
         )
-        self.install_access(mode='700', owner=self.hdb.run_u)
+        self.install_access(mode='700', owner=self.hdb.rsconf_db_run_u)
         self.install_directory(env.RABBITMQ_LOG_BASE)
         self.install_directory(env.RABBITMQ_MNESIA_BASE)
         for f in ('enabled_plugins', 'rabbitmq.config'):

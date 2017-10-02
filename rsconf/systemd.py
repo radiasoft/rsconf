@@ -5,8 +5,9 @@ u"""create systemd files
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
-from pykern import pkio
 from pykern import pkcollections
+from pykern import pkconfig
+from pykern import pkio
 
 
 _SYSTEMD_DIR = pkio.py_path('/etc/systemd/system')
@@ -18,41 +19,45 @@ _SYSTEMD_DIR = pkio.py_path('/etc/systemd/system')
 def docker_unit_enable(compt, image, env, cmd, volumes=None, after=None):
     """Must be last call"""
     j2_ctx = pkcollections.Dict(compt.hdb)
-    j2_ctx.update(**compt.systemd)
+    v = pkcollections.Dict(compt.systemd)
     if 'TZ' not in env:
         # Tested on CentOS 7, and it does have the localtime stat problem
         # https://blog.packagecloud.io/eng/2017/02/21/set-environment-variable-save-thousands-of-system-calls/
         env['TZ'] = ':/etc/localtime'
-    j2_ctx.update(
+    v.update(
         after=' '.join(after or []),
         service_exec=cmd,
         exports='\n'.join(
             ["export '{}={}'".format(k, env[k]) for k in sorted(env.keys())],
         ),
-        image=image + ':' + j2_ctx.channel,
-        service=compt.name,
+        image=image + ':' + j2_ctx.rsconf_db_channel,
+        #TODO(robnagler) not possible to override right now, components
+        # would need to be fixed to not assume rsconf_db_run_u for files
+        run_u=j2_ctx.rsconf_db_run_u
     )
-    j2_ctx.volumes = ' '.join(
-        ["-v '{}:{}'".format(x, x) for x in [j2_ctx.run_d] + (volumes or [])],
+    v.volumes = ' '.join(
+        ["-v '{}:{}'".format(x, x) for x in [v.run_d] + (volumes or [])],
     )
     scripts = ('cmd', 'env', 'remove', 'start', 'stop')
-    compt.install_access(mode='700', owner=j2_ctx.run_u)
-    compt.install_directory(j2_ctx.run_d)
+    compt.install_access(mode='700', owner=v.run_u)
+    compt.install_directory(v.run_d)
     compt.install_access(mode='500')
     for s in scripts:
-        j2_ctx[s] = j2_ctx.run_d.join(s)
-        compt.install_resource('systemd/' + s, j2_ctx, j2_ctx[s])
+        v[s] = v.run_d.join(s)
+    pkconfig.flatten_values(j2_ctx, pkcollections.Dict(systemd=v))
+    for s in scripts:
+        compt.install_resource('systemd/' + s, j2_ctx, v[s])
     # See Poettering's omniscience about what's good for all of us here:
     # https://github.com/systemd/systemd/issues/770
     # These files should be 400, since there's no value in making them public.
-    compt.install_access(mode='444', owner=j2_ctx.root_u)
+    compt.install_access(mode='444', owner=j2_ctx.rsconf_db_root_u)
     compt.install_resource(
         'systemd/service',
         j2_ctx,
-        compt.systemd.service_f,
+        v.service_f,
     )
     compt.append_root_bash(
-        "rsconf_service_docker_pull '{}' '{}'".format(j2_ctx.service, j2_ctx.image),
+        "rsconf_service_docker_pull '{}' '{}'".format(v.service_name, v.image),
     )
     unit_enable(compt)
 
@@ -66,7 +71,7 @@ def docker_unit_prepare(compt):
 
 
 def docker_unit_run_d(hdb, unit_name):
-    return hdb.host_run_d.join(unit_name)
+    return hdb.rsconf_db_host_run_d.join(unit_name)
 
 
 def unit_enable(compt):
@@ -78,6 +83,7 @@ def unit_enable(compt):
 def unit_prepare(compt, *watch_files):
     """Must be first call"""
     compt.systemd = pkcollections.Dict(
+        service_name=compt.name,
         service_f=_SYSTEMD_DIR.join('{}.service'.format(compt.name)),
     )
     compt.append_root_bash(

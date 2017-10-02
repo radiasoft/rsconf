@@ -12,15 +12,15 @@ class T(component.T):
     def internal_build(self):
         self.buildt.require_component('base_os')
         self.append_root_bash(
-            'rsconf_radia_run_as_user {} home'.format(self.hdb.root_u))
-        self.install_access(mode='400', owner=self.hdb.root_u)
+            'rsconf_radia_run_as_user {} home'.format(self.hdb.rsconf_db_root_u))
+        self.install_access(mode='400', owner=self.hdb.rsconf_db_root_u)
         self.install_resource(
             'base_users/root_post_bivio_bashrc',
             {},
             '/root/.post_bivio_bashrc',
         )
         self.append_root_bash(
-            'rsconf_radia_run_as_user {} home'.format(self.hdb.run_u),
+            'rsconf_radia_run_as_user {} home'.format(self.hdb.rsconf_db_run_u),
             'set +e +o pipefail',
             '. ~/.bashrc',
             'set -e -o pipefail',
