@@ -10,6 +10,7 @@ base_os_chrony() {
 }
 
 base_os_main() {
+    rsconf_radia_run_as_user root redhat_base
     local i=$(sysctl -n net.ipv6.conf.all.disable_ipv6)
     local reboot=
     rsconf_install_access 400 root root
@@ -25,10 +26,6 @@ base_os_main() {
         # restart.
         dracut -f
     fi
-    if [[ ! -e /etc/yum.repos.d/epel.repo ]]; then
-        yum --enablerepo=extras install -y -q epel-release
-    fi
-    rsconf_radia_run_as_user root code base_rpm
     # https://access.redhat.com/solutions/8709
     # breaks SSH Xforwarding unless AddressFamily inet is set in sshd_config
     # idempotent so ok to repeat and the file might get updated with a new release.
