@@ -10,7 +10,7 @@ base_os_chrony() {
 }
 
 base_os_main() {
-    rsconf_radia_run_as_user root redhat_base
+    rsconf_radia_run_as_user root redhat-base
     local i=$(sysctl -n net.ipv6.conf.all.disable_ipv6)
     local reboot=
     rsconf_install_access 400 root root
