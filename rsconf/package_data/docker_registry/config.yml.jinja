@@ -1,0 +1,31 @@
+---
+# https://docs.docker.com/registry/configuration/
+version: 0.1
+log:
+  accesslog:
+    disabled: false
+  level: info
+  formatter: text
+  fields:
+    service: docker_registry
+    environment: {{ rsconf_db_channel }}
+storage:
+  filesystem:
+    rootdirectory: {{ docker_registry_db_d }}
+    maxthreads: 20
+  delete:
+    enabled: true
+auth:
+  htpasswd:
+    realm: '*'
+    path: {{ docker_registry_auth_htpasswd_path }}
+http:
+  addr: {{ docker_registry_http_addr }}
+  host: {{ docker_registry_http_host }}
+  secret: {{ docker_registry_http_secret }}
+  tls:
+    certificate: {{ docker_registry_http_tls_certificate }}
+    key:  {{ docker_registry_http_tls_key }}
+  headers:
+    X-Content-Type-Options: [nosniff]
+# Consider validation

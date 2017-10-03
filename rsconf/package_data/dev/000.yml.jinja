@@ -4,6 +4,8 @@ default:
     ip_forward: false
   docker:
     iptables: true
+  docker_registry:
+    tls_base: docker_registry
   celery_sirepo:
     queues: "sequential,parallel"
   nginx:

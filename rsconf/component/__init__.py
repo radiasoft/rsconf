@@ -6,12 +6,10 @@ u"""Load components
 """
 from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
+from pykern import pkconfig
 from pykern import pkio
 from pykern.pkdebug import pkdp, pkdc
 import re
-
-VISIBILITY_LIST = ('global', 'channel', 'host')
-VISIBILITY_DEFAULT = VISIBILITY_LIST[1]
 
 _DONE = 'done'
 _START = 'start'
@@ -82,10 +80,11 @@ class T(pkcollections.Dict):
             pkjinja.render_resource(name, j2_ctx, strict_undefined=True),
         )
 
-    def install_secret(self, basename, host_path, gen_secret=None, visibility=VISIBILITY_DEFAULT):
+    def install_secret(self, basename, host_path, gen_secret=None, visibility=None):
+        from rsconf import db
         dst = self._bash_append_and_dst(host_path)
         src = self.hdb.rsconf_db_secret_d.join(
-            self._secret_base(basename, visibility),
+            db.secret_base(self.hdb, basename, visibility=visibility),
         )
         if not src.check():
             assert gen_secret, \
@@ -93,6 +92,10 @@ class T(pkcollections.Dict):
             pkio.mkdir_parent_only(src)
             gen_secret(src)
         src.copy(dst, mode=True)
+
+    def install_secret_file(self, secret_path, host_path):
+        dst = self._bash_append_and_dst(host_path)
+        secret_path.copy(dst, mode=True)
 
     def _bash_append(self, host_path, is_file=True):
         assert not "'" in str(host_path), \
@@ -112,17 +115,6 @@ class T(pkcollections.Dict):
         pkio.mkdir_parent_only(dst)
         return dst
 
-    def _secret_base(self, basename, visibility):
-        if visibility == VISIBILITY_LIST[0]:
-            return basename
-        assert visibility in VISIBILITY_LIST, \
-            '{}: invalid visibility, must be {}'.format(
-                visibility,
-                VISIBILITY_LIST,
-            )
-        return '{}-{}'.format(basename, self.hdb['rsconf_db_' + visibility])
-
-
 def create_t(name, buildt):
     """Instantiate component
 
@@ -134,3 +126,26 @@ def create_t(name, buildt):
     import importlib
 
     return importlib.import_module('.' + name, __name__).T(name, buildt)
+
+
+def tls_key_and_crt(hdb, domain):
+    from rsconf.pkcli import tls
+    from rsconf import db
+
+    #TODO(robnagler) wildcard: search for name if single domain, then
+    #  wildcard file
+    #TODO(robnagler) search for MDC
+    base = domains[0]
+    src = hdb.rsconf_db_secret_d.join(
+        db.secret_base(hdb, base, visibility='global'),
+    )
+    src_key = src + tls.KEY_EXT
+    src_crt = src + tsl.CRT_EXT
+    if not src_crt.check():
+        assert pkconfig.channel_in_internal_test(channel=hdb.rsconf_db_channel), \
+            '{}: missing crt for: {}'.format(src_crt, domains)
+        pkio.mkdir_parent_only(src_crt)
+        tls.gen_self_signed_crt(src, *domains)
+    assert src_key.check(), \
+        '{}: missing key for: {}'.format(src_key, domains)
+    return pkcollections.Dict(key=src_key, crt=src_crt)

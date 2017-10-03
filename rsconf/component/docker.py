@@ -15,7 +15,6 @@ _DAEMON_JSON = _CONF_DIR.join('daemon.json')
 class T(component.T):
     def internal_build(self):
         self.buildt.require_component('base_users')
-
         #TODO(robnagler) if /etc/docker changes restart daemon
         #  coordinate with main.sh which may have just started daemon
         self.append_root_bash(
@@ -36,6 +35,9 @@ class T(component.T):
             j2_ctx,
             _DAEMON_JSON,
         )
+        if docker_registry.is_self_signed():
+        if self.hdb.get('docker_registry_host')
+            self._docker_registry_crt()
         self.append_root_bash_with_resource(
             'docker/main.sh',
             j2_ctx,

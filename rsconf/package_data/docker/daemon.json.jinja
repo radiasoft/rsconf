@@ -1,5 +1,6 @@
 {
     "iptables": {{ docker_iptables | tojson }},
+    "live-restore": true,
     "log-driver": "journald",
     "storage-driver": "devicemapper",
     "storage-opts": [

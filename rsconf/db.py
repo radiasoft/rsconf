@@ -10,6 +10,9 @@ from pykern import pkconfig
 from pykern import pkio
 from pykern.pkdebug import pkdc, pkdp
 
+VISIBILITY_LIST = ('global', 'channel', 'host')
+VISIBILITY_DEFAULT = VISIBILITY_LIST[1]
+
 _ZERO_YML = '000.yml'
 _SRV_SUBDIR = 'srv'
 _DEFAULT_DB_SUBDIR = 'run'
@@ -75,6 +78,20 @@ class T(pkcollections.Dict):
                 self.base.host.get(c, pkcollections.Dict()).keys(),
             )
         return res
+
+
+def secret_base(hdb, basename, visibility=None):
+    if visibility:
+        assert visibility in VISIBILITY_LIST, \
+            '{}: invalid visibility, must be {}'.format(
+                visibility,
+                VISIBILITY_LIST,
+            )
+    else:
+        visibility = VISIBILITY_DEFAULT
+    if visibility == VISIBILITY_LIST[0]:
+        return basename
+    return '{}-{}'.format(basename, hdb['rsconf_db_' + visibility])
 
 
 @pkconfig.parse_none
