@@ -32,7 +32,7 @@ channel:
       mpi.cores: 2
       nginx:
         vhost: {{ host }}
-        ssl_base: sirepo
+        want_tls: true
 
 host:
   {{ channel }}:

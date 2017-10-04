@@ -86,7 +86,9 @@ def is_self_signed_crt(filename):
     Returns:
         bool: true or false
     """
-    o = subprocess.output(
+    # error 18 at 0 depth lookup:self signed certificate
+    # Root certs are self-signed
+    o = subprocess.check_output(
         ['openssl', 'verify', str(filename)],
         stderr=subprocess.STDOUT,
     )

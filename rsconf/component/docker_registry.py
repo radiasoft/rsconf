@@ -10,18 +10,22 @@ from pykern import pkcollections
 
 _DB_SUBDIR = 'db'
 _TLS_BASE = 'docker_registry'
+_GLOBAL_CONF = '/etc/docker/registry/config.yml'
 
 #TODO(robnagler) how to clean registry?
 
-def tls_key_and_crt(hdb):
-    return component.tls_key_and_crt(hdb, hdb.docker_registry_host)
+def tls_crt(hdb):
+    return component.tls_key_and_crt(hdb, hdb.docker_registry_host).crt
 
+def htpasswd_auth(hdb):
+    # this secret is bound to the registry for this host
+    this would be a yml file that gets generated
+    then the htpasswd would get generated from that in the same process
+    docker_registry-v4.bivio.biz.yml
+    docker_registry-v4.bivio.biz-passwd
+    gen_secret=yaml file with the password
+    return component.tls_key_and_crt(hdb, hdb.docker_registry_host).crt
 
--CAfile v4.bivio.biz.crt -CApath v4.bivio.biz.crt
-
-openssl verify v4.bivio.biz.crt
-v4.bivio.biz.crt: C = US, ST = Colorado, L = Boulder, CN = v4.bivio.biz
-error 18 at 0 depth lookup:self signed certificate
 
 class T(component.T):
 
@@ -31,6 +35,20 @@ class T(component.T):
         run_d = systemd.docker_unit_prepare(self)
         db_d = run_d.join(_DB_SUBDIR)
         tls = tls_key_and_crt(self.hdb)
+        conf_f = run_d.join('config.yml')
+
+        j2_ctx = pkcollections.Dict(self.hdb)
+        run_u = self.hdb.rsconf_db_root_u
+        self.install_access(mode='400', owner=run_u)
+        self.install_resource('docker_registry/config.yml', j2_ctx, conf_f)
+        kc = self.install_tls_key_and_crt(self.hdb.docker_registry_host, run_d)
+        j2_ctx.update(
+            docker_registry_http_tls_certificate=kc.crt,
+            docker_registry_http_tls_key=kc.key,
+        )
+        volumes = [
+            [conf_f, _GLOBAL_CONF],
+        ]
 
         docker_registry_db_d
         # https://docs.docker.com/registry/configuration/

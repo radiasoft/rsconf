@@ -8,6 +8,7 @@ from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
 from pykern import pkconfig
 from pykern import pkio
+import types
 
 
 _SYSTEMD_DIR = pkio.py_path('/etc/systemd/system')
@@ -36,7 +37,7 @@ def docker_unit_enable(compt, image, env, cmd, volumes=None, after=None):
         run_u=j2_ctx.rsconf_db_run_u
     )
     v.volumes = ' '.join(
-        ["-v '{}:{}'".format(x, x) for x in [v.run_d] + (volumes or [])],
+        ["-v '{}'".format(_vol_arg(x)) for x in [v.run_d] + (volumes or [])],
     )
     scripts = ('cmd', 'env', 'remove', 'start', 'stop')
     compt.install_access(mode='700', owner=v.run_u)
@@ -93,3 +94,8 @@ def unit_prepare(compt, *watch_files):
             *watch_files
         ),
     )
+
+def _vol_arg(vol):
+    if isinstance(vol, type.StringTypes):
+        vol = (vol, vol)
+    return '{}:{}'.format(*vol)

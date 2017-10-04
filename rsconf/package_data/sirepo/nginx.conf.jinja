@@ -8,10 +8,8 @@ server {
     listen {{ sirepo_nginx_vhost }}:443 ssl;
     server_name {{ sirepo_nginx_vhost }};
     root {{ nginx_default_root }};
-    {% if nginx_ssl_crt -%}
-    ssl_certificate {{ nginx_ssl_crt }};
-    ssl_certificate_key {{ nginx_ssl_key }};
-    {%- endif %}
+    ssl_certificate {{ nginx_tls_crt }};
+    ssl_certificate_key {{ nginx_tls_key }};
     location / {
         allow all;
         include uwsgi_params;

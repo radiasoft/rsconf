@@ -30,9 +30,15 @@ def install_vhost(compt):
     j2_ctx.update(
         nginx_default_error_pages=_DEFAULT_ERROR_PAGES,
         nginx_default_root=_DEFAULT_ROOT,
-        nginx_ssl_crt=None,
     )
-    _setup_ssl(compt, j2_ctx)
+    compt.install_access(mode='400', owner=compt.hdb.rsconf_db_root_u)
+    tls = component.tls_key_and_crt(
+        compt.hdb,
+        compt.hdb[compt.name + '_nginx_vhost'],
+    )
+    kc = compt.install_tls_key_and_crt(tls, _CONF_D)
+    j2_ctx.nginx_tls_crt = kc.crt
+    j2_ctx.nginx_tls_key = kc.key
     compt.install_resource(
         compt.name + '/nginx.conf',
         j2_ctx,
@@ -51,17 +57,3 @@ class T(component.T):
         self.install_access(mode='400', owner=self.hdb.rsconf_db_root_u)
         self.install_resource('nginx/global.conf', j2_ctx, _GLOBAL_CONF)
         systemd.unit_enable(self)
-
-
-def _setup_ssl(compt, j2_ctx):
-    b = compt.hdb.get('{}_nginx_ssl_base'.format(compt.name))
-    if not b:
-        return
-    compt.install_access(mode='400', owner=compt.hdb.rsconf_db_root_u)
-    for suffix in 'key', 'crt':
-        ds = '.' + suffix
-        p = _CONF_D.join(b) + ds
-        j2_ctx['nginx_ssl_' + suffix] = p
-        # secret may already be installed in case of multi-domain/wildcard certs
-        if not p.check():
-            compt.install_secret(p.basename, host_path=p, visibility='global')

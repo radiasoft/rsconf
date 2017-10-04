@@ -50,6 +50,10 @@ class T(pkcollections.Dict):
         self._root_bash.extend(self._root_bash_aux)
         self.buildt.write_root_bash(self.name, self._root_bash)
 
+    def install_abspath(self, abs_path, host_path):
+        dst = self._bash_append_and_dst(host_path)
+        abspath.copy(dst, mode=True)
+
     def install_access(self, mode=None, owner=None, group=None):
         if not mode is None:
             assert not isinstance(mode, int), \
@@ -80,7 +84,7 @@ class T(pkcollections.Dict):
             pkjinja.render_resource(name, j2_ctx, strict_undefined=True),
         )
 
-    def install_secret(self, basename, host_path, gen_secret=None, visibility=None):
+    def install_secret_relbase(self, basename, host_path, gen_secret=None, visibility=None):
         from rsconf import db
         dst = self._bash_append_and_dst(host_path)
         src = self.hdb.rsconf_db_secret_d.join(
@@ -93,9 +97,17 @@ class T(pkcollections.Dict):
             gen_secret(src)
         src.copy(dst, mode=True)
 
-    def install_secret_file(self, secret_path, host_path):
-        dst = self._bash_append_and_dst(host_path)
-        secret_path.copy(dst, mode=True)
+    def install_tls_key_and_crt(self, domain, dst_d):
+        kc = tls_key_and_crt(hdb, domain)
+        dst = pkcollections.Dict(
+            key=dst_d.join(kc.key.basename),
+            crt=dst_d.join(kc.crt.basename),
+        )
+        self.install_abspath(kc.key, dst.key)
+        self.install_abspath(kc.crt, dst.crt)
+        return dst
+
+
 
     def _bash_append(self, host_path, is_file=True):
         assert not "'" in str(host_path), \
