@@ -5,7 +5,8 @@ default:
   docker:
     iptables: true
   docker_registry:
-    tls_base: docker_registry
+    host: {{ master }}
+    port: {{ port }}
   celery_sirepo:
     queues: "sequential,parallel"
   nginx:

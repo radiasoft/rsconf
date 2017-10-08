@@ -17,7 +17,7 @@ _SYSTEMD_DIR = pkio.py_path('/etc/systemd/system')
 #TODO(robnagler) when to download new version of docker container?
 #TODO(robnagler) docker pull happens explicitly, probably
 
-def docker_unit_enable(compt, image, env, cmd, volumes=None, after=None):
+def docker_unit_enable(compt, image, env, cmd, volumes=None, after=None, run_u=None):
     """Must be last call"""
     j2_ctx = pkcollections.Dict(compt.hdb)
     v = pkcollections.Dict(compt.systemd)
@@ -25,16 +25,16 @@ def docker_unit_enable(compt, image, env, cmd, volumes=None, after=None):
         # Tested on CentOS 7, and it does have the localtime stat problem
         # https://blog.packagecloud.io/eng/2017/02/21/set-environment-variable-save-thousands-of-system-calls/
         env['TZ'] = ':/etc/localtime'
+    if not ':' in image:
+        image += ':' + j2_ctx.rsconf_db_channel
     v.update(
         after=' '.join(after or []),
         service_exec=cmd,
         exports='\n'.join(
             ["export '{}={}'".format(k, env[k]) for k in sorted(env.keys())],
         ),
-        image=image + ':' + j2_ctx.rsconf_db_channel,
-        #TODO(robnagler) not possible to override right now, components
-        # would need to be fixed to not assume rsconf_db_run_u for files
-        run_u=j2_ctx.rsconf_db_run_u
+        image=image,
+        run_u=run_u or j2_ctx.rsconf_db_run_u,
     )
     v.volumes = ' '.join(
         ["-v '{}'".format(_vol_arg(x)) for x in [v.run_d] + (volumes or [])],

@@ -84,12 +84,11 @@ class T(pkcollections.Dict):
             pkjinja.render_resource(name, j2_ctx, strict_undefined=True),
         )
 
-    def install_secret_relbase(self, basename, host_path, gen_secret=None, visibility=None):
+    def install_secret_path(self, filename, host_path, gen_secret=None, visibility=None):
         from rsconf import db
+
         dst = self._bash_append_and_dst(host_path)
-        src = self.hdb.rsconf_db_secret_d.join(
-            db.secret_base(self.hdb, basename, visibility=visibility),
-        )
+        src = db.secret_path(self.hdb, filename, visibility=visibility)
         if not src.check():
             assert gen_secret, \
                 '{}: unable to generate secret: {}'.format(src, host_path)
@@ -148,9 +147,7 @@ def tls_key_and_crt(hdb, domain):
     #  wildcard file
     #TODO(robnagler) search for MDC
     base = domains[0]
-    src = hdb.rsconf_db_secret_d.join(
-        db.secret_base(hdb, base, visibility='global'),
-    )
+    src = db.secret_path(hdb, base, visibility='global')
     src_key = src + tls.KEY_EXT
     src_crt = src + tsl.CRT_EXT
     if not src_crt.check():

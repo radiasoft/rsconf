@@ -12,6 +12,7 @@ from pykern.pkdebug import pkdc, pkdp
 
 VISIBILITY_LIST = ('global', 'channel', 'host')
 VISIBILITY_DEFAULT = VISIBILITY_LIST[1]
+VISIBILITY_GLOBAL = VISIBILITY_LIST[0]
 
 _ZERO_YML = '000.yml'
 _SRV_SUBDIR = 'srv'
@@ -80,7 +81,7 @@ class T(pkcollections.Dict):
         return res
 
 
-def secret_base(hdb, basename, visibility=None):
+def secret_path(hdb, filename, visibility=None):
     if visibility:
         assert visibility in VISIBILITY_LIST, \
             '{}: invalid visibility, must be {}'.format(
@@ -89,9 +90,11 @@ def secret_base(hdb, basename, visibility=None):
             )
     else:
         visibility = VISIBILITY_DEFAULT
-    if visibility == VISIBILITY_LIST[0]:
-        return basename
-    return '{}-{}'.format(basename, hdb['rsconf_db_' + visibility])
+    p = [] if visibility == VISIBILITY_GLOBAL else [hdb['rsconf_db_' + visibility]]
+    p.append(filename)
+    res = hdb.rsconf_db_secret_d.join(*p)
+    pkio.mkdir_parent_only(res)
+    return res
 
 
 @pkconfig.parse_none
@@ -166,13 +169,14 @@ def _setup_dev(root):
 
     secret_d = pkio.mkdir_parent(root.join(_SECRET_SUBDIR))
     nginx_d = pkio.mkdir_parent(root.join(_NGINX_SUBDIR))
+    boot_hdb = pkcollections.Dict(rsconf_db_secret_d=secret_d, rsconf_db_channel='dev')
     j2_ctx = pkcollections.Dict(
         srv_d=str(srv),
         port=8000,
         host='v4.bivio.biz',
         channel='dev',
         master='v5.bivio.biz',
-        passwd_file=str(secret_d.join('dev-nginx-passwd')),
+        passwd_file=secret_path(boot_hdb, 'nginx-passwd', visibility='channel')
     )
     j2_ctx.passwd = _add_host(j2_ctx.channel, j2_ctx.host, j2_ctx.passwd_file)
     _sym('~/src/radiasoft/download/bin/install.sh', 'index.html')

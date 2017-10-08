@@ -28,4 +28,6 @@ http:
     key:  {{ docker_registry_http_tls_key }}
   headers:
     X-Content-Type-Options: [nosniff]
+proxy:
+  remoteurl: https://registry-1.docker.io
 # Consider validation

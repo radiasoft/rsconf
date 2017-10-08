@@ -60,7 +60,7 @@ class T(component.T):
         self.install_access(mode='700', owner=self.hdb.rsconf_db_run_u)
         self.install_directory(db_d)
         self.install_directory(user_d(self.hdb))
-        self.install_secret_relbase(
+        self.install_secret_path(
             _BEAKER_SECRET_BASE,
             host_path=beaker_secret_f,
             gen_secret=self._gen_beaker_secret,
