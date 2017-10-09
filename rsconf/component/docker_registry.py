@@ -12,8 +12,59 @@ from pykern import pkcollections
 _DB_SUBDIR = 'db'
 _TLS_BASE = 'docker_registry'
 _GLOBAL_CONF = '/etc/docker/registry/config.yml'
+_DOCKER_HUB_HOST = 'docker.io'
 
 #TODO(robnagler) how to clean registry?
+
+def prefix_image(hdb, image):
+    if image.startswith(_DOCKER_HUB_HOST):
+        return image
+
+
+
+
+def install_crt_and_login(compt, j2_ctx):
+    addr = '{}:{}'.format(j2_ctx.docker_registry_host, j2_ctx.hdb.docker_registry_port)
+    j2_ctx.update(
+        docker_registry_http_addr=addr
+        docker_registry_http_host='https://' + addr
+        docker_registry_tls_crt_f= component.tls_key_and_crt(
+            j2_ctx,
+            j2_ctx.docker_registry_host,
+        ).crt,
+    )
+    # must be defined
+    /root/docker.json
+    login happens in a file
+    # no, only add if not already there
+    # the file has to have detachKeys, we want all files to come from server
+    json.auths[http_host].auth = base64.b64decode("user:passwd")
+	"auths": {
+		"v5.bivio.biz:5000": {
+			"auth": base64.b64decode("user:passwd"),
+		}
+	},
+
+
+    compt.append_root_bash_with_resource(
+        'docker_registry/login.sh',
+        j2_ctx,
+        'docker_registry_login',
+    )
+
+#cp certs/domain.crt /etc/pki/ca-trust/source/anchors/myregistrydomain.com.crt
+#update-ca-trust
+        if self.hdb.get('docker_registry_host'):
+
+
+
+        crt = docker_registry.tls_crt(self.hdb)
+        if tls.is_self_signed(crt):
+                 /etc/docker/certs.d/myregistrydomain.com:5000/ca.crt
+        if self.hdb.get('docker_registry_host')
+            self._docker_registry_crt()
+        docker login required
+
 
 def tls_crt(hdb):
     return component.tls_key_and_crt(hdb, hdb.docker_registry_host).crt
@@ -21,23 +72,18 @@ def tls_crt(hdb):
 
 def htpasswd_auth(hdb):
     # this secret is bound to the registry for this host
-    f = db.secret_base(hdb, 'docker_registery_password.yml', visibility='channel')
+    import
 
-
+    f = db.secret_path(hdb, 'docker_registery_password.yml', visibility='channel')
     import bcrypt
-"2" - the first revision of BCrypt, which suffers from a minor security flaw and is generally not used anymore.
-"2a" - some implementations suffered from rare security flaws, replaced by 2b.
-
-probably needs to be "2y" - format specific to the crypt_blowfish BCrypt implementation, identical to "2b" in all but name.
-
-"2b" - latest revision of the official BCrypt algorithm, current default.
-
-    # output of htpassword
+    # Apache htpasswd outputs:
     # foo:$2y$05$2Z2P5HLffM./.FRB69.1CuPoiIHdv.K5/fSETVV44.81iPLVGOVp2
-    # Try "2b" with docker
-    # probably only need 5 turns (
-    bcrypt.hashpw('foobar', bcrypt.gensalt())
-    '$2b$14$5huP80t2JQr5M7.X.g0jNeOXdkqKyaNRnsgrxku7GxmQtMn0uxlsC'
+    # bcrypt outputs by default:
+    # '$2b$14$5huP80t2JQr5M7.X.g0jNeOXdkqKyaNRnsgrxku7GxmQtMn0uxlsC'
+    # Use "5" turns, because doesn't need to be that secure. Somebody with this
+    # file already has a lot.
+
+    bcrypt.hashpw('foobar', bcrypt.gensalt(5))
 
     this would be a yml file that gets generated
     then the htpasswd would get generated from that in the same process
@@ -69,7 +115,6 @@ class T(component.T):
             docker_registry_http_tls_key=kc.key,
             docker_registry_conf_f=conf_f,
         )
-
         docker_registry_auth_htpasswd_path,
 
 docker run -d -p 127.0.0.1:5000:5000 --restart=always --name registry -v /reg:/var/lib/registry  -v $PWD/config/config.yml:/etc/docker/registry/config.yml registry:2
@@ -79,8 +124,8 @@ docker run -d -p 127.0.0.1:5000:5000 --restart=always --name registry -v /reg:/v
         ]
         systemd.docker_unit_enable(
             self,
-            # Specify pull from docker.io directly
-            image='docker.io/library/registry:2',
+            # Specify pull from docker.io directly to avoid registry not yet running
+            image=_DOCKER_HUB_HOST + '/library/registry:2',
             env=pkcollections.Dict(),
             cmd='',
             after=['docker.service'],

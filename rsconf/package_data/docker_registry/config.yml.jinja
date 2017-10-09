@@ -14,6 +14,7 @@ storage:
     rootdirectory: {{ docker_registry_db_d }}
     maxthreads: 20
   delete:
+    # required for proxy (pull through cache)
     enabled: true
 auth:
   htpasswd:
@@ -29,5 +30,6 @@ http:
   headers:
     X-Content-Type-Options: [nosniff]
 proxy:
+  # Only pull public images
   remoteurl: https://registry-1.docker.io
 # Consider validation

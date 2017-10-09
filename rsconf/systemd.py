@@ -19,6 +19,8 @@ _SYSTEMD_DIR = pkio.py_path('/etc/systemd/system')
 
 def docker_unit_enable(compt, image, env, cmd, volumes=None, after=None, run_u=None):
     """Must be last call"""
+    from rsconf.component import docker_registry
+
     j2_ctx = pkcollections.Dict(compt.hdb)
     v = pkcollections.Dict(compt.systemd)
     if 'TZ' not in env:
@@ -27,6 +29,7 @@ def docker_unit_enable(compt, image, env, cmd, volumes=None, after=None, run_u=N
         env['TZ'] = ':/etc/localtime'
     if not ':' in image:
         image += ':' + j2_ctx.rsconf_db_channel
+    image = docker_registry.prefix_image(compt.hdb, image)
     v.update(
         after=' '.join(after or []),
         service_exec=cmd,
