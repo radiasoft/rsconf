@@ -9,6 +9,10 @@ from pykern import pkcollections
 from pykern import pkconfig
 from pykern import pkio
 from pykern.pkdebug import pkdc, pkdp
+import string
+import random
+
+
 
 VISIBILITY_LIST = ('global', 'channel', 'host')
 VISIBILITY_DEFAULT = VISIBILITY_LIST[1]
@@ -21,7 +25,8 @@ _SECRET_SUBDIR = 'secret'
 _NGINX_SUBDIR = 'nginx'
 _HOST_SUBDIR = 'host'
 _LEVELS = ('default', 'channel', 'host')
-
+# Passwords are long so keep them simple
+_PASSWORD_CHARS = string.digits + string.letters
 
 class T(pkcollections.Dict):
 
@@ -82,6 +87,10 @@ class T(pkcollections.Dict):
         return res
 
 
+def gen_password(length=32):
+    return ''.join(random.choice(_PASSWORD_CHARS) for _ in range(length))
+
+
 def secret_path(hdb, filename, visibility=None):
     if visibility:
         assert visibility in VISIBILITY_LIST, \
@@ -128,7 +137,8 @@ def _cfg_root(value):
 
 
 #TODO(robnagler) needs to moved
-def _add_host(channel, host, passwd_file):
+def _add_host(j2_ctx, channel, host, passwd_file):
+    from rsconf.component import docker_registry
     import subprocess
     p = subprocess.Popen(
         ['openssl', 'passwd', '-stdin', '-apr1'],
@@ -140,6 +150,7 @@ def _add_host(channel, host, passwd_file):
     out, err = p.communicate(input=pw)
     with open(passwd_file, 'a') as f:
         f.write('{}:{}\n'.format(host, out.rstrip()))
+    docker_registry.add_host(hdb, host)
     return pw
 
 
@@ -179,7 +190,7 @@ def _setup_dev(root):
         master='v5.bivio.biz',
         passwd_file=secret_path(boot_hdb, 'nginx-passwd', visibility='channel')
     )
-    j2_ctx.passwd = _add_host(j2_ctx.channel, j2_ctx.host, j2_ctx.passwd_file)
+    j2_ctx.passwd = _add_host(j2_ctx, j2_ctx.channel, j2_ctx.host, j2_ctx.passwd_file)
     _sym('~/src/radiasoft/download/bin/install.sh', 'index.html')
     _sym(pkresource.filename('rsconf.sh'), 'rsconf.sh')
     dev_root = pkio.py_path(pkresource.filename('dev'))
