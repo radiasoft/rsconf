@@ -47,6 +47,7 @@ class T(component.T):
         )
         # Must be after everything else
         docker_registry.install_crt_and_login(compt, j2_ctx)
+thin pool creation one command, fixed size unless dev
         #TODO(robnagler) add live-restore?
         # live restore: https://docs.docker.com/engine/admin/live-restore
         # "live-restore": true,

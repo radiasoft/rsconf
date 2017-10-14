@@ -179,6 +179,8 @@ def _setup_dev(root):
             '{}: does not exist'.format(old)
         srv.join(new_base).mksymlinkto(old, absolute=False)
 
+    # ssh-keygen -q -N '' -C rsconf -t rsa -b 4096 -f /var/tmp/foo
+    # -- don't need this
     secret_d = pkio.mkdir_parent(root.join(_SECRET_SUBDIR))
     nginx_d = pkio.mkdir_parent(root.join(_NGINX_SUBDIR))
     boot_hdb = pkcollections.Dict(rsconf_db_secret_d=secret_d, rsconf_db_channel='dev')

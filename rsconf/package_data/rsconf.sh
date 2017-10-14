@@ -14,6 +14,10 @@ rsconf_edit() {
     local file=$1
     local grep=$2
     local perl=$3
+    if [[ ! -e $file ]]; then
+        # file doesn't exist so ok
+        return 1
+    fi
     local need=
     if [[ $grep =~ ^![[:space:]]*(.+) ]]; then
         need=1

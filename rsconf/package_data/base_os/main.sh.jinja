@@ -9,6 +9,13 @@ base_os_chrony() {
     systemctl disable chronyd
 }
 
+base_os_iptables() {
+    # Turn off the firewalld, we use iptables directly
+    systemctl stop firewalld >& /dev/null || true
+    systemctl disable firewalld >& /dev/null || true
+    perl /etc/rsconf/iptables.PL -automatic
+}
+
 base_os_main() {
     rsconf_radia_run_as_user root redhat-base
     local i=$(sysctl -n net.ipv6.conf.all.disable_ipv6)
@@ -44,6 +51,7 @@ base_os_main() {
         reboot=1
     fi
     base_os_chrony
+    ###base_os_iptables
     if [[ -n $reboot ]]; then
         rsconf_reboot
     fi

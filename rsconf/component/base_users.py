@@ -14,6 +14,9 @@ class T(component.T):
         self.append_root_bash(
             'rsconf_radia_run_as_user {} home'.format(self.hdb.rsconf_db_root_u))
         self.install_access(mode='400', owner=self.hdb.rsconf_db_root_u)
+        # useradd -u 1000 -g vagrant -d /var/lib/vagrant vagrant
+
+        # create vagrant with home /var/lib/vagrant for centos
         self.install_resource(
             'base_users/root_post_bivio_bashrc',
             {},

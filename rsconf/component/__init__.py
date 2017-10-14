@@ -97,7 +97,7 @@ class T(pkcollections.Dict):
         src.copy(dst, mode=True)
 
     def install_tls_key_and_crt(self, domain, dst_d):
-        kc = tls_key_and_crt(hdb, domain)
+        kc = tls_key_and_crt(self.hdb, domain)
         dst = pkcollections.Dict(
             key=dst_d.join(kc.key.basename),
             crt=dst_d.join(kc.crt.basename),
