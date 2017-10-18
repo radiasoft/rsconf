@@ -34,7 +34,7 @@ base_os_journal_persist() {
         return
     fi
     rsconf_install_access 700 root root
-    rsconf_install_file "$d"
+    rsconf_install_directory "$d"
     systemd-tmpfiles --create --prefix "$d"
     systemctl restart systemd-journald
 }
