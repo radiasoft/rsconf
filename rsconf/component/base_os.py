@@ -27,6 +27,11 @@ disk partitioning. may need to remove extra lv because have to add to create cen
             j2_ctx,
             'base_os_main',
         )
+*** /etc/machine-id
+
+rjn: i don't think this is an issue, but it is related to journalctl
+
+https://unix.stackexchange.com/questions/191313/why-is-my-systemd-journal-not-persistent-across-reboots/191373#191373
 
 
 '''
