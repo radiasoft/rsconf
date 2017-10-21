@@ -25,6 +25,7 @@ base_os_iptables() {
     yum install -y iptables-services >& /dev/null || true
     systemctl enable iptables
     systemctl start iptables
+    # /usr/libexec/iptables/iptables.init save
 }
 
 base_os_journal_persist() {
