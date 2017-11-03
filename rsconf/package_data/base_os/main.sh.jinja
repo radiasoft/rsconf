@@ -14,6 +14,11 @@ base_os_chrony() {
     systemctl disable chronyd
 }
 
+# https://www.freedesktop.org/wiki/Software/systemd/NetworkTarget/
+##### ??? systemctl enable NetworkManager-wait-online.service
+
+
+
 base_os_iptables() {
     if [[ $(systemctl is-active iptables 2>&1 || true) == active ]]; then
         # Just in case, make sure enabled
@@ -80,4 +85,5 @@ base_os_main() {
     if [[ -n $reboot ]]; then
         rsconf_reboot
     fi
+    rsconf_edit /etc/screenrc 'escape ^^^^' || true
 }

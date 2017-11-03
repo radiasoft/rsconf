@@ -18,19 +18,27 @@ rsconf_edit() {
         # file doesn't exist so ok
         return 1
     fi
-    local need=
-    if [[ $grep =~ ^![[:space:]]*(.+) ]]; then
-        need=1
-        grep=${BASH_REMATCH[1]}
-    fi
-    local g=$( set +e; grep -s -q "$grep" "$file" && echo 1 )
-    if [[ $g != $need ]]; then
-        return 1
-    fi
-    perl -pi -e "$perl" "$file"
-    g=$( set +e; grep -s -q "$grep" "$file" && echo 1 )
-    if [[ $g == $need ]]; then
-        install_err "$perl: failed to modify: $file"
+    # No $perl ($3) means append exactly this line
+    if [[ -z $perl ]]; then
+        if fgrep -s -q -x "$grep" "$file"; then
+            return 1
+        fi
+        echo "$grep" >> "$file"
+    else
+        local need=
+        if [[ $grep =~ ^![[:space:]]*(.+) ]]; then
+            need=1
+            grep=${BASH_REMATCH[1]}
+        fi
+        local g=$( set +e; grep -s -q "$grep" "$file" && echo 1 )
+        if [[ $g != $need ]]; then
+            return 1
+        fi
+        perl -pi -e "$perl" "$file"
+        g=$( set +e; grep -s -q "$grep" "$file" && echo 1 )
+        if [[ $g == $need ]]; then
+            install_err "$perl: failed to modify: $file"
+        fi
     fi
     rsconf_service_file_check "$file"
     return 0
