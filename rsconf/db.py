@@ -107,68 +107,16 @@ def secret_path(hdb, filename, visibility=None):
     return res
 
 
-@pkconfig.parse_none
-def _cfg_root(value):
-    """Parse root directory"""
-    #TODO(robnagler) encapsulate this sirepo.server is the same thing
-    from pykern import pkio, pkinspect
-    import os, sys
-
-    if value:
-        assert os.path.isabs(value), \
-            '{}: must be absolute'.format(value)
-        value = pkio.py_path(value)
-        assert value.check(dir=1), \
-            '{}: must be a directory and exist'.format(value)
-    else:
-        assert pkconfig.channel_in('dev'), \
-            'must be configured except in DEV'
-        fn = pkio.py_path(sys.modules[pkinspect.root_package(_cfg_root)].__file__)
-        root = pkio.py_path(pkio.py_path(fn.dirname).dirname)
-        # Check to see if we are in our ~/src/radiasoft/<pkg> dir. This is a hack,
-        # but should be reliable.
-        if not root.join('requirements.txt').check():
-            # Don't run from an install directory
-            root = pkio.py_path('.')
-        value = root.join(_DEFAULT_DB_SUBDIR)
-        if not value.check(dir=True):
-            _setup_dev(value)
-    return value
-
-
-#TODO(robnagler) needs to moved
-def _add_host(j2_ctx, channel, host, passwd_file):
-    from rsconf.component import docker_registry
-    import subprocess
-    p = subprocess.Popen(
-        ['openssl', 'passwd', '-stdin', '-apr1'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        stdin=subprocess.PIPE,
-    )
-    pw = _gen_password()
-    out, err = p.communicate(input=pw)
-    with open(passwd_file, 'a') as f:
-        f.write('{}:{}\n'.format(host, out.rstrip()))
-    docker_registry.add_host(hdb, host)
-    return pw
-
-
-def _gen_password():
-    import random
-    import string
-
-    chars = string.ascii_lowercase + string.digits + string.ascii_uppercase
-    return ''.join(random.choice(chars) for _ in range(32))
-
-
 #TODO(robnagler) happen in a pkcli
-def _setup_dev(root):
+def setup_dev():
     from pykern import pkresource
     from pykern import pkio
     from pykern import pkjinja
     import re
 
+    root = cfg.root_dir
+    if root.check():
+        return
     srv = pkio.mkdir_parent(root.join(_SRV_SUBDIR))
 
     def _sym(old, new_base=None):
@@ -192,6 +140,7 @@ def _setup_dev(root):
         master='v5.bivio.biz',
         passwd_file=secret_path(boot_hdb, 'nginx-passwd', visibility='channel')
     )
+    j2_ctx.update(boot_hdb)
     j2_ctx.passwd = _add_host(j2_ctx, j2_ctx.channel, j2_ctx.host, j2_ctx.passwd_file)
     _sym('~/src/radiasoft/download/bin/install.sh', 'index.html')
     _sym(pkresource.filename('rsconf.sh'), 'rsconf.sh')
@@ -211,6 +160,59 @@ def _setup_dev(root):
     _sym(netrc)
     _sym('~/src/radiasoft')
     _sym('~/src/biviosoftware')
+
+
+#TODO(robnagler) needs to moved
+def _add_host(j2_ctx, channel, host, passwd_file):
+    from rsconf.component import docker_registry
+    import subprocess
+    p = subprocess.Popen(
+        ['openssl', 'passwd', '-stdin', '-apr1'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        stdin=subprocess.PIPE,
+    )
+    pw = _gen_password()
+    out, err = p.communicate(input=pw)
+    with open(str(passwd_file), 'a') as f:
+        f.write('{}:{}\n'.format(host, out.rstrip()))
+    docker_registry.add_host(j2_ctx, host)
+    return pw
+
+
+@pkconfig.parse_none
+def _cfg_root(value):
+    """Parse root directory"""
+    #TODO(robnagler) encapsulate this sirepo.server is the same thing
+    from pykern import pkio, pkinspect
+    import os, sys
+
+    if value:
+        assert os.path.isabs(value), \
+            '{}: must be absolute'.format(value)
+        value = pkio.py_path(value)
+        assert value.check(dir=1), \
+            '{}: must be a directory and exist'.format(value)
+    else:
+        assert pkconfig.channel_in('dev'), \
+            'must be configured except in DEV'
+        fn = pkio.py_path(sys.modules[pkinspect.root_package(_cfg_root)].__file__)
+        root = pkio.py_path(pkio.py_path(fn.dirname).dirname)
+        # Check to see if we are in our ~/src/radiasoft/<pkg> dir. This is a hack,
+        # but should be reliable.
+        if not root.join('setup.py').check():
+            # Don't run from an install directorya
+            root = pkio.py_path('.')
+        value = root.join(_DEFAULT_DB_SUBDIR)
+    return value
+
+
+def _gen_password():
+    import random
+    import string
+
+    chars = string.ascii_lowercase + string.digits + string.ascii_uppercase
+    return ''.join(random.choice(chars) for _ in range(32))
 
 
 cfg = pkconfig.init(

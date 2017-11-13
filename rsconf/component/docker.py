@@ -29,6 +29,7 @@ class T(component.T):
             ),
         )
         j2_ctx = pkcollections.Dict(self.hdb)
+        docker_registry.update_j2_ctx(j2_ctx)
         j2_ctx.update(
             docker_volume_group='docker',
         )
@@ -46,8 +47,8 @@ class T(component.T):
             'docker_main',
         )
         # Must be after everything else
-        docker_registry.install_crt_and_login(compt, j2_ctx)
-thin pool creation one command, fixed size unless dev
+        docker_registry.install_crt_and_login(self, j2_ctx)
+        #TODO(robnagler) thin pool creation one command, fixed size unless dev
         #TODO(robnagler) add live-restore?
         # live restore: https://docs.docker.com/engine/admin/live-restore
         # "live-restore": true,

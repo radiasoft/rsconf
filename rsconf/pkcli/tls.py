@@ -52,7 +52,7 @@ CN = {}""".format(alt, first)
     pkio.write_text(cfg, c)
     crt = basename + CRT_EXT
     key = basename + KEY_EXT
-    subprocess.check_call([
+    subprocess.check_output([
         'openssl',
         'req',
         '-x509',
@@ -70,7 +70,7 @@ CN = {}""".format(alt, first)
         str(crt),
         '-config',
         str(cfg),
-    ])
+    ], stderr=subprocess.STDOUT)
     cfg.remove(ignore_errors=True)
     return dict(crt=crt, key=key)
 

@@ -29,7 +29,7 @@ def docker_unit_enable(compt, image, env, cmd, volumes=None, after=None, run_u=N
         env['TZ'] = ':/etc/localtime'
     if not ':' in image:
         image += ':' + j2_ctx.rsconf_db_channel
-    image = docker_registry.prefix_image(compt.hdb, image)
+    image = docker_registry.prefix_image(j2_ctx, image)
     v.update(
         after=' '.join(after or []),
         service_exec=cmd,
@@ -99,6 +99,6 @@ def unit_prepare(compt, *watch_files):
     )
 
 def _vol_arg(vol):
-    if isinstance(vol, type.StringTypes):
+    if not isinstance(vol, (tuple, list)):
         vol = (vol, vol)
     return '{}:{}'.format(*vol)

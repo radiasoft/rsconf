@@ -52,7 +52,7 @@ class T(pkcollections.Dict):
 
     def install_abspath(self, abs_path, host_path):
         dst = self._bash_append_and_dst(host_path)
-        abspath.copy(dst, mode=True)
+        abs_path.copy(dst, mode=True)
 
     def install_access(self, mode=None, owner=None, group=None):
         if not mode is None:
@@ -146,15 +146,15 @@ def tls_key_and_crt(hdb, domain):
     #TODO(robnagler) wildcard: search for name if single domain, then
     #  wildcard file
     #TODO(robnagler) search for MDC
-    base = domains[0]
+    base = domain
     src = db.secret_path(hdb, base, visibility='global')
     src_key = src + tls.KEY_EXT
-    src_crt = src + tsl.CRT_EXT
+    src_crt = src + tls.CRT_EXT
     if not src_crt.check():
         assert pkconfig.channel_in_internal_test(channel=hdb.rsconf_db_channel), \
-            '{}: missing crt for: {}'.format(src_crt, domains)
+            '{}: missing crt for: {}'.format(src_crt, domain)
         pkio.mkdir_parent_only(src_crt)
-        tls.gen_self_signed_crt(src, *domains)
+        tls.gen_self_signed_crt(src, domain)
     assert src_key.check(), \
-        '{}: missing key for: {}'.format(src_key, domains)
+        '{}: missing key for: {}'.format(src_key, domain)
     return pkcollections.Dict(key=src_key, crt=src_crt)

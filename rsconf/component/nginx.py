@@ -32,11 +32,7 @@ def install_vhost(compt):
         nginx_default_root=_DEFAULT_ROOT,
     )
     compt.install_access(mode='400', owner=compt.hdb.rsconf_db_root_u)
-    tls = component.tls_key_and_crt(
-        compt.hdb,
-        compt.hdb[compt.name + '_nginx_vhost'],
-    )
-    kc = compt.install_tls_key_and_crt(tls, _CONF_D)
+    kc = compt.install_tls_key_and_crt(compt.hdb[compt.name + '_nginx_vhost'], _CONF_D)
     j2_ctx.nginx_tls_crt = kc.crt
     j2_ctx.nginx_tls_key = kc.key
     compt.install_resource(
