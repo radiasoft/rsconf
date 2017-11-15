@@ -5,14 +5,17 @@ u"""create sirepo configuration
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
-from rsconf import component
-from rsconf import systemd
 from pykern import pkcollections
+from rsconf import component
+from rsconf import db
+from rsconf import systemd
+
 
 _DB_SUBDIR = 'db'
 #TODO(robnagler) import from sirepo directly
 _USER_SUBDIR = 'user'
 _BEAKER_SECRET_BASE = 'sirepo_beaker_secret'
+
 
 def user_d(hdb):
     return systemd.docker_unit_run_d(hdb, 'sirepo').join(_DB_SUBDIR, _USER_SUBDIR)
@@ -63,7 +66,7 @@ class T(component.T):
         self.install_secret_path(
             _BEAKER_SECRET_BASE,
             host_path=beaker_secret_f,
-            gen_secret=self._gen_beaker_secret,
+            gen_secret=lambda p: db.random_string(path=p, length=64),
         )
         nginx.install_vhost(self)
 

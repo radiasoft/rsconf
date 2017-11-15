@@ -87,13 +87,8 @@ class T(pkcollections.Dict):
     def install_secret_path(self, filename, host_path, gen_secret=None, visibility=None):
         from rsconf import db
 
+        src = self.secret_path_value(filename, gen_secret, visibility)[1]
         dst = self._bash_append_and_dst(host_path)
-        src = db.secret_path(self.hdb, filename, visibility=visibility)
-        if not src.check():
-            assert gen_secret, \
-                '{}: unable to generate secret: {}'.format(src, host_path)
-            pkio.mkdir_parent_only(src)
-            gen_secret(src)
         src.copy(dst, mode=True)
 
     def install_tls_key_and_crt(self, domain, dst_d):
@@ -106,7 +101,17 @@ class T(pkcollections.Dict):
         self.install_abspath(kc.crt, dst.crt)
         return dst
 
+    def secret_path_value(self, filename, gen_secret=None, visibility=None):
+        from rsconf import db
 
+        src = db.secret_path(self.hdb, filename, visibility=visibility)
+        if not src.check():
+            assert gen_secret, \
+                '{}: unable to generate secret: {}'.format(src)
+            pkio.mkdir_parent_only(src)
+            gen_secret(src)
+        with open(str(src), 'rb') as f:
+            return f.read(), src
 
     def _bash_append(self, host_path, is_file=True):
         assert not "'" in str(host_path), \

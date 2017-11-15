@@ -24,7 +24,9 @@ _ROOT_CONFIG_JSON = pkio.py_path('/root/.docker/config.json')
 _DOCKER_HUB_HOST = 'docker.io'
 _PASSWD_SECRET_YAML_F = 'docker_registry_passwd.yml'
 _PASSWD_SECRET_F = 'docker_registry_passwd'
+_HTTP_SECRET_F = 'docker_registry_http_secret'
 _PASSWD_VISIBILITY = 'channel'
+_HTTP_SECRET_VISIBILITY = _PASSWD_VISIBILITY
 
 #TODO(robnagler) how to clean registry?
 
@@ -36,12 +38,12 @@ def add_host(hdb, host):
         y = pkcollections.Dict()
     assert not host in y, \
         '{}: host already exists'
-    y[host] = db.gen_password()
+    y[host] = db.random_string()
     with open(str(yf), 'w') as f:
         yaml.dump(y, f)
     pf = db.secret_path(hdb, _PASSWD_SECRET_F, visibility=_PASSWD_VISIBILITY)
     with open(str(pf), 'a') as f:
-        f.write('{}:{}'.format(host, bcrypt.hashpw(y[host], bcrypt.gensalt(5))))
+        f.write('{}:{}\n'.format(host, bcrypt.hashpw(y[host], bcrypt.gensalt(5))))
 
 
 def install_crt_and_login(compt, j2_ctx):
@@ -51,6 +53,17 @@ def install_crt_and_login(compt, j2_ctx):
     compt.install_directory(_CERTS_D)
     d = _CERTS_D.join(j2_ctx.docker_registry_http_addr)
     compt.install_directory(d)
+
++++ rsconf_service_watch[$w]=docker_registry
++++ rsconf_install_file /var/lib/docker_registry/v5.bivio.biz.key
++++ local path=/var/lib/docker_registry/v5.bivio.biz.key
++++ local tmp
++++ [[ -d /var/lib/docker_registry/v5.bivio.biz.key ]]
++++ tmp=/var/lib/docker_registry/v5.bivio.biz.key-rsconf-tmp
++++ install_download /var/lib/docker_registry/v5.bivio.biz.key
+/var/tmp/radia-run-19988-7514/20171115004227-rsconf.sh: line 108: /var/lib/docker_registry/v5.bivio.biz.key-rsconf-tmp: No such file or directory
+
+
     crt = component.tls_key_and_crt(j2_ctx, j2_ctx.docker_registry_host).crt
     compt.install_access(mode='400', owner=j2_ctx.docker_registry_run_u)
     compt.install_abspath(crt, d.join('ca.crt'))
@@ -89,6 +102,8 @@ def update_j2_ctx(j2_ctx):
 class T(component.T):
 
     def internal_build(self):
+        from rsconf import systemd
+
         # https://docs.docker.com/registry/configuration/
         self.buildt.require_component('docker')
         run_d = systemd.docker_unit_prepare(self)
@@ -104,7 +119,17 @@ class T(component.T):
             docker_registry_http_tls_certificate=kc.crt,
             docker_registry_http_tls_key=kc.key,
         )
-        self.install_secret_path(_PASSWD_SECRET_F, visibility=_PASSWD_VISIBILITY)
+        j2_ctx.docker_registry_http_secret = self.secret_path_value(
+            _HTTP_SECRET_F,
+            lambda x: db.random_string(x, length=64),
+            visibility=_HTTP_SECRET_VISIBILITY,
+        )[0]
+        self.install_secret_path(
+            _PASSWD_SECRET_F,
+            j2_ctx.docker_registry_auth_htpasswd_path,
+            gen_secret=db.random_string,
+            visibility=_PASSWD_VISIBILITY,
+        )
         volumes = [
             [conf_f, _GLOBAL_CONF],
         ]

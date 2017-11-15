@@ -6,7 +6,7 @@ default:
     iptables: true
   docker_registry:
     host: {{ master }}
-    port: {{ port }}
+    port: {{ docker_registry_port }}
   celery_sirepo:
     queues: "sequential,parallel"
   nginx:
@@ -39,3 +39,5 @@ host:
   {{ channel }}:
     {{ host }}:
       rsconf_db_components: [ sirepo ]
+    {{ master }}:
+      rsconf_db_components: [ docker_registry ]

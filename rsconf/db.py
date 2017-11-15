@@ -25,8 +25,8 @@ _SECRET_SUBDIR = 'secret'
 _NGINX_SUBDIR = 'nginx'
 _HOST_SUBDIR = 'host'
 _LEVELS = ('default', 'channel', 'host')
-# Passwords are long so keep them simple
-_PASSWORD_CHARS = string.digits + string.letters
+# Secrets are long so keep them simple
+_RANDOM_STRING = string.ascii_letters + string.digits
 
 class T(pkcollections.Dict):
 
@@ -87,10 +87,6 @@ class T(pkcollections.Dict):
         return res
 
 
-def gen_password(length=32):
-    return ''.join(random.choice(_PASSWORD_CHARS) for _ in range(length))
-
-
 def secret_path(hdb, filename, visibility=None):
     if visibility:
         assert visibility in VISIBILITY_LIST, \
@@ -104,6 +100,18 @@ def secret_path(hdb, filename, visibility=None):
     p.append(filename)
     res = hdb.rsconf_db_secret_d.join(*p)
     pkio.mkdir_parent_only(res)
+    return res
+
+
+def random_string(path=None, length=32):
+    import random
+    import string
+
+    chars = string.ascii_lowercase + string.digits + string.ascii_uppercase
+    res = ''.join(random.choice(chars) for _ in range(length))
+    if path:
+        with open(str(path), 'wb') as f:
+            f.write(res)
     return res
 
 
@@ -138,14 +146,16 @@ def setup_dev():
         host='v4.bivio.biz',
         channel='dev',
         master='v5.bivio.biz',
+        docker_registry_port=8002,
         passwd_file=secret_path(boot_hdb, 'nginx-passwd', visibility='channel')
     )
     j2_ctx.update(boot_hdb)
-    j2_ctx.passwd = _add_host(j2_ctx, j2_ctx.channel, j2_ctx.host, j2_ctx.passwd_file)
+    pw = {}
+    for h in j2_ctx.host, j2_ctx.master:
+        pw[h] = _add_host(j2_ctx, j2_ctx.channel, h, j2_ctx.passwd_file)
     _sym('~/src/radiasoft/download/bin/install.sh', 'index.html')
     _sym(pkresource.filename('rsconf.sh'), 'rsconf.sh')
     dev_root = pkio.py_path(pkresource.filename('dev'))
-    netrc = None
     for f in pkio.walk_tree(dev_root):
         # TODO(robnagler) ignore backup files
         if str(f).endswith('~') or str(f).startswith('#'):
@@ -153,11 +163,17 @@ def setup_dev():
         x = f.relto(dev_root)
         dst = root.join(re.sub('.jinja$', '', x))
         pkio.mkdir_parent_only(dst)
-        pkjinja.render_file(f, j2_ctx, output=dst, strict_undefined=True)
-        if 'dev-netrc' in str(dst):
-            netrc = dst
+        if not dst.basename.startswith('host-'):
+            pkjinja.render_file(f, j2_ctx, output=dst, strict_undefined=True)
+            continue
+        for h, p in pw.iteritems():
+            d = pkio.py_path(dst.dirname).join(dst.basename.replace('host', h))
+            j2_ctx.passwd = p
+            j2_ctx.host = h
+            pkjinja.render_file(f, j2_ctx, output=d, strict_undefined=True)
+            _sym(d)
+
     # dev only, really insecure, but makes consistent builds easy
-    _sym(netrc)
     _sym('~/src/radiasoft')
     _sym('~/src/biviosoftware')
 
@@ -172,7 +188,7 @@ def _add_host(j2_ctx, channel, host, passwd_file):
         stderr=subprocess.PIPE,
         stdin=subprocess.PIPE,
     )
-    pw = _gen_password()
+    pw = random_string()
     out, err = p.communicate(input=pw)
     with open(str(passwd_file), 'a') as f:
         f.write('{}:{}\n'.format(host, out.rstrip()))
@@ -205,14 +221,6 @@ def _cfg_root(value):
             root = pkio.py_path('.')
         value = root.join(_DEFAULT_DB_SUBDIR)
     return value
-
-
-def _gen_password():
-    import random
-    import string
-
-    chars = string.ascii_lowercase + string.digits + string.ascii_uppercase
-    return ''.join(random.choice(chars) for _ in range(32))
 
 
 cfg = pkconfig.init(
