@@ -53,17 +53,6 @@ def install_crt_and_login(compt, j2_ctx):
     compt.install_directory(_CERTS_D)
     d = _CERTS_D.join(j2_ctx.docker_registry_http_addr)
     compt.install_directory(d)
-
-+++ rsconf_service_watch[$w]=docker_registry
-+++ rsconf_install_file /var/lib/docker_registry/v5.bivio.biz.key
-+++ local path=/var/lib/docker_registry/v5.bivio.biz.key
-+++ local tmp
-+++ [[ -d /var/lib/docker_registry/v5.bivio.biz.key ]]
-+++ tmp=/var/lib/docker_registry/v5.bivio.biz.key-rsconf-tmp
-+++ install_download /var/lib/docker_registry/v5.bivio.biz.key
-/var/tmp/radia-run-19988-7514/20171115004227-rsconf.sh: line 108: /var/lib/docker_registry/v5.bivio.biz.key-rsconf-tmp: No such file or directory
-
-
     crt = component.tls_key_and_crt(j2_ctx, j2_ctx.docker_registry_host).crt
     compt.install_access(mode='400', owner=j2_ctx.docker_registry_run_u)
     compt.install_abspath(crt, d.join('ca.crt'))
@@ -109,9 +98,22 @@ class T(component.T):
         run_d = systemd.docker_unit_prepare(self)
         j2_ctx = pkcollections.Dict(self.hdb)
         update_j2_ctx(j2_ctx)
+        conf_f = run_d.join('config.yml')
+        volumes = [
+            [conf_f, _GLOBAL_CONF],
+        ]
+        systemd.docker_unit_enable(
+            self,
+            # Specify pull from docker.io directly to avoid registry not yet running
+            image=_DOCKER_HUB_HOST + '/library/registry:2',
+            env=pkcollections.Dict(),
+            cmd=None,
+            after=['docker.service'],
+            run_u=j2_ctx.docker_registry_run_u,
+            volumes=volumes,
+        )
         kc = self.install_tls_key_and_crt(j2_ctx.docker_registry_host, run_d)
         db_d = run_d.join(_DB_SUBDIR)
-        conf_f = run_d.join('config.yml')
         j2_ctx.update(
             docker_registry_auth_htpasswd_path=run_d.join('passwd'),
             docker_registry_conf_f=conf_f,
@@ -129,18 +131,6 @@ class T(component.T):
             j2_ctx.docker_registry_auth_htpasswd_path,
             gen_secret=db.random_string,
             visibility=_PASSWD_VISIBILITY,
-        )
-        volumes = [
-            [conf_f, _GLOBAL_CONF],
-        ]
-        systemd.docker_unit_enable(
-            self,
-            # Specify pull from docker.io directly to avoid registry not yet running
-            image=_DOCKER_HUB_HOST + '/library/registry:2',
-            env=pkcollections.Dict(),
-            cmd='',
-            after=['docker.service'],
-            run_u=j2_ctx.docker_registry_run_u,
         )
         self.install_access(mode='700', owner=j2_ctx.docker_registry_run_u)
         self.install_directory(db_d)

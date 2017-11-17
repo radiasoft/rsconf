@@ -123,8 +123,12 @@ rsconf_install_file() {
 
 rsconf_main() {
     local host=${1:-$(hostname -f)}
+    local setup_dev=$2
     if [[ $host =~ / ]]; then
         install_err "$host: invalid host name"
+    fi
+    if [[ $setup_dev == setup_dev ]]; then
+        rsconf_setup_dev "$host"
     fi
     install_curl_flags+=( -n )
     install_url host/$host
@@ -230,6 +234,13 @@ rsconf_service_restart() {
         fi
         systemctl enable "$s"
     done
+}
+
+rsconf_setup_dev() {
+    local host=$1
+    export install_channel=dev
+    curl "$install_server/$host-netrc" > /root/.netrc
+    chmod 400 /root/.netrc
 }
 
 rsconf_yum_install() {

@@ -3,10 +3,14 @@
 # Usage: run [bash -l]
 #
 set -euo pipefail
-cmd=( {{ systemd_cmd }} )
+# Needed to allow for empty commands (e.g. docker_registry), bash will complain
+# if an variable is empty as unbound (set -u above)
+image_cmd=( '{{ systemd_image }}' )
 flags='--name {{ systemd_service_name }} '
 if (( $# > 0 )); then
     flags='-i '
-    cmd=( $@ )
+    image_cmd+=( $@ )
+else
+    image_cmd+=( {{ systemd_cmd }} )
 fi
-exec docker run $flags --tty --rm --user={{ systemd_run_u }} --net host {{ systemd_volumes }} {{ systemd_image }} "${cmd[@]}"
+exec docker run $flags --tty --rm --user={{ systemd_run_u }} --net host {{ systemd_volumes }} "${image_cmd[@]}"

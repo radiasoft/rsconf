@@ -146,7 +146,8 @@ def setup_dev():
         host='v4.bivio.biz',
         channel='dev',
         master='v5.bivio.biz',
-        docker_registry_port=8002,
+        # You can't change this
+        docker_registry_port=5000,
         passwd_file=secret_path(boot_hdb, 'nginx-passwd', visibility='channel')
     )
     j2_ctx.update(boot_hdb)

@@ -48,9 +48,12 @@ def docker_unit_enable(compt, image, env, cmd, volumes=None, after=None, run_u=N
     compt.install_access(mode='500')
     for s in scripts:
         v[s] = v.run_d.join(s)
+    if not cmd:
+        v.cmd = ''
     pkconfig.flatten_values(j2_ctx, pkcollections.Dict(systemd=v))
     for s in scripts:
-        compt.install_resource('systemd/' + s, j2_ctx, v[s])
+        if v[s]:
+            compt.install_resource('systemd/' + s, j2_ctx, v[s])
     # See Poettering's omniscience about what's good for all of us here:
     # https://github.com/systemd/systemd/issues/770
     # These files should be 400, since there's no value in making them public.
