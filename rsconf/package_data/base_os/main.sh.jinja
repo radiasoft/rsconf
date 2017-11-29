@@ -48,6 +48,9 @@ base_os_journal_persist() {
 base_os_main() {
     rsconf_radia_run_as_user root redhat-base
     local i=$(sysctl -n net.ipv6.conf.all.disable_ipv6)
+    if [[ -z $i ]]; then
+        install_err 'systctl net.ipv6.conf.all.disable_ipv6: failed'
+    fi
     local reboot=
     rsconf_install_access 400 root root
     rsconf_install_file /etc/sysctl.d/60-rsconf-base.conf

@@ -146,6 +146,7 @@ def setup_dev():
         host='v4.bivio.biz',
         channel='dev',
         master='v5.bivio.biz',
+        master_ip='10.10.10.50',
         # You can't change this
         docker_registry_port=5000,
         passwd_file=secret_path(boot_hdb, 'nginx-passwd', visibility='channel')

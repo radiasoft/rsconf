@@ -16,29 +16,32 @@ On the master as root:
 
 ```bash
 sudo su -
+host=v5.bivio.biz
 export install_channel=dev install_server=http://v5.bivio.biz:8000
-curl "$install_server/v5.bivio.biz-netrc" > ~/.netrc
+curl "$install_server/$host-netrc" > ~/.netrc
 chmod 400 ~/.netrc
-curl "$install_server" | bash -s rsconf.sh v5.bivio.biz
+curl "$install_server" | bash -s rsconf.sh "$host"
 ```
 
 On the client:
 
 ```bash
-curl radia.run | bash -s vagrant-centos7 v4.bivio.biz 10.10.10.40
+curl radia.run | bash -s vagrant-centos7 "$host" 10.10.10.40
 vssh
 sudo su -
+host=v4.bivio.biz
 export install_channel=dev install_server=http://v5.bivio.biz:8000
-curl "$install_server/v4.bivio.biz-netrc" > ~/.netrc
+curl "$install_server/$host-netrc" > ~/.netrc
 chmod 400 ~/.netrc
-curl "$install_server" | bash -s rsconf.sh v4.bivio.biz
+curl "$install_server" | bash -s rsconf.sh "$host"
 exit
 exit
 vagrant reload
 vssh
 sudo su -
+host=v4.bivio.biz
 export install_channel=dev install_server=http://v5.bivio.biz:8000
-curl "$install_server" | bash -s rsconf.sh v4.bivio.biz
+curl "$install_server" | bash -s rsconf.sh "$host"
 ```
 
 ## License
