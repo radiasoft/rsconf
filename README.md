@@ -18,30 +18,34 @@ On the master as root:
 sudo su -
 host=v5.bivio.biz
 export install_channel=dev install_server=http://v5.bivio.biz:8000
-curl "$install_server/$host-netrc" > ~/.netrc
-chmod 400 ~/.netrc
-curl "$install_server" | bash -s rsconf.sh "$host"
+curl "$install_server" | bash -s rsconf.sh "$host" setup_dev
+exit
+exit
+vagrant reload
+vssh
+# NOTE: restart nginx like above (do not "rsconf build")
+sudo su -
+export install_channel=dev install_server=http://v5.bivio.biz:8000
+curl "$install_server" | bash -s rsconf.sh "$(hostname -f)"
 ```
 
 On the client:
 
 ```bash
+host=v4.bivio.biz
 curl radia.run | bash -s vagrant-centos7 "$host" 10.10.10.40
 vssh
 sudo su -
 host=v4.bivio.biz
 export install_channel=dev install_server=http://v5.bivio.biz:8000
-curl "$install_server/$host-netrc" > ~/.netrc
-chmod 400 ~/.netrc
-curl "$install_server" | bash -s rsconf.sh "$host"
+curl "$install_server" | bash -s rsconf.sh "$host" setup_dev
 exit
 exit
 vagrant reload
 vssh
 sudo su -
-host=v4.bivio.biz
 export install_channel=dev install_server=http://v5.bivio.biz:8000
-curl "$install_server" | bash -s rsconf.sh "$host"
+curl "$install_server" | bash -s rsconf.sh "$(hostname -f)"
 ```
 
 ## License

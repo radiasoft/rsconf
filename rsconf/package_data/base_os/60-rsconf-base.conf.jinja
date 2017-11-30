@@ -24,6 +24,12 @@ net.ipv4.ip_forward = {{ base_os_ip_forward | int }}
 net.ipv4.tcp_syncookies = 1
 net.ipv4.tcp_syncookies = 1
 
+#TODO(robnagler) Not sure if this needs to be here. On one VM, /proc/sys/net/ipv6
+# disappeared completely after boot with new initrd. On another, it didn't.
+# See base_os/main.sh.jinja
+net.ipv6.conf.all.disable_ipv6=1
+net.ipv6.conf.default.disable_ipv6=1
+
 # Useful for postgres, but not totally necessary
 kernel.msgmnb = 65536
 kernel.msgmax = 65536
