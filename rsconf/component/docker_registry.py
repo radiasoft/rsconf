@@ -7,13 +7,12 @@ u"""create base os configuration
 from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
 from pykern import pkio
-from pykern import pkyaml
+from pykern import pkjson
 from pykern.pkdebug import pkdp
 from rsconf import component
 from rsconf import db
 import base64
 import bcrypt
-import yaml
 
 
 _DB_SUBDIR = 'db'
@@ -22,7 +21,7 @@ _CERTS_D = pkio.py_path('/etc/docker/certs.d')
 _GLOBAL_CONF = '/etc/docker/registry/config.yml'
 _ROOT_CONFIG_JSON = pkio.py_path('/root/.docker/config.json')
 _DOCKER_HUB_HOST = 'docker.io'
-_PASSWD_SECRET_YAML_F = 'docker_registry_passwd.yml'
+_PASSWD_SECRET_JSON_F = 'docker_registry_passwd.json'
 _PASSWD_SECRET_F = 'docker_registry_passwd'
 _HTTP_SECRET_F = 'docker_registry_http_secret'
 _PASSWD_VISIBILITY = 'channel'
@@ -31,18 +30,18 @@ _HTTP_SECRET_VISIBILITY = _PASSWD_VISIBILITY
 #TODO(robnagler) how to clean registry?
 
 def add_host(hdb, host):
-    yf = db.secret_path(hdb, _PASSWD_SECRET_YAML_F, visibility=_PASSWD_VISIBILITY)
-    if yf.check():
-        y = pkyaml.load_file(yf)
+    jf = db.secret_path(hdb, _PASSWD_SECRET_JSON_F, visibility=_PASSWD_VISIBILITY)
+    if jf.check():
+        with jf.open() as f:
+            y = pkjson.load_any(f)
     else:
         y = pkcollections.Dict()
     assert not host in y, \
         '{}: host already exists'
     y[host] = db.random_string()
-    with open(str(yf), 'w') as f:
-        yaml.dump(y, f)
+    pkjson.dump_pretty(y, filename=jf)
     pf = db.secret_path(hdb, _PASSWD_SECRET_F, visibility=_PASSWD_VISIBILITY)
-    with open(str(pf), 'a') as f:
+    with pf.open(mode='a') as f:
         f.write('{}:{}\n'.format(host, bcrypt.hashpw(y[host], bcrypt.gensalt(5))))
 
 
@@ -59,8 +58,9 @@ def install_crt_and_login(compt, j2_ctx):
     # Might be needed:
     # cp certs/domain.crt /etc/pki/ca-trust/source/anchors/myregistrydomain.com.crt
     # update-ca-trust
-    yf = db.secret_path(j2_ctx, _PASSWD_SECRET_YAML_F, visibility=_PASSWD_VISIBILITY)
-    y = pkyaml.load_file(yf)
+    jf = db.secret_path(j2_ctx, _PASSWD_SECRET_JSON_F, visibility=_PASSWD_VISIBILITY)
+    with jf.open() as f:
+        y = pkjson.load_any(jf)
     u = j2_ctx.rsconf_db_host
     p = y[u]
     j2_ctx.docker_registry_auth_b64 = base64.b64encode(u + ':' + p)

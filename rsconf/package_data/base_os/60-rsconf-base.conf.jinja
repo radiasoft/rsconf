@@ -24,11 +24,6 @@ net.ipv4.ip_forward = {{ base_os_ip_forward | int }}
 net.ipv4.tcp_syncookies = 1
 net.ipv4.tcp_syncookies = 1
 
-# Need to disable ipv6. Python 3's ssl library seems to want to try ipv6,
-# but we aren't setup for it yet
-net.ipv6.conf.all.disable_ipv6 = 1
-net.ipv6.conf.default.disable_ipv6 = 1
-
 # Useful for postgres, but not totally necessary
 kernel.msgmnb = 65536
 kernel.msgmax = 65536

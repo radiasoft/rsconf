@@ -24,7 +24,7 @@ class T(component.T):
         )
         systemd.docker_unit_enable(
             self,
-            image='radiasoft/rabbitmq',
+            image='docker.io/radiasoft/rabbitmq',
             env=env,
             cmd='/usr/lib/rabbitmq/bin/rabbitmq-server',
             after=['docker.service'],

@@ -54,7 +54,7 @@ class T(component.T):
             env[f.upper()] = _env_value(self.hdb[f])
         systemd.docker_unit_enable(
             self,
-            image='radiasoft/sirepo',
+            image='docker.io/radiasoft/sirepo',
             env=env,
             cmd='sirepo service uwsgi',
             after=['celery_sirepo.service'],
