@@ -1,0 +1,13 @@
+Once on the host, need to:
+
+yum install -y perl-libwww-perl
+cat SendmailHTTP.pm, package main; b-sendmail-http > b-sendmail-http
+install /usr/bin/b-sendmail-http
+postfix modification
+
+spamc copy, pulled from container dynamically?
+spamd is listening on a socket
+postgrey
+
+postgres will need it init
+su - vagrant -c 'bivio sql -force create_test_db'

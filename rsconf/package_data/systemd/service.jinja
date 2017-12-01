@@ -1,8 +1,8 @@
 [Unit]
 Description={{ systemd_service_name }}
 {%- if systemd_after %}
-Requires={{ systemd_after }}
-After={{ systemd_after }}
+Requires=docker.service
+After=docker.service {{ systemd_after }}
 {% endif -%}
 
 [Service]

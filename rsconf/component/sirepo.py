@@ -25,7 +25,7 @@ class T(component.T):
     def internal_build(self):
         from rsconf.component import nginx
 
-        self.buildt.require_component('celery_sirepo', 'nginx')
+        self.buildt.require_component('docker', 'nginx')
         run_d = systemd.docker_unit_prepare(self)
         db_d = run_d.join(_DB_SUBDIR)
         #TODO(robnagler) from sirepo or flask(?)

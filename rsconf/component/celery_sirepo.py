@@ -14,7 +14,7 @@ class T(component.T):
         from rsconf import systemd
         from rsconf.component import sirepo
 
-        self.buildt.require_component('docker', 'rabbitmq')
+        self.buildt.require_component('docker')
         systemd.docker_unit_prepare(self)
         env = pkcollections.Dict(
             PYKERN_PKCONFIG_CHANNEL=self.hdb.rsconf_db_channel,

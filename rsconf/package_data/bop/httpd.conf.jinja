@@ -1,0 +1,97 @@
+# The order of this list matters a bit
+# AddOutputFilterByType
+LoadModule mime_module		modules/mod_mime.so
+# status
+LoadModule status_module		modules/mod_status.so
+# SetHandler
+LoadModule actions_module		modules/mod_actions.so
+# Require host
+LoadModule authz_host_module		modules/mod_authz_host.so
+LoadModule deflate_module		modules/mod_deflate.so
+# RequestHeader
+LoadModule headers_module		modules/mod_headers.so
+# LogFormat
+LoadModule log_config_module		modules/mod_log_config.so
+# PerlModule
+LoadModule perl_module		modules/mod_perl.so
+# RequestReadTimeout
+LoadModule reqtimeout_module		modules/mod_reqtimeout.so
+LoadModule authz_core_module		modules/mod_authz_core.so
+LoadModule mpm_prefork_module		modules/mod_mpm_prefork.so
+# BrowserMatch
+LoadModule setenvif_module		modules/mod_setenvif.so
+# User/Group
+LoadModule unixd_module		modules/mod_unixd.so
+# AddOutputFilterByType
+LoadModule filter_module		modules/mod_filter.so
+
+# {{ port }}
+Listen 8114
+Listen 8115
+
+User vagrant
+Group vagrant
+ServerAdmin root@bivio.biz
+ServerTokens ProductOnly
+
+Timeout 1200
+KeepAlive On
+MaxKeepAliveRequests 10
+KeepAliveTimeout 2
+MinSpareServers 1
+
+# {{ servers }}
+MaxSpareServers 4
+StartServers 4
+MaxClients 4
+MaxRequestsPerChild 120
+LimitRequestBody 240000000
+# https://www.apache.org/security/asf-httpoxy-response.txt
+RequestHeader unset Proxy early
+RequestReadTimeout header=5
+
+ServerRoot /etc/httpd
+PidFile /var/run/httpd.pid
+TypesConfig /etc/mime.types
+UseCanonicalName Off
+LogFormat "%V %h %P %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+CustomLog /var/log/httpd/access_log combined
+ErrorLog /var/log/httpd/error_log
+LogLevel warn
+ExtendedStatus On
+TraceEnable off
+
+AddOutputFilterByType DEFLATE application/json application/xml text/css text/csv text/html text/javascript text/plain
+
+DocumentRoot /var/www/html
+
+<Directory />
+    AllowOverride None
+    Options FollowSymLinks
+</Directory>
+
+PerlWarn on
+PerlModule Apache2::compat
+
+# TODO: Override the translation handler to avoid local file permission checks
+PerlModule Bivio::Ext::ApacheConstants
+PerlModule Bivio::Agent::HTTP::Dispatcher
+
+<Location />
+    Require all granted
+    SetHandler perl-script
+    PerlResponseHandler Bivio::Agent::HTTP::Dispatcher
+</Location>
+
+<Location /zz/zig>
+    # {{ local host IP }}
+    Require host 127.0.0.1 .bivio.biz
+    SetHandler server-status
+    PerlResponseHandler Apache2::Status
+</Location>
+
+BrowserMatch "Mozilla/2" nokeepalive
+BrowserMatch "MSIE 4\.0b2;" nokeepalive downgrade-1.0 force-response-1.0
+BrowserMatch "RealPlayer 4\.0" force-response-1.0
+BrowserMatch "Java/1\.0" force-response-1.0
+BrowserMatch "JDK/1\.0" force-response-1.0
