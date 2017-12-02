@@ -1,33 +1,31 @@
 # -*-perl-*-
-use Bivio::PetShop::BConf;
-Bivio::PetShop::BConf->merge_dir({
+use {{ bop_perl_root }}::BConf;
+{{ bop_perl_root }}::BConf->merge_dir({
     'Bivio::Agent::Request' => {
-        can_secure => 0,
+        can_secure => {{ bop_can_secure || int }},
     },
     'Bivio::IO::Config' => {
-        is_production => 0,
+        is_production => {{ bop_is_production | int }},
     },
     'Bivio::Delegate::Cookie' => {
-        tag => 'PSDEV',
+        tag => '{{ bop_cookie_tag }}',
     },
     'Bivio::UI::Facade' => {
         local_file_root => '/var/www/facades',
         want_local_file_cache => 1,
         # Only used on test systems
-        http_host => 'z50.bivio.biz',
-        mail_host => 'z50.bivio.biz',
+        http_host => '{{ bop_http_host }}',
+        mail_host => '{{ bop_mail_host }}',
     },
     'Bivio::Util::HTTPLog' => {
         error_file => '/var/log/httpd/error_log',
     },
     'Bivio::UI::HTML::Widget::SourceCode' => {
-        # bivio.biz /var/www/facades/bivio.biz/plain/f/bOP/lib
-        # default /var/www/html
-        source_dir => '/var/www/facades/petshop/plain/s',
+        source_dir => '{{ bop_source_code_dir }}',
     },
     'Bivio::Util::HTTPLog' => {
-        email => 'errors@bivio.biz',
-        pager_email => 'critical-errors@bivio.biz',
+        email => '{{ bop_http_log_email }}',
+        pager_email => '{{ bop_http_log_pager_email }}',
     },
     'Bivio::IO::Alert' => {
         want_time => 1,
@@ -36,5 +34,5 @@ Bivio::PetShop::BConf->merge_dir({
     'Bivio::Biz::Model::CRMForm' => {
         want_status_email => 0,
     },
-# {{ other_defaults }}
+# other_defaults
 });
