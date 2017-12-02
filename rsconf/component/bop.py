@@ -56,3 +56,5 @@ class T(component.T):
             cmd='/usr/sbin/httpd -DFOREGROUND',
             volumes=volumes,
         )
+        # /var/lib/petshop/start bash
+        # bivio sql init_dbms
