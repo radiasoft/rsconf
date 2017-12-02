@@ -2,7 +2,7 @@
 use {{ bop_perl_root }}::BConf;
 {{ bop_perl_root }}::BConf->merge_dir({
     'Bivio::Agent::Request' => {
-        can_secure => {{ bop_can_secure || int }},
+        can_secure => {{ bop_can_secure | int }},
     },
     'Bivio::IO::Config' => {
         is_production => {{ bop_is_production | int }},
@@ -17,6 +17,13 @@ use {{ bop_perl_root }}::BConf;
         http_host => '{{ bop_http_host }}',
         mail_host => '{{ bop_mail_host }}',
     },
+    'Bivio::IO::Log' => {
+        directory => '/var/log/bop',
+    },
+    'Bivio::Biz::File' => {
+        root => '/var/db/bop',
+        backup_root => '/var/bkp/bop',
+    },
     'Bivio::Util::HTTPLog' => {
         error_file => '/var/log/httpd/error_log',
     },
@@ -24,8 +31,9 @@ use {{ bop_perl_root }}::BConf;
         source_dir => '{{ bop_source_code_dir }}',
     },
     'Bivio::Util::HTTPLog' => {
-        email => '{{ bop_http_log_email }}',
-        pager_email => '{{ bop_http_log_pager_email }}',
+        # avoid spambots from seeing this
+        email => 'errors' . '@' . 'bivio.biz',
+        pager_email => 'critical-errors' . '@' . 'bivio.biz',
     },
     'Bivio::IO::Alert' => {
         want_time => 1,

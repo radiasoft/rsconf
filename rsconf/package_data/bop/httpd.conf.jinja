@@ -25,12 +25,11 @@ LoadModule unixd_module		modules/mod_unixd.so
 # AddOutputFilterByType
 LoadModule filter_module		modules/mod_filter.so
 
-# {{ port }}
-Listen 8114
-Listen 8115
+Listen {{ bop_listen_base }}
+Listen {{ bop_listen_base + 1 }}
 
-User vagrant
-Group vagrant
+User {{ rsconf_db_run_u }}
+Group {{ rsconf_db_run_u }}
 ServerAdmin root@bivio.biz
 ServerTokens ProductOnly
 
@@ -40,10 +39,9 @@ MaxKeepAliveRequests 10
 KeepAliveTimeout 2
 MinSpareServers 1
 
-# {{ servers }}
-MaxSpareServers 4
-StartServers 4
-MaxClients 4
+MaxSpareServers {{ bop_num_servers }}
+StartServers {{ bop_num_servers }}
+MaxClients {{ bop_num_servers }}
 MaxRequestsPerChild 120
 LimitRequestBody 240000000
 # https://www.apache.org/security/asf-httpoxy-response.txt
@@ -84,7 +82,7 @@ PerlModule Bivio::Agent::HTTP::Dispatcher
 </Location>
 
 <Location /zz/zig>
-    # {{ local host IP }}
+    #TODO: local host IP
     Require host 127.0.0.1 .bivio.biz
     SetHandler server-status
     PerlResponseHandler Apache2::Status

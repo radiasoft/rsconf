@@ -2,15 +2,36 @@
 default:
   base_os:
     ip_forward: false
+  celery_sirepo:
+    queues: "sequential,parallel"
   docker:
     iptables: true
   docker_registry:
     host: {{ master }}
-    port: {{ docker_registry_port }}
-  celery_sirepo:
-    queues: "sequential,parallel"
   nginx:
     worker_processes: 1
+  petshop:
+    docker_image: biviosoftware/bivio
+    http_host: petshop.{{ host }}
+    mail_host: petshop.{{ host }}
+    listen_base: 8114
+    cookie_tag: PSD
+    can_secure: false
+    perl_root: Bivio::PetShop
+    num_servers: 4
+    # bivio.biz /var/www/facades/bivio.biz/plain/f/bOP/lib
+    # default /var/www/html
+    source_code_dir: /var/www/facades/petshop/plain/s
+    vhost_common:
+      # Only for test
+      host_suffix: {{ host }}
+    vhosts:
+      - facade_uri: petshop
+        mail_host: petshop
+      - facade_uri: beforeother
+      - facade_uri: m.petshop
+      - facade_uri: other
+      - facade_uri: requiresecure
   sirepo:
     pkcli:
       service_processes: 1
@@ -21,9 +42,13 @@ default:
       github_secret: ""
     server:
       oauth_login: false
+  bop:
+    server_status_location: /bop-status
+    is_production: false
+    apps: [ petshop ]
 
 channel:
-  {{ channel }}:
+  dev:
     base_os:
       ip_forward: true
     sirepo:
@@ -36,8 +61,12 @@ channel:
         want_tls: true
 
 host:
-  {{ channel }}:
+  dev:
     {{ host }}:
-      rsconf_db_components: [ rabbitmq, celery_sirepo, sirepo ]
+      rsconf_db_components: [ rabbitmq, celery_sirepo, sirepo, bop ]
     {{ master }}:
       rsconf_db_components: [ docker_registry ]
+
+#Local Variables:
+#mode:yaml
+#End:

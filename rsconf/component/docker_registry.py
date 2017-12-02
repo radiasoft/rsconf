@@ -26,8 +26,16 @@ _PASSWD_SECRET_F = 'docker_registry_passwd'
 _HTTP_SECRET_F = 'docker_registry_http_secret'
 _PASSWD_VISIBILITY = 'channel'
 _HTTP_SECRET_VISIBILITY = _PASSWD_VISIBILITY
+# 5000 is hardwired, because Docker doesn't have a way of configuring it; they
+# just assume you are using the docker proxy (-P 80:5000) or a regular proxy (which
+# doesn't work so well). Only when we open up iptables, will we need to share this
+# via some call.
+_PORT = 5000
 
 #TODO(robnagler) how to clean registry?
+
+#TODO(robnagler) need to proxy registry to control access to push (WTF???)
+# http://mindtrove.info/control-read-write-access-docker-private-registry/
 
 def add_host(hdb, host):
     jf = db.secret_path(hdb, _PASSWD_SECRET_JSON_F, visibility=_PASSWD_VISIBILITY)
@@ -79,8 +87,8 @@ def prefix_image(j2_ctx, image):
 
 
 def update_j2_ctx(j2_ctx):
-    #TODO(robnagler) exit if already initialzed
-    addr = '{}:{}'.format(j2_ctx.docker_registry_host, j2_ctx.docker_registry_port)
+    #TODO(robnagler) exit if already initialzed.
+    addr = '{}:{}'.format(j2_ctx.docker_registry_host, _PORT)
     j2_ctx.update(
         docker_registry_http_addr=addr,
         docker_registry_http_host='https://' + addr,

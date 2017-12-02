@@ -13,7 +13,6 @@ import string
 import random
 
 
-
 VISIBILITY_LIST = ('global', 'channel', 'host')
 VISIBILITY_DEFAULT = VISIBILITY_LIST[1]
 VISIBILITY_GLOBAL = VISIBILITY_LIST[0]
@@ -142,19 +141,15 @@ def setup_dev():
     boot_hdb = pkcollections.Dict(rsconf_db_secret_d=secret_d, rsconf_db_channel='dev')
     j2_ctx = pkcollections.Dict(
         srv_d=str(srv),
-        port=8000,
         host='v4.bivio.biz',
-        channel='dev',
         master='v5.bivio.biz',
-        master_ip='10.10.10.50',
         # You can't change this
-        docker_registry_port=5000,
         passwd_file=secret_path(boot_hdb, 'nginx-passwd', visibility='channel')
     )
     j2_ctx.update(boot_hdb)
     pw = {}
     for h in j2_ctx.host, j2_ctx.master:
-        pw[h] = _add_host(j2_ctx, j2_ctx.channel, h, j2_ctx.passwd_file)
+        pw[h] = _add_host(j2_ctx, 'dev', h, j2_ctx.passwd_file)
     _sym('~/src/radiasoft/download/bin/install.sh', 'index.html')
     _sym(pkresource.filename('rsconf.sh'), 'rsconf.sh')
     dev_root = pkio.py_path(pkresource.filename('dev'))

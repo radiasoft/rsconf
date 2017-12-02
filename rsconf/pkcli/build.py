@@ -21,6 +21,25 @@ class T(pkcollections.Dict):
             hdb=dbt.host_db(channel, host),
         )
 
+    def build_component(self, compt_or_name):
+        from rsconf import component
+
+        if isinstance(compt_or_name, component.T):
+            compt = compt_or_name
+            assert not self.components.get(compt.name), \
+                '{}: duplicate component'.format(compt.name)
+        else:
+            compt = self.components.get(compt_or_name)
+            if compt:
+                compt.assert_done()
+                return
+            compt = component.create_t(compt_or_name, self)
+        self.components[compt.name] = compt
+        compt.build()
+        # Must be after, since write_root_bash happens from this list and
+        # dependencies in build() must come first
+        self.components_required.append(compt.name)
+
     def create_host(self):
         dst_d = self.hdb.rsconf_db_srv_host_d.join(self.hdb.rsconf_db_host)
         new = dst_d + '-new'
@@ -46,13 +65,7 @@ class T(pkcollections.Dict):
         from rsconf import component
 
         for c in components:
-            compt = self.components.get(c)
-            if compt:
-                compt.assert_done()
-                continue
-            self.components[c] = component.create_t(c, self)
-            self.components[c].build()
-            self.components_required.append(c)
+            self.build_component(c)
 
     def write_root_bash(self, basename, lines):
         # python and perl scripts?
