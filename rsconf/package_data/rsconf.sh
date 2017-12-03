@@ -10,35 +10,41 @@
 # export install_server=http://v5.bivio.biz:8000 install_channel=dev
 # curl "$install_server" | bash -s rsconf.sh
 #
+rsconf_append() {
+    local file=$1
+    local line=$2
+    if [[ ! -e $file ]]; then
+        install_err "$file: does not exist"
+    fi
+    # Assumes file must exist or be writable
+    if fgrep -s -q -x "$line" "$file"; then
+        return 1
+    fi
+    echo "$line" >> "$file"
+    rsconf_service_file_check "$file"
+    return 0
+}
+
 rsconf_edit() {
     local file=$1
     local grep=$2
     local perl=$3
     if [[ ! -e $file ]]; then
-        # file doesn't exist so ok
+        install_err "$file: does not exist"
+    fi
+    local need=
+    if [[ $grep =~ ^![[:space:]]*(.+) ]]; then
+        need=1
+        grep=${BASH_REMATCH[1]}
+    fi
+    local g=$( set +e; grep -s -q "$grep" "$file" && echo 1 )
+    if [[ $g != $need ]]; then
         return 1
     fi
-    # No $perl ($3) means append exactly this line
-    if [[ -z $perl ]]; then
-        if fgrep -s -q -x "$grep" "$file"; then
-            return 1
-        fi
-        echo "$grep" >> "$file"
-    else
-        local need=
-        if [[ $grep =~ ^![[:space:]]*(.+) ]]; then
-            need=1
-            grep=${BASH_REMATCH[1]}
-        fi
-        local g=$( set +e; grep -s -q "$grep" "$file" && echo 1 )
-        if [[ $g != $need ]]; then
-            return 1
-        fi
-        perl -pi -e "$perl" "$file"
-        g=$( set +e; grep -s -q "$grep" "$file" && echo 1 )
-        if [[ $g == $need ]]; then
-            install_err "$perl: failed to modify: $file"
-        fi
+    perl -pi -e "$perl" "$file"
+    g=$( set +e; grep -s -q "$grep" "$file" && echo 1 )
+    if [[ $g == $need ]]; then
+        install_err "$perl: failed to modify: $file"
     fi
     rsconf_service_file_check "$file"
     return 0
@@ -137,8 +143,14 @@ rsconf_main() {
     local -A rsconf_service_status=()
     local -A rsconf_service_watch=()
     local -a rsconf_service_order=()
+    local rsconf_rerun_required=
     install_script_eval 000.sh
     rsconf_service_restart
+    if [[ $rsconf_rerun_required ]]; then
+        echo "$rsconf_rerun_required
+
+You need to rerun this command"
+    fi
 }
 
 rsconf_radia_run_as_user() {
@@ -158,6 +170,11 @@ rsconf_reboot() {
 
 rsconf_require() {
     rsconf_only_once=1 rsconf_run "$1"
+}
+
+rsconf_rerun_required() {
+    rsconf_rerun_required="$rsconf_rerun_required$1
+"
 }
 
 rsconf_run() {

@@ -4,11 +4,25 @@ use {{ bop_perl_root }}::BConf;
     'Bivio::Agent::Request' => {
         can_secure => {{ bop_can_secure | int }},
     },
-    'Bivio::IO::Config' => {
-        is_production => {{ bop_is_production | int }},
+    'Bivio::Biz::File' => {
+        root => '/var/db/bop',
+        backup_root => '/var/bkp/bop',
+    },
+    'Bivio::Biz::Model::CRMForm' => {
+        want_status_email => 0,
     },
     'Bivio::Delegate::Cookie' => {
         tag => '{{ bop_cookie_tag }}',
+    },
+    'Bivio::IO::Alert' => {
+        want_time => 1,
+        want_pid => 1,
+    },
+    'Bivio::IO::Config' => {
+        is_production => {{ bop_is_production | int }},
+    },
+    'Bivio::IO::Log' => {
+        directory => '/var/log/bop',
     },
     'Bivio::UI::Facade' => {
         local_file_root => '/var/www/facades',
@@ -17,30 +31,14 @@ use {{ bop_perl_root }}::BConf;
         http_host => '{{ bop_http_host }}',
         mail_host => '{{ bop_mail_host }}',
     },
-    'Bivio::IO::Log' => {
-        directory => '/var/log/bop',
-    },
-    'Bivio::Biz::File' => {
-        root => '/var/db/bop',
-        backup_root => '/var/bkp/bop',
-    },
-    'Bivio::Util::HTTPLog' => {
-        error_file => '/var/log/httpd/error_log',
-    },
     'Bivio::UI::HTML::Widget::SourceCode' => {
         source_dir => '{{ bop_source_code_dir }}',
     },
     'Bivio::Util::HTTPLog' => {
-        # avoid spambots from seeing this
+        error_file => '/var/log/httpd/error_log',
+        # avoid spambots
         email => 'errors' . '@' . 'bivio.biz',
         pager_email => 'critical-errors' . '@' . 'bivio.biz',
     },
-    'Bivio::IO::Alert' => {
-        want_time => 1,
-        want_pid => 1,
-    },
-    'Bivio::Biz::Model::CRMForm' => {
-        want_status_email => 0,
-    },
-# other_defaults
+{{ bop_bconf_aux }}
 });

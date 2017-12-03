@@ -45,6 +45,22 @@ base_os_journal_persist() {
     systemctl restart systemd-journald
 }
 
+base_os_rpcbind_patch() {
+    # Binding to IPv6 address not available since kernel does not support IPv6.
+    # https://bugzilla.redhat.com/show_bug.cgi?id=1402961
+    local old=/usr/lib/systemd/system/rpcbind.socket
+    if [[ ! -e $old ]]; then
+        return
+    fi
+    # Replacement
+    local new=/etc/systemd/system/rpcbind.socket
+    cp -a "$old" "$new"
+    if rsconf_edit "$new" '! BindIPv6Only' 'm{\[::\]:|BindIPv6Only} && ($_=q{})'; then
+        systemctl daemon-reload
+        systemctl restart rpcbind.socket
+    fi
+}
+
 base_os_main() {
     rsconf_radia_run_as_user root redhat-base
     local i
@@ -80,13 +96,7 @@ base_os_main() {
     # idempotent so ok to repeat and the file might get updated with a new release.
     rsconf_edit /etc/ssh/sshd_config ^AddressFamily.inet \
         's{^#(AddressFamily) any}{$1 inet}' || true
-    # Binding to IPv6 address not available since kernel does not support IPv6.
-    # https://bugzilla.redhat.com/show_bug.cgi?id=1402961
-    if rsconf_edit /usr/lib/systemd/system/rpcbind.socket '! BindIPv6Only' \
-        'm{\[::\]:|BindIPv6Only} && ($_ = q{})'; then
-        systemctl daemon-reload
-        systemctl restart rpcbind.socket
-    fi
+    base_os_rpcbind_patch
 #TODO(robnagler) consider permissive on back end and enforcing on front end
     if rsconf_edit /etc/selinux/config ^SELINUX=disabled \
         's{(?<=^SELINUX=).*}{disabled}'; then
@@ -98,5 +108,5 @@ base_os_main() {
     if [[ -n $reboot ]]; then
         rsconf_reboot
     fi
-    rsconf_edit /etc/screenrc 'escape ^^^^' || true
+    rsconf_append /etc/screenrc 'escape ^^^^' || true
 }

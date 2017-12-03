@@ -32,6 +32,14 @@ default:
       - facade_uri: m.petshop
       - facade_uri: other
       - facade_uri: requiresecure
+  postgresql:
+    # https://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server#effective_cache_size
+    effective_cache_size: 244MB
+    # https://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server#shared_buffers
+    # "If you have a system with 1GB or more of RAM, a reasonable
+    # starting value for shared_buffers is 1/4 of the memory in your system."
+    shared_buffers: 122MB
+    auth_local_method: md5
   sirepo:
     pkcli:
       service_processes: 1
@@ -45,12 +53,16 @@ default:
   bop:
     server_status_location: /bop-status
     is_production: false
+    bconf_aux: ''
     apps: [ petshop ]
 
 channel:
   dev:
     base_os:
       ip_forward: true
+    postgresql:
+      auth_local_method: trust
+      postgres_password: pgpass
     sirepo:
       celery_tasks:
         celeryd_concurrency: 1

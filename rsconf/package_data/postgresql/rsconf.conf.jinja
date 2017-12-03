@@ -1,0 +1,18 @@
+# system specific
+effective_cache_size = {{ postgresql_effective_cache_size }}
+shared_buffers = {{ postgresql_shared_buffers }}
+
+# https://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server
+checkpoint_completion_target = 0.9
+checkpoint_segments = 64
+listen_addresses = '*'
+log_checkpoints = on
+log_line_prefix = '%t %d %p '
+maintenance_work_mem = 64MB
+max_connections = 128
+ssl = on
+ssl_cert_file = '{{ postgresql_ssl_cert_file }}'
+ssl_ciphers = 'DHE-RSA-AES256-SHA:AES256-SHA:DHE-RSA-AES128-SHA:RC4-SHA:HIGH:!ADH'
+ssl_key_file = '{{ postgresql_ssl_key_file }}'
+wal_buffers = 64MB
+work_mem = 4MB

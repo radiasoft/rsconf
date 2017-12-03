@@ -16,12 +16,13 @@ class T(component.T):
         from rsconf import systemd
 
         if self.name == 'bop':
-            self.buildt.require_component('docker')
+            self.buildt.require_component('docker', 'postgresql')
             self.append_root_bash(': nothing for now')
             for n in sorted(self.hdb.bop_apps):
                 self.buildt.build_component(T(n, self.buildt))
             return
         j2_ctx = pkcollections.Dict(self.hdb)
+        j2_ctx.bop_app_name = self.name
         r = re.compile('^' + self.name + '_(.+)')
         for k, v in j2_ctx.items():
             m = r.search(k)
@@ -30,7 +31,8 @@ class T(component.T):
         run_d = systemd.docker_unit_prepare(self)
         self.install_access(mode='700', owner=self.hdb.rsconf_db_run_u)
         self.install_directory(run_d)
-        volumes = ['/var/run/postgresql/.s.PSGSQL.5432']
+        j2_ctx.bop_run_d = run_d
+        volumes = ['/var/run/postgresql/.s.PGSQL.5432']
         for host_d, guest_d in (
             # POSIT: /etc/bivio.bconf has same values
             ('log', '/var/log/httpd'),
@@ -39,6 +41,7 @@ class T(component.T):
             ('logbop', '/var/log/bop'),
         ):
             x = run_d.join(host_d)
+            j2_ctx['bop_{}_host_d'.format(host_d)] = x
             self.install_directory(x)
             volumes.append([x, guest_d])
         self.install_access(mode='400')
@@ -56,5 +59,9 @@ class T(component.T):
             cmd='/usr/sbin/httpd -DFOREGROUND',
             volumes=volumes,
         )
-        # /var/lib/petshop/start bash
-        # bivio sql init_dbms
+        # After the unit files are installed
+        self.append_root_bash_with_resource(
+            'bop/initdb.sh',
+            j2_ctx,
+            j2_ctx.bop_app_name + '_initdb',
+        )
