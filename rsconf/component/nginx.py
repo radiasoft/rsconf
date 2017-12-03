@@ -25,8 +25,8 @@ _DEFAULT_ERROR_PAGES = '''
     location = /50x.html { }
 '''
 
-def install_vhost(compt):
-    j2_ctx = pkcollections.Dict(compt.hdb)
+def install_vhost(compt, resource_d=None, j2_ctx=None):
+    j2_ctx = pkcollections.Dict(j2_ctx or compt.hdb)
     j2_ctx.update(
         nginx_default_error_pages=_DEFAULT_ERROR_PAGES,
         nginx_default_root=_DEFAULT_ROOT,
@@ -35,8 +35,10 @@ def install_vhost(compt):
     kc = compt.install_tls_key_and_crt(compt.hdb[compt.name + '_nginx_vhost'], _CONF_D)
     j2_ctx.nginx_tls_crt = kc.crt
     j2_ctx.nginx_tls_key = kc.key
+    if not resource_d:
+        resource_d = compt.name
     compt.install_resource(
-        compt.name + '/nginx.conf',
+        resource_d + '/nginx.conf',
         j2_ctx,
         _CONF_D.join(compt.name + '.conf'),
     )

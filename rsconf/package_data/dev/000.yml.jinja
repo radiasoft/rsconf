@@ -63,6 +63,9 @@ channel:
     postgresql:
       auth_local_method: trust
       postgres_password: pgpass
+    petshop:
+      nginx:
+        vhost: petshop.{{ host }}
     sirepo:
       celery_tasks:
         celeryd_concurrency: 1

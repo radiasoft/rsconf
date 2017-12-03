@@ -14,9 +14,10 @@ from pykern import pkcollections
 class T(component.T):
     def internal_build(self):
         from rsconf import systemd
+        from rsconf.component import nginx
 
         if self.name == 'bop':
-            self.buildt.require_component('docker', 'postgresql')
+            self.buildt.require_component('docker', 'postgresql', 'nginx')
             self.append_root_bash(': nothing for now')
             for n in sorted(self.hdb.bop_apps):
                 self.buildt.build_component(T(n, self.buildt))
@@ -65,3 +66,4 @@ class T(component.T):
             j2_ctx,
             j2_ctx.bop_app_name + '_initdb',
         )
+        nginx.install_vhost(self, resource_d='bop', j2_ctx=j2_ctx)
