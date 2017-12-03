@@ -72,8 +72,7 @@ channel:
         broker_url: "amqp://guest@{{ host }}//"
       mpi.cores: 2
       nginx:
-        vhost: {{ host }}
-        want_tls: true
+        vhost: sirepo.{{ host }}
 
 host:
   dev:

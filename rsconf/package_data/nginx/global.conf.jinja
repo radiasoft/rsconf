@@ -73,5 +73,12 @@ http {
 #    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload";
 #    add_header X-Frame-Options DENY;
 #    add_header X-Content-Type-Options nosniff;
+
+    server {
+        listen 80 default_server;
+        server_name "";
+        return 444;
+    }
+
     include /etc/nginx/conf.d/*.conf;
 }
