@@ -29,22 +29,35 @@ export install_channel=dev install_server=http://v5.bivio.biz:8000
 curl "$install_server" | bash -s rsconf.sh "$(hostname -f)"
 ```
 
-On the client:
+On the client, create a test.sh file and run it:
 
 ```bash
-curl radia.run | bash -s vagrant-centos7 v4.bivio.biz 10.10.10.40
-vssh
-sudo su -
-export install_channel=dev install_server=http://v5.bivio.biz:8000 host=v4.bivio.biz
-curl "$install_server" | bash -s rsconf.sh "$host" setup_dev
-exit
-exit
+mkdir ~/v4
+cd ~/v4
+cat > test.sh <<'END'
+#!/bin/bash
+. ~/.bashrc
+set -e -x
+export host=v4.bivio.biz install_server=http://v5.bivio.biz:8000 installl_channel=dev
+curl radia.run | bash -s vagrant-centos7 "$host" "$(dig +short "$host")"
+vssh sudo su - <<EOF
+export install_channel=dev install_server="$install_server"
+# fails because of reboot
+curl "$install_server" | bash -s rsconf.sh "$host" setup_dev || true
+EOF
 vagrant reload
-vssh
-sudo su -
-export install_channel=dev install_server=http://v5.bivio.biz:8000
-curl "$install_server" | bash -s rsconf.sh "$(hostname -f)"
+vssh sudo su - <<EOF
+set -e -x
+export install_channel=$install_channel install_server=$install_server
+curl "$install_server" | bash -s rsconf.sh "$host"
+# postresql restart request
+curl "$install_server" | bash -s rsconf.sh "$host"
+EOF
+END
+bash test.sh
 ```
+
+You'll need to destroy manually.
 
 ## License
 

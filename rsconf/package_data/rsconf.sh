@@ -200,7 +200,7 @@ rsconf_service_docker_pull() {
     local curr_id=$(docker inspect --format='{{.Id}}' "$image" 2>/dev/null || true)
     if [[ $prev_id != $curr_id || -n $container_image_id && $container_image_id != $curr_id ]]; then
         install_info "$image: new image, restart $service required"
-        rsconf_service_trigger_restart "$s"
+        rsconf_service_trigger_restart "$service"
     fi
 }
 

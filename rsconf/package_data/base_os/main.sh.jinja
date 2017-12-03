@@ -104,9 +104,9 @@ base_os_main() {
     fi
     base_os_chrony
     base_os_journal_persist
+    rsconf_append /etc/screenrc 'escape ^^^^' || true
     ###base_os_iptables
     if [[ -n $reboot ]]; then
         rsconf_reboot
     fi
-    rsconf_append /etc/screenrc 'escape ^^^^' || true
 }

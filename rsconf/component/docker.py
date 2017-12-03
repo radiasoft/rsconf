@@ -29,9 +29,6 @@ class T(component.T):
         )
         j2_ctx = pkcollections.Dict(self.hdb)
         docker_registry.update_j2_ctx(j2_ctx)
-        j2_ctx.update(
-            docker_volume_group='docker',
-        )
         self.install_access(mode='700', owner=j2_ctx.rsconf_db_root_u)
         self.install_directory(_CONF_DIR)
         self.install_access(mode='400', owner=j2_ctx.rsconf_db_root_u)

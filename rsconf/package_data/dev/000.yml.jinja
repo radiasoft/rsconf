@@ -6,6 +6,7 @@ default:
     queues: "sequential,parallel"
   docker:
     iptables: true
+    volume_size: 100G
   docker_registry:
     host: {{ master }}
   nginx:
@@ -60,12 +61,12 @@ channel:
   dev:
     base_os:
       ip_forward: true
-    postgresql:
-      auth_local_method: trust
-      postgres_password: pgpass
     petshop:
       nginx:
         vhost: petshop.{{ host }}
+    postgresql:
+      auth_local_method: trust
+      postgres_password: pgpass
     sirepo:
       celery_tasks:
         celeryd_concurrency: 1
