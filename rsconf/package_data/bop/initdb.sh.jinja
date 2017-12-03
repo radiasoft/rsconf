@@ -38,4 +38,5 @@ bivio sql init_dbms
 {% endif %}
 EOF2
 EOF1
+    rsconf_service_trigger_restart '{{ bop_app_name }}'
 }

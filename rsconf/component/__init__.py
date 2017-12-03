@@ -15,6 +15,7 @@ _DONE = 'done'
 _START = 'start'
 _MODE_RE = re.compile(r'^\d{3,4}$')
 _BASH_FUNC_SUFFIX = '_rsconf_component'
+_TLS_CRT_PREFIX = 'component_tls_crt_'
 
 class T(pkcollections.Dict):
 
@@ -50,9 +51,10 @@ class T(pkcollections.Dict):
         self._root_bash.extend(self._root_bash_aux)
         self.buildt.write_root_bash(self.name, self._root_bash)
 
-    def install_abspath(self, abs_path, host_path):
-        dst = self._bash_append_and_dst(host_path)
-        abs_path.copy(dst, mode=True)
+    def install_abspath(self, abs_path, host_path, ignore_exists=False):
+        dst = self._bash_append_and_dst(host_path, ignore_exists=ignore_exists)
+        if dst:
+            abs_path.copy(dst, mode=True)
 
     def install_access(self, mode=None, owner=None, group=None):
         if not mode is None:
@@ -97,8 +99,8 @@ class T(pkcollections.Dict):
             key=dst_d.join(kc.key.basename),
             crt=dst_d.join(kc.crt.basename),
         )
-        self.install_abspath(kc.key, dst.key)
-        self.install_abspath(kc.crt, dst.crt)
+        self.install_abspath(kc.key, dst.key, ignore_exists=True)
+        self.install_abspath(kc.crt, dst.crt, ignore_exists=True)
         return dst
 
     def secret_path_value(self, filename, gen_secret=None, visibility=None):
@@ -123,11 +125,13 @@ class T(pkcollections.Dict):
             ),
         )
 
-    def _bash_append_and_dst(self, host_path):
+    def _bash_append_and_dst(self, host_path, ignore_exists=False):
         self._bash_append(host_path)
         dst = self.hdb.build_dst_d.join(host_path)
-        assert not dst.check(), \
-            '{}: dst already exists'.format(dst)
+        if dst.check():
+            if ignore_exists:
+                return None
+            raise AssertionError('{}: dst already exists'.format(dst))
         pkio.mkdir_parent_only(dst)
         return dst
 
@@ -148,18 +152,23 @@ def tls_key_and_crt(hdb, domain):
     from rsconf.pkcli import tls
     from rsconf import db
 
-    #TODO(robnagler) wildcard: search for name if single domain, then
-    #  wildcard file
-    #TODO(robnagler) search for MDC
-    base = domain
-    src = db.secret_path(hdb, base, visibility='global')
+    base, domains = _find_tls_crt(hdb, domain)
+    src = db.secret_path(hdb, base, visibility='channel')
     src_key = src + tls.KEY_EXT
     src_crt = src + tls.CRT_EXT
     if not src_crt.check():
         assert pkconfig.channel_in_internal_test(channel=hdb.rsconf_db_channel), \
             '{}: missing crt for: {}'.format(src_crt, domain)
         pkio.mkdir_parent_only(src_crt)
-        tls.gen_self_signed_crt(src, domain)
+        tls.gen_self_signed_crt(*domains, basename=src)
     assert src_key.check(), \
         '{}: missing key for: {}'.format(src_key, domain)
     return pkcollections.Dict(key=src_key, crt=src_crt)
+
+
+def _find_tls_crt(hdb, domain):
+    for k in hdb.keys():
+        if k.startswith(_TLS_CRT_PREFIX):
+            if domain in hdb[k]:
+                return k[len(_TLS_CRT_PREFIX):], hdb[k]
+    raise AssertionError('{}: tls crt for domain not found'.format(domain))

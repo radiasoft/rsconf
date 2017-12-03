@@ -17,13 +17,12 @@ VISIBILITY_LIST = ('global', 'channel', 'host')
 VISIBILITY_DEFAULT = VISIBILITY_LIST[1]
 VISIBILITY_GLOBAL = VISIBILITY_LIST[0]
 
-_ZERO_YML = '000.yml'
-_SRV_SUBDIR = 'srv'
-_DEFAULT_DB_SUBDIR = 'run'
-_SECRET_SUBDIR = 'secret'
-_NGINX_SUBDIR = 'nginx'
-_HOST_SUBDIR = 'host'
-_LEVELS = ('default', 'channel', 'host')
+ZERO_YML = '000.yml'
+SRV_SUBDIR = 'srv'
+DEFAULT_DB_SUBDIR = 'run'
+SECRET_SUBDIR = 'secret'
+HOST_SUBDIR = 'host'
+LEVELS = ('default', 'channel', 'host')
 # Secrets are long so keep them simple
 _RANDOM_STRING = string.ascii_letters + string.digits
 
@@ -33,9 +32,9 @@ class T(pkcollections.Dict):
         from pykern import pkyaml
 
         super(T, self).__init__(*args, **kwargs)
-        self.base = pkyaml.load_file(cfg.root_dir.join(_ZERO_YML))
+        self.base = pkyaml.load_file(cfg.root_dir.join(ZERO_YML))
         self.secret = pkyaml.load_file(
-            cfg.root_dir.join(_SECRET_SUBDIR).join(_ZERO_YML),
+            cfg.root_dir.join(SECRET_SUBDIR).join(ZERO_YML),
         )
 
     def host_db(self, channel, host):
@@ -50,7 +49,7 @@ class T(pkcollections.Dict):
         )
         pkconfig.flatten_values(res, v)
         #TODO(robnagler) optimize by caching default and channels
-        for l in _LEVELS:
+        for l in LEVELS:
             for x in self.base, self.secret:
                 v = x[l]
                 if l != 'default':
@@ -63,15 +62,15 @@ class T(pkcollections.Dict):
                             continue
                 pkconfig.flatten_values(res, v)
         root_d = pkio.py_path(cfg.root_dir)
-        srv_d = root_d.join(_SRV_SUBDIR)
+        srv_d = root_d.join(SRV_SUBDIR)
         v = pkcollections.Dict(
             rsconf_db=pkcollections.Dict(
                 host=host.lower(),
                 channel=channel,
                 root_d=root_d,
-                secret_d=root_d.join(_SECRET_SUBDIR),
+                secret_d=root_d.join(SECRET_SUBDIR),
                 srv_d=srv_d,
-                srv_host_d=srv_d.join(_HOST_SUBDIR),
+                srv_host_d=srv_d.join(HOST_SUBDIR),
             )
         )
         pkconfig.flatten_values(res, v)
@@ -114,85 +113,6 @@ def random_string(path=None, length=32):
     return res
 
 
-#TODO(robnagler) happen in a pkcli
-def setup_dev():
-    from pykern import pkresource
-    from pykern import pkio
-    from pykern import pkjinja
-    import re
-
-    root = cfg.root_dir
-    if root.check():
-        return
-    srv = pkio.mkdir_parent(root.join(_SRV_SUBDIR))
-
-    def _sym(old, new_base=None):
-        old = pkio.py_path(old)
-        if not new_base:
-            new_base = old.basename
-        assert old.check(), \
-            '{}: does not exist'.format(old)
-        srv.join(new_base).mksymlinkto(old, absolute=False)
-
-    # ssh-keygen -q -N '' -C rsconf -t rsa -b 4096 -f /var/tmp/foo
-    # -- don't need this
-    secret_d = pkio.mkdir_parent(root.join(_SECRET_SUBDIR))
-    nginx_d = pkio.mkdir_parent(root.join(_NGINX_SUBDIR))
-    boot_hdb = pkcollections.Dict(rsconf_db_secret_d=secret_d, rsconf_db_channel='dev')
-    j2_ctx = pkcollections.Dict(
-        srv_d=str(srv),
-        host='v4.bivio.biz',
-        master='v5.bivio.biz',
-        # You can't change this
-        passwd_file=secret_path(boot_hdb, 'nginx-passwd', visibility='channel')
-    )
-    j2_ctx.update(boot_hdb)
-    pw = {}
-    for h in j2_ctx.host, j2_ctx.master:
-        pw[h] = _add_host(j2_ctx, 'dev', h, j2_ctx.passwd_file)
-    _sym('~/src/radiasoft/download/bin/install.sh', 'index.html')
-    _sym(pkresource.filename('rsconf.sh'), 'rsconf.sh')
-    dev_root = pkio.py_path(pkresource.filename('dev'))
-    for f in pkio.walk_tree(dev_root):
-        # TODO(robnagler) ignore backup files
-        if str(f).endswith('~') or str(f).startswith('#'):
-            continue
-        x = f.relto(dev_root)
-        dst = root.join(re.sub('.jinja$', '', x))
-        pkio.mkdir_parent_only(dst)
-        if not dst.basename.startswith('host-'):
-            pkjinja.render_file(f, j2_ctx, output=dst, strict_undefined=True)
-            continue
-        for h, p in pw.iteritems():
-            d = pkio.py_path(dst.dirname).join(dst.basename.replace('host', h))
-            j2_ctx.passwd = p
-            j2_ctx.host = h
-            pkjinja.render_file(f, j2_ctx, output=d, strict_undefined=True)
-            _sym(d)
-
-    # dev only, really insecure, but makes consistent builds easy
-    _sym('~/src/radiasoft')
-    _sym('~/src/biviosoftware')
-
-
-#TODO(robnagler) needs to moved
-def _add_host(j2_ctx, channel, host, passwd_file):
-    from rsconf.component import docker_registry
-    import subprocess
-    p = subprocess.Popen(
-        ['openssl', 'passwd', '-stdin', '-apr1'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        stdin=subprocess.PIPE,
-    )
-    pw = random_string()
-    out, err = p.communicate(input=pw)
-    with open(str(passwd_file), 'a') as f:
-        f.write('{}:{}\n'.format(host, out.rstrip()))
-    docker_registry.add_host(j2_ctx, host)
-    return pw
-
-
 @pkconfig.parse_none
 def _cfg_root(value):
     """Parse root directory"""
@@ -216,7 +136,7 @@ def _cfg_root(value):
         if not root.join('setup.py').check():
             # Don't run from an install directorya
             root = pkio.py_path('.')
-        value = root.join(_DEFAULT_DB_SUBDIR)
+        value = root.join(DEFAULT_DB_SUBDIR)
     return value
 
 

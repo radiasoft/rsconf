@@ -1,9 +1,10 @@
 #!/bin/bash
 
 docker_main() {
-    if [[ -e /var/lib/docker ]]; then
+    local dir=/var/lib/docker
+    if [[ -e $dir ]]; then
 #TODO(robnagler) update docker rpm?
-        install_info '/var/lib/docker: exists, docker already installed'
+        install_info "$dir: exists, docker already installed"
         return
     fi
     rsconf_require base_users
@@ -11,27 +12,28 @@ docker_main() {
     yum-config-manager \
         --add-repo https://download.docker.com/linux/centos/docker-ce.repo
     yum makecache fast
-#TODO(robnagler) how to update
-    rsconf_yum_install docker-ce-17.06.0.ce-1.el7.centos
+#TODO(robnagler) how to update?
+    # yum-plugin-ovl required for overlay2 on centos7
+    # https://github.com/docker-library/official-images/issues/1291
+    rsconf_yum_install docker-ce-17.06.0.ce-1.el7.centos yum-plugin-ovl
+    # Destroy the lvm in case it got created
     while [[ $(lvs --noheadings --nameprefixes '{{ docker_volume_group }}') =~ LVM2_LV_NAME=.([^\']+) ]]; do
         lvremove -f "{{ docker_volume_group }}/${BASH_REMATCH[1]}"
     done
-    lvcreate --wipesignatures y -n thinpool '{{ docker_volume_group }}' -l 95%VG
-    lvcreate --wipesignatures y -n thinpoolmeta '{{ docker_volume_group }}' -l 1%VG
-    lvconvert -y \
-        --zero n \
-        -c 512K \
-        --thinpool '{{ docker_volume_group }}'/thinpool \
-        --poolmetadata '{{ docker_volume_group }}'/thinpoolmeta
-    #TODO(robnagler) Do we really want autoextend?
-    dd of=/etc/lvm/profile/'{{ docker_volume_group }}'-thinpool.profile <<EOF
-activation {
-    thin_pool_autoextend_threshold=80
-    thin_pool_autoextend_percent=20
-}
-EOF
-    lvchange --metadataprofile '{{ docker_volume_group }}'-thinpool '{{ docker_volume_group }}'/thinpool
-    lvs -o+seg_monitor
+    # This bug with devicemapper keeps coming up:
+    # "Error response from daemon: devicemapper failed to remove the root"
+    # which is caused by "thin: Deletion of thin device 143 failed." (dmesg)
+    # https://github.com/moby/moby/issues/34463
+    #
+    # The recommendation now is to use overlay2 on CentOS 7 with this flag (daemon.json):
+    # https://github.com/moby/moby/issues/34368
+    lvcreate --wipesignatures y -n lib '{{ docker_volume_group }}' -l 100%VG
+    local dev='/dev/mapper/{{ docker_volume_group }}-lib'
+    # https://docs.docker.com/engine/userguide/storagedriver/overlayfs-driver/#prerequisites
+    mkfs -t xfs -n ftype=1 "$dev"
+    rsconf_append /etc/fstab "$dev $dir xfs defaults 0 0"
+    mkdir "$dir"
+    mount "$dir"
     # Give vagrant user access in dev mode only
     if [[ $install_channel == dev ]]; then
        usermod -aG docker vagrant

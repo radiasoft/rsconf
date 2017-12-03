@@ -200,7 +200,7 @@ rsconf_service_docker_pull() {
     local curr_id=$(docker inspect --format='{{.Id}}' "$image" 2>/dev/null || true)
     if [[ $prev_id != $curr_id || -n $container_image_id && $container_image_id != $curr_id ]]; then
         install_info "$image: new image, restart $service required"
-        rsconf_service_status[$service]=restart
+        rsconf_service_trigger_restart "$s"
     fi
 }
 
@@ -211,7 +211,7 @@ rsconf_service_file_check() {
     while [[ $path != / ]]; do
         s=${rsconf_service_watch[$path]}
         if [[ -n $s ]]; then
-            rsconf_service_status[$s]=restart
+            rsconf_service_trigger_restart "$s"
             return
         fi
         path=$(dirname "$path")
@@ -251,6 +251,11 @@ rsconf_service_restart() {
         fi
         systemctl enable "$s"
     done
+}
+
+rsconf_service_trigger_restart() {
+    local service=$1
+    rsconf_service_status[$service]=restart
 }
 
 rsconf_setup_dev() {

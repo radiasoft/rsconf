@@ -80,7 +80,10 @@ def default_command():
     from rsconf import db
 
     if pkconfig.channel_in('dev'):
-        db.setup_dev()
+        from rsconf.pkcli import setup_dev
+
+        setup_dev.default_command()
+
     dbt = db.T()
     for c, hosts in pkcollections.map_items(dbt.channel_hosts()):
         for h in hosts:

@@ -16,7 +16,6 @@ _DAEMON_JSON = _CONF_DIR.join('daemon.json')
 
 class T(component.T):
     def internal_build(self):
-        from rsconf.pkcli import tls
         from rsconf.component import docker_registry
 
         self.buildt.require_component('base_users')

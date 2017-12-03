@@ -5,10 +5,8 @@
     {%- if docker_registry_http_host %}
     "registry-mirrors": ["{{ docker_registry_http_host }}"],
     {%- endif -%}
-    "storage-driver": "devicemapper",
+    "storage-driver": "overlay2",
     "storage-opts": [
-        "dm.thinpooldev=/dev/mapper/{{ docker_volume_group }}-thinpool",
-        "dm.use_deferred_removal=true",
-        "dm.use_deferred_deletion=true"
+        "overlay2.override_kernel_check=true"
     ]
 }

@@ -16,7 +16,7 @@ KEY_EXT = '.key'
 CRT_EXT = '.crt'
 
 
-def gen_self_signed_crt(basename=None, *domains):
+def gen_self_signed_crt(*domains, **kwargs):
     """Generate a self-signed certificate
 
     Creates the files basename.{key,crt}
@@ -29,7 +29,9 @@ def gen_self_signed_crt(basename=None, *domains):
         dict: key, crt
     """
     first = domains[0]
-    if basename is None:
+    if 'basename' in kwargs:
+        basename = kwargs['basename']
+    if not basename:
         basename = first
     alt = ''
     if len(domains) > 1:
@@ -47,7 +49,7 @@ C = US
 ST = Colorado
 L = Boulder
 CN = {}""".format(alt, first)
-    basename = pkio.py_path(basename)
+    basename = pkio.py_path(kwargs['basename'])
     cfg = basename + '.cfg'
     pkio.write_text(cfg, c)
     crt = basename + CRT_EXT

@@ -32,12 +32,10 @@ curl "$install_server" | bash -s rsconf.sh "$(hostname -f)"
 On the client:
 
 ```bash
-host=v4.bivio.biz
-curl radia.run | bash -s vagrant-centos7 "$host" 10.10.10.40
+curl radia.run | bash -s vagrant-centos7 v4.bivio.biz 10.10.10.40
 vssh
 sudo su -
-host=v4.bivio.biz
-export install_channel=dev install_server=http://v5.bivio.biz:8000
+export install_channel=dev install_server=http://v5.bivio.biz:8000 host=v4.bivio.biz
 curl "$install_server" | bash -s rsconf.sh "$host" setup_dev
 exit
 exit
