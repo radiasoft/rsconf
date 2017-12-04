@@ -18,22 +18,10 @@ server {
         return 403;
     }
 
+    # Need to configure caching and better proxying
+    # https://www.digitalocean.com/community/tutorials/understanding-nginx-http-proxying-load-balancing-buffering-and-caching
     location / {
         proxy_pass http://127.0.0.1:{{ bop_listen_base }};
-        proxy_http_version 1.1;
-        # https://www.kb.cert.org/vuls/id/797896
-        proxy_set_header Proxy "";
-        proxy_set_header Accept-Encoding "";
-        proxy_set_header Host $http_host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header Via $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        add_header Front-End-Https on;
-        proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
-        proxy_read_timeout 600s;
-        proxy_send_timeout 600s;
-        proxy_connect_timeout 600s;
     }
 }
 

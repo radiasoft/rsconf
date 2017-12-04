@@ -267,8 +267,8 @@ rsconf_service_restart() {
                systemctl daemon-reload
             fi
             # Just restart, most daemons are fast
-            systemctl restart "$s"
             install_info "$s: restarting"
+            systemctl restart "$s"
         else
             # test is really only necessary for the msg
             if ! systemctl is-active "$s" >&/dev/null; then

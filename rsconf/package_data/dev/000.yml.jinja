@@ -23,16 +23,18 @@ default:
     # bivio.biz /var/www/facades/bivio.biz/plain/f/bOP/lib
     # default /var/www/html
     source_code_dir: /var/www/facades/petshop/plain/s
+    nginx_aux_directives: ""
     vhost_common:
       # Only for test
       host_suffix: {{ host }}
-      aux_directives: ""
     vhosts:
-      - domain: petshop.{{ host }}
-        mail_domain: petshop.{{ host }}
-        domain_aliases:
-          - petshop-alias.{{ host }}
-        aux_directives: |
+      # first vhost is default mail_host
+      - domains:
+          - petshop.{{ host }}
+          - bprog.{{ host }}
+        mail_domains:
+          - petshop.{{ host }}
+        nginx_aux_directives: |
           location /nginx_redirect/(.*) {
               return 301 $scheme://$http_host/$1;
           }
@@ -63,7 +65,6 @@ default:
     server_status_location: /bop-status
     is_production: false
     bconf_aux: ''
-    apps: [ petshop ]
 
 channel:
   dev:
@@ -81,6 +82,8 @@ channel:
         broker_url: "amqp://guest@{{ host }}//"
       mpi.cores: 2
       vhost: sirepo.{{ host }}
+    bop:
+      apps: [ petshop ]
 
 host:
   dev:

@@ -1,0 +1,17 @@
+server {
+    listen localhost.localdomain:80;
+    server_name localhost.localdomain;
+    root {{ nginx_default_root }};
+
+    {% for h in bop_mail_domain_keys %}
+    location ~* /_mail_receive/.*\@\Q{{ h }}\E {
+        proxy_pass http://127.0.0.1:{{ bop_mail_domains[h] }};
+    }
+    {% endfor %}
+
+    location / {
+        deny all;
+        return 403;
+    }
+
+}

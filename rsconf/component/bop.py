@@ -15,14 +15,29 @@ from pykern import pkconfig
 class T(component.T):
     def internal_build(self):
         from rsconf import systemd
+        from rsconf.component import nginx
 
         if self.name == 'bop':
+            self.hdb.bop_mail_domains = pkcollections.Dict()
             self.buildt.require_component('docker', 'postgresql', 'nginx', 'postfix')
             self.append_root_bash(': nothing for now')
             for n in sorted(self.hdb.bop_apps):
-                self.buildt.build_component(T(n, self.buildt))
+                vhostt = T(n, self.buildt)
+                vhostt.bopt = self
+                self.buildt.build_component(vhostt)
+            j2_ctx = pkcollections.Dict(self.hdb)
+            j2_ctx.bop_mail_domain_keys = sorted(self.hdb.bop_mail_domains.keys())
+            if j2_ctx.bop_mail_domain_keys:
+                nginx.update_j2_ctx_and_install_access(self, j2_ctx)
+                self.install_resource(
+                    'bop/nginx_common.conf',
+                    j2_ctx,
+                    nginx.CONF_D.join('bop_common.conf'),
+                )
             # mail domains: [domain, port -- localhost always]
             # aux directives vhost_common
+            # nginx.install_vhost(self, vhost='bop_common', resource_d='bop', j2_ctx=j2_ctx)
+
             return
         j2_ctx = pkcollections.Dict(self.hdb)
         j2_ctx.bop_app_name = self.name
@@ -75,15 +90,14 @@ def _install_vhosts(self, j2_ctx):
     from rsconf.component import nginx
 
     def _domain(vh):
-        res = vh.get('domain')
+        res = vh.get('domains')
         if res:
-            return res
-        return vh.get('facade') + '.' + j2_ctx.bop_vhost_common_host_suffix
+            return res[0], res[1:]
+        return vh.get('facade') + '.' + j2_ctx.bop_vhost_common_host_suffix, []
 
     for vh in j2_ctx.bop_vhosts:
-        h = _domain(vh)
-        j2_ctx.bop_domain_aliases = vh.get('domain_aliases', [])
-        j2_ctx.bop_aux_directives = vh.get('aux_directives', '')
-        # mail_domain
-        # aux_directives
+        h, j2_ctx.bop_domain_aliases = _domain(vh)
+        j2_ctx.bop_aux_directives = vh.get('nginx_aux_directives', '')
         nginx.install_vhost(self, vhost=h, resource_d='bop', j2_ctx=j2_ctx)
+        for m in vh.get('mail_domains', []):
+            self.bopt.hdb.bop_mail_domains[m] = j2_ctx.bop_listen_base

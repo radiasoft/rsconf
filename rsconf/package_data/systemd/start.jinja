@@ -20,4 +20,5 @@ if (( $# > 0 )); then
 else
     image_cmd+=( {{ systemd_cmd }} )
 fi
-exec docker run $flags --rm "--user=$user" --net host {{ systemd_volumes }} "${image_cmd[@]}"
+# --init runs tini wrapper: https://github.com/krallin/tini
+exec docker run $flags --init --rm "--user=$user" --net host {{ systemd_volumes }} "${image_cmd[@]}"
