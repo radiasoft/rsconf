@@ -30,6 +30,8 @@ default:
     vhosts:
       - domain: petshop.{{ host }}
         mail_domain: petshop.{{ host }}
+        domain_aliases:
+          - petshop-alias.{{ host }}
         aux_directives: |
           location /nginx_redirect/(.*) {
               return 301 $scheme://$http_host/$1;

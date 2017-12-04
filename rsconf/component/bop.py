@@ -21,6 +21,8 @@ class T(component.T):
             self.append_root_bash(': nothing for now')
             for n in sorted(self.hdb.bop_apps):
                 self.buildt.build_component(T(n, self.buildt))
+            # mail domains: [domain, port -- localhost always]
+            # aux directives vhost_common
             return
         j2_ctx = pkcollections.Dict(self.hdb)
         j2_ctx.bop_app_name = self.name
@@ -80,8 +82,8 @@ def _install_vhosts(self, j2_ctx):
 
     for vh in j2_ctx.bop_vhosts:
         h = _domain(vh)
-        j2_ctx.bop_http_redirects = []
-        j2_ctx.bop_https_redirects = []
+        j2_ctx.bop_domain_aliases = vh.get('domain_aliases', [])
+        j2_ctx.bop_aux_directives = vh.get('aux_directives', '')
         # mail_domain
-        # aliases
+        # aux_directives
         nginx.install_vhost(self, vhost=h, resource_d='bop', j2_ctx=j2_ctx)

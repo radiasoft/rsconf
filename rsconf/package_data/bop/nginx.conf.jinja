@@ -10,6 +10,9 @@ server {
     root {{ nginx_default_root }};
     ssl_certificate {{ nginx_tls_crt }};
     ssl_certificate_key {{ nginx_tls_key }};
+
+    {{ bop_aux_directives | indent(4, indentfirst=False) }}
+
     location ~ /_ {
         deny all;
         return 403;
@@ -34,20 +37,10 @@ server {
     }
 }
 
-{% for h in bop_http_redirects %}
+{% for h in bop_domain_aliases %}
 server {
     listen {{ h }}:80;
     server_name {{ h }};
-    return 301 https://www.$http_host$request_uri;
-}
-{% endfor %}
-
-{% for h in bop_https_redirects %}
-server {
-    listen {{ h }}:443;
-    server_name {{ h }};
-    ssl_certificate {{ nginx_tls_crt }};
-    ssl_certificate_key {{ nginx_tls_key }};
     return 301 https://{{ nginx_vhost }}$request_uri;
 }
 {% endfor %}
