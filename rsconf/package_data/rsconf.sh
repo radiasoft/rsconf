@@ -18,7 +18,7 @@ rsconf_append() {
     fi
     # Assumes file must exist or be writable
     if fgrep -s -q -x "$line" "$file"; then
-        return 1
+        return ${rsconf_edit_no_change_res:-1}
     fi
     echo "$line" >> "$file"
     rsconf_service_file_changed "$file"
@@ -39,7 +39,7 @@ rsconf_edit() {
     fi
     local g=$( set +e; grep -s -q "$grep" "$file" && echo 1 )
     if [[ $g != $need ]]; then
-        return 1
+        return ${rsconf_edit_no_change_res:-1}
     fi
     perl -pi -e "$perl" "$file"
     g=$( set +e; grep -s -q "$grep" "$file" && echo 1 )

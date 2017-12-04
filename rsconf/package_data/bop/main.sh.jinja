@@ -11,6 +11,7 @@ cat /usr/bin/b-sendmail-http
 EOF
     rsconf_install_access 555 root root
     rsconf_install_file /usr/bin/b-sendmail-http "$tmp"
+    postfix_setup_bop
     # postfix modification
     # spamc copy, pulled from container dynamically?
     # spamd is listening on a socket

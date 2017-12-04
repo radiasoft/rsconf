@@ -94,8 +94,8 @@ base_os_main() {
     # https://access.redhat.com/solutions/8709
     # breaks SSH Xforwarding unless AddressFamily inet is set in sshd_config
     # idempotent so ok to repeat and the file might get updated with a new release.
-    rsconf_edit /etc/ssh/sshd_config ^AddressFamily.inet \
-        's{^#(AddressFamily) any}{$1 inet}' || true
+    rsconf_edit_no_change_res=0 rsconf_edit /etc/ssh/sshd_config ^AddressFamily.inet \
+        's{^#(AddressFamily) any}{$1 inet}'
     base_os_rpcbind_patch
 #TODO(robnagler) consider permissive on back end and enforcing on front end
     if rsconf_edit /etc/selinux/config ^SELINUX=disabled \
@@ -104,7 +104,7 @@ base_os_main() {
     fi
     base_os_chrony
     base_os_journal_persist
-    rsconf_append /etc/screenrc 'escape ^^^^' || true
+    rsconf_edit_no_change_res=0 rsconf_append /etc/screenrc 'escape ^^^^'
     ###base_os_iptables
     if [[ -n $reboot ]]; then
         rsconf_reboot
