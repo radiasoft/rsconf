@@ -81,7 +81,7 @@ def install_crt_and_login(compt, j2_ctx):
 
 def prefix_image(j2_ctx, image):
     update_j2_ctx(j2_ctx)
-    if image.startswith(_DOCKER_HUB_HOST):
+    if image.startswith(_DOCKER_HUB_HOST) or image.startswith(j2_ctx.docker_registry_http_addr):
         return image
     return '{}/{}'.format(j2_ctx.docker_registry_http_addr, image)
 

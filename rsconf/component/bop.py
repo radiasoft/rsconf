@@ -16,27 +16,29 @@ class T(component.T):
     def internal_build(self):
         from rsconf import systemd
         from rsconf.component import nginx
+        from rsconf.component import docker_registry
 
         if self.name == 'bop':
             self.hdb.bop_mail_domains = pkcollections.Dict()
+            self.hdb.bop_aux_directives = ''
             self.buildt.require_component('docker', 'postgresql', 'nginx', 'postfix')
-            self.append_root_bash(': nothing for now')
             for n in sorted(self.hdb.bop_apps):
                 vhostt = T(n, self.buildt)
                 vhostt.bopt = self
                 self.buildt.build_component(vhostt)
             j2_ctx = pkcollections.Dict(self.hdb)
             j2_ctx.bop_mail_domain_keys = sorted(self.hdb.bop_mail_domains.keys())
-            if j2_ctx.bop_mail_domain_keys:
-                nginx.update_j2_ctx_and_install_access(self, j2_ctx)
-                self.install_resource(
-                    'bop/nginx_common.conf',
-                    j2_ctx,
-                    nginx.CONF_D.join('bop_common.conf'),
-                )
-            # mail domains: [domain, port -- localhost always]
-            # aux directives vhost_common
-            # nginx.install_vhost(self, vhost='bop_common', resource_d='bop', j2_ctx=j2_ctx)
+            nginx.update_j2_ctx_and_install_access(self, j2_ctx)
+            self.install_resource(
+                'bop/nginx_common.conf',
+                j2_ctx,
+                nginx.CONF_D.join('bop_common.conf'),
+            )
+            self.append_root_bash_with_resource(
+                'bop/main.sh',
+                j2_ctx,
+                'bop_main',
+            )
 
             return
         j2_ctx = pkcollections.Dict(self.hdb)
@@ -70,19 +72,23 @@ class T(component.T):
             x = run_d.join(host_f)
             self.install_resource('bop/' + host_f, j2_ctx, x)
             volumes.append([x, guest_f])
+        image = docker_registry.prefix_image(j2_ctx, j2_ctx.bop_docker_image)
         systemd.docker_unit_enable(
             self,
-            image=j2_ctx.bop_docker_image,
+            image=image,
             env=pkcollections.Dict(),
             cmd='/usr/sbin/httpd -DFOREGROUND',
             volumes=volumes,
         )
+        if not 'bop_docker_image' in self.bopt:
+            self.bopt.hdb.bop_docker_image = image
         # After the unit files are installed
         self.append_root_bash_with_resource(
             'bop/initdb.sh',
             j2_ctx,
             j2_ctx.bop_app_name + '_initdb',
         )
+        self.bopt.hdb.bop_aux_directives += j2_ctx.get('bop_nginx_aux_directives', '')
         _install_vhosts(self, j2_ctx)
 
 

@@ -52,8 +52,8 @@ rsconf_edit() {
 
 rsconf_file_hash() {
     local file=$1
-    local x=( $(md5sum "$file") )
-    echo ${x[0]}
+    local x=( $(md5sum "$file" 2>/dev/null) )
+    echo ${x[0]:-NONE}
 }
 
 rsconf_file_hash_check() {
@@ -133,12 +133,17 @@ rsconf_install_directory() {
 
 rsconf_install_file() {
     local path=$1
+    local src=$2
     local tmp
     if [[ -d "$path" ]]; then
         install_err "$path: is a directory, must be a file (remove first)"
     fi
     tmp=$path-rsconf-tmp
-    install_download "$path" > "$tmp"
+    if [[ $src ]]; then
+        cp -a "$src" "$tmp"
+    else
+        install_download "$path" > "$tmp"
+    fi
     # Unlikely we are downloading HTML so this is a sanity check on SimpleHTTPServer
     # returning something that's a directory listing or not found
     if grep -s -q -i '^<title>' "$tmp"; then

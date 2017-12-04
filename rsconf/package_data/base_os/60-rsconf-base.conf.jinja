@@ -33,3 +33,6 @@ net.ipv6.conf.default.disable_ipv6=1
 # Useful for postgres, but not totally necessary
 kernel.msgmnb = 65536
 kernel.msgmax = 65536
+
+# https://github.com/moby/moby/pull/34886
+fs.may_detach_mounts = 1

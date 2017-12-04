@@ -1,13 +1,18 @@
-Once on the host, need to:
+#!/bin/bash
 
-yum install -y perl-libwww-perl
-cat SendmailHTTP.pm, package main; b-sendmail-http > b-sendmail-http
-install /usr/bin/b-sendmail-http
-postfix modification
-
-spamc copy, pulled from container dynamically?
-spamd is listening on a socket
-postgrey
-
-postgres will need it init
-su - vagrant -c 'bivio sql -force create_test_db'
+bop_main() {
+    rsconf_yum_install perl-libwww-perl
+    local tmp=$TMPDIR/b-sendmail-http-$RANDOM
+    docker run -i --rm '{{ bop_docker_image }}' bash > "$tmp" <<'EOF'
+echo '#!/usr/bin/perl -w'
+cat /usr/share/perl5/vendor_perl/Bivio/Util/SendmailHTTP.pm
+echo 'package main;'
+cat /usr/bin/b-sendmail-http
+EOF
+    rsconf_install_access 555 root root
+    rsconf_install_file /usr/bin/b-sendmail-http "$tmp"
+    # postfix modification
+    # spamc copy, pulled from container dynamically?
+    # spamd is listening on a socket
+    # postgrey
+}
