@@ -1,0 +1,24 @@
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/security_guide/sec-encryption
+https://unix.stackexchange.com/a/107859
+yum search cryptsetup
+# takes some time
+shred -v --iterations=1 /dev/docker/vps
+# fast
+cryptsetup luksFormat /dev/mapper/docker-vps
+cryptsetup --type luks open /dev/mapper/docker-vps mnt
+Enter passphrase for /dev/mapper/docker-vps:
+[root@v4 ~]# df
+Filesystem                      1K-blocks      Used Available Use% Mounted on
+/dev/mapper/VolGroup00-LogVol00  39269648   1089460  38180188   3% /
+devtmpfs                           242268         0    242268   0% /dev
+tmpfs                              250076         0    250076   0% /dev/shm
+tmpfs                              250076      4432    245644   2% /run
+tmpfs                              250076         0    250076   0% /sys/fs/cgroup
+/dev/sda2                         1038336     86836    951500   9% /boot
+tmpfs                               50016         0     50016   0% /run/user/1000
+10.10.10.1:/Users/nagler/v4     975954176 671868928 303829248  69% /vagrant
+mnt /dev/docker/vps none
+[root@v4 ~]# lsblk -o name,uuid,mountpoint
+mkfs -t xfs -n ftype=1 /dev/mapper/mnt
+
+vagrant doesn't work with mounting partitions (goes to the console and you can't copy and paste)
