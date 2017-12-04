@@ -26,13 +26,19 @@ default:
     vhost_common:
       # Only for test
       host_suffix: {{ host }}
+      aux_directives: ""
     vhosts:
-      - facade_uri: petshop
-        mail_host: petshop
-      - facade_uri: beforeother
-      - facade_uri: m.petshop
-      - facade_uri: other
-      - facade_uri: requiresecure
+      - domain: petshop.{{ host }}
+        mail_domain: petshop.{{ host }}
+        aux_directives: |
+          location /nginx_redirect/(.*) {
+              return 301 $scheme://$http_host/$1;
+          }
+
+      - facade: beforeother
+      - facade: m-petshop
+      - facade: other
+      - facade: requiresecure
   postgresql:
     # https://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server#effective_cache_size
     effective_cache_size: 244MB
@@ -72,8 +78,7 @@ channel:
         celeryd_concurrency: 1
         broker_url: "amqp://guest@{{ host }}//"
       mpi.cores: 2
-      nginx:
-        vhost: sirepo.{{ host }}
+      vhost: sirepo.{{ host }}
 
 host:
   dev:

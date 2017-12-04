@@ -1,0 +1,8 @@
+#!/bin/bash
+
+postfix_main() {
+    rsconf_file_hash_save /etc/postfix/main.cf
+    # https://codinfox.github.io/dev/2015/04/08/postfix-cannot-start/
+    postconf -e inet_protocols=ipv4
+    rsconf_file_hash_check /etc/postfix/main.cf
+}

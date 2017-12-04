@@ -9,15 +9,15 @@ import re
 from pykern.pkdebug import pkdp
 from rsconf import component
 from pykern import pkcollections
+from pykern import pkconfig
 
 
 class T(component.T):
     def internal_build(self):
         from rsconf import systemd
-        from rsconf.component import nginx
 
         if self.name == 'bop':
-            self.buildt.require_component('docker', 'postgresql', 'nginx')
+            self.buildt.require_component('docker', 'postgresql', 'nginx', 'postfix')
             self.append_root_bash(': nothing for now')
             for n in sorted(self.hdb.bop_apps):
                 self.buildt.build_component(T(n, self.buildt))
@@ -66,4 +66,22 @@ class T(component.T):
             j2_ctx,
             j2_ctx.bop_app_name + '_initdb',
         )
-        nginx.install_vhost(self, resource_d='bop', j2_ctx=j2_ctx)
+        _install_vhosts(self, j2_ctx)
+
+
+def _install_vhosts(self, j2_ctx):
+    from rsconf.component import nginx
+
+    def _domain(vh):
+        res = vh.get('domain')
+        if res:
+            return res
+        return vh.get('facade') + '.' + j2_ctx.bop_vhost_common_host_suffix
+
+    for vh in j2_ctx.bop_vhosts:
+        h = _domain(vh)
+        j2_ctx.bop_http_redirects = []
+        j2_ctx.bop_https_redirects = []
+        # mail_domain
+        # aliases
+        nginx.install_vhost(self, vhost=h, resource_d='bop', j2_ctx=j2_ctx)

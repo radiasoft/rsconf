@@ -21,7 +21,7 @@ rsconf_append() {
         return 1
     fi
     echo "$line" >> "$file"
-    rsconf_service_file_check "$file"
+    rsconf_service_file_changed "$file"
     return 0
 }
 
@@ -46,8 +46,35 @@ rsconf_edit() {
     if [[ $g == $need ]]; then
         install_err "$perl: failed to modify: $file"
     fi
-    rsconf_service_file_check "$file"
+    rsconf_service_file_changed "$file"
     return 0
+}
+
+rsconf_file_hash() {
+    local file=$1
+    local x=( $(md5sum "$file") )
+    echo ${x[0]}
+}
+
+rsconf_file_hash_check() {
+    local file=$1
+    if [[ ! $rsconf_file_hash[$file] ]]; then
+        install_err "$file: missing hash"
+    fi
+    local new=$(rsconf_file_hash "$file")
+    local old=${rsconf_file_hash[$file]}
+    unset rsconf_file_hash[$file]
+    if [[ $new != $old ]]; then
+        rsconf_service_file_changed "$file"
+    fi
+}
+
+rsconf_file_hash_save() {
+    local file=$1
+    if [[ ${rsconf_file_hash[$file]} ]]; then
+        install_err "$file: unchecked saved hash"
+    fi
+    rsconf_file_hash[$file]=$(rsconf_file_hash "$file")
 }
 
 rsconf_install_access() {
@@ -82,7 +109,7 @@ rsconf_install_chxxx() {
         change=1
     fi
     if [[ -z $rsconf_no_check && -n $change ]]; then
-        rsconf_service_file_check "$path"
+        rsconf_service_file_changed "$path"
     fi
 }
 
@@ -101,7 +128,7 @@ rsconf_install_directory() {
     # parent directory must already exist
     mkdir "$path"
     rsconf_no_check=1 rsconf_install_chxxx "$path"
-    rsconf_service_file_check "$path"
+    rsconf_service_file_changed "$path"
 }
 
 rsconf_install_file() {
@@ -124,7 +151,7 @@ rsconf_install_file() {
     fi
     rsconf_no_check=1 rsconf_install_chxxx "$tmp"
     mv -f "$tmp" "$path"
-    rsconf_service_file_check "$path"
+    rsconf_service_file_changed "$path"
 }
 
 rsconf_main() {
@@ -139,6 +166,7 @@ rsconf_main() {
     install_curl_flags+=( -n )
     install_url host/$host
     # Dynamically scoped; must be inline here
+    local -A rsconf_file_hash=()
     local -A rsconf_install_access=()
     local -A rsconf_service_status=()
     local -A rsconf_service_watch=()
@@ -204,8 +232,7 @@ rsconf_service_docker_pull() {
     fi
 }
 
-
-rsconf_service_file_check() {
+rsconf_service_file_changed() {
     local path=$1
     local s
     while [[ $path != / ]]; do

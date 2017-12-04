@@ -68,7 +68,7 @@ class T(component.T):
             host_path=beaker_secret_f,
             gen_secret=lambda p: db.random_string(path=p, length=64),
         )
-        nginx.install_vhost(self)
+        nginx.install_vhost(self, vhost=self.hdb.sirepo_vhost)
 
     def _gen_beaker_secret(self, tgt):
         from rsconf.pkcli import sirepo
