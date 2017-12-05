@@ -15,7 +15,7 @@ docker_main() {
 #TODO(robnagler) how to update?
     # yum-plugin-ovl required for overlay2 on centos7
     # https://github.com/docker-library/official-images/issues/1291
-    rsconf_yum_install docker-ce-17.06.0.ce-1.el7.centos yum-plugin-ovl
+    rsconf_yum_install docker-ce yum-plugin-ovl
     # This bug with devicemapper keeps coming up:
     # "Error response from daemon: devicemapper failed to remove the root"
     # which is caused by "thin: Deletion of thin device 143 failed." (dmesg)
