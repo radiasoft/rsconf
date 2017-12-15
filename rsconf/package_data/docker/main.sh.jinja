@@ -9,13 +9,28 @@ docker_main() {
     fi
     rsconf_require base_users
 #TODO(robnagler) need a list of repos and RPMs.
-    yum-config-manager \
-        --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-    yum makecache fast
+    # F27
+    if rsconf_fedora_release_if 26; then
+        # https://docs.docker.com/engine/installation/linux/docker-ce/fedora/#set-up-the-repository
+        dnf -y install dnf-plugins-core
+        sudo dnf config-manager \
+            --add-repo \
+            https://download.docker.com/linux/fedora/docker-ce.repo
+        # no release for 27 yet
+        # https://github.com/docker/for-linux/issues/164#issuecomment-348173547
+        install -m 700 -d /etc/dnf/vars
+        echo 26 | install -m 600 /dev/stdin /etc/dnf/vars/docker_releasever
+        perl -pi -e 's/\$releasever/\$docker_releasever/g' /etc/yum.repos.d/docker-ce.repo
+    else
+        yum-config-manager \
+            --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+        yum makecache fast
+        # yum-plugin-ovl required for overlay2 on centos7
+        # https://github.com/docker-library/official-images/issues/1291
+        rsconf_yum_install yum-plugin-ovl
+    fi
 #TODO(robnagler) how to update?
-    # yum-plugin-ovl required for overlay2 on centos7
-    # https://github.com/docker-library/official-images/issues/1291
-    rsconf_yum_install docker-ce yum-plugin-ovl
+    rsconf_yum_install docker-ce
     # This bug with devicemapper keeps coming up:
     # "Error response from daemon: devicemapper failed to remove the root"
     # which is caused by "thin: Deletion of thin device 143 failed." (dmesg)
@@ -31,8 +46,12 @@ docker_main() {
         done
         size='-l 100%VG'
     else
-        # Non-vagrant: fixed size, centos volume group
+        # Non-vagrant: fixed size, centos/fedora volume group
         vg=centos
+        if rsconf_fedora_release_if; then
+            # untested and probably never will be
+            vg=fedora
+        fi
         size='-L {{ docker_volume_size }}'
     fi
     lvcreate --wipesignatures y -n "$lv" "$vg" $size

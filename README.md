@@ -16,8 +16,7 @@ On the master as root:
 
 ```bash
 sudo su -
-host=v5.bivio.biz
-export install_channel=dev install_server=http://v5.bivio.biz:8000
+export host=v5.radia.run install_channel=dev install_server=http://v5.radia.run:8000
 curl "$install_server" | bash -s rsconf.sh "$host" setup_dev
 exit
 exit
@@ -25,7 +24,7 @@ vagrant reload
 vssh
 # NOTE: restart nginx like above (do not "rsconf build")
 sudo su -
-export install_channel=dev install_server=http://v5.bivio.biz:8000
+export install_channel=dev install_server=http://v5.radia.run:8000
 curl "$install_server" | bash -s rsconf.sh "$(hostname -f)"
 ```
 
@@ -38,7 +37,7 @@ cat > test.sh <<'END'
 #!/bin/bash
 . ~/.bashrc
 set -e -x
-export host=v4.bivio.biz install_server=http://v5.bivio.biz:8000 installl_channel=dev
+export host=v4.radia.run install_server=http://v5.radia.run:8000 install_channel=dev
 curl radia.run | bash -s vagrant-centos7 "$host" "$(dig +short "$host")"
 vssh sudo su - <<EOF
 export install_channel=dev install_server="$install_server"

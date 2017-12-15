@@ -1,14 +1,6 @@
 #!/bin/bash
 #
-# Development server:
-# python -m SimpleHTTPServer 8000
-#
-# Development box:
-# curl radia.run | bash -s vagrant-centos7
-# vssh
-# sudo su -
-# export install_server=http://v5.bivio.biz:8000 install_channel=dev
-# curl "$install_server" | bash -s rsconf.sh
+# rsconf library and main
 #
 rsconf_append() {
     local file=$1
@@ -48,6 +40,13 @@ rsconf_edit() {
     fi
     rsconf_service_file_changed "$file"
     return 0
+}
+
+rsconf_fedora_release_if() {
+    # First supported release is 27, but this allows a general fedora test
+    local expect=${1:-26}
+    local ver=( $(cat /etc/fedora-release 2>/dev/null) )
+    (( $expect >= ${ver[2]:-0} ))
 }
 
 rsconf_file_hash() {
@@ -140,7 +139,8 @@ rsconf_install_file() {
     fi
     tmp=$path-rsconf-tmp
     if [[ $src ]]; then
-        cp -a "$src" "$tmp"
+        # Don't copy attributes, because may be /dev/null
+        cp "$src" "$tmp"
     else
         install_download "$path" > "$tmp"
     fi

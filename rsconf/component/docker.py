@@ -24,7 +24,7 @@ class T(component.T):
         self.append_root_bash(
             "rsconf_service_prepare '{}' '{}'".format(
                 self.name,
-                _DAEMON_JSON,
+                _CONF_DIR,
             ),
         )
         j2_ctx = pkcollections.Dict(self.hdb)

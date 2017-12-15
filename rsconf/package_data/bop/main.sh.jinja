@@ -6,8 +6,11 @@ bop_main() {
     docker run -i --rm '{{ bop_docker_image }}' bash > "$tmp" <<'EOF'
 echo '#!/usr/bin/perl -w'
 cat /usr/share/perl5/vendor_perl/Bivio/Util/SendmailHTTP.pm
-echo 'package main;'
-cat /usr/bin/b-sendmail-http
+cat <<'EOF2'
+package main;
+use strict;
+exit(Bivio::Util::SendmailHTTP->main(@ARGV));
+EOF2
 EOF
     rsconf_install_access 555 root root
     rsconf_install_file /usr/bin/b-sendmail-http "$tmp"

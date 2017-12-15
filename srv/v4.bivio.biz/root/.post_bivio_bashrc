@@ -1,3 +1,0 @@
-export SYSTEMD_COLORS=0
-# --quit-if-one-screen -quit-at-eof --quit-on-intr --no-init
-export SYSTEMD_LESS=EFKX

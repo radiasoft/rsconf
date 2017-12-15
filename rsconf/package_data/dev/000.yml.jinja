@@ -88,8 +88,7 @@ channel:
 host:
   dev:
     {{ host }}:
-      # rabbitmq, celery_sirepo, sirepo
-      rsconf_db_components: [ bop ]
+      rsconf_db_components: [ rabbitmq, celery_sirepo, sirepo ]
     {{ master }}:
       rsconf_db_components: [ docker_registry ]
 

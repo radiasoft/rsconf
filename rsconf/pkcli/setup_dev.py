@@ -36,8 +36,8 @@ def default_command():
     boot_hdb = pkcollections.Dict(rsconf_db_secret_d=secret_d, rsconf_db_channel='dev')
     j2_ctx = pkcollections.Dict(
         srv_d=str(srv),
-        host='v4.bivio.biz',
-        master='v5.bivio.biz',
+        host='v4.radia.run',
+        master='v5.radia.run',
         # You can't change this
         passwd_file=db.secret_path(boot_hdb, 'nginx-passwd', visibility='channel')
     )
