@@ -1,6 +1,6 @@
 https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/security_guide/sec-encryption
 https://unix.stackexchange.com/a/107859
-yum search cryptsetup
+yum install cryptsetup
 # takes some time
 shred -v --iterations=1 /dev/docker/vps
 # fast
@@ -22,3 +22,54 @@ mnt /dev/docker/vps none
 mkfs -t xfs -n ftype=1 /dev/mapper/mnt
 
 vagrant doesn't work with mounting partitions (goes to the console and you can't copy and paste)
+
+#### Performance testing
+
+# lvcreate -n t1 centos -L 100G
+# mkfs -t xfs -n ftype=1 /dev/mapper/centos-t1
+# mount /dev/mapper/centos-t1 /mnt
+# mkdir /run/rd1
+# mount -t tmpfs -o size=62G tmpfs /run/rd1
+# dd if=/dev/zero of=/run/rd1/foo count=62000 bs=1M
+
+~$ bonnie++ -d /mnt -r 4000 -n 0 -m t1 -f -b
+Writing intelligently...done
+Rewriting...done
+Reading intelligently...done
+start 'em...done...done...done...done...done...
+Version  1.97       ------Sequential Output------ --Sequential Input- --Random-
+Concurrency   1     -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
+Machine        Size K/sec %CP K/sec %CP K/sec %CP K/sec %CP K/sec %CP  /sec %CP
+t1               8G           256343  38 114849  21           332744  28  2762  97
+Latency                         499ms    2259ms              2547us   39940us
+
+1.97,1.97,t1,1,1513589554,8G,,,,256343,38,114849,21,,,332744,28,2762,97,,,,,,,,,,,,,,,,,,,499ms,2259ms,,2547us,39940us,,,,,,
+
+# umount /mnt
+# shred -v --iterations=1 /dev/mapper/centos-t1
+# cryptsetup luksFormat /dev/mapper/centos-t1
+# cryptsetup --type luks open /dev/mapper/centos-t1 mnt
+# mkfs -t xfs -n ftype=1 /dev/mapper/mnt
+#  mount /dev/mapper/mnt /mnt
+# chown vagrant:vagrant /mnt
+
+
+~$ bonnie++ -d /mnt -r 4000 -n 0 -m t1 -f -b
+
+# uptime
+16:01:40 up 5 days, 22:34,  2 users,  load average: 1.03, 0.68, 0.58
+
+~# uptime
+ 16:02:18 up 5 days, 22:34,  2 users,  load average: 1.67, 0.87, 0.65
+~$ bonnie++ -d /mnt -r 4000 -n 0 -m t1 -f -b
+Writing intelligently...done
+Rewriting...done
+Reading intelligently...done
+start 'em...done...done...done...done...done...
+Version  1.97       ------Sequential Output------ --Sequential Input- --Random-
+Concurrency   1     -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
+Machine        Size K/sec %CP K/sec %CP K/sec %CP K/sec %CP K/sec %CP  /sec %CP
+t1               8G           259489  24 129929  20           331386  22  2844  95
+Latency                       19293us   99858us              2635us   47930us
+
+1.97,1.97,t1,1,1513592346,8G,,,,259489,24,129929,20,,,331386,22,2844,95,,,,,,,,,,,,,,,,,,,19293us,99858us,,2635us,47930us,,,,,,
