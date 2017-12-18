@@ -25,7 +25,7 @@ vssh
 # NOTE: restart nginx like above (do not "rsconf build")
 sudo su -
 export install_channel=dev install_server=http://v5.radia.run:8000
-curl "$install_server" | bash -s rsconf.sh "$(hostname -f)"
+curl "$install_server" | bash -s rsconf.sh "$(hostname -f)" setup_dev
 ```
 
 On the client, create a test.sh file and run it:
@@ -48,9 +48,9 @@ vagrant reload
 vssh sudo su - <<EOF
 set -e -x
 export install_channel=$install_channel install_server=$install_server
-curl "$install_server" | bash -s rsconf.sh "$host"
+curl "$install_server" | bash -s rsconf.sh "$host" setup_dev
 # postresql restart request
-curl "$install_server" | bash -s rsconf.sh "$host"
+curl "$install_server" | bash -s rsconf.sh "$host" setup_dev
 EOF
 END
 bash test.sh
