@@ -14,7 +14,7 @@ if (( $# > 0 )); then
         flags="$flags-t"
     fi
     image_cmd+=( $@ )
-    if [[ $start_run_u ]]; then
+    if [[ ${start_run_u:=} ]]; then
         user=$start_run_u
     fi
 else
