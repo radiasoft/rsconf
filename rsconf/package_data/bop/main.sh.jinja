@@ -14,8 +14,9 @@ EOF2
 EOF
     rsconf_install_access 555 root root
     rsconf_install_file /usr/bin/b-sendmail-http "$tmp"
-    postfix_setup_bop
-    # postfix modification
+    rsconf_install_access 555 root root
+    #POSIT: domains have not special chars
+    postfix_setup_bop {{ bop_mail_domain_keys }}
     # spamc copy, pulled from container dynamically?
     # spamd is listening on a socket
     # postgrey

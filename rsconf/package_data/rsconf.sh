@@ -76,6 +76,25 @@ rsconf_file_hash_save() {
     rsconf_file_hash[$file]=$(rsconf_file_hash "$file")
 }
 
+rsconf_group() {
+    local group=$1
+    local gid=$2
+    local x=( $(IFS=: getent group "$group" 2>/dev/null || true) )
+    local exist_gid=${x[2]}
+    if [[ -n $exist_gid ]]; then
+        if [[ $exist_gid != $gid ]]; then
+            install_err "$exist_gid: unexpected gid (expect=$gid) for group $group"
+        fi
+        return
+    fi
+    local flags=()
+    #POSIT: <1000 is system
+    if [[ $gid < 1000 ]]; then
+        flags+=( -r )
+    fi
+    groupadd "${flags[@]}" -g "$gid" "$group"
+}
+
 rsconf_install_access() {
     if [[ ! $1 =~ ^[[:digit:]]{1,4}$ ]]; then
         install_err "$1: invalid or empty mode"
@@ -295,6 +314,25 @@ rsconf_setup_dev() {
     export install_channel=dev
     curl "$install_server/$host-netrc" > /root/.netrc
     chmod 400 /root/.netrc
+}
+
+rsconf_user() {
+    local user=$1
+    local uid=$2
+    local exist_uid=$(id -u "$user" 2>/dev/null || true)
+    rsconf_group "$user" "$gid"
+    if [[ -n $exist_uid ]]; then
+        if [[ $exist_uid != $uid ]]; then
+            install_err "$exist_uid: unexpected uid (expect=$uid) for user $user"
+        fi
+        return
+    fi
+    local flags=()
+    #POSIT: <1000 is system
+    if [[ $gid < 1000 ]]; then
+        flags+=( -r )
+    fi
+    useradd "${flags[@]}" -g "$user" -u "$uid" "$user"
 }
 
 rsconf_yum_install() {

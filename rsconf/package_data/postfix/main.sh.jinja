@@ -1,22 +1,21 @@
 #!/bin/bash
 
+postfix_local_host_names=/etc/postfix/local-host-names
+
 postfix_main() {
     rsconf_file_hash_save /etc/postfix/main.cf
     # https://codinfox.github.io/dev/2015/04/08/postfix-cannot-start/
     rsconf_yum_install procmail
-    local lh=/etc/postfix/local-host-names
-    if [[ ! -e $lh ]]; then
-        rsconf_install_access 444 root root
-        rsconf_install_file "$lh" /dev/null
+    if [[ ! -e $_postfix_local_host_names ]]; then
+        rsconf_install_access 644 root root
+        rsconf_install_file "$postfix_local_host_names" /dev/null
     fi
     local x=(
-        alias_maps=hash:/etc/aliases
-        alias_database=hash:/etc/aliases
 	inet_interfaces=all
 	inet_protocols=ipv4
 	'mailbox_command=/usr/bin/procmail -t -Y -a "$EXTENSION" -d "$USER"'
 	recipient_delimiter=+
-	'mydestination=$myhostname,localhost,'"$lh"
+	"mydestination=\$myhostname,localhost,$postfix_local_host_names"
 	local_recipient_maps=
 	biff=no
 	'smtpd_banner=$myhostname ESMTP'
@@ -32,6 +31,7 @@ postfix_main() {
 }
 
 postfix_setup_bop() {
+    local mail_domains=( "$@" )
     local master=/etc/postfix/master.cf
     local main=/etc/postfix/main.cf
     rsconf_file_hash_save "$main"
@@ -46,6 +46,10 @@ postfix_setup_bop() {
         '^smtp.*200' 's{^smtp\s+inet.*}{smtp       inet  n       -       n       -       200       smtpd}'
     rsconf_edit "$master" \
         '^local.*8' 's{^local\s.*}{local     unix  -       n       n       -       8       local}'
+    local h
+    for h in "${mail_domains[@]}"; do
+        rsconf_append "$postfix_local_host_names" "$h"
+    done
     rsconf_append "$master" \
         'b-sendmail-http unix  -       n       n       -       2       pipe flags=DRhu user=nobody:nobody argv=/usr/bin/b-sendmail-http ${client_address} ${recipient} localhost.localdomain:80/_mail_receive/%s /bin/false any-param'
 
@@ -54,4 +58,19 @@ postfix_setup_bop() {
 ##!/bin/sh
 ## $Id: b-spamc-http,v 1.3 2013/05/19 22:35:51 nagler Exp $
 #/usr/bin/spamc | /usr/bin/b-sendmail-http "$@"
+
 }
+
+# Testing email
+true <<'EOF2'
+/usr/sbin/sendmail fourem@petshop.v4.radia.run <<'EOF'
+To: fourem@petshop.v4.radia.run
+Subject: testing 123
+From: vagrant+btest_btest_admin@v4.radia.run
+
+test
+EOF
+EOF2
+
+https://janikarhunen.fi/tackle-spam-with-spamassassin-on-centos7-and-postfix.html
+http://forums.sentora.org/showthread.php?tid=1118
