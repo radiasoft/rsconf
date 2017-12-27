@@ -1,64 +1,98 @@
 #!/bin/bash
 
 postfix_local_host_names=/etc/postfix/local-host-names
+postfix_main_cf=/etc/postfix/main.cf
 
 postfix_main() {
-    rsconf_file_hash_save /etc/postfix/main.cf
+    rsconf_file_hash_save "$postfix_main_cf"
     # https://codinfox.github.io/dev/2015/04/08/postfix-cannot-start/
     rsconf_yum_install procmail
     if [[ ! -e $_postfix_local_host_names ]]; then
         rsconf_install_access 644 root root
-        rsconf_install_file "$postfix_local_host_names" /dev/null
+        rsconf_install_file /dev/null "$postfix_local_host_names"
     fi
+    local tmp=$TMPDIR/postfix_main-$RANDOM
+    #POSIT spamd_docker_image is binary compatible with host operating system
+    docker run -i --rm '{{ spamd_docker_image }}' dd if=/usr/bin/spamc > "$tmp"
+    rsconf_install_access 555 root root
+    rsconf_install_file "$tmp" /usr/bin/spamc
+    rm -f "$tmp"
     local x=(
-	inet_interfaces=all
-	inet_protocols=ipv4
-	'mailbox_command=/usr/bin/procmail -t -Y -a "$EXTENSION" -d "$USER"'
-	recipient_delimiter=+
-	"mydestination=\$myhostname,localhost,$postfix_local_host_names"
-	local_recipient_maps=
-	biff=no
-	'smtpd_banner=$myhostname ESMTP'
-	smtpd_delay_reject=no
+        # https://help.ubuntu.com/community/PostfixGreylisting
+        biff=no
+        inet_interfaces=all
+        inet_protocols=ipv4
+        local_recipient_maps=
+        mailbox_command='/usr/bin/procmail -t -Y -a "$EXTENSION" -d "$USER"'
+        mailbox_size_limit=0
+        message_size_limit=50000000
+        mydestination="\$myhostname,localhost,$postfix_local_host_names"
         mynetworks=127.0.0.0/8
-	smtpd_sender_restrictions=reject_unauth_pipelining,permit_mynetworks,reject_non_fqdn_sender,reject_unknown_sender_domain
-	smtpd_recipient_restrictions=reject_unauth_pipelining,permit_mynetworks,reject_unauth_destination,reject_non_fqdn_recipient,reject_unknown_recipient_domain
-	message_size_limit=50000000
-	mailbox_size_limit=0
+        recipient_delimiter=+
+        smtp_tls_CAfile=/etc/pki/tls/certs/ca-bundle.crt
+        smtp_tls_cert_file='{{ postfix_tls_cert_file }}'
+        smtp_tls_key_file='{{ postfix_tls_cert_file }}'
+        smtp_tls_security_level=may
+        smtpd_banner='$myhostname ESMTP'
+        smtpd_client_restrictions='sleep 8'
+        smtpd_data_restrictions=reject_unauth_pipelining
+        smtpd_delay_reject=no
+        smtpd_helo_restrictions=reject_unknown_helo_hostname
+        smtpd_recipient_restrictions='reject_unauth_pipelining,permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination,reject_non_fqdn_recipient,reject_unknown_recipient_domain,check_policy_service inet:127.0.0.1:{{ postgrey_port }}'
+        smtpd_relay_restrictions=permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination
+        smtpd_sender_restrictions=reject_unauth_pipelining,permit_mynetworks,reject_non_fqdn_sender,reject_unknown_sender_domain
+        smtpd_tls_CAfile=/etc/pki/tls/certs/ca-bundle.crt
+        smtpd_tls_cert_file='{{ postfix_tls_cert_file }}'
+        smtpd_tls_key_file='{{ postfix_tls_cert_file }}'
+        smtpd_tls_security_level=may
     )
     postconf -e "${x[@]}"
-    rsconf_file_hash_check /etc/postfix/main.cf
+    rsconf_file_hash_check "$postfix_main_cf"
+    local rsconf_edit_no_change_res=0
+    # http://www.postfix.org/FILTER_README.html
+    # https://janikarhunen.fi/tackle-spam-with-spamassassin-on-centos7-and-postfix.html
+    # http://forums.sentora.org/showthread.php?tid=1118
+    rsconf_edit "$master" \
+        '^smtp.*spamd' 's{^smtp\s+inet.*}{smtp       inet  n       -       n       -       200       smtpd -o content_filter=spamd}'
+    rsconf_append "$master" \
+        'spamd unix  -       n       n       -       10       pipe flags=Rq user=nobody:nobody argv=/usr/bin/spamc --port={{ spamd_port }} -e /usr/sbin/sendmail -G -i -f ${sender} -- ${recipient}'
 }
 
 postfix_setup_bop() {
     local mail_domains=( "$@" )
+    local tmp=$TMPDIR/postfix_setup_bop-$RANDOM
+    # https://janikarhunen.fi/tackle-spam-with-spamassassin-on-centos7-and-postfix.html
+    # http://forums.sentora.org/showthread.php?tid=1118
+    rsconf_yum_install perl-libwww-perl
+    rsconf_install_access 555 root root
+    docker run -i --rm '{{ bop_docker_image }}' bash > "$tmp" <<'EOF2'
+echo '#!/usr/bin/perl -w'
+cat /usr/share/perl5/vendor_perl/Bivio/Util/SendmailHTTP.pm
+cat <<'EOF'
+package main;
+use strict;
+exit(Bivio::Util::SendmailHTTP->main(@ARGV));
+EOF
+EOF2
+    rsconf_install_file "$tmp" /usr/bin/b-sendmail-http
+    rm -f "$tmp"
     local master=/etc/postfix/master.cf
-    local main=/etc/postfix/main.cf
-    rsconf_file_hash_save "$main"
+    rsconf_file_hash_save "$postfix_main_cf"
     postconf -e \
-        'mailbox_transport=b-sendmail-http:unix' \
+        'mailbox_transport=bsendmailhttp:unix' \
         'smtpd_timeout=${stress?12}${stress:300}' \
         'smtpd_hard_error_limit=${stress?1}${stress:20}' \
-	'b-sendmail-http_destination_recipient_limit=1'
-    rsconf_file_hash_check "$main"
+	'bsendmailhttp_destination_recipient_limit=1'
+    rsconf_file_hash_check "$postfix_main_cf"
     local rsconf_edit_no_change_res=0
     rsconf_edit "$master" \
-        '^smtp.*200' 's{^smtp\s+inet.*}{smtp       inet  n       -       n       -       200       smtpd}'
-    rsconf_edit "$master" \
         '^local.*8' 's{^local\s.*}{local     unix  -       n       n       -       8       local}'
+    rsconf_append "$master" \
+        'bsendmailhttp unix  -       n       n       -       2       pipe flags=DRhu user=nobody:nobody argv=/usr/bin/b-sendmail-http ${client_address} ${recipient} localhost.localdomain:80/_mail_receive/%s /bin/false unused-param'
     local h
     for h in "${mail_domains[@]}"; do
         rsconf_append "$postfix_local_host_names" "$h"
     done
-    rsconf_append "$master" \
-        'b-sendmail-http unix  -       n       n       -       2       pipe flags=DRhu user=nobody:nobody argv=/usr/bin/b-sendmail-http ${client_address} ${recipient} localhost.localdomain:80/_mail_receive/%s /bin/false any-param'
-
-#TODO(robnagler)
-# b-spamc-http
-##!/bin/sh
-## $Id: b-spamc-http,v 1.3 2013/05/19 22:35:51 nagler Exp $
-#/usr/bin/spamc | /usr/bin/b-sendmail-http "$@"
-
 }
 
 # Testing email
@@ -71,6 +105,3 @@ From: vagrant+btest_btest_admin@v4.radia.run
 test
 EOF
 EOF2
-
-https://janikarhunen.fi/tackle-spam-with-spamassassin-on-centos7-and-postfix.html
-http://forums.sentora.org/showthread.php?tid=1118

@@ -51,6 +51,22 @@ default:
     # starting value for shared_buffers is 1/4 of the memory in your system."
     shared_buffers: 122MB
     auth_local_method: md5
+  postgrey:
+    port: 10023
+    docker_image: biviosoftware/perl
+    whitelist_clients:
+      # bdu3
+      - 50.253.124.194
+      # dfw1
+      - 72.14.189.248
+      # dfw2
+      - 72.14.189.97
+      # dfw4
+      - 104.237.137.251
+      # frii
+      - 216.17.132.32/27
+      # vw
+      - 216.87.82.64/27
   sirepo:
     pkcli:
       service_processes: 1
@@ -61,6 +77,9 @@ default:
       github_secret: ""
     server:
       oauth_login: false
+  spamd:
+    port: 10783
+    docker_image: biviosoftware/perl
   bop:
     server_status_location: /bop-status
     is_production: false

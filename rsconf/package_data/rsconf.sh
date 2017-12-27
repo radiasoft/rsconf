@@ -151,7 +151,12 @@ rsconf_install_directory() {
 
 rsconf_install_file() {
     local path=$1
-    local src=$2
+    local src=
+    if [[ -n $2 ]]; then
+        src=$1
+        path=$2
+    fi
+    # src= may be passed in
     local tmp
     if [[ -d "$path" ]]; then
         install_err "$path: is a directory, must be a file (remove first)"
