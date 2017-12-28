@@ -19,7 +19,8 @@ VISIBILITY_GLOBAL = VISIBILITY_LIST[0]
 
 ZERO_YML = '000.yml'
 SRV_SUBDIR = 'srv'
-DEFAULT_DB_SUBDIR = 'run'
+DEFAULT_ROOT_SUBDIR = 'run'
+DB_SUBDIR = 'db'
 SECRET_SUBDIR = 'secret'
 HOST_SUBDIR = 'host'
 LEVELS = ('default', 'channel', 'host')
@@ -32,9 +33,10 @@ class T(pkcollections.Dict):
         from pykern import pkyaml
 
         super(T, self).__init__(*args, **kwargs)
-        self.base = pkyaml.load_file(cfg.root_dir.join(ZERO_YML))
+        self.root_d = pkio.py_path(cfg.root_dir)
+        self.base = pkyaml.load_file(self.root_d.join(DB_SUBDIR, ZERO_YML))
         self.secret = pkyaml.load_file(
-            cfg.root_dir.join(SECRET_SUBDIR).join(ZERO_YML),
+            self.root_d.join(DB_DIR, SECRET_SUBDIR, ZERO_YML),
         )
 
     def host_db(self, channel, host):
@@ -61,14 +63,14 @@ class T(pkcollections.Dict):
                         if not v:
                             continue
                 pkconfig.flatten_values(res, v)
-        root_d = pkio.py_path(cfg.root_dir)
-        srv_d = root_d.join(SRV_SUBDIR)
+        db_d = self.root_d.join(DB_SUBDIR)
+        srv_d = self.root_d.join(SRV_SUBDIR)
         v = pkcollections.Dict(
             rsconf_db=pkcollections.Dict(
-                host=host.lower(),
                 channel=channel,
-                root_d=root_d,
-                secret_d=root_d.join(SECRET_SUBDIR),
+                db_d=db_d,
+                host=host.lower(),
+                secret_d=db_d.join(SECRET_SUBDIR),
                 srv_d=srv_d,
                 srv_host_d=srv_d.join(HOST_SUBDIR),
             )
@@ -136,10 +138,10 @@ def _cfg_root(value):
         if not root.join('setup.py').check():
             # Don't run from an install directorya
             root = pkio.py_path('.')
-        value = root.join(DEFAULT_DB_SUBDIR)
+        value = root.join(DEFAULT_ROOT_SUBDIR)
     return value
 
 
 cfg = pkconfig.init(
-    root_dir=(None, _cfg_root, 'Top of rsonf tree'),
+    root_dir=(None, _cfg_root, 'Top of rsconf tree'),
 )

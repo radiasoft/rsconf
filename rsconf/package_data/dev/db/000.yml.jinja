@@ -9,6 +9,20 @@ default:
     volume_size: 100G
   docker_registry:
     host: {{ master }}
+  iptables:
+    our_networks:
+      # bdu3
+      - 50.253.124.194
+      # dfw1
+      - 72.14.189.248
+      # dfw2
+      - 72.14.189.97
+      # dfw4
+      - 104.237.137.251
+      # frii
+      - 216.17.132.32/27
+      # vw
+      - 216.87.82.64/27
   nginx:
     worker_processes: 1
   petshop:
@@ -54,19 +68,7 @@ default:
   postgrey:
     port: 10023
     docker_image: biviosoftware/perl
-    whitelist_clients:
-      # bdu3
-      - 50.253.124.194
-      # dfw1
-      - 72.14.189.248
-      # dfw2
-      - 72.14.189.97
-      # dfw4
-      - 104.237.137.251
-      # frii
-      - 216.17.132.32/27
-      # vw
-      - 216.87.82.64/27
+    whitelist_recipients: []
   sirepo:
     pkcli:
       service_processes: 1
@@ -81,6 +83,7 @@ default:
     port: 10783
     docker_image: biviosoftware/perl
   bop:
+    docker_image: biviosoftware/bivio
     server_status_location: /bop-status
     is_production: false
     bconf_aux: ''
@@ -98,7 +101,7 @@ channel:
     sirepo:
       celery_tasks:
         celeryd_concurrency: 1
-        broker_url: "amqp://guest@{{ host }}//"
+        broker_url: "amqp://guest@rabbitmq.{{ host }}//"
       mpi.cores: 2
       vhost: sirepo.{{ host }}
     bop:

@@ -1,3 +1,4 @@
+#TODO(robnagler) https://linode.com/docs/web-servers/nginx/configure-nginx-for-optimized-performance/
 user nginx;
 worker_processes {{ nginx_worker_processes }};
 error_log /var/log/nginx/error.log info;
@@ -6,6 +7,8 @@ pid /run/nginx.pid;
 events {
     # This is the maximum
     worker_connections 1024;
+    use epoll;
+    multi_accept on;
 }
 
 http {

@@ -1,0 +1,10 @@
+#!/bin/bash
+set -eu -o pipefail
+cp /usr/share/postgrey/postgrey_whitelist_clients /etc/postgrey/postgrey_whitelist_clients
+cd '{{ postgrey_dbdir }}'
+exec /usr/sbin/postgrey \
+    --dbdir '{{ postgrey_dbdir }}' \
+    --group="$(id -g -n)" \
+    --inet=127.0.0.1:{{ postgrey_port }} \
+    --syslog-facility=mail \
+    --user="$USER"

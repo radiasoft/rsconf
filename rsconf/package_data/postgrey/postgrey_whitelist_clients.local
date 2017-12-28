@@ -1,0 +1,3 @@
+{% for x in iptables_our_networks %}
+{{ x }}
+{% endfor %}

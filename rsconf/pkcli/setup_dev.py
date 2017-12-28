@@ -31,7 +31,8 @@ def default_command():
 
     # ssh-keygen -q -N '' -C rsconf -t rsa -b 4096 -f /var/tmp/foo
     # -- don't need this
-    secret_d = pkio.mkdir_parent(root.join(db.SECRET_SUBDIR))
+    db_d = pkio.mkdir_parent(root.join(db.DB_DIR))
+    secret_d = pkio.mkdir_parent(db_d.join(db.SECRET_SUBDIR))
     nginx_d = pkio.mkdir_parent(root.join(NGINX_SUBDIR))
     boot_hdb = pkcollections.Dict(rsconf_db_secret_d=secret_d, rsconf_db_channel='dev')
     j2_ctx = pkcollections.Dict(

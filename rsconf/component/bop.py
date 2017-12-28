@@ -72,7 +72,7 @@ class T(component.T):
             x = run_d.join(host_f)
             self.install_resource('bop/' + host_f, j2_ctx, x)
             volumes.append([x, guest_f])
-        image = docker_registry.prefix_image(j2_ctx, j2_ctx.bop_docker_image)
+        image = docker_registry.absolute_import(j2_ctx, j2_ctx.bop_docker_image)
         systemd.docker_unit_enable(
             self,
             image=image,

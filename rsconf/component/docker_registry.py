@@ -37,6 +37,15 @@ _PORT = 5000
 #TODO(robnagler) need to proxy registry to control access to push (WTF???)
 # http://mindtrove.info/control-read-write-access-docker-private-registry/
 
+def absolute_image(j2_ctx, image):
+    update_j2_ctx(j2_ctx)
+    if not ':' in image:
+        image += ':' + j2_ctx.rsconf_db_channel
+    if image.startswith(_DOCKER_HUB_HOST) or image.startswith(j2_ctx.docker_registry_http_addr):
+        return image
+    return '{}/{}'.format(j2_ctx.docker_registry_http_addr, image)
+
+
 def add_host(hdb, host):
     jf = db.secret_path(hdb, _PASSWD_SECRET_JSON_F, visibility=_PASSWD_VISIBILITY)
     if jf.check():
@@ -77,13 +86,6 @@ def install_crt_and_login(compt, j2_ctx):
         j2_ctx,
         _ROOT_CONFIG_JSON,
     )
-
-
-def prefix_image(j2_ctx, image):
-    update_j2_ctx(j2_ctx)
-    if image.startswith(_DOCKER_HUB_HOST) or image.startswith(j2_ctx.docker_registry_http_addr):
-        return image
-    return '{}/{}'.format(j2_ctx.docker_registry_http_addr, image)
 
 
 def update_j2_ctx(j2_ctx):

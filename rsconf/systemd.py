@@ -27,9 +27,7 @@ def docker_unit_enable(compt, image, env, cmd, volumes=None, after=None, run_u=N
         # Tested on CentOS 7, and it does have the localtime stat problem
         # https://blog.packagecloud.io/eng/2017/02/21/set-environment-variable-save-thousands-of-system-calls/
         env['TZ'] = ':/etc/localtime'
-    if not ':' in image:
-        image += ':' + j2_ctx.rsconf_db_channel
-    image = docker_registry.prefix_image(j2_ctx, image)
+    image = docker_registry.absolute_image(j2_ctx, image)
     v.update(
         after=' '.join(after or []),
         service_exec=cmd,

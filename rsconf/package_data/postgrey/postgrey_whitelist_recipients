@@ -1,0 +1,5 @@
+abuse@
+postmaster@
+{% for x in postgrey_whitelist_recipients %}
+/{{ x }}/
+{% endfor %}

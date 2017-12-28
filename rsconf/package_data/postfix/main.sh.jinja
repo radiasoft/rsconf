@@ -13,7 +13,7 @@ postfix_main() {
     fi
     local tmp=$TMPDIR/postfix_main-$RANDOM
     #POSIT spamd_docker_image is binary compatible with host operating system
-    docker run -i --rm '{{ spamd_docker_image }}' dd if=/usr/bin/spamc > "$tmp"
+    docker run -i --rm '{{ spamd_docker_image }}' cat /usr/bin/spamc > "$tmp"
     rsconf_install_access 555 root root
     rsconf_install_file "$tmp" /usr/bin/spamc
     rm -f "$tmp"
@@ -65,6 +65,9 @@ postfix_setup_bop() {
     # http://forums.sentora.org/showthread.php?tid=1118
     rsconf_yum_install perl-libwww-perl
     rsconf_install_access 555 root root
+
+need the channel
+
     docker run -i --rm '{{ bop_docker_image }}' bash > "$tmp" <<'EOF2'
 echo '#!/usr/bin/perl -w'
 cat /usr/share/perl5/vendor_perl/Bivio/Util/SendmailHTTP.pm
