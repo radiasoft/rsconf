@@ -2,6 +2,7 @@
 
 postfix_local_host_names=/etc/postfix/local-host-names
 postfix_main_cf=/etc/postfix/main.cf
+postfix_master_cf=/etc/postfix/master.cf
 
 postfix_main() {
     rsconf_file_hash_save "$postfix_main_cf"
@@ -31,7 +32,7 @@ postfix_main() {
         recipient_delimiter=+
         smtp_tls_CAfile=/etc/pki/tls/certs/ca-bundle.crt
         smtp_tls_cert_file='{{ postfix_tls_cert_file }}'
-        smtp_tls_key_file='{{ postfix_tls_cert_file }}'
+        smtp_tls_key_file='{{ postfix_tls_key_file }}'
         smtp_tls_security_level=may
         smtpd_banner='$myhostname ESMTP'
         smtpd_client_restrictions='sleep 8'
@@ -43,7 +44,7 @@ postfix_main() {
         smtpd_sender_restrictions=reject_unauth_pipelining,permit_mynetworks,reject_non_fqdn_sender,reject_unknown_sender_domain
         smtpd_tls_CAfile=/etc/pki/tls/certs/ca-bundle.crt
         smtpd_tls_cert_file='{{ postfix_tls_cert_file }}'
-        smtpd_tls_key_file='{{ postfix_tls_cert_file }}'
+        smtpd_tls_key_file='{{ postfix_tls_key_file }}'
         smtpd_tls_security_level=may
     )
     postconf -e "${x[@]}"
@@ -52,9 +53,9 @@ postfix_main() {
     # http://www.postfix.org/FILTER_README.html
     # https://janikarhunen.fi/tackle-spam-with-spamassassin-on-centos7-and-postfix.html
     # http://forums.sentora.org/showthread.php?tid=1118
-    rsconf_edit "$master" \
+    rsconf_edit "$postfix_master_cf" \
         '^smtp.*spamd' 's{^smtp\s+inet.*}{smtp       inet  n       -       n       -       200       smtpd -o content_filter=spamd}'
-    rsconf_append "$master" \
+    rsconf_append "$postfix_master_cf" \
         'spamd unix  -       n       n       -       10       pipe flags=Rq user=nobody:nobody argv=/usr/bin/spamc --port={{ spamd_port }} -e /usr/sbin/sendmail -G -i -f ${sender} -- ${recipient}'
 }
 
@@ -65,9 +66,6 @@ postfix_setup_bop() {
     # http://forums.sentora.org/showthread.php?tid=1118
     rsconf_yum_install perl-libwww-perl
     rsconf_install_access 555 root root
-
-need the channel
-
     docker run -i --rm '{{ bop_docker_image }}' bash > "$tmp" <<'EOF2'
 echo '#!/usr/bin/perl -w'
 cat /usr/share/perl5/vendor_perl/Bivio/Util/SendmailHTTP.pm
@@ -79,7 +77,6 @@ EOF
 EOF2
     rsconf_install_file "$tmp" /usr/bin/b-sendmail-http
     rm -f "$tmp"
-    local master=/etc/postfix/master.cf
     rsconf_file_hash_save "$postfix_main_cf"
     postconf -e \
         'mailbox_transport=bsendmailhttp:unix' \
@@ -88,9 +85,9 @@ EOF2
 	'bsendmailhttp_destination_recipient_limit=1'
     rsconf_file_hash_check "$postfix_main_cf"
     local rsconf_edit_no_change_res=0
-    rsconf_edit "$master" \
+    rsconf_edit "$postfix_master_cf" \
         '^local.*8' 's{^local\s.*}{local     unix  -       n       n       -       8       local}'
-    rsconf_append "$master" \
+    rsconf_append "$postfix_master_cf" \
         'bsendmailhttp unix  -       n       n       -       2       pipe flags=DRhu user=nobody:nobody argv=/usr/bin/b-sendmail-http ${client_address} ${recipient} localhost.localdomain:80/_mail_receive/%s /bin/false unused-param'
     local h
     for h in "${mail_domains[@]}"; do

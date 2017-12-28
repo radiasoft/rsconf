@@ -12,7 +12,7 @@ from pykern import pkcollections
 class T(component.T):
     def internal_build(self):
         from rsconf import systemd
-        from rsconf import docker_registry
+        from rsconf.component import docker_registry
 
         self.buildt.require_component('docker')
         j2_ctx = pkcollections.Dict(self.hdb)
@@ -30,7 +30,9 @@ class T(component.T):
         self.install_directory(run_d)
         self.install_directory(j2_ctx.postgrey_dbdir)
         self.install_directory(j2_ctx.postgrey_etc)
+        self.install_access(mode='500')
         self.install_resource('postgrey/run.sh', j2_ctx, run)
+        self.install_access(mode='400')
         self.install_resource(
             'postgrey/postgrey_whitelist_recipients',
             j2_ctx,

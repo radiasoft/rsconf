@@ -5,6 +5,7 @@ u"""Test tree
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
+from pykern.pkdebug import pkdp
 
 NGINX_SUBDIR = 'nginx'
 
@@ -31,7 +32,7 @@ def default_command():
 
     # ssh-keygen -q -N '' -C rsconf -t rsa -b 4096 -f /var/tmp/foo
     # -- don't need this
-    db_d = pkio.mkdir_parent(root.join(db.DB_DIR))
+    db_d = pkio.mkdir_parent(root.join(db.DB_SUBDIR))
     secret_d = pkio.mkdir_parent(db_d.join(db.SECRET_SUBDIR))
     nginx_d = pkio.mkdir_parent(root.join(NGINX_SUBDIR))
     boot_hdb = pkcollections.Dict(rsconf_db_secret_d=secret_d, rsconf_db_channel='dev')

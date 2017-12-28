@@ -36,7 +36,7 @@ class T(pkcollections.Dict):
         self.root_d = pkio.py_path(cfg.root_dir)
         self.base = pkyaml.load_file(self.root_d.join(DB_SUBDIR, ZERO_YML))
         self.secret = pkyaml.load_file(
-            self.root_d.join(DB_DIR, SECRET_SUBDIR, ZERO_YML),
+            self.root_d.join(DB_SUBDIR, SECRET_SUBDIR, ZERO_YML),
         )
 
     def host_db(self, channel, host):

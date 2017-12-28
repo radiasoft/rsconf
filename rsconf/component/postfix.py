@@ -5,6 +5,7 @@ u"""create postfix configuration
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
+from pykern import pkcollections
 from pykern import pkio
 from rsconf import component
 
@@ -14,7 +15,7 @@ class T(component.T):
 
     def internal_build(self):
         from rsconf import systemd
-        from rsconf import docker_registry
+        from rsconf.component import docker_registry
 
         self.buildt.require_component('postgrey', 'spamd')
         j2_ctx = pkcollections.Dict(self.hdb)
@@ -22,8 +23,8 @@ class T(component.T):
         systemd.unit_prepare(self, _CONF_D)
         self.install_access(mode='400', owner=j2_ctx.rsconf_db_root_u)
         kc = self.install_tls_key_and_crt(j2_ctx.rsconf_db_host, _CONF_D)
-        j2_ctx.postgresql_ssl_cert_file = kc.crt
-        j2_ctx.postgresql_ssl_key_file = kc.key
+        j2_ctx.postfix_tls_cert_file = kc.crt
+        j2_ctx.postfix_tls_key_file = kc.key
         #TODO(robnagler) docker_image should be automatically prefixed
         j2_ctx.bop_docker_image = docker_registry.absolute_image(
             j2_ctx, j2_ctx.bop_docker_image)
