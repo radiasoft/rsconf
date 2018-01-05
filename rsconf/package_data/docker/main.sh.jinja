@@ -13,7 +13,7 @@ docker_main() {
     if rsconf_fedora_release_if 26; then
         # https://docs.docker.com/engine/installation/linux/docker-ce/fedora/#set-up-the-repository
         dnf -y install dnf-plugins-core
-        sudo dnf config-manager \
+        dnf config-manager \
             --add-repo \
             https://download.docker.com/linux/fedora/docker-ce.repo
         # no release for 27 yet
