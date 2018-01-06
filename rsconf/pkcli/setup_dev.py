@@ -19,10 +19,10 @@ def default_command():
     import pwd
     import re
 
-    root = db.cfg.root_dir
-    if root.check():
-        return '{}: already exists'.format(root)
-    srv = pkio.mkdir_parent(root.join(db.SRV_SUBDIR))
+    root_d = db.cfg.root_d
+    if root_d.check():
+        return '{}: already exists'.format(root_d)
+    srv = pkio.mkdir_parent(root_d.join(db.SRV_SUBDIR))
 
     def _sym(old, new_base=None):
         old = pkio.py_path(old)
@@ -34,9 +34,9 @@ def default_command():
 
     # ssh-keygen -q -N '' -C rsconf -t rsa -b 4096 -f /var/tmp/foo
     # -- don't need this
-    db_d = pkio.mkdir_parent(root.join(db.DB_SUBDIR))
+    db_d = pkio.mkdir_parent(root_d.join(db.DB_SUBDIR))
     secret_d = pkio.mkdir_parent(db_d.join(db.SECRET_SUBDIR))
-    nginx_d = pkio.mkdir_parent(root.join(NGINX_SUBDIR))
+    nginx_d = pkio.mkdir_parent(root_d.join(NGINX_SUBDIR))
     boot_hdb = pkcollections.Dict(rsconf_db_secret_d=secret_d, rsconf_db_channel='dev')
     j2_ctx = pkcollections.Dict(
         srv_d=str(srv),
@@ -53,13 +53,13 @@ def default_command():
         pw[h] = _add_host(j2_ctx, 'dev', h, j2_ctx.passwd_file)
     _sym('~/src/radiasoft/download/bin/install.sh', 'index.html')
     _sym(pkresource.filename('rsconf.sh'), 'rsconf.sh')
-    dev_root = pkio.py_path(pkresource.filename('dev'))
-    for f in pkio.walk_tree(dev_root):
+    dev_d = pkio.py_path(pkresource.filename('dev'))
+    for f in pkio.walk_tree(dev_d):
         # TODO(robnagler) ignore backup files
         if str(f).endswith('~') or str(f).startswith('#'):
             continue
-        x = f.relto(dev_root)
-        dst = root.join(re.sub('.jinja$', '', x))
+        x = f.relto(dev_d)
+        dst = root_d.join(re.sub('.jinja$', '', x))
         pkio.mkdir_parent_only(dst)
         if not dst.basename.startswith('host-'):
             pkjinja.render_file(f, j2_ctx, output=dst, strict_undefined=True)

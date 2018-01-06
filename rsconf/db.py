@@ -33,7 +33,7 @@ class T(pkcollections.Dict):
         from pykern import pkyaml
 
         super(T, self).__init__(*args, **kwargs)
-        self.root_d = pkio.py_path(cfg.root_dir)
+        self.root_d = pkio.py_path(cfg.root_d)
         self.base = pkyaml.load_file(self.root_d.join(DB_SUBDIR, ZERO_YML))
         self.secret = pkyaml.load_file(
             self.root_d.join(DB_SUBDIR, SECRET_SUBDIR, ZERO_YML),
@@ -146,5 +146,5 @@ def _cfg_root(value):
 
 
 cfg = pkconfig.init(
-    root_dir=(None, _cfg_root, 'Top of rsconf tree'),
+    root_d=(None, _cfg_root, 'Top of rsconf tree'),
 )
