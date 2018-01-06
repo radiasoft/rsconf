@@ -9,6 +9,8 @@ from pykern import pkcollections
 from pykern import pkconfig
 from pykern import pkio
 from pykern.pkdebug import pkdp, pkdc
+import os
+import pwd
 
 
 class T(pkcollections.Dict):
@@ -41,24 +43,33 @@ class T(pkcollections.Dict):
         self.components_required.append(compt.name)
 
     def create_host(self):
-        dst_d = self.hdb.rsconf_db_srv_host_d.join(self.hdb.rsconf_db_host)
-        new = dst_d + '-new'
-        self.hdb.build_dst_d = new
-        old = dst_d + '-old'
-        pkio.unchecked_remove(new, old)
-        pkio.mkdir_parent(new)
-        self.require_component(*self.hdb.rsconf_db_components)
-        self.write_root_bash(
-            '000',
-            ['rsconf_require ' + x for x in self.components_required],
-        )
-        if dst_d.check():
-            dst_d.rename(old)
-        else:
-            old = None
-        new.rename(dst_d)
-        if old:
-            pkio.unchecked_remove(old)
+        prev_umask = None
+        try:
+            prev_umask = os.umask(022)
+            dst_d = self.hdb.rsconf_db_srv_host_d.join(self.hdb.rsconf_db_host)
+            new = dst_d + '-new'
+            self.hdb.build_dst_d = new
+            old = dst_d + '-old'
+            pkio.unchecked_remove(new, old)
+            pkio.mkdir_parent(new)
+            self.require_component(*self.hdb.rsconf_db_components)
+            self.write_root_bash(
+                '000',
+                ['rsconf_require ' + x for x in self.components_required],
+            )
+            if dst_d.check():
+                dst_d.rename(old)
+            else:
+                old = None
+            u = self.hdb.rsconf_db_srv_u
+            if pwd.getpwuid(os.getuid())[0] != u:
+                new.chown(u, u, rec=True)
+            new.rename(dst_d)
+            if old:
+                pkio.unchecked_remove(old)
+        finally:
+            if prev_umask:
+                os.umask(prev_umask)
 
 
     def require_component(self, *components):

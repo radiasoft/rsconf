@@ -44,7 +44,7 @@ class T(pkcollections.Dict):
         v = pkcollections.Dict(
             rsconf_db=pkcollections.Dict(
                 # Common defaults we allow overrides for
-                host_run_d=pkio.py_path('/var/lib'),
+                host_run_d='/var/lib',
                 run_u='vagrant',
                 root_u='root',
             )
@@ -76,6 +76,9 @@ class T(pkcollections.Dict):
             )
         )
         pkconfig.flatten_values(res, v)
+        for k, v in res.items():
+            if k.endswith('_d'):
+                res[k] = pkio.py_path(v)
         return res
 
     def channel_hosts(self):

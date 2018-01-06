@@ -15,6 +15,8 @@ def default_command():
     from pykern import pkjinja
     from pykern import pkresource
     from rsconf import db
+    import os
+    import pwd
     import re
 
     root = db.cfg.root_dir
@@ -38,9 +40,11 @@ def default_command():
     boot_hdb = pkcollections.Dict(rsconf_db_secret_d=secret_d, rsconf_db_channel='dev')
     j2_ctx = pkcollections.Dict(
         srv_d=str(srv),
+        user=pwd.getpwuid(os.getuid())[0],
         host='v4.radia.run',
         master='v5.radia.run',
         # You can't change this
+        #POSIT: rsconf_db config nginx
         passwd_file=db.secret_path(boot_hdb, 'nginx-passwd', visibility='channel')
     )
     j2_ctx.update(boot_hdb)

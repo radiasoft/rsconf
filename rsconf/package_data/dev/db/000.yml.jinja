@@ -2,6 +2,11 @@
 default:
   base_os:
     ip_forward: false
+  bop:
+    docker_image: biviosoftware/bivio
+    server_status_location: /bop-status
+    is_production: false
+    bconf_aux: ''
   celery_sirepo:
     queues: "sequential,parallel"
   docker:
@@ -36,7 +41,7 @@ default:
     num_servers: 4
     # bivio.biz /var/www/facades/bivio.biz/plain/f/bOP/lib
     # default /var/www/html
-    source_code_dir: /var/www/facades/petshop/plain/s
+    source_code_d: /var/www/facades/petshop/plain/s
     nginx_aux_directives: ''
     vhost_common:
       # Only for test
@@ -69,6 +74,11 @@ default:
     port: 10023
     docker_image: biviosoftware/perl
     whitelist_recipients: []
+  rsconf_db:
+    host_run_d: /var/lib
+    root_u: root
+    run_u: {{ user }}
+    srv_u: {{ user }}
   sirepo:
     pkcli:
       service_processes: 1
@@ -82,16 +92,14 @@ default:
   spamd:
     port: 10783
     docker_image: biviosoftware/perl
-  bop:
-    docker_image: biviosoftware/bivio
-    server_status_location: /bop-status
-    is_production: false
-    bconf_aux: ''
+
 
 channel:
   dev:
     base_os:
       ip_forward: true
+    bop:
+      apps: [ petshop ]
     petshop:
       nginx:
         vhost: petshop.{{ host }}
@@ -104,8 +112,6 @@ channel:
         broker_url: "amqp://guest@rabbitmq.{{ host }}//"
       mpi.cores: 2
       vhost: sirepo.{{ host }}
-    bop:
-      apps: [ petshop ]
 
 host:
   dev:
