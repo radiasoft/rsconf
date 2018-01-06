@@ -78,7 +78,7 @@ default:
     host_run_d: /var/lib
     root_u: root
     run_u: {{ user }}
-    srv_u: {{ user }}
+    srv_group: {{ group }}
   sirepo:
     pkcli:
       service_processes: 1

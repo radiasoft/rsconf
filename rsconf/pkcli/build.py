@@ -9,8 +9,9 @@ from pykern import pkcollections
 from pykern import pkconfig
 from pykern import pkio
 from pykern.pkdebug import pkdp, pkdc
+import grp
 import os
-import pwd
+import subprocess
 
 
 class T(pkcollections.Dict):
@@ -45,7 +46,7 @@ class T(pkcollections.Dict):
     def create_host(self):
         prev_umask = None
         try:
-            prev_umask = os.umask(022)
+            prev_umask = os.umask(027)
             dst_d = self.hdb.rsconf_db_srv_host_d.join(self.hdb.rsconf_db_host)
             new = dst_d + '-new'
             self.hdb.build_dst_d = new
@@ -61,9 +62,7 @@ class T(pkcollections.Dict):
                 dst_d.rename(old)
             else:
                 old = None
-            u = self.hdb.rsconf_db_srv_u
-            if pwd.getpwuid(os.getuid())[0] != u:
-                new.chown(u, u, rec=True)
+            subprocess.check_call(['chgrp', '-R', self.hdb.rsconf_db_srv_group, str(new)])
             new.rename(dst_d)
             if old:
                 pkio.unchecked_remove(old)
