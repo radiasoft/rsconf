@@ -6,18 +6,21 @@
 # ClientAliveCountMax 3
 
 base_os_chrony() {
-    if [[ ! -f /vagrant/Vagrantfile ]]; then
-        # only needed for vagrant
+    if base_os_if_virtual_box; then
+        # only needed for VirtualBox
         return
     fi
     systemctl stop chronyd
     systemctl disable chronyd
 }
 
+base_os_if_virtual_box() {
+    local x=$(dmidecode -s system-product-name 2>/dev/null)
+    [[ $x =~ VirtualBox || -f /vagrant/Vagrantfile ]]
+}
+
 # https://www.freedesktop.org/wiki/Software/systemd/NetworkTarget/
 ##### ??? systemctl enable NetworkManager-wait-online.service
-
-
 
 base_os_iptables() {
     if [[ $(systemctl is-active iptables 2>&1 || true) == active ]]; then
@@ -45,20 +48,40 @@ base_os_journal_persist() {
     systemctl restart systemd-journald
 }
 
-base_os_rpcbind_patch() {
-    # Binding to IPv6 address not available since kernel does not support IPv6.
-    # https://bugzilla.redhat.com/show_bug.cgi?id=1402961
-    local old=/usr/lib/systemd/system/rpcbind.socket
-    if [[ ! -e $old ]]; then
+base_os_logical_volume() {
+    local name=$1 gigabytes=$2 vg=$3 mount_d=$4
+    local dev="/dev/mapper/$vg-$name"
+    local x=$(lvs --units g --no-headings -o lv_size "$dev" 2>/dev/null)
+    rsconf_edit_no_change_res=0 rsconf_append /etc/fstab "$dev $mount_d xfs defaults 0 0"
+    if [[ $x =~ ([0-9]+)(\.[0-9]+)?g ]]; then
+        local actual=${BASH_REMATCH[1]}
+        # Account for the truncation and a little slop
+        if (( $actual + 2 >= $gigabytes )); then
+            return
+        fi
+        # -y: wipe signatures
+        lvextend -y -L "${gigabytes}G" "$dev"
+        # xfs_group requires a mounted file system
+        if ! mountpoint "$mount_d"; then
+            mount "$mount_d"
+        fi
+        xfs_growfs "$dev"
         return
     fi
-    # Replacement
-    local new=/etc/systemd/system/rpcbind.socket
-    cp -a "$old" "$new"
-    if rsconf_edit "$new" '! BindIPv6Only' 'm{\[::\]:|BindIPv6Only} && ($_=q{})'; then
-        systemctl daemon-reload
-        systemctl restart rpcbind.socket
+    lvcreate -y --wipesignatures y -L "${gigabytes}G" -n "$name" "$vg"
+    mkfs -t xfs -n ftype=1 "$dev"
+    # the component that sets mount_d will set the permissions and owner
+    mkdir -p "$mount_d"
+    mount "$mount_d"
+}
+
+base_os_logical_volumes() {
+    if base_os_if_virtual_box && lvs /dev/mapper/docker-vps >& /dev/null; then
+        # vagrant persistent_storage plugin creates an LV in the VG so need to
+        # remove it if it exists.
+        lvremove -f /dev/mapper/docker-vps
     fi
+    {{ base_os_logical_volume_cmds }}
 }
 
 base_os_main() {
@@ -105,8 +128,25 @@ base_os_main() {
     base_os_chrony
     base_os_journal_persist
     rsconf_edit_no_change_res=0 rsconf_append /etc/screenrc 'escape ^^^^'
+    base_os_logical_volumes
     ###base_os_iptables
     if [[ -n $reboot ]]; then
         rsconf_reboot
+    fi
+}
+
+base_os_rpcbind_patch() {
+    # Binding to IPv6 address not available since kernel does not support IPv6.
+    # https://bugzilla.redhat.com/show_bug.cgi?id=1402961
+    local old=/usr/lib/systemd/system/rpcbind.socket
+    if [[ ! -e $old ]]; then
+        return
+    fi
+    # Replacement
+    local new=/etc/systemd/system/rpcbind.socket
+    cp -a "$old" "$new"
+    if rsconf_edit "$new" '! BindIPv6Only' 'm{\[::\]:|BindIPv6Only} && ($_=q{})'; then
+        systemctl daemon-reload
+        systemctl restart rpcbind.socket
     fi
 }

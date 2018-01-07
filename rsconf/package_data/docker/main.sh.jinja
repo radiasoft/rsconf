@@ -31,36 +31,6 @@ docker_main() {
     fi
 #TODO(robnagler) how to update?
     rsconf_yum_install docker-ce
-    # This bug with devicemapper keeps coming up:
-    # "Error response from daemon: devicemapper failed to remove the root"
-    # which is caused by "thin: Deletion of thin device 143 failed." (dmesg)
-    # https://github.com/moby/moby/issues/34463
-    #
-    # The recommendation now is to use overlay2 on CentOS 7 with this flag (daemon.json):
-    # https://github.com/moby/moby/issues/34368
-    local vg=docker lv=docker size=
-    if vgdisplay "$vg" >& /dev/null; then
-        # Vagrant: Destroy any lvs that might exist only in the "vg=docker" case
-        while [[ $(lvs --noheadings --nameprefixes "$vg") =~ LVM2_LV_NAME=.([^\']+) ]]; do
-            lvremove -f "$vg/${BASH_REMATCH[1]}"
-        done
-        size='-l 100%VG'
-    else
-        # Non-vagrant: fixed size, centos/fedora volume group
-        vg=centos
-        if rsconf_fedora_release_if; then
-            # untested and probably never will be
-            vg=fedora
-        fi
-        size='-L {{ docker_volume_size }}'
-    fi
-    lvcreate --wipesignatures y -n "$lv" "$vg" $size
-    local dev="/dev/mapper/$vg-$lv"
-    # https://docs.docker.com/engine/userguide/storagedriver/overlayfs-driver/#prerequisites
-    mkfs -t xfs -n ftype=1 "$dev"
-    rsconf_append /etc/fstab "$dev $dir xfs defaults 0 0"
-    mkdir "$dir"
-    mount "$dir"
     # Give vagrant user access in dev mode only
     if [[ $install_channel == dev ]]; then
        usermod -aG docker vagrant

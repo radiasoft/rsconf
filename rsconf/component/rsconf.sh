@@ -22,3 +22,7 @@ cat >> ~/.post_bivio_bashrc <<'EOF'
 export PYKERN_PKCONFIG_CHANNEL=alpha
 export RSCONF_DB_ROOT_D=/var/lib/rsconf
 EOF
+
+# extend /var
+lvextend -L +125G /dev/vgdata/lvdata
+xfs_growfs /mount/point -D size

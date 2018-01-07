@@ -2,6 +2,7 @@
 default:
   base_os:
     ip_forward: false
+    volume_group: {}
   bop:
     docker_image: biviosoftware/bivio
     server_status_location: /bop-status
@@ -97,7 +98,16 @@ default:
 channel:
   dev:
     base_os:
+      # Needed for Docker with iptables (not using --network=host)
       ip_forward: true
+      #TODO(robnagler) create volume groups and
+      volume_groups:
+        - name: docker
+          logical_volumes:
+            - name: docker
+              #POSIT: downloadx/installers/vagrant-dev:config.persistent_storage.size=102400
+              gigabytes: 100
+              mount_d: /var/lib/docker
     bop:
       apps: [ petshop ]
     petshop:
@@ -119,6 +129,8 @@ host:
       # rsconf_db_components: [ rabbitmq, celery_sirepo, sirepo ]
       rsconf_db_components: [ bop ]
     {{ master }}:
+      base_os:
+        volume_groups: []
       rsconf_db_components: [ docker_registry ]
 
 #Local Variables:
