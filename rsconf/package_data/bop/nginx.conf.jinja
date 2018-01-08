@@ -5,7 +5,7 @@ server {
 }
 
 server {
-    listen {{ nginx_vhost }}:443;
+    listen {{ nginx_vhost }}:443 ssl;
     server_name {{ nginx_vhost }};
     root {{ nginx_default_root }};
     ssl_certificate {{ nginx_tls_crt }};
