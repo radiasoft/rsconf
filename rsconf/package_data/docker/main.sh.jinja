@@ -2,7 +2,7 @@
 
 docker_main() {
     local dir=/var/lib/docker
-    if [[ -e $dir ]]; then
+    if [[ -e $dir && $(type -t docker) != '' ]]; then
 #TODO(robnagler) update docker rpm?
         install_info "$dir: exists, docker already installed"
         return

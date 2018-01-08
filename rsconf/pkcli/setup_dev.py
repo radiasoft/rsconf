@@ -44,7 +44,7 @@ def default_command():
         user=pwd.getpwuid(os.getuid())[0],
         group=grp.getgrgid(os.getgid())[0],
         host='v4.radia.run',
-        master='v5.radia.run',
+        master='v3.radia.run',
         # You can't change this
         #POSIT: rsconf_db config nginx
         passwd_file=db.secret_path(boot_hdb, 'nginx-passwd', visibility='channel')

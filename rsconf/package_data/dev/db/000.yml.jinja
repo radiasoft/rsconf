@@ -12,7 +12,6 @@ default:
     queues: "sequential,parallel"
   docker:
     iptables: true
-    volume_size: 100G
   docker_registry:
     host: {{ master }}
   iptables:
@@ -106,7 +105,7 @@ channel:
           logical_volumes:
             - name: docker
               #POSIT: downloadx/installers/vagrant-dev:config.persistent_storage.size=102400
-              gigabytes: 100
+              gigabytes: 99
               mount_d: /var/lib/docker
     bop:
       apps: [ petshop ]
