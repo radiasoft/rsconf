@@ -47,6 +47,19 @@ export install_channel=dev install_server=http://v3.radia.run:8000
 curl "$install_server" | bash -s rsconf.sh "$(hostname -f)" setup_dev
 ```
 
+On the master as dev user:
+
+```bash
+sudo cat /root/.docker/config.json > ~/.docker/config.json
+cd ~/src/biviosoftware
+gcl container-perl
+cd container-perl
+export build_push=1 build_docker_registry=$(hostname -f):5000
+curl radia.run | bash -s container-build
+curl radia.run | bash -s biviosoftware/container-bop Bivio b Bivio::PetShop petshop
+```
+
+
 On the client, create a test.sh file and run it:
 
 ```bash
