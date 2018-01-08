@@ -24,6 +24,7 @@ def user_d(j2_ctx):
 class T(component.T):
     def internal_build(self):
         from rsconf.component import nginx
+        from rsconf.component import docker_registry
 
         self.buildt.require_component('docker', 'nginx')
         j2_ctx = pkcollections.Dict(self.hdb)

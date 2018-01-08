@@ -12,8 +12,10 @@ from pykern import pkcollections
 class T(component.T):
     def internal_build(self):
         from rsconf import systemd
+        from rsconf.component import docker_registry
 
         self.buildt.require_component('docker')
+        j2_ctx = pkcollections.Dict(self.hdb)
         run_d = systemd.docker_unit_prepare(self)
         env = pkcollections.Dict(
             HOME=run_d,
@@ -24,7 +26,7 @@ class T(component.T):
         )
         systemd.docker_unit_enable(
             self,
-            image='docker.io/radiasoft/rabbitmq',
+            image=docker_registry.absolute_image(j2_ctx, j2_ctx.rabbitmq_docker_image),
             env=env,
             cmd='/usr/lib/rabbitmq/bin/rabbitmq-server',
         )
@@ -32,4 +34,4 @@ class T(component.T):
         self.install_directory(env.RABBITMQ_LOG_BASE)
         self.install_directory(env.RABBITMQ_MNESIA_BASE)
         for f in ('enabled_plugins', 'rabbitmq.config'):
-            self.install_resource('rabbitmq/' + f, {}, run_d.join(f))
+            self.install_resource('rabbitmq/' + f, j2_ctx, run_d.join(f))

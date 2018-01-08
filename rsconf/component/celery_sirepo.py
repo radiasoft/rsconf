@@ -13,6 +13,7 @@ class T(component.T):
     def internal_build(self):
         from rsconf import systemd
         from rsconf.component import sirepo
+        from rsconf.component import docker_registry
 
         self.buildt.require_component('docker')
         systemd.docker_unit_prepare(self)

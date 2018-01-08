@@ -74,6 +74,8 @@ default:
     port: 10023
     docker_image: biviosoftware/perl
     whitelist_recipients: []
+  rabbitmq:
+    docker_image: docker.io/radiasoft/rabbitmq
   rsconf_db:
     host_run_d: /var/lib
     root_u: root
@@ -127,8 +129,8 @@ channel:
 host:
   dev:
     {{ host }}:
-      # rsconf_db_components: [ rabbitmq, celery_sirepo, sirepo ]
-      rsconf_db_components: [ bop ]
+      rsconf_db_components: [ rabbitmq, celery_sirepo, sirepo ]
+      # rsconf_db_components: [ bop ]
     {{ master }}:
       base_os:
         volume_groups: []
