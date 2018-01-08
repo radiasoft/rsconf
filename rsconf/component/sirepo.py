@@ -17,8 +17,8 @@ _USER_SUBDIR = 'user'
 _BEAKER_SECRET_BASE = 'sirepo_beaker_secret'
 
 
-def user_d(hdb):
-    return systemd.docker_unit_run_d(hdb, 'sirepo').join(_DB_SUBDIR, _USER_SUBDIR)
+def user_d(j2_ctx):
+    return systemd.docker_unit_run_d(j2_ctx, 'sirepo').join(_DB_SUBDIR, _USER_SUBDIR)
 
 
 class T(component.T):
@@ -26,18 +26,19 @@ class T(component.T):
         from rsconf.component import nginx
 
         self.buildt.require_component('docker', 'nginx')
+        j2_ctx = pkcollections.Dict(self.hdb)
         run_d = systemd.docker_unit_prepare(self)
         db_d = run_d.join(_DB_SUBDIR)
         #TODO(robnagler) from sirepo or flask(?)
         beaker_secret_f = db_d.join('beaker_secret')
         env = pkcollections.Dict(
-            PYKERN_PKCONFIG_CHANNEL=self.hdb.rsconf_db_channel,
+            PYKERN_PKCONFIG_CHANNEL=j2_ctx.rsconf_db_channel,
             PYKERN_PKDEBUG_REDIRECT_LOGGING=1,
             PYKERN_PKDEBUG_WANT_PID_TIME=1,
             PYTHONUNBUFFERED=1,
             SIREPO_PKCLI_SERVICE_IP='0.0.0.0',
             SIREPO_PKCLI_SERVICE_RUN_DIR=run_d,
-            SIREPO_SERVER_BEAKER_SESSION_KEY='sirepo_{}'.format(self.hdb.rsconf_db_channel),
+            SIREPO_SERVER_BEAKER_SESSION_KEY='sirepo_{}'.format(j2_ctx.rsconf_db_channel),
             SIREPO_SERVER_BEAKER_SESSION_SECRET=beaker_secret_f,
             SIREPO_SERVER_DB_DIR=db_d,
             SIREPO_SERVER_JOB_QUEUE='Celery',
@@ -51,24 +52,24 @@ class T(component.T):
             'sirepo_oauth_github_secret',
             'sirepo_server_oauth_login',
         ):
-            env[f.upper()] = _env_value(self.hdb[f])
+            env[f.upper()] = _env_value(j2_ctx[f])
         systemd.docker_unit_enable(
             self,
-            image='docker.io/radiasoft/sirepo',
+            image=docker_registry.absolute_image(j2_ctx, j2_ctx.sirepo_docker_image),
             env=env,
             cmd='sirepo service uwsgi',
             after=['celery_sirepo.service'],
             #TODO(robnagler) wanted by nginx
         )
-        self.install_access(mode='700', owner=self.hdb.rsconf_db_run_u)
+        self.install_access(mode='700', owner=j2_ctx.rsconf_db_run_u)
         self.install_directory(db_d)
-        self.install_directory(user_d(self.hdb))
+        self.install_directory(user_d(j2_ctx))
         self.install_secret_path(
             _BEAKER_SECRET_BASE,
             host_path=beaker_secret_f,
             gen_secret=lambda p: db.random_string(path=p, length=64),
         )
-        nginx.install_vhost(self, vhost=self.hdb.sirepo_vhost)
+        nginx.install_vhost(self, vhost=j2_ctx.sirepo_vhost)
 
     def _gen_beaker_secret(self, tgt):
         from rsconf.pkcli import sirepo

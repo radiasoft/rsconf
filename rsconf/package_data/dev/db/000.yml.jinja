@@ -78,15 +78,17 @@ default:
     host_run_d: /var/lib
     root_u: root
     run_u: {{ user }}
+    run_uid: {{ uid }}
     srv_group: {{ group }}
   sirepo:
+    docker_image: docker.io/radiasoft/sirepo
+    oauth:
+      github_key: ""
+      github_secret: ""
     pkcli:
       service_processes: 1
       service_threads: 20
       service_port: 7000
-    oauth:
-      github_key: ""
-      github_secret: ""
     server:
       oauth_login: false
   spamd:

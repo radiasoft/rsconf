@@ -16,6 +16,7 @@ class T(component.T):
 
         self.buildt.require_component('docker')
         systemd.docker_unit_prepare(self)
+        j2_ctx = pkcollections.Dict(self.hdb)
         env = pkcollections.Dict(
             PYKERN_PKCONFIG_CHANNEL=self.hdb.rsconf_db_channel,
             PYKERN_PKDEBUG_REDIRECT_LOGGING=1,
@@ -27,13 +28,13 @@ class T(component.T):
             'sirepo_mpi_cores',
             'sirepo_celery_tasks_celeryd_concurrency',
         ):
-            env[f.upper()] = self.hdb[f]
+            env[f.upper()] = j2_ctx[f]
         #TODO(robnagler) need to set hostname so celery flower shows up right
         systemd.docker_unit_enable(
             self,
-            image='docker.io/radiasoft/sirepo',
-            cmd="celery worker --app=sirepo.celery_tasks --no-color -Ofair '--queue={}'".format(self.hdb.celery_sirepo_queues),
+            image=docker_registry.absolute_image(j2_ctx, j2_ctx.sirepo_docker_image),
+            cmd="celery worker --app=sirepo.celery_tasks --no-color -Ofair '--queue={}'".format(j2_ctx.celery_sirepo_queues),
             env=env,
-            volumes=[sirepo.user_d(self.hdb)],
+            volumes=[sirepo.user_d(j2_ctx)],
             after=['rabbitmq.service'],
         )

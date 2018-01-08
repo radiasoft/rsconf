@@ -41,6 +41,7 @@ def default_command():
     boot_hdb = pkcollections.Dict(rsconf_db_secret_d=secret_d, rsconf_db_channel='dev')
     j2_ctx = pkcollections.Dict(
         srv_d=str(srv),
+        uid=os.getuid(),
         user=pwd.getpwuid(os.getuid())[0],
         group=grp.getgrgid(os.getgid())[0],
         host='v4.radia.run',

@@ -53,6 +53,7 @@ class T(component.T):
     def internal_build(self):
         from rsconf import systemd
 
+        self.buildt.require_component('base_users')
         self.append_root_bash('rsconf_yum_install nginx')
         systemd.unit_prepare(self, _CONF_ROOT_D)
         j2_ctx = pkcollections.Dict(self.hdb)

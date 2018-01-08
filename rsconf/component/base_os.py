@@ -10,6 +10,7 @@ from pykern.pkdebug import pkdp
 from rsconf import component
 
 class T(component.T):
+
     def internal_build(self):
         self.install_access(mode='400', owner=self.hdb.rsconf_db_root_u)
         j2_ctx = pkcollections.Dict(self.hdb)
@@ -18,8 +19,6 @@ class T(component.T):
             j2_ctx,
             '/etc/sysctl.d/60-rsconf-base.conf',
         )
-        # disk partitioning. may need to remove extra lv because have to add to create centos properly
-
         self.install_access(mode='444', owner=self.hdb.rsconf_db_root_u)
         self.install_resource('base_os/hostname', j2_ctx, '/etc/hostname')
         vgs = j2_ctx.base_os_volume_groups
@@ -30,33 +29,9 @@ class T(component.T):
                     lv.name, lv.gigabytes, vg.name, lv.mount_d,
                 )
         j2_ctx.base_os_logical_volume_cmds = cmds
-        # watch and update hostname? restart networking???
+        #TODO(robnagler) watch and update hostname? restart networking???
         self.append_root_bash_with_resource(
             'base_os/main.sh',
             j2_ctx,
             'base_os_main',
         )
-'''
-*** /etc/machine-id
-
-rjn: i don't think this is an issue, but it is related to journalctl
-
-https://unix.stackexchange.com/questions/191313/why-is-my-systemd-journal-not-persistent-across-reboots/191373#191373
-
-
-[root@localhost ~]# lvs
-  LV     VG     Attr       LSize    Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
-  home   centos -wi-ao----    5.00g
-  remove centos -wi-ao---- <911.00g
-  root   centos -wi-ao----    5.00g
-  swap   centos -wi-ao----    4.00g
-  var    centos -wi-ao----    5.00g
-[root@localhost ~]# vi /etc/fstab
-[root@localhost ~]# umount /remove
-[root@localhost ~]# lvremove /dev/mapper/centos-remove
-Do you really want to remove active logical volume centos/remove? [y/n]: y
-  Logical volume "remove" successfully removed
-  centos   1   4   0 wz--n- <930.00g <911.00g
-
-nfs client require yum install nfs-utils
-'''

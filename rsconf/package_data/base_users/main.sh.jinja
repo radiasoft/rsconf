@@ -1,0 +1,17 @@
+#!/bin/bash
+
+base_users_main() {
+    rsconf_radia_run_as_user {{ rsconf_db_root_u }} home
+        # useradd -u 1000 -g vagrant -d /var/lib/vagrant vagrant
+    rsconf_radia_run_as_user {{ rsconf_db_run_u }} home
+    if ! id {{ rsconf_db_run_u }} >& /dev/null; then
+        #TODO(robnagler) make re-entrant
+        #TODO(robnagler) use /var/lib/vagrant as the user?
+        groupadd -g {{ rsconf_db_run_uid }} {{ rsconf_db_run_u }}
+        useradd -m -g {{ rsconf_db_run_u }} -u {{ rsconf_db_run_uid }} {{ rsconf_db_run_u }}
+    fi
+    rsconf_radia_run_as_user {{ rsconf_db_run_u }} home
+    set +e +o pipefail
+    . ~/.bashrc
+    set -e -o pipefail
+}
