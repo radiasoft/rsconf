@@ -63,6 +63,7 @@ class T(pkcollections.Dict):
             else:
                 old = None
             subprocess.check_call(['chgrp', '-R', self.hdb.rsconf_db_srv_group, str(new)])
+            subprocess.check_call(['chmod', '-R', 'g+rX', str(new)])
             new.rename(dst_d)
             if old:
                 pkio.unchecked_remove(old)
