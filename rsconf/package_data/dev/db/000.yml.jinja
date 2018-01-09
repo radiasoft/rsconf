@@ -11,7 +11,7 @@ default:
   celery_sirepo:
     queues: "sequential,parallel"
   docker:
-    iptables: true
+    iptables: false
   docker_registry:
     host: {{ master }}
   iptables:
@@ -113,6 +113,8 @@ channel:
               mount_d: /var/lib/docker
     bop:
       apps: [ petshop ]
+    docker:
+      iptables: true
     petshop:
       nginx:
         vhost: petshop.{{ host }}

@@ -38,12 +38,14 @@ _PORT = 5000
 # http://mindtrove.info/control-read-write-access-docker-private-registry/
 
 def absolute_image(j2_ctx, image):
-    update_j2_ctx(j2_ctx)
     if not ':' in image:
         image += ':' + j2_ctx.rsconf_db_channel
-    if image.startswith(_DOCKER_HUB_HOST) or image.startswith(j2_ctx.docker_registry_http_addr):
+    h = _DOCKER_HUB_HOST
+    if update_j2_ctx(j2_ctx):
+        h = j2_ctx.docker_registry_http_addr
+    if image.startswith(_DOCKER_HUB_HOST) or image.startswith(h):
         return image
-    return '{}/{}'.format(j2_ctx.docker_registry_http_addr, image)
+    return '{}/{}'.format(h, image)
 
 
 def add_host(hdb, host):
@@ -63,7 +65,8 @@ def add_host(hdb, host):
 
 
 def install_crt_and_login(compt, j2_ctx):
-    update_j2_ctx(j2_ctx)
+    if not update_j2_ctx(j2_ctx):
+        return
     compt.install_access(mode='700', owner=j2_ctx.docker_registry_run_u)
     compt.install_directory(_ROOT_CONFIG_JSON.dirname)
     compt.install_directory(_CERTS_D)
@@ -90,12 +93,15 @@ def install_crt_and_login(compt, j2_ctx):
 
 def update_j2_ctx(j2_ctx):
     #TODO(robnagler) exit if already initialzed.
+    if not j2_ctx.docker_registry_host:
+        return False
     addr = '{}:{}'.format(j2_ctx.docker_registry_host, _PORT)
     j2_ctx.update(
         docker_registry_http_addr=addr,
         docker_registry_http_host='https://' + addr,
         docker_registry_run_u=j2_ctx.rsconf_db_root_u,
     )
+    return True
 
 
 class T(component.T):
@@ -107,7 +113,8 @@ class T(component.T):
         self.buildt.require_component('docker')
         run_d = systemd.docker_unit_prepare(self)
         j2_ctx = pkcollections.Dict(self.hdb)
-        update_j2_ctx(j2_ctx)
+        assert update_j2_ctx(j2_ctx), \
+            'no registry host'
         conf_f = run_d.join('config.yml')
         volumes = [
             [conf_f, _GLOBAL_CONF],
