@@ -26,6 +26,7 @@ base_os_iptables() {
     if [[ $(systemctl is-active iptables 2>&1 || true) == active ]]; then
         # Just in case, make sure enabled
         systemctl enable iptables
+        return
     fi
     systemctl stop firewalld >& /dev/null || true
     systemctl disable firewalld >& /dev/null || true
@@ -131,7 +132,12 @@ base_os_main() {
     base_os_journal_persist
     rsconf_edit_no_change_res=0 rsconf_append /etc/screenrc 'escape ^^^^'
     base_os_logical_volumes
-    ###base_os_iptables
+    {% if rsconf_db_channel != "dev" %}
+        # we don't muck with iptables on virtualbox
+        if ! base_os_if_virtual_box; then
+            base_os_iptables
+        fi
+    {% endif %}
     if [[ -n $reboot ]]; then
         rsconf_reboot
     fi
