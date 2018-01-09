@@ -2,7 +2,7 @@
     "iptables": {{ docker_iptables | tojson }},
     "live-restore": true,
     "log-driver": "journald",
-    {% if docker_registry_http_host %}
+    {% if docker_registry_http_host is defined %}
     "registry-mirrors": ["{{ docker_registry_http_host }}"],
     {% endif %}
     "storage-driver": "overlay2",
