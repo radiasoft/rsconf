@@ -6,7 +6,7 @@
 # ClientAliveCountMax 3
 
 base_os_chrony() {
-    if base_os_if_virtual_box; then
+    if ! base_os_if_virtual_box; then
         # only needed for VirtualBox
         return
     fi
@@ -119,6 +119,8 @@ base_os_main() {
     # idempotent so ok to repeat and the file might get updated with a new release.
     rsconf_edit_no_change_res=0 rsconf_edit /etc/ssh/sshd_config ^AddressFamily.inet \
         's{^#(AddressFamily) any}{$1 inet}'
+    rsconf_edit_no_change_res=0 rsconf_edit /etc/ssh/sshd_config ^PermitRootLogin.without \
+        's{^#(PermitRootLogin) .*}{$1 without-password}'
     base_os_rpcbind_patch
 #TODO(robnagler) consider permissive on back end and enforcing on front end
     if rsconf_edit /etc/selinux/config ^SELINUX=disabled \
