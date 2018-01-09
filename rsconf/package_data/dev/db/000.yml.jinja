@@ -77,6 +77,8 @@ default:
   rabbitmq:
     docker_image: docker.io/radiasoft/rabbitmq
   rsconf_db:
+    #TODO(robnagler) POSIT dev/nginx/nginx.conf.jinja
+    http_host: http://{{ master }}:8000
     host_run_d: /var/lib
     root_u: root
     run_u: {{ user }}

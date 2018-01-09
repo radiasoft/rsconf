@@ -56,7 +56,8 @@ class T(pkcollections.Dict):
             self.require_component(*self.hdb.rsconf_db_components)
             self.write_root_bash(
                 '000',
-                ['rsconf_require ' + x for x in self.components_required],
+                ['export install_channel={}'.format(self.hdb.rsconf_db_channel)] \
+                    + ['rsconf_require ' + x for x in self.components_required],
             )
             if dst_d.check():
                 dst_d.rename(old)

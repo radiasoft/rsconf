@@ -15,7 +15,7 @@ class T(component.T):
         self.install_access(mode='400', owner=self.hdb.rsconf_db_root_u)
         self.install_resource(
             'base_users/root_post_bivio_bashrc',
-            {},
+            j2_ctx,
             '/root/.post_bivio_bashrc',
         )
         self.append_root_bash_with_resource(
