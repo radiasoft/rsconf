@@ -132,7 +132,7 @@ base_os_main() {
     base_os_journal_persist
     rsconf_edit_no_change_res=0 rsconf_append /etc/screenrc 'escape ^^^^'
     base_os_logical_volumes
-    {% if rsconf_db_channel != "dev" %}
+    {% if rsconf_db_channel != "dev" and not docker_iptables %}
         # we don't muck with iptables on virtualbox
         if ! base_os_if_virtual_box; then
             base_os_iptables
