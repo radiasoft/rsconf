@@ -1,6 +1,6 @@
 {
     "iptables": {{ docker_iptables | tojson }},
-    "live-restore": true,
+    {# does not work with docker swarm: "live-restore": true, #}
     "log-driver": "journald",
     {% if docker_registry_http_host is defined %}
     "registry-mirrors": ["{{ docker_registry_http_host }}"],
