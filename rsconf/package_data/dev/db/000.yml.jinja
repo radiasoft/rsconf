@@ -8,8 +8,6 @@ default:
     server_status_location: /bop-status
     is_production: false
     bconf_aux: ''
-  celery_sirepo:
-    queues: "sequential,parallel"
   docker:
     iptables: false
   docker_registry:
@@ -86,6 +84,7 @@ default:
     run_uid: {{ uid }}
     srv_group: {{ group }}
   sirepo:
+    celery_queues: "sequential,parallel"
     docker_image: docker.io/radiasoft/sirepo
     oauth:
       github_key: ""
@@ -130,7 +129,7 @@ channel:
       celery_tasks:
         celeryd_concurrency: 1
         broker_url: "amqp://guest@rabbitmq.{{ host }}//"
-      mpi.cores: 2
+      mpi_cores: 2
       vhost: sirepo.{{ host }}
 
 host:

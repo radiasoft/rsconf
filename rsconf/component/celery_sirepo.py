@@ -34,7 +34,7 @@ class T(component.T):
         systemd.docker_unit_enable(
             self,
             image=docker_registry.absolute_image(j2_ctx, j2_ctx.sirepo_docker_image),
-            cmd="celery worker --app=sirepo.celery_tasks --no-color -Ofair '--queue={}'".format(j2_ctx.celery_sirepo_queues),
+            cmd="celery worker --app=sirepo.celery_tasks --no-color -Ofair '--queue={}'".format(j2_ctx.sirepo_celery_queues),
             env=env,
             volumes=[sirepo.user_d(j2_ctx)],
             after=['rabbitmq.service'],
