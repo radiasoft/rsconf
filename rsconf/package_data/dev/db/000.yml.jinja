@@ -15,6 +15,7 @@ default:
   docker_registry:
     host: {{ master }}
   iptables:
+    enable: true
     our_networks:
       # bdu3
       - 50.253.124.194
@@ -113,6 +114,8 @@ channel:
               #POSIT: downloadx/installers/vagrant-dev:config.persistent_storage.size=102400
               gigabytes: 99
               mount_d: /var/lib/docker
+    iptables:
+      enable: false
     bop:
       apps: [ petshop ]
     docker:
