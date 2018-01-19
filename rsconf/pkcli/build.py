@@ -47,23 +47,23 @@ class T(pkcollections.Dict):
         prev_umask = None
         try:
             prev_umask = os.umask(027)
-            dst_d = self.hdb.rsconf_db_srv_host_d.join(self.hdb.rsconf_db_host)
+            dst_d = self.hdb.rsconf_db.srv_host_d.join(self.hdb.rsconf_db.host)
             new = dst_d + '-new'
-            self.hdb.build_dst_d = new
+            self.hdb.build = pkcollections.Dict(dst_d=new)
             old = dst_d + '-old'
             pkio.unchecked_remove(new, old)
             pkio.mkdir_parent(new)
-            self.require_component(*self.hdb.rsconf_db_components)
+            self.require_component(*self.hdb.rsconf_db.components)
             self.write_root_bash(
                 '000',
-                ['export install_channel={}'.format(self.hdb.rsconf_db_channel)] \
+                ['export install_channel={}'.format(self.hdb.rsconf_db.channel)] \
                     + ['rsconf_require ' + x for x in self.components_required],
             )
             if dst_d.check():
                 dst_d.rename(old)
             else:
                 old = None
-            subprocess.check_call(['chgrp', '-R', self.hdb.rsconf_db_srv_group, str(new)])
+            subprocess.check_call(['chgrp', '-R', self.hdb.rsconf_db.srv_group, str(new)])
             subprocess.check_call(['chmod', '-R', 'g+rX', str(new)])
             new.rename(dst_d)
             if old:
@@ -82,7 +82,7 @@ class T(pkcollections.Dict):
     def write_root_bash(self, basename, lines):
         # python and perl scripts?
         pkio.write_text(
-            self.hdb.build_dst_d.join(basename + '.sh'),
+            self.hdb.build.dst_d.join(basename + '.sh'),
             '\n'.join(['#!/bin/bash'] + lines) + '\n',
         )
 

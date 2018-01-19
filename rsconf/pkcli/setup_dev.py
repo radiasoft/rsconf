@@ -38,7 +38,10 @@ def default_command():
     db_d = pkio.mkdir_parent(root_d.join(db.DB_SUBDIR))
     secret_d = pkio.mkdir_parent(db_d.join(db.SECRET_SUBDIR))
     nginx_d = pkio.mkdir_parent(root_d.join(NGINX_SUBDIR))
-    boot_hdb = pkcollections.Dict(rsconf_db_secret_d=secret_d, rsconf_db_channel='dev')
+    boot_hdb = pkcollections.Dict(rsconf_db=pkcollections.Dict(
+        secret_d=secret_d,
+        channel='dev',
+    ))
     j2_ctx = pkcollections.Dict(
         srv_d=str(srv),
         uid=os.getuid(),
@@ -52,7 +55,7 @@ def default_command():
     )
     j2_ctx.update(boot_hdb)
     pw = {}
-    for h in j2_ctx.host, j2_ctx.master:
+    for h in j2_ctx.host, j2_ctx.host + '2', j2_ctx.master:
         pw[h] = _add_host(j2_ctx, 'dev', h, j2_ctx.passwd_file)
     _sym('~/src/radiasoft/download/bin/install.sh', 'index.html')
     _sym(pkresource.filename('rsconf/rsconf.sh'), 'rsconf.sh')

@@ -15,7 +15,7 @@ _DONE = 'done'
 _START = 'start'
 _MODE_RE = re.compile(r'^\d{3,4}$')
 _BASH_FUNC_SUFFIX = '_rsconf_component'
-_TLS_CRT_PREFIX = 'component_tls_crt_'
+_TLS_CRT_PREFIX = 'component_tls_crt'
 
 class T(pkcollections.Dict):
 
@@ -127,7 +127,7 @@ class T(pkcollections.Dict):
 
     def _bash_append_and_dst(self, host_path, ignore_exists=False):
         self._bash_append(host_path)
-        dst = self.hdb.build_dst_d.join(host_path)
+        dst = self.hdb.build.dst_d.join(host_path)
         if dst.check():
             if ignore_exists:
                 return None
@@ -157,7 +157,7 @@ def tls_key_and_crt(hdb, domain):
     src_key = src + tls.KEY_EXT
     src_crt = src + tls.CRT_EXT
     if not src_crt.check():
-        assert pkconfig.channel_in_internal_test(channel=hdb.rsconf_db_channel), \
+        assert pkconfig.channel_in_internal_test(channel=hdb.rsconf_db.channel), \
             '{}: missing crt for: {}'.format(src_crt, domain)
         pkio.mkdir_parent_only(src_crt)
         tls.gen_self_signed_crt(*domains, basename=src)
@@ -167,8 +167,7 @@ def tls_key_and_crt(hdb, domain):
 
 
 def _find_tls_crt(hdb, domain):
-    for k in hdb.keys():
-        if k.startswith(_TLS_CRT_PREFIX):
-            if domain in hdb[k]:
-                return k[len(_TLS_CRT_PREFIX):], hdb[k]
+    for crt, domains in hdb[_TLS_CRT_PREFIX].items():
+        if domain in domains:
+            return crt, domains
     raise AssertionError('{}: tls crt for domain not found'.format(domain))

@@ -135,12 +135,14 @@ channel:
 host:
   dev:
     {{ host }}:
-      rsconf_db_components: [ rabbitmq, celery_sirepo, sirepo ]
+      rsconf_db:
+        components: [ rabbitmq, celery_sirepo, sirepo ]
       # rsconf_db_components: [ bop ]
     {{ master }}:
       base_os:
         volume_groups: []
-      rsconf_db_components: [ docker_registry ]
+      rsconf_db:
+        components: [ docker_registry ]
 
 #Local Variables:
 #mode:yaml
