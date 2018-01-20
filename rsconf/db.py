@@ -129,9 +129,18 @@ def merge_dict(base, new):
                 new_v.extend(copy.deepcopy(base_v))
             else:
                 raise AssertionError(
-                    '{}: type imsmatch between new value ({}) and base ({})'.format(
+                    '{}: type mismatch between new value ({}) and base ({})'.format(
                         k, new_v, base_v))
             base[k] = copy.deepcopy(new_v)
+            continue
+        if type(new_v) != type(base_v) and not (
+            isinstance(new_v, pkconfig.STRING_TYPES) and isinstance(base_v, pkconfig.STRING_TYPES)
+            or new_v is None or base_v is None
+        ):
+            raise AssertionError(
+                '{}: type mismatch between new value ({}) and base ({})'.format(
+                    k, new_v, base_v))
+        base[k] = copy.deepcopy(new_v)
 
 
 def secret_path(hdb, filename, visibility=None):

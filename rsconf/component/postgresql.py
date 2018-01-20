@@ -8,6 +8,7 @@ from __future__ import absolute_import, division, print_function
 from rsconf import component
 from pykern import pkcollections
 from pykern import pkio
+from pykern.pkdebug import pkdp
 
 _CONF_D = pkio.py_path('/var/lib/pgsql/data')
 
@@ -41,5 +42,6 @@ class T(component.T):
             j2_ctx,
             _CONF_D.join('rsconf.conf'),
         )
-        self.install_resource('postgresql/pg_hba.conf', j2_ctx, _CONF_D.join('pg_hba.conf'))
+        self.install_resource(
+            'postgresql/pg_hba.conf', j2_ctx, _CONF_D.join('pg_hba.conf'))
         systemd.unit_enable(self)
