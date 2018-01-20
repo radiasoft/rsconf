@@ -11,8 +11,8 @@ from pykern import pkcollections
 class T(component.T):
     def internal_build(self):
         self.buildt.require_component('base_os')
-        j2_ctx = pkcollections.Dict(self.hdb)
-        self.install_access(mode='400', owner=self.hdb.rsconf_db_root_u)
+        j2_ctx = self.hdb.j2_ctx_copy()
+        self.install_access(mode='400', owner=self.hdb.rsconf_db.root_u)
         self.install_resource(
             'base_users/root_post_bivio_bashrc',
             j2_ctx,

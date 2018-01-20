@@ -27,20 +27,21 @@ _DEFAULT_ERROR_PAGES = '''
 
 
 def update_j2_ctx_and_install_access(compt, j2_ctx):
-    j2_ctx.update(
-        nginx_default_error_pages=_DEFAULT_ERROR_PAGES,
-        nginx_default_root=_DEFAULT_ROOT,
+    j2_ctx.setdefault('nginx', pkcollections.Dict()).update(
+        default_error_pages=_DEFAULT_ERROR_PAGES,
+        default_root=_DEFAULT_ROOT,
     )
-    compt.install_access(mode='400', owner=j2_ctx.rsconf_db_root_u)
+    compt.install_access(mode='400', owner=j2_ctx.rsconf_db.root_u)
 
 
 def install_vhost(compt, vhost, resource_d=None, j2_ctx=None):
-    j2_ctx = pkcollections.Dict(j2_ctx or compt.hdb)
     update_j2_ctx_and_install_access(compt, j2_ctx)
     kc = compt.install_tls_key_and_crt(vhost, CONF_D)
-    j2_ctx.nginx_tls_crt = kc.crt
-    j2_ctx.nginx_tls_key = kc.key
-    j2_ctx.nginx_vhost = vhost
+    j2_ctx.setdefault('nginx', pkcollections.Dict()).update(
+        tls_crt=kc.crt,
+        tls_key=kc.key,
+        vhost=vhost,
+    )
     compt.install_resource(
         (resource_d or compt.name) + '/nginx.conf',
         j2_ctx,
@@ -56,7 +57,7 @@ class T(component.T):
         self.buildt.require_component('base_users')
         self.append_root_bash('rsconf_yum_install nginx')
         systemd.unit_prepare(self, _CONF_ROOT_D)
-        j2_ctx = pkcollections.Dict(self.hdb)
-        self.install_access(mode='400', owner=self.hdb.rsconf_db_root_u)
+        j2_ctx = self.hdb.j2_ctx_copy()
+        self.install_access(mode='400', owner=self.hdb.rsconf_db.root_u)
         self.install_resource('nginx/global.conf', j2_ctx, _GLOBAL_CONF)
         systemd.unit_enable(self)

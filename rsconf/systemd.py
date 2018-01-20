@@ -21,7 +21,7 @@ def docker_unit_enable(compt, image, env, cmd, volumes=None, after=None, run_u=N
     """Must be last call"""
     from rsconf.component import docker_registry
 
-    j2_ctx = pkcollections.Dict(compt.hdb)
+    j2_ctx = compt.hdb.j2_ctx_copy()
     v = pkcollections.Dict(compt.systemd)
     if 'TZ' not in env:
         # Tested on CentOS 7, and it does have the localtime stat problem
@@ -35,7 +35,7 @@ def docker_unit_enable(compt, image, env, cmd, volumes=None, after=None, run_u=N
             ["export '{}={}'".format(k, env[k]) for k in sorted(env.keys())],
         ),
         image=image,
-        run_u=run_u or j2_ctx.rsconf_db_run_u,
+        run_u=run_u or j2_ctx.rsconf_db.run_u,
     )
     v.volumes = ' '.join(
         ["-v '{}'".format(_vol_arg(x)) for x in [v.run_d] + (volumes or [])],
@@ -48,14 +48,14 @@ def docker_unit_enable(compt, image, env, cmd, volumes=None, after=None, run_u=N
         v[s] = v.run_d.join(s)
     if not cmd:
         v.cmd = ''
-    pkconfig.flatten_values(j2_ctx, pkcollections.Dict(systemd=v))
+    j2_ctx.setdefault('systemd', pkcollections.Dict()).update(v)
     for s in scripts:
         if v[s]:
             compt.install_resource('systemd/' + s, j2_ctx, v[s])
     # See Poettering's omniscience about what's good for all of us here:
     # https://github.com/systemd/systemd/issues/770
     # These files should be 400, since there's no value in making them public.
-    compt.install_access(mode='444', owner=j2_ctx.rsconf_db_root_u)
+    compt.install_access(mode='444', owner=j2_ctx.rsconf_db.root_u)
     compt.install_resource(
         'systemd/service',
         j2_ctx,
@@ -76,7 +76,7 @@ def docker_unit_prepare(compt):
 
 
 def docker_unit_run_d(hdb, unit_name):
-    return hdb.rsconf_db_host_run_d.join(unit_name)
+    return hdb.rsconf_db.host_run_d.join(unit_name)
 
 
 def unit_enable(compt):

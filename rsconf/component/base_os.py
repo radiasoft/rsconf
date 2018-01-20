@@ -12,23 +12,23 @@ from rsconf import component
 class T(component.T):
 
     def internal_build(self):
-        self.install_access(mode='400', owner=self.hdb.rsconf_db_root_u)
-        j2_ctx = pkcollections.Dict(self.hdb)
+        self.install_access(mode='400', owner=self.hdb.rsconf_db.root_u)
+        j2_ctx = self.hdb.j2_ctx_copy()
         self.install_resource(
             'base_os/60-rsconf-base.conf',
             j2_ctx,
             '/etc/sysctl.d/60-rsconf-base.conf',
         )
-        self.install_access(mode='444', owner=self.hdb.rsconf_db_root_u)
+        self.install_access(mode='444', owner=self.hdb.rsconf_db.root_u)
         self.install_resource('base_os/hostname', j2_ctx, '/etc/hostname')
-        vgs = j2_ctx.base_os_volume_groups
+        vgs = j2_ctx.base_os.volume_groups
         cmds = ''
         for vg in vgs:
             for lv in vg.logical_volumes:
                 cmds += "base_os_logical_volume '{}' '{}' '{}' '{}'\n".format(
                     lv.name, lv.gigabytes, vg.name, lv.mount_d,
                 )
-        j2_ctx.base_os_logical_volume_cmds = cmds
+        j2_ctx.base_os.logical_volume_cmds = cmds
         #TODO(robnagler) watch and update hostname? restart networking???
         self.append_root_bash_with_resource(
             'base_os/main.sh',

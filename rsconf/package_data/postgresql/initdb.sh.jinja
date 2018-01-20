@@ -6,7 +6,7 @@ postgresql_initdb() {
     fi
     local pw=/tmp/postgresql_aux-$$-$RANDOM
     install -o postgres -m 400 /dev/null "$pw"
-    echo "{{ postgresql_postgres_password }}" >> "$pw"
+    echo "{{ postgresql.postgres_password }}" >> "$pw"
     local ret=0
     if ! PGSETUP_INITDB_OPTIONS="--pwfile=$pw --encoding=SQL_ASCII --auth=ident" postgresql-setup initdb; then
         ret=1

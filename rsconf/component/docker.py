@@ -27,11 +27,11 @@ class T(component.T):
                 _CONF_DIR,
             ),
         )
-        j2_ctx = pkcollections.Dict(self.hdb)
+        j2_ctx = self.hdb.j2_ctx_copy()
         docker_registry.update_j2_ctx(j2_ctx)
-        self.install_access(mode='700', owner=j2_ctx.rsconf_db_root_u)
+        self.install_access(mode='700', owner=j2_ctx.rsconf_db.root_u)
         self.install_directory(_CONF_DIR)
-        self.install_access(mode='400', owner=j2_ctx.rsconf_db_root_u)
+        self.install_access(mode='400', owner=j2_ctx.rsconf_db.root_u)
         self.install_resource(
             'docker/daemon.json',
             j2_ctx,

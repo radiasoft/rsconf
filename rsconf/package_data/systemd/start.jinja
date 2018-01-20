@@ -5,9 +5,9 @@
 set -euo pipefail
 # Needed to allow for empty commands (e.g. docker_registry), bash will complain
 # if an variable is empty as unbound (set -u above)
-image_cmd=( '{{ systemd_image }}' )
-flags='--name {{ systemd_service_name }} '
-user={{ systemd_run_u }}
+image_cmd=( '{{ systemd.image }}' )
+flags='--name {{ systemd.service_name }} '
+user={{ systemd.run_u }}
 if (( $# > 0 )); then
     flags='-i '
     if [[ -t 0 ]]; then
@@ -18,7 +18,7 @@ if (( $# > 0 )); then
         user=$start_run_u
     fi
 else
-    image_cmd+=( {{ systemd_cmd }} )
+    image_cmd+=( {{ systemd.cmd }} )
 fi
 # --init runs tini wrapper: https://github.com/krallin/tini
-exec docker run $flags --init --rm "--user=$user" --net host {{ systemd_volumes }} "${image_cmd[@]}"
+exec docker run $flags --init --rm "--user=$user" --net host {{ systemd.volumes }} "${image_cmd[@]}"

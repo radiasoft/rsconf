@@ -31,7 +31,7 @@ docker_main() {
     fi
 #TODO(robnagler) how to update?
     rsconf_yum_install docker-ce
-    {% if rsconf_db_channel == "dev" %}
+    {% if rsconf_db.channel == "dev" %}
         # Give vagrant user access in dev mode only
         usermod -aG docker vagrant
     {% endif %}

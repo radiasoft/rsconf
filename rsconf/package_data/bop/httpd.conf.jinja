@@ -24,11 +24,11 @@ LoadModule unixd_module		modules/mod_unixd.so
 # AddOutputFilterByType
 LoadModule filter_module		modules/mod_filter.so
 
-Listen {{ bop_listen_base }}
-Listen {{ bop_listen_base + 1 }}
+Listen {{ bop.listen_base }}
+Listen {{ bop.listen_base + 1 }}
 
-User {{ rsconf_db_run_u }}
-Group {{ rsconf_db_run_u }}
+User {{ rsconf_db.run_u }}
+Group {{ rsconf_db.run_u }}
 ServerAdmin root@bivio.biz
 ServerTokens ProductOnly
 
@@ -38,9 +38,9 @@ MaxKeepAliveRequests 10
 KeepAliveTimeout 2
 MinSpareServers 1
 
-MaxSpareServers {{ bop_num_servers }}
-StartServers {{ bop_num_servers }}
-MaxClients {{ bop_num_servers }}
+MaxSpareServers {{ bop.num_servers }}
+StartServers {{ bop.num_servers }}
+MaxClients {{ bop.num_servers }}
 MaxRequestsPerChild 120
 LimitRequestBody 240000000
 # https://www.apache.org/security/asf-httpoxy-response.txt

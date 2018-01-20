@@ -1,8 +1,8 @@
 # -*-perl-*-
-use {{ bop_perl_root }}::BConf;
-{{ bop_perl_root }}::BConf->merge_dir({
+use {{ bop.perl_root }}::BConf;
+{{ bop.perl_root }}::BConf->merge_dir({
     'Bivio::Agent::Request' => {
-        can_secure => {{ bop_can_secure | int }},
+        can_secure => {{ bop.can_secure | int }},
     },
     'Bivio::Biz::File' => {
         root => '/var/db/bop',
@@ -12,14 +12,14 @@ use {{ bop_perl_root }}::BConf;
         want_status_email => 0,
     },
     'Bivio::Delegate::Cookie' => {
-        tag => '{{ bop_cookie_tag }}',
+        tag => '{{ bop.cookie_tag }}',
     },
     'Bivio::IO::Alert' => {
         want_time => 1,
         want_pid => 1,
     },
     'Bivio::IO::Config' => {
-        is_production => {{ bop_is_production | int }},
+        is_production => {{ bop.is_production | int }},
     },
     'Bivio::IO::Log' => {
         directory => '/var/log/bop',
@@ -27,11 +27,11 @@ use {{ bop_perl_root }}::BConf;
     'Bivio::UI::Facade' => {
         local_file_root => '/var/www/facades',
         want_local_file_cache => 1,
-        http_host => '{{ bop_http_host }}',
-        mail_host => '{{ bop_mail_host }}',
+        http_host => '{{ bop.http_host }}',
+        mail_host => '{{ bop.mail_host }}',
     },
     'Bivio::UI::HTML::Widget::SourceCode' => {
-        source_dir => '{{ bop_source_code_d }}',
+        source_dir => '{{ bop.source_code_d }}',
     },
     'Bivio::Util::HTTPLog' => {
         error_file => '/var/log/httpd/error_log',
@@ -39,5 +39,5 @@ use {{ bop_perl_root }}::BConf;
         email => 'errors' . '@' . 'bivio.biz',
         pager_email => 'critical-errors' . '@' . 'bivio.biz',
     },
-{{ bop_bconf_aux }}
+{{ bop.bconf_aux }}
 });

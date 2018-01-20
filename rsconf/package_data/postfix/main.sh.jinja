@@ -14,7 +14,7 @@ postfix_main() {
     fi
     local tmp=$TMPDIR/postfix_main-$RANDOM
     #POSIT spamd_docker_image is binary compatible with host operating system
-    docker run -i --rm '{{ spamd_docker_image }}' cat /usr/bin/spamc > "$tmp"
+    docker run -i --rm '{{ spamd.docker_image }}' cat /usr/bin/spamc > "$tmp"
     rsconf_install_access 555 root root
     rsconf_install_file "$tmp" /usr/bin/spamc
     rm -f "$tmp"
@@ -31,20 +31,20 @@ postfix_main() {
         mynetworks=127.0.0.0/8
         recipient_delimiter=+
         smtp_tls_CAfile=/etc/pki/tls/certs/ca-bundle.crt
-        smtp_tls_cert_file='{{ postfix_tls_cert_file }}'
-        smtp_tls_key_file='{{ postfix_tls_key_file }}'
+        smtp_tls_cert_file='{{ postfix.tls_cert_file }}'
+        smtp_tls_key_file='{{ postfix.tls_key_file }}'
         smtp_tls_security_level=may
         smtpd_banner='$myhostname ESMTP'
         smtpd_client_restrictions='sleep 8'
         smtpd_data_restrictions=reject_unauth_pipelining
         smtpd_delay_reject=no
         smtpd_helo_restrictions=reject_unknown_helo_hostname
-        smtpd_recipient_restrictions='reject_unauth_pipelining,permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination,reject_non_fqdn_recipient,reject_unknown_recipient_domain,check_policy_service inet:127.0.0.1:{{ postgrey_port }}'
+        smtpd_recipient_restrictions='reject_unauth_pipelining,permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination,reject_non_fqdn_recipient,reject_unknown_recipient_domain,check_policy_service inet:127.0.0.1:{{ postgrey.port }}'
         smtpd_relay_restrictions=permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination
         smtpd_sender_restrictions=reject_unauth_pipelining,permit_mynetworks,reject_non_fqdn_sender,reject_unknown_sender_domain
         smtpd_tls_CAfile=/etc/pki/tls/certs/ca-bundle.crt
-        smtpd_tls_cert_file='{{ postfix_tls_cert_file }}'
-        smtpd_tls_key_file='{{ postfix_tls_key_file }}'
+        smtpd_tls_cert_file='{{ postfix.tls_cert_file }}'
+        smtpd_tls_key_file='{{ postfix.tls_key_file }}'
         smtpd_tls_security_level=may
     )
     postconf -e "${x[@]}"
@@ -56,7 +56,7 @@ postfix_main() {
     rsconf_edit "$postfix_master_cf" \
         '^smtp.*spamd' 's{^smtp\s+inet.*}{smtp       inet  n       -       n       -       200       smtpd -o content_filter=spamd}'
     rsconf_append "$postfix_master_cf" \
-        'spamd unix  -       n       n       -       10       pipe flags=Rq user=nobody:nobody argv=/usr/bin/spamc --port={{ spamd_port }} -e /usr/sbin/sendmail -G -i -f ${sender} -- ${recipient}'
+        'spamd unix  -       n       n       -       10       pipe flags=Rq user=nobody:nobody argv=/usr/bin/spamc --port={{ spamd.port }} -e /usr/sbin/sendmail -G -i -f ${sender} -- ${recipient}'
 }
 
 postfix_setup_bop() {
@@ -66,7 +66,7 @@ postfix_setup_bop() {
     # http://forums.sentora.org/showthread.php?tid=1118
     rsconf_yum_install perl-libwww-perl
     rsconf_install_access 555 root root
-    docker run -i --rm '{{ bop_docker_image }}' bash > "$tmp" <<'EOF2'
+    docker run -i --rm '{{ bop.docker_image }}' bash > "$tmp" <<'EOF2'
 echo '#!/usr/bin/perl -w'
 cat /usr/share/perl5/vendor_perl/Bivio/Util/SendmailHTTP.pm
 cat <<'EOF'

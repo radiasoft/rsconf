@@ -1,20 +1,20 @@
 #!/bin/bash
 
-{{ bop_app_name }}_initdb() {
-    if [[ -d {{ bop_db_host_d }}/RealmFile ]]; then
+{{ bop.app_name }}_initdb() {
+    if [[ -d {{ bop.db_host_d }}/RealmFile ]]; then
         return
     fi
     if [[ $(systemctl is-active postgresql) != active ]]; then
         rsconf_rerun_required 'postgresql needs to be running'
         return
     fi
-    start_run_u=root {{ bop_run_d }}/start bash ${install_debug:+-x} <<'EOF1'
+    start_run_u=root {{ bop.run_d }}/start bash ${install_debug:+-x} <<'EOF1'
 #!/bin/bash
 set -e
 # create_test_db writes to /var/www/facades/<facade_uri>/ddl so need to
 # make writable. In a container so will go away next run.
-chown '{{ rsconf_db_run_u }}' /var/www/facades/*/ddl
-su - '{{ rsconf_db_run_u }}' <<'EOF2'
+chown '{{ rsconf_db.run_u }}' /var/www/facades/*/ddl
+su - '{{ rsconf_db.run_u }}' <<'EOF2'
 set -e
 d=/tmp/bop_initdb_$$-$RANDOM
 mkdir -p "$d/bconf.d"
@@ -24,19 +24,19 @@ cat >> "$d/bconf.d/temp.bconf" <<'EOF3'
 {
     'Bivio::Ext::DBI' => {
         template1 => {
-            password => '{{ postgresql_postgres_password }}',
+            password => '{{ postgresql.postgres_password }}',
         },
         dbms => {
-            password => '{{ postgresql_postgres_password }}',
+            password => '{{ postgresql.postgres_password }}',
         },
     },
 };
 EOF3
 bivio sql init_dbms
-{% if not bop_is_production %}
+{% if not bop.is_production %}
     bivio sql -f create_test_db
 {% endif %}
 EOF2
 EOF1
-    rsconf_service_trigger_restart '{{ bop_app_name }}'
+    rsconf_service_trigger_restart '{{ bop.app_name }}'
 }

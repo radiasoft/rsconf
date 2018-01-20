@@ -83,8 +83,9 @@ default:
     run_u: {{ user }}
     run_uid: {{ uid }}
     srv_group: {{ group }}
+  celery_sirepo:
+    queues: "sequential,parallel"
   sirepo:
-    celery_queues: "sequential,parallel"
     docker_image: docker.io/radiasoft/sirepo
     oauth:
       github_key: ""
@@ -136,8 +137,7 @@ host:
   dev:
     {{ host }}:
       rsconf_db:
-        components: [ rabbitmq, celery_sirepo, sirepo ]
-      # rsconf_db_components: [ bop ]
+        components: [ bop, rabbitmq, celery_sirepo, sirepo ]
     {{ master }}:
       base_os:
         volume_groups: []

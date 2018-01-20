@@ -8,10 +8,10 @@ log:
   formatter: text
   fields:
     service: docker_registry
-    environment: {{ rsconf_db_channel }}
+    environment: {{ rsconf_db.channel }}
 storage:
   filesystem:
-    rootdirectory: {{ docker_registry_db_d }}
+    rootdirectory: {{ docker_registry.db_d }}
     maxthreads: 20
   delete:
     # required for proxy (pull through cache)
@@ -19,14 +19,14 @@ storage:
 auth:
   htpasswd:
     realm: '*'
-    path: {{ docker_registry_auth_htpasswd_path }}
+    path: {{ docker_registry.auth_htpasswd_path }}
 http:
-  addr: {{ docker_registry_http_addr }}
-  host: {{ docker_registry_http_host }}
-  secret: {{ docker_registry_http_secret }}
+  addr: {{ docker_registry.http_addr }}
+  host: {{ docker_registry.http_host }}
+  secret: {{ docker_registry.http_secret }}
   tls:
-    certificate: {{ docker_registry_http_tls_certificate }}
-    key:  {{ docker_registry_http_tls_key }}
+    certificate: {{ docker_registry.http_tls_certificate }}
+    key:  {{ docker_registry.http_tls_key }}
   headers:
     X-Content-Type-Options: [nosniff]
 # https://docs.docker.com/registry/configuration/#proxy

@@ -15,8 +15,8 @@ skip_uribl_checks 1
 score FH_DATE_PAST_20XX 0
 score FREEMAIL_FORGED_REPLYTO 0
 score RDNS_NONE 0
-internal_networks {{ iptables_our_networks | join(' ') }}
-trusted_networks {{ iptables_our_networks | join(' ') }}
+internal_networks {{ iptables.our_networks | join(' ') }}
+trusted_networks {{ iptables.our_networks | join(' ') }}
 score __RCVD_IN_ZEN 0
 score RCVD_IN_SBL 0
 score RCVD_IN_XBL 0
@@ -41,5 +41,5 @@ exec /bin/spamd \
     --listen=127.0.0.1 \
     --max-children=3 \
     --nouser-config \
-    --port={{ spamd_port }} \
+    --port={{ spamd.port }} \
     --syslog-socket=native

@@ -1,21 +1,21 @@
 server {
-    listen {{ nginx_vhost }}:80;
-    server_name {{ nginx_vhost }};
+    listen {{ nginx.vhost }}:80;
+    server_name {{ nginx.vhost }};
     return 301 https://$http_host$request_uri;
 }
 
 server {
-    listen {{ nginx_vhost }}:443 ssl;
-    server_name {{ nginx_vhost }};
-    root {{ nginx_default_root }};
-    ssl_certificate {{ nginx_tls_crt }};
-    ssl_certificate_key {{ nginx_tls_key }};
+    listen {{ nginx.vhost }}:443 ssl;
+    server_name {{ nginx.vhost }};
+    root {{ nginx.default_root }};
+    ssl_certificate {{ nginx.tls_crt }};
+    ssl_certificate_key {{ nginx.tls_key }};
     location / {
         allow all;
         include uwsgi_params;
         client_max_body_size 50m;
         uwsgi_read_timeout 300s;
         uwsgi_send_timeout 300s;
-        uwsgi_pass {{ nginx_vhost }}:{{ sirepo_pkcli_service_port }};
+        uwsgi_pass {{ nginx.vhost }}:{{ sirepo.pkcli.service_port }};
     }
 }

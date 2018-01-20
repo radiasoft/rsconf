@@ -20,14 +20,14 @@ class T(component.T):
         self.buildt.require_component('docker')
 
         self.buildt.require_component('docker')
-        j2_ctx = pkcollections.Dict(self.hdb)
+        j2_ctx = self.hdb.j2_ctx_copy()
         run_d = systemd.docker_unit_prepare(self)
         run = run_d.join('run')
         systemd.docker_unit_enable(
             self,
-            image=docker_registry.absolute_image(j2_ctx, j2_ctx.spamd_docker_image),
+            image=docker_registry.absolute_image(j2_ctx, j2_ctx.spamd.docker_image),
             env=pkcollections.Dict(),
             cmd=str(run),
         )
-        self.install_access(mode='500', owner=self.hdb.rsconf_db_run_u)
+        self.install_access(mode='500', owner=self.hdb.rsconf_db.run_u)
         self.install_resource('spamd/run.sh', j2_ctx, run)

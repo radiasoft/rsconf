@@ -6,6 +6,7 @@ u"""Test tree
 """
 from __future__ import absolute_import, division, print_function
 from pykern.pkdebug import pkdp
+from pykern import pkconfig
 
 NGINX_SUBDIR = 'nginx'
 
@@ -68,7 +69,9 @@ def default_command():
         dst = root_d.join(re.sub('.jinja$', '', x))
         pkio.mkdir_parent_only(dst)
         if not dst.basename.startswith('host-'):
-            pkjinja.render_file(f, j2_ctx, output=dst, strict_undefined=True)
+            flat = pkcollections.Dict()
+            pkconfig.flatten_values(flat, j2_ctx)
+            pkjinja.render_file(f, flat, output=dst, strict_undefined=True)
             continue
         for h, p in pw.iteritems():
             d = pkio.py_path(dst.dirname).join(dst.basename.replace('host', h))

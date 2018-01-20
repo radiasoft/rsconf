@@ -39,10 +39,10 @@ _PORT = 5000
 
 def absolute_image(j2_ctx, image):
     if not ':' in image:
-        image += ':' + j2_ctx.rsconf_db_channel
+        image += ':' + j2_ctx.rsconf_db.channel
     h = _DOCKER_HUB_HOST
     if update_j2_ctx(j2_ctx):
-        h = j2_ctx.docker_registry_http_addr
+        h = j2_ctx.docker_registry.http_addr
     if image.startswith(_DOCKER_HUB_HOST) or image.startswith(h):
         return image
     return '{}/{}'.format(h, image)
@@ -67,13 +67,13 @@ def add_host(hdb, host):
 def install_crt_and_login(compt, j2_ctx):
     if not update_j2_ctx(j2_ctx):
         return
-    compt.install_access(mode='700', owner=j2_ctx.docker_registry_run_u)
+    compt.install_access(mode='700', owner=j2_ctx.docker_registry.run_u)
     compt.install_directory(_ROOT_CONFIG_JSON.dirname)
     compt.install_directory(_CERTS_D)
-    d = _CERTS_D.join(j2_ctx.docker_registry_http_addr)
+    d = _CERTS_D.join(j2_ctx.docker_registry.http_addr)
     compt.install_directory(d)
-    crt = component.tls_key_and_crt(j2_ctx, j2_ctx.docker_registry_host).crt
-    compt.install_access(mode='400', owner=j2_ctx.docker_registry_run_u)
+    crt = component.tls_key_and_crt(j2_ctx, j2_ctx.docker_registry.host).crt
+    compt.install_access(mode='400', owner=j2_ctx.docker_registry.run_u)
     compt.install_abspath(crt, d.join('ca.crt'))
     # Might be needed:
     # cp certs/domain.crt /etc/pki/ca-trust/source/anchors/myregistrydomain.com.crt
@@ -81,9 +81,9 @@ def install_crt_and_login(compt, j2_ctx):
     jf = db.secret_path(j2_ctx, _PASSWD_SECRET_JSON_F, visibility=_PASSWD_VISIBILITY)
     with jf.open() as f:
         y = pkjson.load_any(jf)
-    u = j2_ctx.rsconf_db_host
+    u = j2_ctx.rsconf_db.host
     p = y[u]
-    j2_ctx.docker_registry_auth_b64 = base64.b64encode(u + ':' + p)
+    j2_ctx.docker_registry.auth_b64 = base64.b64encode(u + ':' + p)
     compt.install_resource(
         'docker_registry/root_config.json',
         j2_ctx,
@@ -93,14 +93,14 @@ def install_crt_and_login(compt, j2_ctx):
 
 def update_j2_ctx(j2_ctx):
     #TODO(robnagler) exit if already initialzed.
-    if not j2_ctx.docker_registry_host:
+    if not j2_ctx.docker_registry.host:
         return False
-    addr = '{}:{}'.format(j2_ctx.docker_registry_host, _PORT)
-    j2_ctx.update(
-        docker_registry_http_addr=addr,
-        docker_registry_http_host='https://' + addr,
-        docker_registry_run_u=j2_ctx.rsconf_db_root_u,
-    )
+    addr = '{}:{}'.format(j2_ctx.docker_registry.host, _PORT)
+    j2_ctx.docker_registry.update(pkcollections.Dict(
+        http_addr=addr,
+        http_host='https://' + addr,
+        run_u=j2_ctx.rsconf_db.root_u,
+    ))
     return True
 
 
@@ -112,7 +112,7 @@ class T(component.T):
         # https://docs.docker.com/registry/configuration/
         self.buildt.require_component('docker')
         run_d = systemd.docker_unit_prepare(self)
-        j2_ctx = pkcollections.Dict(self.hdb)
+        j2_ctx = self.hdb.j2_ctx_copy()
         assert update_j2_ctx(j2_ctx), \
             'no registry host'
         conf_f = run_d.join('config.yml')
@@ -126,31 +126,31 @@ class T(component.T):
             env=pkcollections.Dict(),
             cmd=None,
             after=['docker.service'],
-            run_u=j2_ctx.docker_registry_run_u,
+            run_u=j2_ctx.docker_registry.run_u,
             volumes=volumes,
         )
-        kc = self.install_tls_key_and_crt(j2_ctx.docker_registry_host, run_d)
+        kc = self.install_tls_key_and_crt(j2_ctx.docker_registry.host, run_d)
         db_d = run_d.join(_DB_SUBDIR)
-        j2_ctx.update(
-            docker_registry_auth_htpasswd_path=run_d.join('passwd'),
-            docker_registry_conf_f=conf_f,
-            docker_registry_db_d=db_d,
-            docker_registry_http_tls_certificate=kc.crt,
-            docker_registry_http_tls_key=kc.key,
+        j2_ctx.docker_registry.update(
+            auth_htpasswd_path=run_d.join('passwd'),
+            conf_f=conf_f,
+            db_d=db_d,
+            http_tls_certificate=kc.crt,
+            http_tls_key=kc.key,
         )
-        j2_ctx.docker_registry_http_secret = self.secret_path_value(
+        j2_ctx.docker_registry.http_secret = self.secret_path_value(
             _HTTP_SECRET_F,
             lambda x: db.random_string(x, length=64),
             visibility=_HTTP_SECRET_VISIBILITY,
         )[0]
         self.install_secret_path(
             _PASSWD_SECRET_F,
-            j2_ctx.docker_registry_auth_htpasswd_path,
+            j2_ctx.docker_registry.auth_htpasswd_path,
             gen_secret=db.random_string,
             visibility=_PASSWD_VISIBILITY,
         )
-        self.install_access(mode='700', owner=j2_ctx.docker_registry_run_u)
+        self.install_access(mode='700', owner=j2_ctx.docker_registry.run_u)
         self.install_directory(db_d)
-        self.install_access(mode='400', owner=j2_ctx.docker_registry_run_u)
+        self.install_access(mode='400', owner=j2_ctx.docker_registry.run_u)
         self.install_resource(
-            'docker_registry/config.yml', j2_ctx, j2_ctx.docker_registry_conf_f)
+            'docker_registry/config.yml', j2_ctx, j2_ctx.docker_registry.conf_f)

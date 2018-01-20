@@ -20,7 +20,7 @@ net.ipv4.conf.all.log_martians = 1
 net.ipv4.conf.default.accept_source_route = 0
 net.ipv4.icmp_echo_ignore_broadcasts = 1
 net.ipv4.icmp_ignore_bogus_error_responses = 1
-net.ipv4.ip_forward = {{ base_os_ip_forward | int }}
+net.ipv4.ip_forward = {{ base_os.ip_forward | int }}
 net.ipv4.tcp_syncookies = 1
 net.ipv4.tcp_syncookies = 1
 

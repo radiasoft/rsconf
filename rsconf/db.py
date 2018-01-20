@@ -11,6 +11,7 @@ from pykern import pkio
 from pykern import pkjinja
 from pykern import pkyaml
 from pykern.pkdebug import pkdc, pkdp, pkdpretty
+import copy
 import random
 import string
 
@@ -30,6 +31,11 @@ LEVELS = ('default', 'channel', 'host')
 # Secrets are long so keep them simple
 _RANDOM_STRING = string.ascii_letters + string.digits
 
+class Host(pkcollections.Dict):
+    def j2_ctx_copy(self):
+        return copy.deepcopy(self)
+
+
 class T(pkcollections.Dict):
 
     def __init__(self, *args, **kwargs):
@@ -46,10 +52,10 @@ class T(pkcollections.Dict):
                         strict_undefined=True,
                     ),
                 )
-                _merge_dict(self.base, v)
+                merge_dict(self.base, v)
 
     def host_db(self, channel, host):
-        res = pkcollections.Dict()
+        res = Host()
         v = pkcollections.Dict(
             rsconf_db=pkcollections.Dict(
                 # Common defaults we allow overrides for
@@ -58,7 +64,7 @@ class T(pkcollections.Dict):
                 root_u='root',
             )
         )
-        _merge_dict(res, v)
+        merge_dict(res, v)
         #TODO(robnagler) optimize by caching default and channels
         for l in LEVELS:
             v = self.base[l]
@@ -70,7 +76,7 @@ class T(pkcollections.Dict):
                     v = v.get(host)
                     if not v:
                         continue
-            _merge_dict(res, v)
+            merge_dict(res, v)
         db_d = self.root_d.join(DB_SUBDIR)
         srv_d = self.root_d.join(SRV_SUBDIR)
         v = pkcollections.Dict(
@@ -83,10 +89,7 @@ class T(pkcollections.Dict):
                 srv_host_d=srv_d.join(HOST_SUBDIR),
             )
         )
-        _merge_dict(res, v)
-        flat = pkcollections.Dict()
-        pkconfig.flatten_values(flat, res)
-        res.update(flat)
+        merge_dict(res, v)
         _update_paths(res)
         return res
 
@@ -97,6 +100,38 @@ class T(pkcollections.Dict):
                 self.base.host.get(c, pkcollections.Dict()).keys(),
             )
         return res
+
+
+def merge_dict(base, new):
+    for k in list(new.keys()):
+        new_v = new[k]
+        if not k in base:
+            base[k] = copy.deepcopy(new_v)
+            continue
+        base_v = base[k]
+        if isinstance(new_v, dict) or isinstance(base_v, dict):
+            if new_v is None or base_v is None:
+                # Just replace, because new_v overrides type in case of None
+                base[k] = copy.deepcopy(new_v)
+            elif isinstance(new_v, dict) and isinstance(base_v, dict):
+                merge_dict(base_v, new_v)
+            else:
+                raise AssertionError(
+                    '{}: type mismatch between new value ({}) and base ({})'.format(
+                        k, new_v, base_v))
+            continue
+        if isinstance(new_v, list) or isinstance(base_v, list):
+            if new_v is None or base_v is None:
+                # Just replace, because new_v overrides type in case of None
+                pass
+            elif isinstance(new_v, list) and isinstance(base_v, list):
+                # prepend the new values
+                new_v.extend(copy.deepcopy(base_v))
+            else:
+                raise AssertionError(
+                    '{}: type imsmatch between new value ({}) and base ({})'.format(
+                        k, new_v, base_v))
+            base[k] = copy.deepcopy(new_v)
 
 
 def secret_path(hdb, filename, visibility=None):
@@ -152,38 +187,6 @@ def _cfg_root(value):
             root = pkio.py_path('.')
         value = root.join(DEFAULT_ROOT_SUBDIR)
     return value
-
-
-def _merge_dict(base, new):
-    for k in list(new.keys()):
-        new_v = new[k]
-        if not k in base:
-            base[k] = new_v
-            continue
-        base_v = base[k]
-        if isinstance(new_v, dict) or isinstance(base_v, dict):
-            if new_v is None or base_v is None:
-                # Just replace, because new_v overrides type in case of None
-                base[k] = new_v
-            elif isinstance(new_v, dict) and isinstance(base_v, dict):
-                _merge_dict(base_v, new_v)
-            else:
-                raise AssertionError(
-                    '{}: type mismatch between new value ({}) and base ({})'.format(
-                        k, new_v, base_v))
-            continue
-        if isinstance(new_v, list) or isinstance(base_v, list):
-            if new_v is None or base_v is None:
-                # Just replace, because new_v overrides type in case of None
-                pass
-            elif isinstance(new_v, list) and isinstance(base_v, list):
-                # prepend the new values
-                new_v.extend(base_v)
-            else:
-                raise AssertionError(
-                    '{}: type imsmatch between new value ({}) and base ({})'.format(
-                        k, new_v, base_v))
-            base[k] = new_v
 
 
 def _update_paths(base):
