@@ -91,7 +91,7 @@ base_os_main() {
     if [[ -e /proc/sys/net/ipv6/conf/all/disable_ipv6 ]]; then
         i=$(sysctl -n net.ipv6.conf.all.disable_ipv6)
         if [[ -z $i ]]; then
-            install_err 'systctl net.ipv6.conf.all.disable_ipv6: failed'
+            install_err 'sysctl net.ipv6.conf.all.disable_ipv6: failed'
         fi
     else
         # Once disabled at the kernel init level, you can't query net.ipv6 at all
