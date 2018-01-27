@@ -1,13 +1,12 @@
 #!/bin/bash
 
 docker_main() {
-    local dir=/var/lib/docker
+    local dir={{ docker.data_d }}/volumes
     if [[ -e $dir && $(type -t docker) != '' ]]; then
 #TODO(robnagler) update docker rpm?
         install_info "$dir: exists, docker already installed"
         return
     fi
-    rsconf_require base_users
 #TODO(robnagler) need a list of repos and RPMs.
     # F27
     if rsconf_fedora_release_if 26; then

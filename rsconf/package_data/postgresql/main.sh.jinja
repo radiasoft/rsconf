@@ -1,0 +1,22 @@
+#!/bin/bash
+
+postgresql_main() {
+    if [[ -e  {{ postgresql.conf_f }} ]]; then
+        return
+    fi
+    local old=/var/lib/pgsql
+    mv -f "$old" '{{ postgresql.run_d }}'
+    # postgresql-setup hardwires /var/lib/pgsql for logs so don't bother
+    # with anything but a symlink. $PGDATA will remain /var/lib/pgsql/data,
+    # and everything works fine
+    ln --relative -s '{{ postgresql.run_d }}' "$old"
+    local pw=/tmp/postgresql_aux-$$-$RANDOM
+    install -o postgres -m 400 /dev/null "$pw"
+    echo '{{ postgresql.postgres_password }}' >> "$pw"
+    local ret=0
+    if ! PGSETUP_INITDB_OPTIONS="--pwfile=$pw --encoding=SQL_ASCII --auth=ident" postgresql-setup initdb; then
+        ret=1
+    fi
+    rm -f "$pw"
+    return "$ret"
+}

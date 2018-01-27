@@ -87,6 +87,10 @@ base_os_logical_volumes() {
 
 base_os_main() {
     rsconf_radia_run_as_user root redhat-base
+    if [[ ! -d {{ rsconf_db.host_run_d }} ]]; then
+        mkdir -p {{ rsconf_db.host_run_d }}
+        chmod 755 {{ rsconf_db.host_run_d }}
+    fi
     local i
     if [[ -e /proc/sys/net/ipv6/conf/all/disable_ipv6 ]]; then
         i=$(sysctl -n net.ipv6.conf.all.disable_ipv6)

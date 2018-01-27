@@ -28,6 +28,9 @@ class T(component.T):
             ),
         )
         j2_ctx = self.hdb.j2_ctx_copy()
+        j2_ctx.docker.update(
+            data_d=j2_ctx.rsconf_db.host_run_d.join('docker'),
+        )
         docker_registry.update_j2_ctx(j2_ctx)
         self.install_access(mode='700', owner=j2_ctx.rsconf_db.root_u)
         self.install_directory(_CONF_DIR)

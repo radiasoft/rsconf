@@ -1,3 +1,12 @@
+http://www.techexams.net/forums/lpi-rhce-sair/115918-possible-setup-open-luks-without-entering-password-boot-time.html
+
+Add to grub.conf rd_NO_LUKS
+
+We want the prompt to happen at startup time.
+
+https://wejn.org/how-to-make-passwordless-cryptsetup.html
+
+
 https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/security_guide/sec-encryption
 https://unix.stackexchange.com/a/107859
 yum install cryptsetup
@@ -73,3 +82,8 @@ t1               8G           259489  24 129929  20           331386  22  2844  
 Latency                       19293us   99858us              2635us   47930us
 
 1.97,1.97,t1,1,1513592346,8G,,,,259489,24,129929,20,,,331386,22,2844,95,,,,,,,,,,,,,,,,,,,19293us,99858us,,2635us,47930us,,,,,,
+
+
+### growing raid5
+
+https://askubuntu.com/a/57627

@@ -78,6 +78,14 @@ class T(pkcollections.Dict):
             '{}: directory must be at least 700 mode (u=rwx)'
         self._bash_append(host_path, is_file=False)
 
+    def install_symlink(self, old_host_path, new_host_path):
+        new = new_host_path.bestrelpath(old_host_path)
+        _assert_host_path(new)
+        _assert_host_path(old_host_path)
+        self.append_root_bash(
+            "rsconf_install_symlink '{}' '{}'".format(old_host_path, new),
+        )
+
     def install_resource(self, name, j2_ctx, host_path):
         from pykern import pkjinja
 
@@ -116,8 +124,7 @@ class T(pkcollections.Dict):
             return f.read(), src
 
     def _bash_append(self, host_path, is_file=True):
-        assert not "'" in str(host_path), \
-            "{}: host_path contains single quote (')".format(host_path)
+        _assert_host_path(host_path)
         self.append_root_bash(
             "rsconf_install_{} '{}'".format(
                 'file' if is_file else 'directory',
@@ -164,6 +171,11 @@ def tls_key_and_crt(hdb, domain):
     assert src_key.check(), \
         '{}: missing key for: {}'.format(src_key, domain)
     return pkcollections.Dict(key=src_key, crt=src_crt)
+
+
+def _assert_host_path(host_path):
+    assert not "'" in str(host_path), \
+        "{}: host_path contains single quote (')".format(host_path)
 
 
 def _find_tls_crt(hdb, domain):

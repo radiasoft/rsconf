@@ -35,7 +35,7 @@ On the master as root:
 
 ```bash
 sudo su -
-export host=v3.radia.run install_channel=dev install_server=http://v3.radia.run:8000
+export host=v3.radia.run install_channel=dev install_server=http://v3.radia.run:2916
 curl "$install_server" | bash -s rsconf.sh "$host" setup_dev
 exit
 exit
@@ -43,7 +43,7 @@ vagrant reload
 vssh
 # NOTE: restart nginx like above (do not "rsconf build")
 sudo su -
-export install_channel=dev install_server=http://v3.radia.run:8000
+export install_channel=dev install_server=http://v3.radia.run:2916
 curl "$install_server" | bash -s rsconf.sh "$(hostname -f)" setup_dev
 ```
 
@@ -52,7 +52,7 @@ On the master as dev user:
 ```bash
 sudo cat /root/.docker/config.json > ~/.docker/config.json
 cd ~/src/biviosoftware
-gcl container-perl
+test -d container-perl || gcl container-perl
 cd container-perl
 export build_push=1 build_docker_registry=$(hostname -f):5000
 curl radia.run | bash -s container-build
@@ -69,7 +69,7 @@ cat > test.sh <<'END'
 #!/bin/bash
 . ~/.bashrc
 set -e -x
-export host=v4.radia.run install_server=http://v3.radia.run:8000 install_channel=dev
+export host=v4.radia.run install_server=http://v3.radia.run:2916 install_channel=dev
 curl radia.run | bash -s vagrant-centos7 "$host" "$(dig +short "$host")"
 vssh sudo su - <<EOF
 export install_channel=dev install_server="$install_server"

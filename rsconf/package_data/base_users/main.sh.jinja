@@ -2,10 +2,8 @@
 
 base_users_main() {
     rsconf_radia_run_as_user {{ rsconf_db.root_u }} home
-        # useradd -u 1000 -g vagrant -d /var/lib/vagrant vagrant
     if ! id {{ rsconf_db.run_u }} >& /dev/null; then
         #TODO(robnagler) make re-entrant
-        #TODO(robnagler) use /var/lib/vagrant as the user?
         groupadd -g {{ rsconf_db.run_uid }} {{ rsconf_db.run_u }}
         useradd -m -g {{ rsconf_db.run_u }} -u {{ rsconf_db.run_uid }} {{ rsconf_db.run_u }}
     fi

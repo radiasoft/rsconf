@@ -59,7 +59,7 @@ class T(pkcollections.Dict):
         v = pkcollections.Dict(
             rsconf_db=pkcollections.Dict(
                 # Common defaults we allow overrides for
-                host_run_d='/var/lib',
+                host_run_d='/srv',
                 run_u='vagrant',
                 root_u='root',
             )

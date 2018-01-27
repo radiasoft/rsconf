@@ -1,5 +1,6 @@
 {
     "iptables": {{ docker.iptables | tojson }},
+    "data-root": "{{ docker.data_d }}",
     "live-restore": true,
     "log-driver": "journald",
     {% if docker_registry.http_host is defined %}

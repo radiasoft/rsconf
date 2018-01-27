@@ -183,6 +183,27 @@ rsconf_install_file() {
     rsconf_service_file_changed "$path"
 }
 
+rsconf_install_symlink() {
+    local old=$1
+    local new=$1
+    if [[ -L $new ]]; then
+        local e=$(readlink "$new")
+        if [[ $e == $old ]]; then
+            return
+        fi
+        rm -f "$new"
+    else
+        if [[ -e $new ]]; then
+            install_err "$new: path is exists and is not a symlink"
+        fi
+    fi
+    ln -s "$old" "$new"
+    if [[ ! -e "$new" ]]; then
+        install_err "$new: symlinks to $old but does not exist"
+    fi
+    rsconf_service_file_changed "$new"
+}
+
 rsconf_main() {
     local host=${1:-$(hostname -f)}
     local setup_dev=$2
@@ -227,6 +248,7 @@ rsconf_reboot() {
 
 rsconf_require() {
     rsconf_only_once=1 rsconf_run "$1"
+    rsconf_service_restart
 }
 
 rsconf_rerun_required() {
@@ -306,6 +328,7 @@ rsconf_service_restart() {
             fi
         fi
         systemctl enable "$s"
+        rsconf_service_status[$s]=active
     done
 }
 

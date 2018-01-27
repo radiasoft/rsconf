@@ -77,8 +77,9 @@ default:
     docker_image: docker.io/radiasoft/rabbitmq
   rsconf_db:
     #TODO(robnagler) POSIT dev/nginx/nginx.conf.jinja
-    http_host: http://{{ master }}:8000
-    host_run_d: /var/lib
+    # defunct elvin_server https://en.wikipedia.org/wiki/Elvin
+    http_host: http://{{ master }}:2916
+    host_run_d: /srv
     root_u: root
     run_u: {{ user }}
     run_uid: {{ uid }}
@@ -113,7 +114,7 @@ channel:
             - name: docker
               #POSIT: downloadx/installers/vagrant-dev:config.persistent_storage.size=102400
               gigabytes: 99
-              mount_d: /var/lib/docker
+              mount_d: /srv/docker
     iptables:
       enable: false
     bop:
