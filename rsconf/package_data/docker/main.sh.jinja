@@ -34,6 +34,4 @@ docker_main() {
         # Give vagrant user access in dev mode only
         usermod -aG docker vagrant
     {% endif %}
-    systemctl start docker
-    systemctl enable docker
 }

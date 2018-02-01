@@ -17,19 +17,13 @@ _DAEMON_JSON = _CONF_DIR.join('daemon.json')
 class T(component.T):
     def internal_build(self):
         from rsconf.component import docker_registry
+        from rsconf import systemd
 
         self.buildt.require_component('base_users')
-        #TODO(robnagler) if /etc/docker changes restart daemon
-        #  coordinate with main.sh which may have just started daemon
-        self.append_root_bash(
-            "rsconf_service_prepare '{}' '{}'".format(
-                self.name,
-                _CONF_DIR,
-            ),
-        )
+        systemd.unit_prepare(self, _CONF_DIR)
         j2_ctx = self.hdb.j2_ctx_copy()
         j2_ctx.docker.update(
-            data_d=j2_ctx.rsconf_db.host_run_d.join('docker'),
+            data_d=systemd.unit_run_d('docker'),
         )
         docker_registry.update_j2_ctx(j2_ctx)
         self.install_access(mode='700', owner=j2_ctx.rsconf_db.root_u)

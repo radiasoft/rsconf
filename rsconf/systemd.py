@@ -69,14 +69,10 @@ def docker_unit_enable(compt, image, env, cmd, volumes=None, after=None, run_u=N
 
 def docker_unit_prepare(compt):
     """Must be first call"""
-    run_d = docker_unit_run_d(compt.hdb, compt.name)
+    run_d = unit_run_d(compt.hdb, compt.name)
     unit_prepare(compt, run_d)
     compt.systemd.run_d = run_d
     return run_d
-
-
-def docker_unit_run_d(hdb, unit_name):
-    return hdb.rsconf_db.host_run_d.join(unit_name)
 
 
 def unit_enable(compt):
@@ -98,6 +94,11 @@ def unit_prepare(compt, *watch_files):
             *watch_files
         ),
     )
+
+
+def unit_run_d(hdb, unit_name):
+    return hdb.rsconf_db.host_run_d.join(unit_name)
+
 
 def _vol_arg(vol):
     if not isinstance(vol, (tuple, list)):

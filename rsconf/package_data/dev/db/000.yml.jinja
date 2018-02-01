@@ -12,6 +12,18 @@ default:
     iptables: false
   docker_registry:
     host: {{ master }}
+  network:
+    devices:
+      eth0:
+        bootproto: dhcp
+      eth1:
+        - vlan:
+        bootproto: static
+        ip: hostname
+        vlan:
+      em1:
+        0:
+
   iptables:
     enable: true
     our_networks:

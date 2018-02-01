@@ -322,6 +322,8 @@ rsconf_service_restart() {
             systemctl restart "$s"
         else
             # test is really only necessary for the msg
+            # https://askubuntu.com/a/836155
+            # don't use "status", b/c reports "bad" for sysv init
             if ! systemctl is-active "$s" >&/dev/null; then
                 install_info "$s: starting"
                 systemctl start "$s"

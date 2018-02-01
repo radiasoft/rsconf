@@ -18,7 +18,7 @@ _BEAKER_SECRET_BASE = 'sirepo_beaker_secret'
 
 
 def user_d(j2_ctx):
-    return systemd.docker_unit_run_d(j2_ctx, 'sirepo').join(_DB_SUBDIR, _USER_SUBDIR)
+    return systemd.unit_run_d(j2_ctx, 'sirepo').join(_DB_SUBDIR, _USER_SUBDIR)
 
 
 class T(component.T):

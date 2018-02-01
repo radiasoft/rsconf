@@ -1,0 +1,8 @@
+#!/bin/bash
+
+network_main() {
+    if [[ $(systemctl is-active NetworkManager) == active ]]; then
+        systemctl stop NetworkManager
+    fi
+    systemctl disable NetworkManager
+}
