@@ -23,7 +23,7 @@ class T(component.T):
         systemd.unit_prepare(self, _CONF_DIR)
         j2_ctx = self.hdb.j2_ctx_copy()
         j2_ctx.docker.update(
-            data_d=systemd.unit_run_d('docker'),
+            data_d=systemd.unit_run_d(j2_ctx, 'docker'),
         )
         docker_registry.update_j2_ctx(j2_ctx)
         self.install_access(mode='700', owner=j2_ctx.rsconf_db.root_u)
