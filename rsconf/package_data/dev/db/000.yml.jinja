@@ -2,7 +2,6 @@
 default:
   base_os:
     ip_forward: false
-    volume_group: {}
   bop:
     docker_image: biviosoftware/bivio
     server_status_location: /bop-status
@@ -17,12 +16,9 @@ default:
       eth0:
         bootproto: dhcp
       eth1:
-        - vlan:
-        bootproto: static
-        ip: hostname
-        vlan:
-      em1:
-        0:
+        - vlan: true
+          bootproto: static
+          ip: hostname
 
   iptables:
     enable: true

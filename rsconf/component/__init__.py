@@ -15,7 +15,6 @@ _DONE = 'done'
 _START = 'start'
 _MODE_RE = re.compile(r'^\d{3,4}$')
 _BASH_FUNC_SUFFIX = '_rsconf_component'
-_TLS_CRT_PREFIX = 'component_tls_crt'
 
 class T(pkcollections.Dict):
 
@@ -179,7 +178,7 @@ def _assert_host_path(host_path):
 
 
 def _find_tls_crt(hdb, domain):
-    for crt, domains in hdb[_TLS_CRT_PREFIX].items():
+    for crt, domains in hdb.component.tls_crt.items():
         if domain in domains:
             return crt, domains
     raise AssertionError('{}: tls crt for domain not found'.format(domain))

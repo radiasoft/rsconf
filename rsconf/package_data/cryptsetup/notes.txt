@@ -87,3 +87,11 @@ Latency                       19293us   99858us              2635us   47930us
 ### growing raid5
 
 https://askubuntu.com/a/57627
+
+### Add key
+look at /etc/crypttab
+cryptsetup luksAddKey /dev/md1
+cryptsetup luksAddKey /dev/md1 keyfile
+cryptsetup luksDump /dev/md1
+cryptsetup luksRemoveKey /dev/md1
+cryptsetup luksKillSlot /dev/<device> 6

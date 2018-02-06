@@ -1,6 +1,6 @@
 yum install -y tftp-server tftp
 chown root:nobody /var/lib/tftpboot
-chmod 750 /var/lib/tftpboot
+chmod 755 /var/lib/tftpboot
 #mkdir /var/lib/tftpboot/upload
 #chown nobody:nobody /var/lib/tftpboot/upload
 #chmod 700 /var/lib/tftpboot/upload
@@ -12,3 +12,31 @@ perl -pi -e 's/=69/=10.1.2.1:69/' /etc/systemd/system/tftp.socket
 systemctl daemon-reload
 systemctl enable tftp
 systemctl start tftp
+
+
+cat > /etc/systemd/system/tftp.service <<EOF
+[Unit]
+Description=Tftp Server
+Requires=tftp.socket
+Documentation=man:in.tftpd
+
+[Service]
+ExecStart=/usr/sbin/in.tftpd -s {{ run_d.db }}
+StandardInput=socket
+
+[Install]
+Also=tftp.socket
+EOF
+
+cat > /etc/systemd/system/tftp.socket <<EOF
+[Unit]
+Description=Tftp Server Activation Socket
+After=network-online.target
+Wants=network-online.target
+
+[Socket]
+ListenDatagram={{ ip }}:69
+
+[Install]
+WantedBy=sockets.target
+EOF
