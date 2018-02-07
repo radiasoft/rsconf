@@ -61,6 +61,7 @@ cat >> /etc/exports <<'EOF'
 /srv/kickstart 10.1.5.0/24(ro,all_squash) 10.1.2.0/24(ro,all_squash)
 EOF
 exportfs -av
+systemctl start nfs-server
 
 bivio_pyenv_2
 cd ~/src
@@ -83,6 +84,8 @@ cat >> ~/.post_bivio_bashrc <<'EOF'
 export PYKERN_PKCONFIG_CHANNEL=alpha
 export RSCONF_DB_ROOT_D=/srv/rsconf
 EOF
+
+
 
 # extend /var
 lvextend -L +125G /dev/vgdata/lvdata
