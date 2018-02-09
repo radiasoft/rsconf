@@ -155,8 +155,7 @@ base_os_rpcbind_patch() {
         return
     fi
     local new=/etc/systemd/system/rpcbind.socket
-    # Only copy if it already doesn't exist
-    if [[ ! -r "$new" ]]; then
+    if [[ ! -r "$new" || $old -nt $new ]]; then
         cp -a "$old" "$new"
     fi
     if rsconf_edit "$new" '! BindIPv6Only' 'm{\[::\]:|BindIPv6Only} && ($_=q{})'; then
