@@ -26,12 +26,13 @@ _DEFAULT_ERROR_PAGES = '''
 '''
 
 
-def update_j2_ctx_and_install_access(compt, j2_ctx):
-    j2_ctx.setdefault('nginx', pkcollections.Dict()).update(
-        default_error_pages=_DEFAULT_ERROR_PAGES,
-        default_root=_DEFAULT_ROOT,
+def install_auth(compt, filename, host_path, visibility, j2_ctx):
+    compt.install_access(mode='440', owner=j2_ctx.rsconf_db.root_u, group='nginx')
+    compt.install_secret_path(
+        filename=filename,
+        host_path=host_path,
+        visibility=visibility,
     )
-    compt.install_access(mode='400', owner=j2_ctx.rsconf_db.root_u)
 
 
 def install_vhost(compt, vhost, resource_d=None, j2_ctx=None):
@@ -47,6 +48,14 @@ def install_vhost(compt, vhost, resource_d=None, j2_ctx=None):
         j2_ctx,
         CONF_D.join(vhost + '.conf'),
     )
+
+
+def update_j2_ctx_and_install_access(compt, j2_ctx):
+    j2_ctx.setdefault('nginx', pkcollections.Dict()).update(
+        default_error_pages=_DEFAULT_ERROR_PAGES,
+        default_root=_DEFAULT_ROOT,
+    )
+    compt.install_access(mode='400', owner=j2_ctx.rsconf_db.root_u)
 
 
 class T(component.T):

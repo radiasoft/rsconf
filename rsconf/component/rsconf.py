@@ -29,10 +29,12 @@ class T(component.T):
             host_subdir=db.HOST_SUBDIR,
         )
         nginx.install_vhost(self, vhost=_vhost(j2_ctx), j2_ctx=j2_ctx)
-        self.install_secret_path(
+        nginx.install_auth(
+            self,
             PASSWD_SECRET_F,
-            host_path=j2_ctx.rsconf.auth_f,
-            visibility=db.VISIBILITY_GLOBAL,
+            j2_ctx.rsconf.auth_f,
+            db.VISIBILITY_GLOBAL,
+            j2_ctx,
         )
 
 
