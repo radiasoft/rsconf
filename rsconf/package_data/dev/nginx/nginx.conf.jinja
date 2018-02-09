@@ -28,7 +28,7 @@ http {
     default_type application/octet-stream;
 
     server {
-        listen 2916 default_server;
+        listen {{ port }} default_server;
         server_name  _;
         root /usr/share/nginx/html;
 
@@ -51,7 +51,7 @@ http {
 
         location ~ ^/host/([^/]+)/ {
             auth_basic "*";
-            auth_basic_user_file {{ passwd_file }};
+            auth_basic_user_file {{ rsconf.passwd_f }};
             # debug: return 200 $remote_user;
             if ($remote_user != $1) {
                 return 403;

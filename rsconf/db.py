@@ -54,6 +54,14 @@ class T(pkcollections.Dict):
                 )
                 merge_dict(self.base, v)
 
+    def channel_hosts(self):
+        res = pkcollections.OrderedMapping()
+        for c in pkconfig.VALID_CHANNELS:
+            res[c] = sorted(
+                self.base.host.get(c, pkcollections.Dict()).keys(),
+            )
+        return res
+
     def host_db(self, channel, host):
         res = Host()
         v = pkcollections.Dict(
@@ -91,14 +99,6 @@ class T(pkcollections.Dict):
         )
         merge_dict(res, v)
         _update_paths(res)
-        return res
-
-    def channel_hosts(self):
-        res = pkcollections.OrderedMapping()
-        for c in pkconfig.VALID_CHANNELS:
-            res[c] = sorted(
-                self.base.host.get(c, pkcollections.Dict()).keys(),
-            )
         return res
 
 

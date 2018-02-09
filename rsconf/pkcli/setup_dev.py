@@ -50,14 +50,14 @@ def default_command():
         group=grp.getgrgid(os.getgid())[0],
         host='v4.radia.run',
         master='v3.radia.run',
-        # You can't change this
-        #POSIT: rsconf_db config nginx
-        passwd_file=db.secret_path(boot_hdb, 'nginx-passwd', visibility='channel')
+        port=2916,
     )
+    # bootstrap
+    j2_ctx.rsconf_db.http_host = 'http://{}:{}'.format(j2_ctx.master, j2_ctx.port)
+    j2_ctx.passwd_file = rsconf.passwd_secret_f(j2_ctx)
     j2_ctx.update(boot_hdb)
-    pw = {}
     for h in j2_ctx.host, j2_ctx.host + '2', j2_ctx.master:
-        pw[h] = _add_host(j2_ctx, 'dev', h, j2_ctx.passwd_file)
+        _add_host(j2_ctx, srv, h)
     _sym('~/src/radiasoft/download/bin/install.sh', 'index.html')
     _sym(pkresource.filename('rsconf/rsconf.sh'), 'rsconf.sh')
     dev_d = pkio.py_path(pkresource.filename('dev'))
@@ -68,17 +68,9 @@ def default_command():
         x = f.relto(dev_d)
         dst = root_d.join(re.sub('.jinja$', '', x))
         pkio.mkdir_parent_only(dst)
-        if not dst.basename.startswith('host-'):
-            flat = pkcollections.Dict()
-            pkconfig.flatten_values(flat, j2_ctx)
-            pkjinja.render_file(f, flat, output=dst, strict_undefined=True)
-            continue
-        for h, p in pw.iteritems():
-            d = pkio.py_path(dst.dirname).join(dst.basename.replace('host', h))
-            j2_ctx.passwd = p
-            j2_ctx.host = h
-            pkjinja.render_file(f, j2_ctx, output=d, strict_undefined=True)
-            _sym(d)
+        flat = pkcollections.Dict()
+        pkconfig.flatten_values(flat, j2_ctx)
+        pkjinja.render_file(f, flat, output=dst, strict_undefined=True)
 
     # dev only, really insecure, but makes consistent builds easy
     _sym('~/src/radiasoft')
@@ -86,20 +78,10 @@ def default_command():
 
 
 #TODO(robnagler) needs to moved
-def _add_host(j2_ctx, channel, host, passwd_file):
+def _add_host(j2_ctx, srv, host):
     from rsconf.component import docker_registry
-    from rsconf import db
-    import subprocess
+    from rsconf.component import rsconf
 
-    p = subprocess.Popen(
-        ['openssl', 'passwd', '-stdin', '-apr1'],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        stdin=subprocess.PIPE,
-    )
-    pw = db.random_string()
-    out, err = p.communicate(input=pw)
-    with open(str(passwd_file), 'a') as f:
-        f.write('{}:{}\n'.format(host, out.rstrip()))
+    netrc = rsconf.host_init(j2_ctx, host)
+    pkio.write_text(srv.join(host + '-netrc'), netrc)
     docker_registry.add_host(j2_ctx, host)
-    return pw
