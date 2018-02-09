@@ -51,7 +51,7 @@ http {
 
         location ~ ^/host/([^/]+)/ {
             auth_basic "*";
-            auth_basic_user_file {{ rsconf.passwd_f }};
+            auth_basic_user_file {{ passwd_f }};
             # debug: return 200 $remote_user;
             if ($remote_user != $1) {
                 return 403;

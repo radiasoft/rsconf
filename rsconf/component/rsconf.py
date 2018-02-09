@@ -7,6 +7,7 @@ u"""rsconf server config
 from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
 from pykern import pkjson
+from rsconf import component
 import urlparse
 
 
@@ -17,6 +18,7 @@ PASSWD_SECRET_F = 'rsconf_auth'
 class T(component.T):
     def internal_build(self):
         from rsconf.component import nginx
+        from rsconf import db
 
         self.buildt.require_component('nginx')
         j2_ctx = self.hdb.j2_ctx_copy()
@@ -28,7 +30,7 @@ class T(component.T):
         self.install_secret_path(
             PASSWD_SECRET_F,
             host_path=j2_ctx.rsconf.passwd_f,
-            visibility=VISIBILITY_GLOBAL,
+            visibility=db.VISIBILITY_GLOBAL,
         )
 
 
@@ -36,21 +38,23 @@ def host_init(j2_ctx, host):
     from rsconf import db
     import urlparse
 
-    jf = db.secret_path(j2_ctx, _PASSWD_SECRET_JSON_F, visibility=VISIBILITY_GLOBAL)
+    jf = db.secret_path(j2_ctx, _PASSWD_SECRET_JSON_F, visibility=db.VISIBILITY_GLOBAL)
     if jf.check():
         with jf.open() as f:
             y = pkjson.load_any(f)
     else:
         y = pkcollections.Dict()
     assert not host in y, \
-        '{}: host already exists'
-    y[host] = _passwd_entry(j2_ctx,h host)
+        '{}: host already initialized'.format(host)
+    y[host] = _passwd_entry(j2_ctx, host)
     pkjson.dump_pretty(y, filename=jf)
-    return 'machine {} login {} password {}\n'.format(_vhost(j2_ctx), host, pw)
+    return 'machine {} login {} password {}\n'.format(_vhost(j2_ctx), host, y[host])
 
 
 def passwd_secret_f(j2_ctx):
-    return db.secret_path(j2_ctx, PASSWD_SECRET_F, visibility=VISIBILITY_GLOBAL)
+    from rsconf import db
+
+    return db.secret_path(j2_ctx, PASSWD_SECRET_F, visibility=db.VISIBILITY_GLOBAL)
 
 
 def _passwd_entry(j2_ctx, host):

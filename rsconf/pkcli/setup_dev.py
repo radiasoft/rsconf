@@ -5,21 +5,22 @@ u"""Test tree
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
-from pykern.pkdebug import pkdp
+from pykern import pkcollections
 from pykern import pkconfig
+from pykern import pkio
+from pykern import pkjinja
+from pykern import pkresource
+from pykern.pkdebug import pkdp
+from rsconf import db
+import grp
+import os
+import pwd
+import re
 
 NGINX_SUBDIR = 'nginx'
 
 def default_command():
-    from pykern import pkio
-    from pykern import pkcollections
-    from pykern import pkjinja
-    from pykern import pkresource
-    from rsconf import db
-    import grp
-    import os
-    import pwd
-    import re
+    from rsconf.component import rsconf
 
     root_d = db.cfg.root_d
     if root_d.check():
@@ -53,9 +54,9 @@ def default_command():
         port=2916,
     )
     # bootstrap
-    j2_ctx.rsconf_db.http_host = 'http://{}:{}'.format(j2_ctx.master, j2_ctx.port)
-    j2_ctx.passwd_file = rsconf.passwd_secret_f(j2_ctx)
     j2_ctx.update(boot_hdb)
+    j2_ctx.rsconf_db.http_host = 'http://{}:{}'.format(j2_ctx.master, j2_ctx.port)
+    j2_ctx.passwd_f = rsconf.passwd_secret_f(j2_ctx)
     for h in j2_ctx.host, j2_ctx.host + '2', j2_ctx.master:
         _add_host(j2_ctx, srv, h)
     _sym('~/src/radiasoft/download/bin/install.sh', 'index.html')
