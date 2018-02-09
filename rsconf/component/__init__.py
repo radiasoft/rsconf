@@ -8,7 +8,7 @@ from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
 from pykern import pkconfig
 from pykern import pkio
-from pykern.pkdebug import pkdp, pkdc
+from pykern.pkdebug import pkdp, pkdc, pkdlog
 import re
 
 _DONE = 'done'
@@ -30,9 +30,7 @@ class T(pkcollections.Dict):
         self._root_bash.extend(line)
 
     def append_root_bash_with_resource(self, script, j2_ctx, bash_func):
-        from pykern import pkjinja
-
-        v = pkjinja.render_resource(script, j2_ctx, strict_undefined=True)
+        v = _render_resource(script, j2_ctx)
         self._root_bash_aux.append(v)
         self.append_root_bash(bash_func)
 
@@ -86,12 +84,8 @@ class T(pkcollections.Dict):
         )
 
     def install_resource(self, name, j2_ctx, host_path):
-        from pykern import pkjinja
-
         dst = self._bash_append_and_dst(host_path)
-        dst.write(
-            pkjinja.render_resource(name, j2_ctx, strict_undefined=True),
-        )
+        dst.write(_render_resource(name, j2_ctx))
 
     def install_secret_path(self, filename, host_path, gen_secret=None, visibility=None):
         from rsconf import db
@@ -182,3 +176,12 @@ def _find_tls_crt(hdb, domain):
         if domain in domains:
             return crt, domains
     raise AssertionError('{}: tls crt for domain not found'.format(domain))
+
+
+def _render_resource(name, j2_ctx):
+    from pykern import pkjinja
+    try:
+        return pkjinja.render_resource(name, j2_ctx, strict_undefined=True)
+    except Exception as e:
+        pkdlog('{}: {}', name, e)
+        raise
