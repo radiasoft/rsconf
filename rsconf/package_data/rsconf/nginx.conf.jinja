@@ -1,0 +1,33 @@
+server {
+    listen {{ nginx.vhost }}:80;
+    server_name {{ nginx.vhost }};
+    return 301 https://$http_host$request_uri;
+}
+
+server {
+    listen {{ nginx.vhost }}:443 ssl;
+    server_name {{ nginx.vhost }};
+    root {{ nginx.default_root }};
+    ssl_certificate {{ nginx.tls_crt }};
+    ssl_certificate_key {{ nginx.tls_key }};
+    location / {
+        root {{ rsconf.srv_d }};
+        try_files $uri $uri/index.sh $uri/index.html =404;
+    }
+
+    location = /{{ rsconf.host_subdir }}/ {
+        return 404;
+    }
+
+    location ~ ^/{{ rsconf.host_subdir }}/([^/]+)/ {
+        auth_basic "*";
+        auth_basic_user_file {{ rsconf.auth_f }};
+        # DEBUG: return 200 $remote_user;
+        if ($remote_user != $1) {
+            return 403;
+        }
+        #TODO(robnagler) might be better to serve from rsconf/host
+        # would require a local rewrite of the url
+        root {{ rsconf.srv_d }};
+    }
+}

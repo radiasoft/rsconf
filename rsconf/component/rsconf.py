@@ -24,12 +24,14 @@ class T(component.T):
         j2_ctx = self.hdb.j2_ctx_copy()
         self.install_access(mode='700', owner=j2_ctx.rsconf_db.run_u)
         j2_ctx.rsconf = pkcollections.Dict(
-            passwd_f=nginx.CONF_D.join(PASSWD_SECRET_F),
+            auth_f=nginx.CONF_D.join(PASSWD_SECRET_F),
+            srv_d=j2_ctx.rsconf_db.srv_d,
+            host_subdir=db.HOST_SUBDIR,
         )
         nginx.install_vhost(self, vhost=_vhost(j2_ctx), j2_ctx=j2_ctx)
         self.install_secret_path(
             PASSWD_SECRET_F,
-            host_path=j2_ctx.rsconf.passwd_f,
+            host_path=j2_ctx.rsconf.auth_f,
             visibility=db.VISIBILITY_GLOBAL,
         )
 
@@ -48,7 +50,12 @@ def host_init(j2_ctx, host):
         '{}: host already initialized'.format(host)
     y[host] = _passwd_entry(j2_ctx, host)
     pkjson.dump_pretty(y, filename=jf)
-    return 'machine {} login {} password {}\n'.format(_vhost(j2_ctx), host, y[host])
+    return """install -m 600 /dev/stdin /root/.netrc <<'EOF'
+machine {} login {} password {}
+EOF
+export install_server={}
+curl $install_server | bash""".format(
+    _vhost(j2_ctx), host, y[host], j2_ctx.rsconf_db.http_host)
 
 
 def passwd_secret_f(j2_ctx):
