@@ -1,0 +1,4 @@
+search {{ network.defroute.net.search }}
+{% for n in network.defroute.net.nameservers %}
+nameserver {{ n }}
+{% endfor %}

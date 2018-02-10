@@ -50,6 +50,7 @@ def default_command():
         user=pwd.getpwuid(os.getuid())[0],
         group=grp.getgrgid(os.getgid())[0],
         host='v4.radia.run',
+        all_host='z5.radia.run',
         master='v3.radia.run',
         port=2916,
     )
@@ -57,7 +58,7 @@ def default_command():
     j2_ctx.update(boot_hdb)
     j2_ctx.rsconf_db.http_host = 'http://{}:{}'.format(j2_ctx.master, j2_ctx.port)
     j2_ctx.passwd_f = rsconf.passwd_secret_f(j2_ctx)
-    for h in j2_ctx.host, j2_ctx.host + '2', j2_ctx.master:
+    for h in j2_ctx.host, j2_ctx.master, j2_ctx.all_host:
         _add_host(j2_ctx, srv, h)
     _sym('~/src/radiasoft/download/bin/install.sh', 'index.html')
     _sym(pkresource.filename('rsconf/rsconf.sh'), 'rsconf.sh')

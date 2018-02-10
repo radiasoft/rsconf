@@ -13,9 +13,11 @@ class T(component.T):
     def internal_build(self):
         from rsconf import systemd
         from rsconf.component import docker_registry
+        from rsconf.component import network
 
         self.buildt.require_component('docker')
         j2_ctx = self.hdb.j2_ctx_copy()
+        network.update_j2_ctx(j2_ctx)
         run_d = systemd.docker_unit_prepare(self)
         j2_ctx.setdefault('postgrey', pkcollections.Dict()).update(
             dbdir=run_d.join('db'),

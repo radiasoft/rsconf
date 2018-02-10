@@ -1,8 +1,25 @@
 #!/bin/bash
 
+network_iptables() {
+    if [[ $(systemctl is-active iptables 2>&1 || true) == active ]]; then
+        # Just in case, make sure enabled
+        systemctl enable iptables
+        return
+    fi
+    systemctl stop firewalld >& /dev/null || true
+    systemctl disable firewalld >& /dev/null || true
+    # https://stackoverflow.com/a/24827438/3075806
+    yum install -y iptables-services >& /dev/null || true
+    systemctl enable iptables
+    systemctl start iptables
+}
+
 network_main() {
     if [[ $(systemctl is-active NetworkManager) == active ]]; then
         systemctl stop NetworkManager
     fi
     systemctl disable NetworkManager
+    {% if network.iptables %}
+    network_iptables
+    {% endif %}
 }

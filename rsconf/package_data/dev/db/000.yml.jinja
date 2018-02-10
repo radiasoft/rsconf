@@ -12,29 +12,9 @@ default:
   docker_registry:
     host: {{ master }}
   network:
-    devices:
-      eth0:
-        bootproto: dhcp
-      eth1:
-        - vlan: true
-          bootproto: static
-          ip: hostname
-
-  iptables:
-    enable: true
-    our_networks:
-      # bdu3
-      - 50.253.124.194
-      # dfw1
-      - 72.14.189.248
-      # dfw2
-      - 72.14.189.97
-      # dfw4
-      - 104.237.137.251
-      # frii
-      - 216.17.132.32/27
-      # vw
-      - 216.87.82.64/27
+    devices: {}
+    trusted: {}
+    iptables: false
   nginx:
     worker_processes: 1
   petshop:
@@ -123,8 +103,6 @@ channel:
               #POSIT: downloadx/installers/vagrant-dev:config.persistent_storage.size=102400
               gigabytes: 99
               mount_d: /srv/docker
-    iptables:
-      enable: false
     bop:
       apps: [ petshop ]
     docker:
@@ -141,6 +119,17 @@ channel:
         broker_url: "amqp://guest@rabbitmq.{{ host }}//"
       mpi_cores: 2
       vhost: sirepo.{{ host }}
+    network:
+      iptables: false
+      trusted:
+        # v*.radia.run private network
+        10.10.10.0/24:
+          gateway: 10.10.10.1
+        # random network to test
+        104.237.137.0/24:
+          gateway: 104.237.137.1
+          search: radia.run
+          nameservers: [ 162.159.27.72, 162.159.24.39 ]
 
 host:
   dev:
@@ -152,6 +141,17 @@ host:
         volume_groups: []
       rsconf_db:
         components: [ docker_registry, rsconf ]
+    # never installed, just for testing build
+    {{ all_host }}:
+      rsconf_db:
+        components: [ rabbitmq, celery_sirepo, sirepo, bop ]
+      network:
+        devices:
+          em1:
+            ip: 10.10.10.5
+          em2:
+            ip: 104.237.137.2
+
 
 #Local Variables:
 #mode:yaml

@@ -19,7 +19,7 @@ class T(component.T):
         from rsconf.component import docker_registry
         from rsconf import systemd
 
-        self.buildt.require_component('base_users')
+        self.buildt.require_component('base_all')
         systemd.unit_prepare(self, _CONF_DIR)
         j2_ctx = self.hdb.j2_ctx_copy()
         j2_ctx.docker.update(

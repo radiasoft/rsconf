@@ -19,24 +19,6 @@ base_os_if_virtual_box() {
     [[ $x =~ VirtualBox || -f /vagrant/Vagrantfile ]]
 }
 
-# https://www.freedesktop.org/wiki/Software/systemd/NetworkTarget/
-##### ??? systemctl enable NetworkManager-wait-online.service
-
-base_os_iptables() {
-    if [[ $(systemctl is-active iptables 2>&1 || true) == active ]]; then
-        # Just in case, make sure enabled
-        systemctl enable iptables
-        return
-    fi
-    systemctl stop firewalld >& /dev/null || true
-    systemctl disable firewalld >& /dev/null || true
-    # https://stackoverflow.com/a/24827438/3075806
-    yum install -y iptables-services >& /dev/null || true
-    systemctl enable iptables
-    systemctl start iptables
-    # /usr/libexec/iptables/iptables.init save
-}
-
 base_os_journal_persist() {
     # https://unix.stackexchange.com/a/159390
     local d=/var/log/journal
@@ -136,12 +118,6 @@ base_os_main() {
     base_os_journal_persist
     rsconf_edit_no_change_res=0 rsconf_append /etc/screenrc 'escape ^^^^'
     base_os_logical_volumes
-    {% if iptables.enable %}
-        # we don't muck with iptables on virtualbox
-        if ! base_os_if_virtual_box; then
-            base_os_iptables
-        fi
-    {% endif %}
     if [[ -n $reboot ]]; then
         rsconf_reboot
     fi
