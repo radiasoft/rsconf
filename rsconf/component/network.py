@@ -44,7 +44,7 @@ class T(component.T):
         j2_ctx = self.hdb.j2_ctx_copy()
         update_j2_ctx(j2_ctx)
         self.install_access(mode='444', owner=self.hdb.rsconf_db.root_u)
-        devs, defroute = _devices(j2_ctx)
+        devs, defroute = _devices(self, j2_ctx)
         if defroute:
             assert defroute.net.search and defroute.net.nameservers, \
                 '{}: defroute needs search and nameservers'.format(defroute.net)
@@ -86,7 +86,7 @@ def _defroute(routes):
     return defroute
 
 
-def _devices(j2_ctx):
+def _devices(self, j2_ctx):
     nets, net_check = _nets(j2_ctx)
     devs = []
     routes = []
@@ -107,6 +107,16 @@ def _devices(j2_ctx):
         defroute = _defroute(routes)
     defroute.defroute = True
     j2_ctx.network.defroute = defroute
+    for d in devs:
+        for k, v in d.items():
+            if isinstance(v, bool):
+                d[k] = 'yes' if v else 'no'
+        j2_ctx.network.dev = d
+        self.install_resource(
+            'network/ifcfg-en',
+            j2_ctx,
+            _SCRIPTS.join('ifcfg-' + d.name)
+        )
     return devs, defroute
 
 
