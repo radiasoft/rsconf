@@ -15,3 +15,4 @@ class T(component.T):
         self.buildt.require_component('base_os')
         self.buildt.require_component('network')
         self.buildt.require_component('base_users')
+        self.append_root_bash(': nothing to do')
