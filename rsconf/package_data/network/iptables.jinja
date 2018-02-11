@@ -20,13 +20,13 @@
 
 {% if network.public_ssh %}
     -A INPUT -i {{ network.inet_dev }} -p tcp -m tcp --dport ssh -m state --state NEW -m recent --set --name SSHPROBES --mask 255.255.255.255 --rsource
-    {% for n in network.trusted_nets %}
+    {% for n in network.trusted_public_nets %}
         -A INPUT -i {{ network.inet_dev }} -s {{ n }} -p tcp -m tcp --dport 22 -m state --state NEW -m recent --remove --name SSHPROBES --mask 255.255.255.255 --rsource
     {% endfor %}
     -A INPUT -i {{ network.inet_dev }} -p tcp -m tcp --dport 22 -m state --state NEW -m recent --update --seconds 180 --hitcount 6 --name SSHPROBES --mask 255.255.255.255 --rsource -j DROP
     -A INPUT -i {{ network.inet_dev }} -p tcp -m state --state NEW -m tcp --match multiport --dport ssh -j ACCEPT
 {% else %}
-    {% for n in network.trusted_nets %}
+    {% for n in network.trusted_public_nets %}
         -A INPUT -i {{ network.inet_dev }} -s {{ n }} -p tcp -m tcp --dport ssh -j ACCEPT
     {% endfor %}
 {% endif %}

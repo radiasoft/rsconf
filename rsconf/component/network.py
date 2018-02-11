@@ -135,4 +135,7 @@ def _nets(j2_ctx):
         if 'nameservers' in v:
             v.nameservers = sorted([ipaddress.ip_address(x) for x in v.nameservers])
         nets[n] = v
+    j2_ctx.network.trusted_public_nets = sorted(
+        [n.ip for n in nets.values() if n.name.is_global],
+    )
     return nets, net_check
