@@ -20,7 +20,7 @@ import ipaddress
 
 _SCRIPTS = pkio.py_path('/etc/sysconfig/network-scripts')
 _RESOLV_CONF = pkio.py_path('/etc/resolv.conf')
-_IPTABLES = pkio.py_path('/etc/sysconf/iptables')
+_IPTABLES = pkio.py_path('/etc/sysconfig/iptables')
 
 
 def update_j2_ctx(j2_ctx):
