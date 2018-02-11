@@ -14,7 +14,7 @@ default:
   network:
     devices: {}
     trusted: {}
-    iptables: false
+    public_ssh: False
   nginx:
     worker_processes: 1
   petshop:
@@ -120,7 +120,6 @@ channel:
       mpi_cores: 2
       vhost: sirepo.{{ host }}
     network:
-      iptables: false
       trusted:
         # v*.radia.run private network
         10.10.10.0/24:
@@ -146,6 +145,8 @@ host:
       rsconf_db:
         components: [ rabbitmq, celery_sirepo, sirepo, bop ]
       network:
+        public_ssh: true
+        natted_nets: [ 10.10.10.0/24 ]
         devices:
           em1:
             ip: 10.10.10.5

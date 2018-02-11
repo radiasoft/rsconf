@@ -24,7 +24,7 @@ _IPTABLES = pkio.py_path('/etc/sysconf/iptables')
 
 
 def update_j2_ctx(j2_ctx):
-    j2_ctx.network.trusted_keys = sorted(j2_ctx.network.trusted.keys())
+    j2_ctx.network.trusted_nets = sorted(j2_ctx.network.trusted.keys())
 
 
 class T(component.T):
@@ -38,48 +38,35 @@ class T(component.T):
             return
         systemd.unit_prepare(self, _SCRIPTS, _RESOLV_CONF, _IPTABLES)
         j2_ctx = self.hdb.j2_ctx_copy()
+        update_j2_ctx(j2_ctx)
         self.install_access(mode='444', owner=self.hdb.rsconf_db.root_u)
-        nets, net_check = _nets(j2_ctx)
-        devs = []
-        routes = []
-        defroute = None
-        for dn in sorted(j2_ctx.network.devices):
-            d = copy.deepcopy(j2_ctx.network.devices[dn])
-            devs.append(d)
-            d.name = dn
-            d.vlan = '.' in dn
-            d.net = net_check(d.ip)
-            if d.net.gateway:
-                routes.append(d)
-            if d.setdefault('defroute', False):
-                assert not defroute, \
-                    '{} & {}: both declared as default routes'.format(d, defroute)
-                defroute = d
-        if not defroute:
-            defroute = _defroute(routes)
-        if defroute:
-            defroute.defroute = True
-        j2_ctx.network.defroute = defroute
-        for d in devs:
-            for k, v in d.items():
-                if isinstance(v, bool):
-                    d[k] = 'yes' if v else 'no'
-            j2_ctx.network.dev = d
-            self.install_resource(
-                'network/ifcfg-en',
-                j2_ctx,
-                _SCRIPTS.join('ifcfg-' + d.name)
-            )
+        devs, defroute = _devices(j2_ctx)
         if defroute:
             assert defroute.net.search and defroute.net.nameservers, \
                 '{}: defroute needs search and nameservers'.format(defroute.net)
             self.install_resource('network/resolv.conf', j2_ctx, _RESOLV_CONF)
+        j2_ctx.network.update(
+            inet_dev=defroute.name if defroute.net.name.is_global else None,
+            private_devs=['lo'] + [d.name for d in devs if d.net.name.is_private],
+        )
+        # No public addresses, no iptables
+        j2_ctx.network.iptables_enable = bool(j2_ctx.network.inet_dev)
+        # Only for jupyterhub, explicitly set, and not on a machine
+        # with a public address
+        if j2_ctx.network.setdefault('docker_proxy', False):
+            assert not network.iptables_enable, \
+                '{}: docker_proxy not allowed on public ip'.format(defroute.ip)
+            network.iptables_enable = True
+            self.install_resource('network/docker_iptables', j2_ctx, _IPTABLES)
+        else:
+            j2_ctx.network.setdefault('natted_nets', None)
+            if j2_ctx.network.iptables_enable:
+                self.install_resource('network/iptables', j2_ctx, _IPTABLES)
         self.append_root_bash_with_resource(
             'network/main.sh',
             j2_ctx,
             'network',
         )
-
 
 def _defroute(routes):
     defroute = None
@@ -96,6 +83,30 @@ def _defroute(routes):
         if rig:
             defroute = r
     return defroute
+
+
+def _devices(j2_ctx):
+    nets, net_check = _nets(j2_ctx)
+    devs = []
+    routes = []
+    defroute = None
+    for dn in sorted(j2_ctx.network.devices):
+        d = copy.deepcopy(j2_ctx.network.devices[dn])
+        devs.append(d)
+        d.name = dn
+        d.vlan = '.' in dn
+        d.net = net_check(d.ip)
+        if d.net.gateway:
+            routes.append(d)
+        if d.setdefault('defroute', False):
+            assert not defroute, \
+                '{} & {}: both declared as default routes'.format(d, defroute)
+            defroute = d
+    if not defroute:
+        defroute = _defroute(routes)
+    defroute.defroute = True
+    j2_ctx.network.defroute = defroute
+    return devs, defroute
 
 
 def _nets(j2_ctx):

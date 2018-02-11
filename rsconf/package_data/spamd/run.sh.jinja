@@ -15,8 +15,8 @@ skip_uribl_checks 1
 score FH_DATE_PAST_20XX 0
 score FREEMAIL_FORGED_REPLYTO 0
 score RDNS_NONE 0
-internal_networks {{ network.trusted_keys | join(' ') }}
-trusted_networks {{ network.trusted_keys | join(' ') }}
+internal_networks {{ network.trusted_nets | join(' ') }}
+trusted_networks {{ network.trusted_nets | join(' ') }}
 score __RCVD_IN_ZEN 0
 score RCVD_IN_SBL 0
 score RCVD_IN_XBL 0
