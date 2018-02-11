@@ -21,11 +21,7 @@ class T(component.T):
         j2_ctx.postgresql.conf_f = j2_ctx.postgresql.conf_d.join('postgresql.conf')
         self.install_access(mode='700', owner='postgres')
         self.append_root_bash('rsconf_yum_install postgresql-server')
-        self.append_root_bash_with_resource(
-            'postgresql/main.sh',
-            j2_ctx,
-            'postgresql_main',
-        )
+        self.append_root_bash_with_main(j2_ctx)
         systemd.unit_prepare(self, j2_ctx.postgresql.run_d)
         self.append_root_bash(
             'rsconf_append "{}" "{}" || true'.format(

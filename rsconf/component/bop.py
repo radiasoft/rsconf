@@ -35,12 +35,7 @@ class T(component.T):
                 j2_ctx,
                 nginx.CONF_D.join('bop_common.conf'),
             )
-            self.append_root_bash_with_resource(
-                'bop/main.sh',
-                j2_ctx,
-                'bop_main',
-            )
-
+            self.append_root_bash_with_main(j2_ctx)
             return
         j2_ctx = self.hdb.j2_ctx_copy()
         j2_ctx.bop.app_name = self.name

@@ -18,8 +18,4 @@ class T(component.T):
             j2_ctx,
             '/root/.post_bivio_bashrc',
         )
-        self.append_root_bash_with_resource(
-            'base_users/main.sh',
-            j2_ctx,
-            'base_users_main',
-        )
+        self.append_root_bash_with_main(j2_ctx)

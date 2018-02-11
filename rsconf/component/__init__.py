@@ -29,6 +29,13 @@ class T(pkcollections.Dict):
     def append_root_bash(self, *line):
         self._root_bash.extend(line)
 
+    def append_root_bash_with_main(self, j2_ctx):
+        self.append_root_bash_with_resource(
+            '{}/main.sh'.format(self.name),
+            j2_ctx,
+            '{}_main'.format(self.name),
+        )
+
     def append_root_bash_with_resource(self, script, j2_ctx, bash_func):
         v = _render_resource(script, j2_ctx)
         self._root_bash_aux.append(v)

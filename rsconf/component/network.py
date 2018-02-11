@@ -66,11 +66,7 @@ class T(component.T):
             j2_ctx.network.setdefault('natted_nets', None)
             if j2_ctx.network.iptables_enable:
                 self.install_resource('network/iptables', j2_ctx, _IPTABLES)
-        self.append_root_bash_with_resource(
-            'network/main.sh',
-            j2_ctx,
-            'network',
-        )
+        self.append_root_bash_with_main(j2_ctx)
 
 
 def _defroute(routes):

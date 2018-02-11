@@ -34,11 +34,7 @@ class T(component.T):
             j2_ctx,
             _DAEMON_JSON,
         )
-        self.append_root_bash_with_resource(
-            'docker/main.sh',
-            j2_ctx,
-            'docker_main',
-        )
+        self.append_root_bash_with_main(j2_ctx)
         # Must be after everything else
         docker_registry.install_crt_and_login(self, j2_ctx)
         #TODO(robnagler) thin pool creation one command, fixed size unless dev

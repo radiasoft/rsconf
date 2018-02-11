@@ -30,8 +30,4 @@ class T(component.T):
                 )
         j2_ctx.base_os.logical_volume_cmds = cmds
         #TODO(robnagler) watch and update hostname? restart networking???
-        self.append_root_bash_with_resource(
-            'base_os/main.sh',
-            j2_ctx,
-            'base_os_main',
-        )
+        self.append_root_bash_with_main(j2_ctx)

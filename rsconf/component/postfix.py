@@ -32,9 +32,5 @@ class T(component.T):
             j2_ctx, j2_ctx.bop.docker_image)
         j2_ctx.spamd.docker_image = docker_registry.absolute_image(
             j2_ctx, j2_ctx.spamd.docker_image)
-        self.append_root_bash_with_resource(
-            'postfix/main.sh',
-            j2_ctx,
-            'postfix_main',
-        )
+        self.append_root_bash_with_main(j2_ctx)
         systemd.unit_enable(self)
