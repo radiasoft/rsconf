@@ -56,8 +56,8 @@ def host_init(j2_ctx, host):
 machine {} login {} password {}
 EOF
 export install_server={}
-curl $install_server | bash""".format(
-    _vhost(j2_ctx), host, y[host], j2_ctx.rsconf_db.http_host)
+curl $install_server | bash {}""".format(
+    _vhost(j2_ctx), host, y[host], j2_ctx.rsconf_db.http_host, host)
 
 
 def passwd_secret_f(j2_ctx):
