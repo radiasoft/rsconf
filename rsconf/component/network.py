@@ -32,9 +32,13 @@ class T(component.T):
     def internal_build(self):
         from rsconf import systemd
 
+        #TODO(robnagler) need to handle dfw1 - dhcp (no net config) and trusted single ip
+        # not all nets are trusted (dfw3) so we need trusted and untrusted nets.
+        # for now works fine.
         self.buildt.require_component('base_os')
         if not self.hdb.network.devices:
             # no devices, no network config
+            self.append_root_bash(': nothing to do')
             return
         systemd.unit_prepare(self, _SCRIPTS, _RESOLV_CONF, _IPTABLES)
         j2_ctx = self.hdb.j2_ctx_copy()
@@ -67,6 +71,7 @@ class T(component.T):
             j2_ctx,
             'network',
         )
+
 
 def _defroute(routes):
     defroute = None
