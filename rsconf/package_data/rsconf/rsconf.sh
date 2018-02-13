@@ -287,10 +287,11 @@ rsconf_service_file_changed() {
     local path=$1
     local s
     while [[ $path != / ]]; do
-        s=${rsconf_service_watch[$path]}
-        if [[ -n $s ]]; then
-            rsconf_service_trigger_restart "$s"
-            return
+        if [[ -n ${rsconf_service_watch[$path]} ]]; then
+            # POSIT: no specials in service names
+            for s in ${rsconf_service_watch[$path]}; do
+                rsconf_service_trigger_restart "$s"
+            done
         fi
         path=$(dirname "$path")
     done
@@ -298,14 +299,21 @@ rsconf_service_file_changed() {
 
 rsconf_service_prepare() {
     local s=$1
-    local w
+    local w x
     rsconf_service_status[$s]=start
     rsconf_service_order+=( $s )
     for w in "$@"; do
-        if [[ -n ${rsconf_service_watch[$w]} ]]; then
-            install_err "$w: already being watched by ${rsconf_service_watch[$w]}, also wanted by $s"
+        if [[ -z ${rsconf_service_watch[$w]} ]]; then
+            rsconf_service_watch[$w]=$s
+            continue
         fi
-        rsconf_service_watch[$w]=$s
+        # POSIT: no specials in service names
+        for x in ${rsconf_service_watch[$w]}; do
+            if [[ $x == $s ]]; then
+                continue 2
+            fi
+        done
+        rsconf_service_watch[$w]+=" $s"
     done
 }
 

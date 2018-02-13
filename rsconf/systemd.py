@@ -87,13 +87,7 @@ def unit_prepare(compt, *watch_files):
         service_name=compt.name,
         service_f=_SYSTEMD_DIR.join('{}.service'.format(compt.name)),
     )
-    compt.append_root_bash(
-        "rsconf_service_prepare '{}' '{}' '{}'".format(
-            compt.name,
-            compt.systemd.service_f,
-            *watch_files
-        ),
-    )
+    compt.service_prepare((compt.systemd.service_f,) + watch_files)
 
 
 def unit_run_d(hdb, unit_name):

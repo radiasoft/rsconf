@@ -30,8 +30,6 @@ def update_j2_ctx(j2_ctx):
 class T(component.T):
 
     def internal_build(self):
-        from rsconf import systemd
-
         #TODO(robnagler) need to handle dfw1 - dhcp (no net config) and trusted single ip
         # not all nets are trusted (dfw3) so we need trusted and untrusted nets.
         # for now works fine.
@@ -40,7 +38,8 @@ class T(component.T):
             # no devices, no network config
             self.append_root_bash(': nothing to do')
             return
-        systemd.unit_prepare(self, _SCRIPTS, _RESOLV_CONF)
+        self.service_prepare((_SCRIPTS, _RESOLV_CONF))
+        self.service_prepare((_IPTABLES, _SCRIPTS), name='iptables')
         j2_ctx = self.hdb.j2_ctx_copy()
         update_j2_ctx(j2_ctx)
         self.install_access(mode='444', owner=self.hdb.rsconf_db.root_u)

@@ -123,6 +123,15 @@ class T(pkcollections.Dict):
         with open(str(src), 'rb') as f:
             return f.read(), src
 
+    def service_prepare(self, watch_files, name=None):
+        if not name:
+            name = self.name
+        self.append_root_bash(
+            "rsconf_service_prepare '{}'".format(
+                "' '".join([name] + list(str(w) for w in watch_files)),
+            ),
+        )
+
     def _bash_append(self, host_path, is_file=True):
         _assert_host_path(host_path)
         self.append_root_bash(
