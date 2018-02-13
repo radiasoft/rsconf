@@ -40,7 +40,7 @@ class T(component.T):
             # no devices, no network config
             self.append_root_bash(': nothing to do')
             return
-        systemd.unit_prepare(self, _SCRIPTS, _RESOLV_CONF, _IPTABLES)
+        systemd.unit_prepare(self, _SCRIPTS, _RESOLV_CONF)
         j2_ctx = self.hdb.j2_ctx_copy()
         update_j2_ctx(j2_ctx)
         self.install_access(mode='444', owner=self.hdb.rsconf_db.root_u)
@@ -154,6 +154,6 @@ def _nets(j2_ctx):
             v.nameservers = sorted([ipaddress.ip_address(x) for x in v.nameservers])
         nets[n] = v
     j2_ctx.network.trusted_public_nets = sorted(
-        [n.ip for n in nets.values() if n.name.is_global],
+        [n.name for n in nets.values() if n.name.is_global],
     )
     return nets, net_check
