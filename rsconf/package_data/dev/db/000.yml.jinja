@@ -142,6 +142,8 @@ host:
         components: [ docker_registry, rsconf ]
     # never installed, just for testing build
     {{ all_host }}:
+      docker:
+        iptables: false
       rsconf_db:
         components: [ rabbitmq, celery_sirepo, sirepo, bop ]
       network:

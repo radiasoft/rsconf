@@ -39,7 +39,6 @@ class T(component.T):
             self.append_root_bash(': nothing to do')
             return
         self.service_prepare((_SCRIPTS, _RESOLV_CONF))
-        self.service_prepare((_IPTABLES, _SCRIPTS), name='iptables')
         j2_ctx = self.hdb.j2_ctx_copy()
         update_j2_ctx(j2_ctx)
         self.install_access(mode='444', owner=self.hdb.rsconf_db.root_u)
@@ -54,17 +53,39 @@ class T(component.T):
         )
         # No public addresses, no iptables
         j2_ctx.network.iptables_enable = bool(j2_ctx.network.inet_dev)
+        if j2_ctx.network.iptables_enable:
+            self.service_prepare((_IPTABLES, _SCRIPTS), name='iptables')
+        self._write_files(j2_ctx, devs)
+
+    def _write_files(self, j2_ctx, devs):
         # Only for jupyterhub, explicitly set, and not on a machine
         # with a public address
-        if j2_ctx.network.setdefault('docker_proxy', False):
-            assert not network.iptables_enable, \
-                '{}: docker_proxy not allowed on public ip'.format(defroute.ip)
-            network.iptables_enable = True
-            self.install_resource('network/docker_iptables', j2_ctx, _IPTABLES)
+        if j2_ctx.network.iptables_enable:
+            self.install_resource('network/iptables', j2_ctx, _IPTABLES)
+        for d in devs:
+            for k, v in d.items():
+                if isinstance(v, bool):
+                    d[k] = 'yes' if v else 'no'
+            j2_ctx.network.dev = d
+            self.install_resource(
+                'network/ifcfg-en',
+                j2_ctx,
+                _SCRIPTS.join('ifcfg-' + d.name)
+            )
+        # No public addresses, no iptables
+        j2_ctx.network.iptables_enable = bool(j2_ctx.network.inet_dev)
+        # Only for jupyterhub, explicitly set, and not on a machine
+        # with a public address
+        if j2_ctx.network.iptables_enable:
+            assert not j2_ctx.docker.iptables, \
+                '{}: docker.iptables not allowed on a public ip'.format(
+                    j2_ctx.network.defroute.ip,
+                )
         else:
-            if j2_ctx.network.iptables_enable:
-                self.install_resource('network/iptables', j2_ctx, _IPTABLES)
+
+            self.install_resource('network/iptables', j2_ctx, _IPTABLES)
         self.append_root_bash_with_main(j2_ctx)
+
 
 
 def _defroute(routes):
@@ -113,16 +134,6 @@ def _devices(self, j2_ctx):
         defroute = _defroute(routes)
     defroute.defroute = True
     j2_ctx.network.defroute = defroute
-    for d in devs:
-        for k, v in d.items():
-            if isinstance(v, bool):
-                d[k] = 'yes' if v else 'no'
-        j2_ctx.network.dev = d
-        self.install_resource(
-            'network/ifcfg-en',
-            j2_ctx,
-            _SCRIPTS.join('ifcfg-' + d.name)
-        )
     return devs, defroute
 
 
