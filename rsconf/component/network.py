@@ -81,8 +81,6 @@ class T(component.T):
                 '{}: docker.iptables not allowed on a public ip'.format(
                     j2_ctx.network.defroute.ip,
                 )
-        else:
-
             self.install_resource('network/iptables', j2_ctx, _IPTABLES)
         self.append_root_bash_with_main(j2_ctx)
 
