@@ -54,14 +54,13 @@ class T(component.T):
         # No public addresses, no iptables
         j2_ctx.network.iptables_enable = bool(j2_ctx.network.inet_dev)
         if j2_ctx.network.iptables_enable:
+            # Only restart iptables service if we have iptables
             self.service_prepare((_IPTABLES, _SCRIPTS), name='iptables')
         self._write_files(j2_ctx, devs)
 
     def _write_files(self, j2_ctx, devs):
         # Only for jupyterhub, explicitly set, and not on a machine
         # with a public address
-        if j2_ctx.network.iptables_enable:
-            self.install_resource('network/iptables', j2_ctx, _IPTABLES)
         for d in devs:
             for k, v in d.items():
                 if isinstance(v, bool):
@@ -72,10 +71,6 @@ class T(component.T):
                 j2_ctx,
                 _SCRIPTS.join('ifcfg-' + d.name)
             )
-        # No public addresses, no iptables
-        j2_ctx.network.iptables_enable = bool(j2_ctx.network.inet_dev)
-        # Only for jupyterhub, explicitly set, and not on a machine
-        # with a public address
         if j2_ctx.network.iptables_enable:
             assert not j2_ctx.docker.iptables, \
                 '{}: docker.iptables not allowed on a public ip'.format(
