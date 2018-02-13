@@ -18,17 +18,14 @@
 -A INPUT -i {{ network.inet_dev.name }} -p tcp -m tcp ! --tcp-flags FIN,SYN,RST,ACK SYN -m state --state NEW -j REJECT --reject-with icmp-port-unreachable
 -A INPUT -i {{ network.inet_dev.name }} -p tcp -m tcp --tcp-option 128 -j REJECT --reject-with icmp-port-unreachable
 
+{# ssh: Accept our networks always #}
+{% for n in network.trusted_public_nets %}
+    -A INPUT -i {{ network.inet_dev.name }} -s {{ n }} -p tcp -m tcp --dport ssh -j ACCEPT
+{% endfor %}
 {% if network.public_ssh %}
     -A INPUT -i {{ network.inet_dev.name }} -p tcp -m tcp --dport ssh -m state --state NEW -m recent --set --name SSHPROBES --mask 255.255.255.255 --rsource
-    {% for n in network.trusted_public_nets %}
-        -A INPUT -i {{ network.inet_dev.name }} -s {{ n }} -p tcp -m tcp --dport ssh -m state --state NEW -m recent --remove --name SSHPROBES --mask 255.255.255.255 --rsource
-    {% endfor %}
     -A INPUT -i {{ network.inet_dev.name }} -p tcp -m tcp --dport ssh -m state --state NEW -m recent --update --seconds 180 --hitcount 6 --name SSHPROBES --mask 255.255.255.255 --rsource -j DROP
     -A INPUT -i {{ network.inet_dev.name }} -p tcp -m state --state NEW -m tcp --dport ssh -j ACCEPT
-{% else %}
-    {% for n in network.trusted_public_nets %}
-        -A INPUT -i {{ network.inet_dev.name }} -s {{ n }} -p tcp -m tcp --dport ssh -j ACCEPT
-    {% endfor %}
 {% endif %}
 -A INPUT -j REJECT --reject-with icmp-host-prohibited
 
