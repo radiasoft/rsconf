@@ -50,7 +50,7 @@ class T(component.T):
                 '{}: defroute needs search and nameservers'.format(defroute.net)
             self.install_resource('network/resolv.conf', j2_ctx, _RESOLV_CONF)
         j2_ctx.network.update(
-            inet_dev=defroute.name if defroute.net.name.is_global else None,
+            inet_dev=defroute if defroute.net.name.is_global else None,
             private_devs=['lo'] + [d.name for d in devs if d.net.name.is_private],
         )
         # No public addresses, no iptables
@@ -63,7 +63,6 @@ class T(component.T):
             network.iptables_enable = True
             self.install_resource('network/docker_iptables', j2_ctx, _IPTABLES)
         else:
-            j2_ctx.network.setdefault('natted_nets', None)
             if j2_ctx.network.iptables_enable:
                 self.install_resource('network/iptables', j2_ctx, _IPTABLES)
         self.append_root_bash_with_main(j2_ctx)
@@ -91,6 +90,7 @@ def _devices(self, j2_ctx):
     devs = []
     routes = []
     defroute = None
+    j2_ctx.network.natted_dev = None
     for dn in sorted(j2_ctx.network.devices):
         d = copy.deepcopy(j2_ctx.network.devices[dn])
         devs.append(d)
@@ -103,6 +103,13 @@ def _devices(self, j2_ctx):
             assert not defroute, \
                 '{} & {}: both declared as default routes'.format(d, defroute)
             defroute = d
+        if d.setdefault('is_natted', False):
+            assert not j2_ctx.network.natted_dev, \
+                '{}: duplicate natted dev ({})'.format(
+                    d.name,
+                    j2_ctx.network.natted_dev.name,
+                )
+            j2_ctx.network.natted_dev = d
     if not defroute:
         defroute = _defroute(routes)
     defroute.defroute = True

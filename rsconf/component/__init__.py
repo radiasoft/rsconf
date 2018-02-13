@@ -160,6 +160,10 @@ def tls_key_and_crt(hdb, domain):
     from rsconf import db
 
     base, domains = _find_tls_crt(hdb, domain)
+#visibility global. certs should be named globally
+#only dev generates
+#config wether to generate, because alpha or customer systems will
+#maybe need to be generated to test and updated manually
     src = db.secret_path(hdb, base, visibility='channel')
     src_key = src + tls.KEY_EXT
     src_crt = src + tls.CRT_EXT
