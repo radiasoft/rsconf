@@ -2,5 +2,5 @@ export SYSTEMD_COLORS=0
 # --quit-if-one-screen -quit-at-eof --quit-on-intr --no-init
 export SYSTEMD_LESS=EFKX
 rsc() {
-    curl {{ rsconf_db.http_host }} | install_server={{ rsconf_db.http_host }} bash -s "$@"
+    curl {{ rsconf_db.http_host }} | install_server={{ rsconf_db.http_host }} bash -s rsconf.sh "$@"
 }
