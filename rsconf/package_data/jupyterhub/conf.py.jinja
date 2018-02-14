@@ -20,10 +20,10 @@ class _Spawner(dockerspawner.DockerSpawner):
 
 c.Authenticator.admin_users = set([{{ jupyterhub.admin_users_str }}])
 {% if 'github' in jupyterhub %}
-    c.JupyterHub.authenticator_class = 'oauthenticator.GitHubOAuthenticator'
-    c.GitHubOAuthenticator.client_id = '{{ jupyterhub.github.client_id }}'
-    c.GitHubOAuthenticator.client_secret = '{{ jupyterhub.github.client_secret }}'
-    c.GitHubOAuthenticator.oauth_callback_url = 'https://{{ jupyterhub.vhost }}/hub/oauth_callback'
+c.JupyterHub.authenticator_class = 'oauthenticator.GitHubOAuthenticator'
+c.GitHubOAuthenticator.client_id = '{{ jupyterhub.github.client_id }}'
+c.GitHubOAuthenticator.client_secret = '{{ jupyterhub.github.client_secret }}'
+c.GitHubOAuthenticator.oauth_callback_url = 'https://{{ jupyterhub.vhost }}/hub/oauth_callback'
 {% else %}
 assert '{{ rsconf_db.channel }}' == 'dev', \
     'development only; all other channels must use GitHubOAuthenticator'
