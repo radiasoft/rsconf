@@ -69,7 +69,7 @@ def docker_unit_enable(compt, image, cmd, env=None, volumes=None, after=None, ru
         v.service_f,
     )
     compt.append_root_bash(
-        "rsconf_service_docker_pull '{}' '{}'".format(v.service_name, v.image),
+        "rsconf_service_docker_pull '{}' '{}'".format(v.image, v.service_name),
     )
     unit_enable(compt)
 

@@ -1,5 +1,6 @@
 #!/bin/bash
 set -eu -o pipefail
+rm -f /etc/postgrey/postgrey_whitelist_clients
 cp /usr/share/postgrey/postgrey_whitelist_clients /etc/postgrey/postgrey_whitelist_clients
 cd '{{ postgrey.dbdir }}'
 exec /usr/sbin/postgrey \

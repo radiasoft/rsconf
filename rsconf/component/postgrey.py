@@ -39,10 +39,10 @@ class T(component.T):
         self.install_resource(
             'postgrey/postgrey_whitelist_recipients',
             j2_ctx,
-            j2_ctx.postgrey.dbdir.join('postgrey_whitelist_recipients'),
+            j2_ctx.postgrey.etc.join('postgrey_whitelist_recipients'),
         )
         self.install_resource(
             'postgrey/postgrey_whitelist_clients.local',
             j2_ctx,
-            j2_ctx.postgrey.dbdir.join('postgrey_whitelist_clients.local'),
+            j2_ctx.postgrey.etc.join('postgrey_whitelist_clients.local'),
         )

@@ -81,7 +81,7 @@ rsconf_group() {
     local gid=$2
     local x=( $(IFS=: getent group "$group" 2>/dev/null || true) )
     local exist_gid=${x[2]}
-    if [[ -n $exist_gid ]]; then
+    if [[ $exist_gid ]]; then
         if [[ $exist_gid != $gid ]]; then
             install_err "$exist_gid: unexpected gid (expect=$gid) for group $group"
         fi
@@ -100,7 +100,7 @@ rsconf_install_access() {
         install_err "$1: invalid or empty mode"
     fi
     rsconf_install_access[mode]=$1
-    if [[ -z $2 ]]; then
+    if [[ ! $2 ]]; then
         return
     fi
     rsconf_install_access[user]=$2
@@ -111,7 +111,7 @@ rsconf_install_chxxx() {
     local path=$1
     local actual=( $(stat --format '%a %U %G' "$path") )
     local change=
-    if [[ -z ${rsconf_install_access[group]} ]]; then
+    if [[ ! ${rsconf_install_access[group]} ]]; then
         install_err 'rsconf_install_access must be called first'
     fi
     if [[ ${rsconf_install_access[user]} != ${actual[1]} ]]; then
@@ -126,7 +126,7 @@ rsconf_install_chxxx() {
         chmod "${rsconf_install_access[mode]}" "$path"
         change=1
     fi
-    if [[ -z $rsconf_no_check && -n $change ]]; then
+    if [[ ! $rsconf_no_check && $change ]]; then
         rsconf_service_file_changed "$path"
     fi
 }
@@ -152,7 +152,7 @@ rsconf_install_directory() {
 rsconf_install_file() {
     local path=$1
     local src=
-    if [[ -n $2 ]]; then
+    if [[ $2 ]]; then
         src=$1
         path=$2
     fi
@@ -262,7 +262,7 @@ rsconf_run() {
     local f=${script}_rsconf_component
     if ! type "$f" >& /dev/null; then
         install_script_eval "$script.sh"
-    elif [[ -n $rsconf_only_once ]]; then
+    elif [[ $rsconf_only_once ]]; then
         return
     fi
     rsconf_install_access=()
@@ -270,16 +270,20 @@ rsconf_run() {
 }
 
 rsconf_service_docker_pull() {
-    local service=$1
-    local image=$2
-    local container_image_id=$(docker inspect --format='{{.Image}}' "$service" 2>/dev/null || true)
-    local prev_id=$(docker inspect --format='{{.Id}}' "$image" 2>/dev/null || true)
+    local image=$1
+    local service=${2:-}
+    if [[ $service ]]; then
+        local container_image_id=$(docker inspect --format='{{.Image}}' "$service" 2>/dev/null || true)
+        local prev_id=$(docker inspect --format='{{.Id}}' "$image" 2>/dev/null || true)
+    fi
     install_info "docker pull $image (may take awhile)..."
     install_exec docker pull "$image"
-    local curr_id=$(docker inspect --format='{{.Id}}' "$image" 2>/dev/null || true)
-    if [[ $prev_id != $curr_id || -n $container_image_id && $container_image_id != $curr_id ]]; then
-        install_info "$image: new image, restart $service required"
-        rsconf_service_trigger_restart "$service"
+    if [[ $service ]]; then
+        local curr_id=$(docker inspect --format='{{.Id}}' "$image" 2>/dev/null || true)
+        if [[ $prev_id != $curr_id || $container_image_id && $container_image_id != $curr_id ]]; then
+            install_info "$image: new image, restart $service required"
+            rsconf_service_trigger_restart "$service"
+        fi
     fi
 }
 
@@ -287,7 +291,7 @@ rsconf_service_file_changed() {
     local path=$1
     local s
     while [[ $path != / ]]; do
-        if [[ -n ${rsconf_service_watch[$path]} ]]; then
+        if [[ ${rsconf_service_watch[$path]} ]]; then
             # POSIT: no specials in service names
             for s in ${rsconf_service_watch[$path]}; do
                 rsconf_service_trigger_restart "$s"
@@ -303,7 +307,7 @@ rsconf_service_prepare() {
     rsconf_service_status[$s]=start
     rsconf_service_order+=( $s )
     for w in "$@"; do
-        if [[ -z ${rsconf_service_watch[$w]} ]]; then
+        if [[ ! ${rsconf_service_watch[$w]} ]]; then
             rsconf_service_watch[$w]=$s
             continue
         fi
@@ -359,7 +363,7 @@ rsconf_user() {
     local uid=$2
     local exist_uid=$(id -u "$user" 2>/dev/null || true)
     rsconf_group "$user" "$gid"
-    if [[ -n $exist_uid ]]; then
+    if [[ $exist_uid ]]; then
         if [[ $exist_uid != $uid ]]; then
             install_err "$exist_uid: unexpected uid (expect=$uid) for user $user"
         fi

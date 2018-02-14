@@ -52,6 +52,9 @@ class T(component.T):
         z.admin_users_str = "'" + "','".join(z.admin_users) + "'"
         conf_f = run_d.join(_CONF_F)
         self.install_resource('jupyterhub/{}'.format(_CONF_F), j2_ctx, conf_f)
+        self.append_root_bash(
+            "rsconf_service_docker_pull '{}'".format(z.jupyter_docker_image),
+        )
         systemd.docker_unit_enable(
             self,
             cmd='jupyterhub -f {}'.format(conf_f),
@@ -60,3 +63,4 @@ class T(component.T):
             run_u=z.run_u,
             volumes=[docker.DOCKER_SOCK],
         )
+        #TODO(robnagler) vhost proxy installed on other host; sirepo could be too
