@@ -205,6 +205,9 @@ rsconf_install_symlink() {
 }
 
 rsconf_main() {
+    if [[ $1 == rsconf ]]; then
+        shift
+    fi
     local host=${1:-$(hostname -f)}
     local setup_dev=$2
     if [[ $host =~ / ]]; then
