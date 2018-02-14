@@ -27,7 +27,6 @@ class T(component.T):
         systemd.docker_unit_enable(
             self,
             image=docker_registry.absolute_image(j2_ctx, j2_ctx.postgrey.docker_image),
-            env=pkcollections.Dict(),
             cmd=str(run),
         )
         self.install_access(mode='700', owner=self.hdb.rsconf_db.run_u)

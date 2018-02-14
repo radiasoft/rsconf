@@ -17,12 +17,14 @@ _SYSTEMD_DIR = pkio.py_path('/etc/systemd/system')
 #TODO(robnagler) when to download new version of docker container?
 #TODO(robnagler) docker pull happens explicitly, probably
 
-def docker_unit_enable(compt, image, env, cmd, volumes=None, after=None, run_u=None):
+def docker_unit_enable(compt, image, cmd, env=None, volumes=None, after=None, run_u=None, ports=None):
     """Must be last call"""
     from rsconf.component import docker_registry
 
     j2_ctx = compt.hdb.j2_ctx_copy()
     v = pkcollections.Dict(compt.systemd)
+    if env is None:
+        env = pkcollections.Dict()
     if 'TZ' not in env:
         # Tested on CentOS 7, and it does have the localtime stat problem
         # https://blog.packagecloud.io/eng/2017/02/21/set-environment-variable-save-thousands-of-system-calls/
@@ -38,8 +40,13 @@ def docker_unit_enable(compt, image, env, cmd, volumes=None, after=None, run_u=N
         run_u=run_u or j2_ctx.rsconf_db.run_u,
     )
     v.volumes = ' '.join(
-        ["-v '{}'".format(_vol_arg(x)) for x in [v.run_d] + (volumes or [])],
+        ["-v '{}'".format(_colon_arg(x)) for x in [v.run_d] + (volumes or [])],
     )
+    v.network = ' '.join(
+        ["-p '{}'".format(_colon_arg(x)) for x in (ports or [])],
+    )
+    if not v.network:
+        v.network = '--network=host'
     scripts = ('cmd', 'env', 'remove', 'start', 'stop')
     compt.install_access(mode='700', owner=v.run_u)
     compt.install_directory(v.run_d)
@@ -94,7 +101,7 @@ def unit_run_d(hdb, unit_name):
     return hdb.rsconf_db.host_run_d.join(unit_name)
 
 
-def _vol_arg(vol):
-    if not isinstance(vol, (tuple, list)):
-        vol = (vol, vol)
-    return '{}:{}'.format(*vol)
+def _colon_arg(v):
+    if not isinstance(v, (tuple, list)):
+        v = (v, v)
+    return '{}:{}'.format(*v)

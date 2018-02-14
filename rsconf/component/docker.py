@@ -9,6 +9,7 @@ from rsconf import component
 from pykern import pkcollections
 from pykern import pkio
 
+DOCKER_SOCK = '/var/run/docker.sock'
 
 _CONF_DIR = pkio.py_path('/etc/docker')
 _DAEMON_JSON = _CONF_DIR.join('daemon.json')

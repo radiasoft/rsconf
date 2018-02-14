@@ -68,7 +68,6 @@ class T(component.T):
         systemd.docker_unit_enable(
             self,
             image=image,
-            env=pkcollections.Dict(),
             cmd='/usr/sbin/httpd -DFOREGROUND',
             volumes=volumes,
         )

@@ -123,7 +123,6 @@ class T(component.T):
             self,
             # Specify pull from docker.io directly to avoid registry not yet running
             image=_DOCKER_HUB_HOST + '/library/registry:2',
-            env=pkcollections.Dict(),
             cmd=None,
             after=['docker.service'],
             run_u=j2_ctx.docker_registry.run_u,

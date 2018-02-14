@@ -29,7 +29,8 @@ SECRET_SUBDIR = 'secret'
 HOST_SUBDIR = 'host'
 LEVELS = ('default', 'channel', 'host')
 # Secrets are long so keep them simple
-_RANDOM_STRING = string.ascii_letters + string.digits
+_BASE62_CHARS = string.ascii_lowercase + string.digits + string.ascii_uppercase
+_HEX_CHARS = '0123456789abcdef'
 
 class Host(pkcollections.Dict):
     def j2_ctx_copy(self):
@@ -159,12 +160,10 @@ def secret_path(hdb, filename, visibility=None):
     return res
 
 
-def random_string(path=None, length=32):
-    import random
-    import string
-
-    chars = string.ascii_lowercase + string.digits + string.ascii_uppercase
-    res = ''.join(random.choice(chars) for _ in range(length))
+def random_string(path=None, length=32, is_hex=False):
+    chars = _HEX_CHARS if is_hex else _BASE62_CHARS
+    r = random.SystemRandom()
+    res = ''.join(r.choice(chars) for _ in range(length))
     if path:
         with open(str(path), 'wb') as f:
             f.write(res)
