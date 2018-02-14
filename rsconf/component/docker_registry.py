@@ -19,7 +19,6 @@ _DB_SUBDIR = 'db'
 _TLS_BASE = 'docker_registry'
 _CERTS_D = pkio.py_path('/etc/docker/certs.d')
 _GLOBAL_CONF = '/etc/docker/registry/config.yml'
-_ROOT_CONFIG_JSON = pkio.py_path('/root/.docker/config.json')
 _DOCKER_HUB_HOST = 'docker.io'
 _PASSWD_SECRET_JSON_F = 'docker_registry_passwd.json'
 _PASSWD_SECRET_F = 'docker_registry_passwd'
@@ -68,7 +67,6 @@ def install_crt_and_login(compt, j2_ctx):
     if not update_j2_ctx(j2_ctx):
         return
     compt.install_access(mode='700', owner=j2_ctx.docker_registry.run_u)
-    compt.install_directory(_ROOT_CONFIG_JSON.dirname)
     compt.install_directory(_CERTS_D)
     d = _CERTS_D.join(j2_ctx.docker_registry.http_addr)
     compt.install_directory(d)
@@ -83,11 +81,8 @@ def install_crt_and_login(compt, j2_ctx):
         y = pkjson.load_any(jf)
     u = j2_ctx.rsconf_db.host
     p = y[u]
-    j2_ctx.docker_registry.auth_b64 = base64.b64encode(u + ':' + p)
-    compt.install_resource(
-        'docker_registry/root_config.json',
-        j2_ctx,
-        _ROOT_CONFIG_JSON,
+    j2_ctx.docker.auths[j2_ctx.docker_registry.http_addr] = dict(
+        auth=base64.b64encode(u + ':' + p),
     )
 
 
