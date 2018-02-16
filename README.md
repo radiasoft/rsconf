@@ -1,10 +1,28 @@
 # rsconf
 
-Under development.
+This is a pre-alpha machine configuration management system which can be tested
+in a Vagrant environemnt and deployed on VMs or bare metal (with minimal OS installed).
 
-## Master
+Some of the design goals are:
 
-On the master as dev user start
+* Program in programming languages
+* Fail fast with debuggable context
+* Trust the master but not the clients
+* Configure in as few YAML files as possible
+* High-level opinions baked in (CentOS 7, docker started via systemd, etc.)
+* Build everything on the master first and download with Curl/Bash
+* Generate secrets automatically and persistently
+* Pull from client; push via ssh (if desired/configured)
+* No builtin "update all" except via shell (`for host in`)
+* Single master serving dev/alpha/beta/prod channels (stages)
+* Updates to files, container images, etc. cause server restarts in proper order
+* Serverless so master can be bootstraped using curl file://
+* Client requirements: bash and yum
+* Server requirements: nginx, python, pykern
+
+# Development
+
+To configure the initial master in Vagrant on a Mac or a Linux development environment:
 
 ```sh
 curl radia.run | bash -s vagrant-centos7 v3.radia.run

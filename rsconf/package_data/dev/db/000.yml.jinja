@@ -143,7 +143,7 @@ host:
   dev:
     {{ host }}:
       rsconf_db:
-        components: [ bop, rabbitmq, celery_sirepo, sirepo, jupyterhub ]
+        components: [ rabbitmq, celery_sirepo, sirepo ]
     {{ master }}:
       base_os:
         volume_groups: []
