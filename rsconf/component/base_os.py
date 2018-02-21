@@ -6,20 +6,31 @@ u"""create base os configuration
 """
 from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
+from pykern import pkio
 from pykern.pkdebug import pkdp
 from rsconf import component
+
+_JOURNAL_CONF_D = pkio.py_path('/etc/systemd/journald.conf.d')
 
 class T(component.T):
 
     def internal_build(self):
-        self.install_access(mode='400', owner=self.hdb.rsconf_db.root_u)
+        self.service_prepare([_JOURNAL_CONF_D], name='systemd-journald')
+        self.install_access(mode='700', owner=self.hdb.rsconf_db.root_u)
+        self.install_directory(_JOURNAL_CONF_D)
         j2_ctx = self.hdb.j2_ctx_copy()
+        self.install_access(mode='400')
+        self.install_resource(
+            'base_os/journald.conf',
+            j2_ctx,
+            _JOURNAL_CONF_D.join('99-rsconf.conf'),
+        )
         self.install_resource(
             'base_os/60-rsconf-base.conf',
             j2_ctx,
             '/etc/sysctl.d/60-rsconf-base.conf',
         )
-        self.install_access(mode='444', owner=self.hdb.rsconf_db.root_u)
+        self.install_access(mode='444')
         self.install_resource('base_os/hostname', j2_ctx, '/etc/hostname')
         vgs = j2_ctx.base_os.volume_groups
         cmds = ''

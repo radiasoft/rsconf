@@ -28,7 +28,7 @@ base_os_journal_persist() {
     rsconf_install_access 700 root root
     rsconf_install_directory "$d"
     systemd-tmpfiles --create --prefix "$d"
-    systemctl restart systemd-journald
+    rsconf_service_trigger_restart systemd-journald
 }
 
 base_os_logical_volume() {
@@ -136,6 +136,6 @@ base_os_rpcbind_patch() {
     fi
     if rsconf_edit "$new" '! BindIPv6Only' 'm{\[::\]:|BindIPv6Only} && ($_=q{})'; then
         systemctl daemon-reload
-        systemctl restart rpcbind.socket
+        rsconf_service_trigger_restart rpcbind.socket
     fi
 }
