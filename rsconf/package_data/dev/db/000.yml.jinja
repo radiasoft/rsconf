@@ -2,6 +2,21 @@
 default:
   base_os:
     ip_forward: false
+  bkp:
+    exclude:
+      - /etc/selinux
+    hosts:
+      - {{ host }}
+      - {{ master }}
+    include:
+      - /etc
+    # Time zones not accepted in systemd 219 (CentOS 7).
+    # Times are in UTC. We may need to change the local time zone.
+    on_calendar: "*-*-* 08:00:00"
+    primary: {{ master }}
+    secondaries: []
+    max_try: 6
+    mirror_d: /srv/bkp/mirror
   bop:
     docker_image: biviosoftware/bivio
     server_status_location: /bop-status
@@ -9,6 +24,21 @@ default:
     bconf_aux: ''
   celery_sirepo:
     queues: "sequential,parallel"
+  component:
+    tls_crt_create: true
+    tls_crt:
+      dev_host:
+        - beforeother.{{ host }}
+        - m-petshop.{{ host }}
+        - other.{{ host }}
+        - petshop.{{ host }}
+        - requiresecure.{{ host }}
+        - sirepo.{{ host }}
+        - {{ host }}
+        - z5.radia.run
+        - alpha2.sirepo.com
+      dev_master:
+        - {{ master }}
   docker:
     iptables: false
   docker_registry:
@@ -148,7 +178,7 @@ host:
       base_os:
         volume_groups: []
       rsconf_db:
-        components: [ docker_registry, rsconf ]
+        components: [ docker_registry, rsconf, bkp ]
     # never installed, just for testing build
     {{ all_host }}:
       docker:

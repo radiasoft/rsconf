@@ -1,0 +1,7 @@
+#!/bin/bash
+if [[ -r ~/.bashrc ]]; then
+    . ~/.bashrc
+fi
+set -euo pipefail
+cd '{{ systemd.run_d }}'
+exec {{ systemd.timer_exec }}

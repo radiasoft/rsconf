@@ -1,0 +1,8 @@
+[Unit]
+Description={{ systemd.service_name }}
+
+[Timer]
+OnCalendar={{ systemd.on_calendar }}
+
+[Install]
+WantedBy=timers.target

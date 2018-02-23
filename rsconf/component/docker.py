@@ -56,6 +56,7 @@ class T(component.T):
             j2_ctx,
             _ROOT_CONFIG_JSON,
         )
+        systemd.unit_enable(self)
 
 
 def _dict(value):

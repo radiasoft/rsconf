@@ -55,9 +55,17 @@ def host_init(j2_ctx, host):
     return """install -m 600 /dev/stdin /root/.netrc <<'EOF'
 machine {} login {} password {}
 EOF
-curl {} | install_server={} bash -s {}""".format(
-    _vhost(j2_ctx), host, y[host], j2_ctx.rsconf_db.http_host, j2_ctx.rsconf_db.http_host, host)
-
+curl {} | install_server={} bash -s {}
+# On {}: ssh root@{} true""".format(
+        _vhost(j2_ctx),
+        host,
+        y[host],
+        j2_ctx.rsconf_db.http_host,
+        j2_ctx.rsconf_db.http_host,
+        host,
+        j2_ctx.bkp.primary,
+        host,
+    )
 
 def passwd_secret_f(j2_ctx):
     from rsconf import db

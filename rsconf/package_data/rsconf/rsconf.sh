@@ -17,6 +17,20 @@ rsconf_append() {
     return 0
 }
 
+rsconf_append_authorized_key() {
+    local user=$1
+    local key=$2
+    local ssh_d="$( getent passwd "$user" | cut -d: -f6 )"/.ssh
+    if [[ ! -e "$ssh_d" ]]; then
+        install -d -m 700 -o "$user" -g "$user" "$ssh_d"
+    fi
+    local keys_f=$ssh_d/authorized_keys
+    if [[ ! -e $keys_f ]]; then
+        install -m 600 -o "$user" -g "$user" /dev/null "$keys_f"
+    fi
+    rsconf_append "$keys_f" "$key"
+}
+
 rsconf_edit() {
     local file=$1
     local grep=$2

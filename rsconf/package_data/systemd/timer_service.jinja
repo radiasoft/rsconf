@@ -1,0 +1,9 @@
+[Unit]
+Description={{ systemd.service_name }}
+
+[Service]
+Type=oneshot
+ExecStart={{ systemd.timer_start_f }}
+
+[Install]
+WantedBy=multi-user.target

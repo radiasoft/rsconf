@@ -1,0 +1,72 @@
+#!/bin/bash
+set -euo pipefail
+
+{{ bkp.global_vars }}
+
+primary_rsync=(
+    rsync
+    --archive
+    --compress
+    # https://possiblelossofprecision.net/?p=2255
+    -e 'ssh -x -T -o Compression=no -c aes128-ctr'
+    --acls
+    --delete
+    --hard-links
+    --links
+    --numeric-ids
+    --relative
+    --sparse
+    --timeout=14400
+    --xattrs
+)
+
+primary_host() {
+    local host=$1
+    local out src_d try cmd
+    local tgt_d=$bkp_mirror_d/$host
+    mkdir -m 700 -p "$tgt_d"
+    primary_log "$host: start"
+    for src_d in "${bkp_include[@]}"; do
+        cmd=(
+            "${primary_rsync[@]}"
+            "${bkp_exclude[@]}"
+            "root@$host:$src_d"
+            "$tgt_d"
+        )
+        for try in $(seq 1 "$bkp_max_try"); do
+            # We don't care about missing top level directories:
+            # rsync: link_stat "/foo" failed: No such file or directory
+            # This is a duplicate error due to the above
+            # rsync error: some files/attrs were not transferred
+            out=$(
+                "${cmd[@]}" 2>&1 |
+                egrep -v -i "\"$src_d\".*no such file|some files.*not transfer" || \
+                    true
+            )
+            if [[ ! $out ]]; then
+                continue 2
+            fi
+            if [[ ! $out =~ ssh_exchange_identification ]] ||
+                (( $try >= $max_try ))
+            then
+                primary_log "$out"
+                continue 2
+            fi
+            # Probably due to an ssh rate limiter in iptables so
+            # let's just try in a little while and backoff linearly.
+            sleep $(( 60 * $try ))
+        done
+    done
+}
+
+primary_log() {
+    echo $(date +"%Y-%m-%d %H:%M:%S") "$@"
+}
+
+primary_main() {
+    primary_log begin
+{{ bkp.host_cmds }}
+    primary_log done
+}
+
+primary_main "$@"

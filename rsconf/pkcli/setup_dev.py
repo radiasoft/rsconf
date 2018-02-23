@@ -6,7 +6,6 @@ u"""Test tree
 """
 from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
-from pykern import pkconfig
 from pykern import pkio
 from pykern import pkjinja
 from pykern import pkresource
@@ -16,6 +15,7 @@ import grp
 import os
 import pwd
 import re
+import subprocess
 
 NGINX_SUBDIR = 'nginx'
 
@@ -70,10 +70,9 @@ def default_command():
         x = f.relto(dev_d)
         dst = root_d.join(re.sub('.jinja$', '', x))
         pkio.mkdir_parent_only(dst)
-        flat = pkcollections.Dict()
-        pkconfig.flatten_values(flat, j2_ctx)
-        pkjinja.render_file(f, flat, output=dst, strict_undefined=True)
+        pkjinja.render_file(f, j2_ctx, output=dst, strict_undefined=True)
 
+    subprocess.check_call(['bash', str(secret_d.join('setup_dev.sh'))])
     # dev only, really insecure, but makes consistent builds easy
     _sym('~/src/radiasoft')
     _sym('~/src/biviosoftware')

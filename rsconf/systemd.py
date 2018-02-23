@@ -82,6 +82,52 @@ def docker_unit_prepare(compt):
     return run_d
 
 
+def timer_enable(compt, j2_ctx, on_calendar, timer_exec):
+    z = j2_ctx.systemd
+    compt.install_access(mode='700', owner=j2_ctx.rsconf_db.root_u)
+    compt.install_directory(z.run_d)
+    compt.install_access(mode='444')
+    z.on_calendar = on_calendar
+    z.timer_exec = timer_exec
+    compt.install_resource(
+        'systemd/timer',
+        j2_ctx,
+        z.timer_f,
+    )
+    compt.install_resource(
+        'systemd/timer_service',
+        j2_ctx,
+        z.service_f,
+    )
+    compt.install_access(mode='500')
+    compt.install_resource(
+        'systemd/timer_start',
+        j2_ctx,
+        z.timer_start_f,
+    )
+    unit_enable(compt)
+
+
+def timer_prepare(compt, j2_ctx, *watch_files):
+    """Must be first call"""
+    n = compt.name
+    tn = n + '.timer'
+    run_d = unit_run_d(j2_ctx, n)
+    j2_ctx.systemd = pkcollections.Dict(
+        run_d=run_d,
+        service_f=_SYSTEMD_DIR.join(n + '.service'),
+        service_name=n,
+        timer_f=_SYSTEMD_DIR.join(tn),
+        timer_name=tn,
+        timer_start_f=run_d.join('start'),
+    )
+    compt.service_prepare(
+        (j2_ctx.systemd.service_f, j2_ctx.systemd.timer_f, run_d) + watch_files,
+        name=tn,
+    )
+    return run_d
+
+
 def unit_enable(compt):
     # rsconf.sh does the actual work of enabling
     # good to have the hook here for clarity
