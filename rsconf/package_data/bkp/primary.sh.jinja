@@ -60,7 +60,8 @@ primary_host() {
 }
 
 primary_log() {
-    echo $(date +"%Y-%m-%d %H:%M:%S") "$@"
+    # Don't need timestamps, journalctl takes care of that
+    echo "$@"
 }
 
 primary_main() {
