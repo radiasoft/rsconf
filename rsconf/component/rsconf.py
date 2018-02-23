@@ -56,7 +56,7 @@ def host_init(j2_ctx, host):
 machine {} login {} password {}
 EOF
 curl {} | install_server={} bash -s {}
-# On {}: ssh root@{} true""".format(
+# On {}: ssh {} true""".format(
         _vhost(j2_ctx),
         host,
         y[host],
