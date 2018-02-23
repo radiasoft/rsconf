@@ -23,7 +23,7 @@ primary_rsync=(
 primary_host() {
     local host=$1
     local out src_d try cmd
-    local tgt_d=$bkp_mirror_d/$host
+    local tgt_d=$bkp_mirror_d/current/$host
     mkdir -m 700 -p "$tgt_d"
     primary_log "$host: start"
     for src_d in "${bkp_include[@]}"; do
