@@ -56,6 +56,8 @@ default:
     devices: {}
     trusted: {}
     public_ssh: False
+  nfs_server:
+    num_servers: 16
   nginx:
     worker_processes: 1
   petshop:
@@ -172,8 +174,11 @@ channel:
 host:
   dev:
     {{ host }}:
+      nfs_server:
+        exports:
+          /srv/sirepo/db/users: [ 10.10.10.0/24 ]
       rsconf_db:
-        components: [ rabbitmq, celery_sirepo, sirepo ]
+        components: [ nfs_server, rabbitmq, celery_sirepo, sirepo ]
     {{ master }}:
       base_os:
         volume_groups: []
@@ -196,8 +201,16 @@ host:
             is_natted: True
           em2:
             ip: 104.237.137.2
+      nfs_client:
+        mounts:
+          {{ master }}:
+            - /srv/sirepo/db/users
+      nfs_server:
+        num_servers: 64
+        exports:
+          /exports/foo: [ 10.10.10.0/24, localhost ]
       rsconf_db:
-        components: [ rabbitmq, celery_sirepo, sirepo, bop, jupyterhub ]
+        components: [ nfs_client, nfs_server, rabbitmq, celery_sirepo, sirepo, bop, jupyterhub ]
 
 
 #Local Variables:

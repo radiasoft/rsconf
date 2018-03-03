@@ -17,8 +17,15 @@ _USER_SUBDIR = 'user'
 _BEAKER_SECRET_BASE = 'sirepo_beaker_secret'
 
 
-def user_d(j2_ctx):
-    return systemd.unit_run_d(j2_ctx, 'sirepo').join(_DB_SUBDIR, _USER_SUBDIR)
+def install_user_d(compt, j2_ctx):
+    run_d = systemd.unit_run_d(j2_ctx, 'sirepo')
+    compt.install_access(mode='700', owner=j2_ctx.rsconf_db.run_u)
+    compt.install_directory(run_d)
+    db_d = run_d.join(_DB_SUBDIR)
+    compt.install_directory(db_d)
+    user_d = db_d.join(_USER_SUBDIR)
+    compt.install_directory(user_d)
+    return user_d
 
 
 class T(component.T):
@@ -62,9 +69,8 @@ class T(component.T):
             after=['celery_sirepo.service'],
             #TODO(robnagler) wanted by nginx
         )
-        self.install_access(mode='700', owner=j2_ctx.rsconf_db.run_u)
-        self.install_directory(db_d)
-        self.install_directory(user_d(j2_ctx))
+        install_user_d(self, j2_ctx)
+        self.install_access(mode='400')
         self.install_secret_path(
             _BEAKER_SECRET_BASE,
             host_path=beaker_secret_f,

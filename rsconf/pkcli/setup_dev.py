@@ -57,6 +57,7 @@ def default_command():
     # bootstrap
     j2_ctx.update(boot_hdb)
     j2_ctx.rsconf_db.http_host = 'http://{}:{}'.format(j2_ctx.master, j2_ctx.port)
+    j2_ctx.bkp = pkcollections.Dict(primary=j2_ctx.master)
     j2_ctx.passwd_f = rsconf.passwd_secret_f(j2_ctx)
     for h in j2_ctx.host, j2_ctx.master, j2_ctx.all_host:
         _add_host(j2_ctx, srv, h)

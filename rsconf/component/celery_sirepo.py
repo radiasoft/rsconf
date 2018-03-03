@@ -30,12 +30,14 @@ class T(component.T):
             'sirepo.celery_tasks.celeryd_concurrency',
         ):
             env[f.upper().replace('.', '_')] = j2_ctx.nested_get(f)
+        # Might be on a different server so need to setup permissions right
+        user_d = sirepo.install_user_d(self, j2_ctx)
         #TODO(robnagler) need to set hostname so celery flower shows up right
         systemd.docker_unit_enable(
             self,
             image=docker_registry.absolute_image(j2_ctx, j2_ctx.sirepo.docker_image),
             cmd="celery worker --app=sirepo.celery_tasks --no-color -Ofair '--queue={}'".format(j2_ctx.celery_sirepo.queues),
             env=env,
-            volumes=[sirepo.user_d(j2_ctx)],
+            volumes=[user_d],
             after=['rabbitmq.service'],
         )

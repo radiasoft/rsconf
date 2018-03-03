@@ -99,8 +99,6 @@ vssh sudo su - <<EOF
 set -e -x
 export install_channel=$install_channel install_server=$install_server
 curl "$install_server" | bash -s rsconf.sh "$host" setup_dev
-# postresql restart request
-curl "$install_server" | bash -s rsconf.sh "$host" setup_dev
 EOF
 END
 bash test.sh

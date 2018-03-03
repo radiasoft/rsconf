@@ -4,12 +4,22 @@
 #
 rsconf_append() {
     local file=$1
-    local line=$2
+    local egrep=$2
+    # Default $egrep is $line and $egrep is fgrep for exact match
+    local line=${3:-}
+    if [[ ! $line ]]; then
+        line=$egrep
+        egrep=
+    fi
     if [[ ! -e $file ]]; then
         install_err "$file: does not exist"
     fi
     # Assumes file must exist or be writable
-    if fgrep -s -q -x "$line" "$file"; then
+    if [[ $egrep ]]; then
+        if egrep -s -q "$egrep" "$file"; then
+            return ${rsconf_edit_no_change_res:-1}
+        fi
+    elif fgrep -s -q -x "$line" "$file"; then
         return ${rsconf_edit_no_change_res:-1}
     fi
     echo "$line" >> "$file"
@@ -33,22 +43,22 @@ rsconf_append_authorized_key() {
 
 rsconf_edit() {
     local file=$1
-    local grep=$2
+    local egrep=$2
     local perl=$3
     if [[ ! -e $file ]]; then
         install_err "$file: does not exist"
     fi
     local need=
-    if [[ $grep =~ ^![[:space:]]*(.+) ]]; then
+    if [[ $egrep =~ ^![[:space:]]*(.+) ]]; then
         need=1
-        grep=${BASH_REMATCH[1]}
+        egrep=${BASH_REMATCH[1]}
     fi
-    local g=$( set +e; grep -s -q "$grep" "$file" && echo 1 )
+    local g=$( set +e; egrep -s -q "$egrep" "$file" && echo 1 )
     if [[ $g != $need ]]; then
         return ${rsconf_edit_no_change_res:-1}
     fi
     perl -pi -e "$perl" "$file"
-    g=$( set +e; grep -s -q "$grep" "$file" && echo 1 )
+    g=$( set +e; egrep -s -q "$egrep" "$file" && echo 1 )
     if [[ $g == $need ]]; then
         install_err "$perl: failed to modify: $file"
     fi
@@ -158,7 +168,11 @@ rsconf_install_directory() {
         install_err "$path: exists but is not a directory"
     fi
     # parent directory must already exist
-    mkdir "$path"
+    local parent=$(dirname "$path")
+    if [[ ! -e $parent ]]; then
+        install_err "$path: parent directory ($parent) does not exist"
+    fi
+    rsconf_mkdir "$path"
     rsconf_no_check=1 rsconf_install_chxxx "$path"
     rsconf_service_file_changed "$path"
 }
@@ -195,6 +209,24 @@ rsconf_install_file() {
     rsconf_no_check=1 rsconf_install_chxxx "$tmp"
     mv -f "$tmp" "$path"
     rsconf_service_file_changed "$path"
+}
+
+rsconf_install_mount_point() {
+    local path=$1
+    if [[ -e $path ]]; then
+        if [[ -L $path || ! -d $path ]]; then
+            install_err "$path: mount point is not a directory"
+        fi
+        return
+    fi
+    local parent=$(dirname "$path")
+    if [[ ! -e $parent ]]; then
+        # Create the parent directory with strict permission (root & 700),
+        # because component may need to set permissions, and this maybe a
+        # prerequisite (e.g. logical_volume) for the component.
+        rsconf_mkdir "$parent"
+    fi
+    rsconf_install_directory "$path"
 }
 
 rsconf_install_symlink() {
@@ -247,6 +279,13 @@ rsconf_main() {
 
 You need to rerun this command"
     fi
+}
+
+rsconf_mkdir() {
+    local d=$1
+    # Create the directory (and parents) with strict permissions;
+    # Subsequent permissions will be created after
+    install -d -o root -g root -m 700 "$d"
 }
 
 rsconf_radia_run_as_user() {

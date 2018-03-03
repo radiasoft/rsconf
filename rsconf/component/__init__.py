@@ -111,6 +111,21 @@ class T(pkcollections.Dict):
         self.install_abspath(kc.crt, dst.crt, ignore_exists=True)
         return dst
 
+    def rsconf_append(self, path, line_or_grep, line=None):
+        l = "rsconf_edit_no_change_res=0 rsconf_append '{}' '{}'".format(path, line_or_grep)
+        if not line is None:
+            l += " '{}'".format(line)
+        self.append_root_bash(l)
+
+    def rsconf_edit(self, path, egrep, perl):
+        self.append_root_bash(
+            "rsconf_edit_no_change_res=0 rsconf_edit '{}' '{}' '{}'".format(
+                path,
+                egrep,
+                perl,
+            ),
+        )
+
     def secret_path_value(self, filename, gen_secret=None, visibility=None):
         from rsconf import db
 
