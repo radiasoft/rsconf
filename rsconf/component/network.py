@@ -80,7 +80,6 @@ class T(component.T):
         self.append_root_bash_with_main(j2_ctx)
 
 
-
 def _defroute(routes):
     defroute = None
     for r in sorted(routes, key=lambda x: x.name):
