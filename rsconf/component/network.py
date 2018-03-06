@@ -47,13 +47,20 @@ class T(component.T):
             assert defroute.net.search and defroute.net.nameservers, \
                 '{}: defroute needs search and nameservers'.format(defroute.net)
             self.install_resource('network/resolv.conf', j2_ctx, _RESOLV_CONF)
-        j2_ctx.network.update(
-            inet_dev=defroute if defroute.net.name.is_global else None,
-            private_devs=['lo'] + [d.name for d in devs if d.net.name.is_private],
-        )
-        # No public addresses, no iptables
-        j2_ctx.network.iptables_enable = bool(j2_ctx.network.inet_dev)
-        if j2_ctx.network.iptables_enable:
+        z = j2_ctx.network
+        if z.get('iptables_enable', False) and len(devs) == 1:
+            z.update(
+                inet_dev=defroute,
+                private_devs=['lo'],
+            )
+        else:
+            z.update(
+                inet_dev=defroute if defroute.net.name.is_global else None,
+                private_devs=['lo'] + [d.name for d in devs if d.net.name.is_private],
+            )
+            # No public addresses, no iptables
+            z.iptables_enable = bool(z.inet_dev)
+        if z.iptables_enable:
             # Only restart iptables service if we have iptables
             self.service_prepare((_IPTABLES, _SCRIPTS), name='iptables')
         self._write_files(j2_ctx, devs)
