@@ -67,6 +67,7 @@ curl {} | install_server={} bash -s {}
         host,
     )
 
+
 def passwd_secret_f(j2_ctx):
     from rsconf import db
 

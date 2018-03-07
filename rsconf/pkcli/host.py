@@ -11,6 +11,18 @@ from pykern import pkjson
 
 
 def init(host):
+    from rsconf.component import rsconf
+
+    _init_do(host, rsconf)
+
+
+def init_docker_registry(host):
+    from rsconf.component import docker_registry
+
+    _init_do(host, docker_registry)
+
+
+def _init_do(host, comp):
     from rsconf import db
 
     host = host.lower()
@@ -18,12 +30,5 @@ def init(host):
     for c, hosts in pkcollections.map_items(dbt.channel_hosts()):
         for h in hosts:
             if h == host.lower():
-                return _host_init(dbt, c, h)
+                return comp.host_init(dbt.host_db(c, h), h)
     pkcli.command_error('{}: host not found in rsconf_db', host)
-
-
-def _host_init(dbt, channel, host):
-    from rsconf.component import rsconf
-
-    hdb = dbt.host_db(channel, host)
-    return rsconf.host_init(hdb, host)

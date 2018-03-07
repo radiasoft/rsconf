@@ -47,7 +47,7 @@ def absolute_image(j2_ctx, image):
     return '{}/{}'.format(h, image)
 
 
-def add_host(hdb, host):
+def host_init(hdb, host):
     jf = db.secret_path(hdb, _PASSWD_SECRET_JSON_F, visibility=_PASSWD_VISIBILITY)
     if jf.check():
         with jf.open() as f:
@@ -66,6 +66,16 @@ def add_host(hdb, host):
 def install_crt_and_login(compt, j2_ctx):
     if not update_j2_ctx(j2_ctx):
         return
+    jf = db.secret_path(j2_ctx, _PASSWD_SECRET_JSON_F, visibility=_PASSWD_VISIBILITY)
+    with jf.open() as f:
+        y = pkjson.load_any(jf)
+    u = j2_ctx.rsconf_db.host
+    p = y.get(u, None)
+    if not p:
+        return
+    j2_ctx.docker.auths[j2_ctx.docker_registry.http_addr] = dict(
+        auth=base64.b64encode(u + ':' + p),
+    )
     compt.install_access(mode='700', owner=j2_ctx.docker_registry.run_u)
     compt.install_directory(_CERTS_D)
     d = _CERTS_D.join(j2_ctx.docker_registry.http_addr)
@@ -76,14 +86,6 @@ def install_crt_and_login(compt, j2_ctx):
     # Might be needed:
     # cp certs/domain.crt /etc/pki/ca-trust/source/anchors/myregistrydomain.com.crt
     # update-ca-trust
-    jf = db.secret_path(j2_ctx, _PASSWD_SECRET_JSON_F, visibility=_PASSWD_VISIBILITY)
-    with jf.open() as f:
-        y = pkjson.load_any(jf)
-    u = j2_ctx.rsconf_db.host
-    p = y[u]
-    j2_ctx.docker.auths[j2_ctx.docker_registry.http_addr] = dict(
-        auth=base64.b64encode(u + ':' + p),
-    )
 
 
 def update_j2_ctx(j2_ctx):

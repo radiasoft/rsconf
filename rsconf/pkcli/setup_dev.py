@@ -77,6 +77,8 @@ def default_command():
     # dev only, really insecure, but makes consistent builds easy
     _sym('~/src/radiasoft')
     _sym('~/src/biviosoftware')
+    # Tests init_docker_registry, which should only be set for specific hosts
+    subprocess.check_call(['rsconf', 'host', 'init_docker_registry', j2_ctx.host])
 
 
 #TODO(robnagler) needs to moved
@@ -86,4 +88,5 @@ def _add_host(j2_ctx, srv, host):
 
     netrc = rsconf.host_init(j2_ctx, host)
     pkio.write_text(srv.join(host + '-netrc'), netrc)
-    docker_registry.add_host(j2_ctx, host)
+    if host == j2_ctx.master:
+        docker_registry.host_init(j2_ctx, host)
