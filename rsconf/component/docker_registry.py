@@ -23,7 +23,7 @@ _DOCKER_HUB_HOST = 'docker.io'
 _PASSWD_SECRET_JSON_F = 'docker_registry_passwd.json'
 _PASSWD_SECRET_F = 'docker_registry_passwd'
 _HTTP_SECRET_F = 'docker_registry_http_secret'
-_PASSWD_VISIBILITY = 'channel'
+_PASSWD_VISIBILITY = 'global'
 _HTTP_SECRET_VISIBILITY = _PASSWD_VISIBILITY
 # 5000 is hardwired, because Docker doesn't have a way of configuring it; they
 # just assume you are using the docker proxy (-P 80:5000) or a regular proxy (which
