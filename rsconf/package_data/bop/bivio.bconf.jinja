@@ -14,6 +14,15 @@ use {{ bop.perl_root }}::BConf;
     'Bivio::Delegate::Cookie' => {
         tag => '{{ bop.cookie_tag }}',
     },
+    'Bivio::Ext::DBI' => {
+        password => '{{ bop.dbi_password }}',
+        template1 => {
+            password => '{{ postgresql.postgres_password }}',
+        },
+        dbms => {
+            password => '{{ postgresql.postgres_password }}',
+        },
+    },
     'Bivio::IO::Alert' => {
         want_time => 1,
         want_pid => 1,
@@ -23,6 +32,11 @@ use {{ bop.perl_root }}::BConf;
     },
     'Bivio::IO::Log' => {
         directory => '/var/log/bop',
+    },
+    'Bivio::Type::Secret' => {
+        algorithm => '{{ bop.secret.algorithm }}',
+        key => pack('h*', '{{ bop.secret.key_hex }}'),
+        magic => '{{ bop.secret.magic }}',
     },
     'Bivio::UI::Facade' => {
         local_file_root => '/var/www/facades',

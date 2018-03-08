@@ -5,4 +5,7 @@ fi
 set -euo pipefail
 cd '{{ systemd.run_d }}'
 . ./env
+if [[ $@ ]]; then
+    exec "$@"
+fi
 exec {{ systemd.service_exec }}

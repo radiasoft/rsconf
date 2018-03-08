@@ -22,16 +22,24 @@ default:
     server_status_location: /bop-status
     is_production: false
     bconf_aux: ''
+    secret:
+      algorithm: DES
+      magic: XYZ
   celery_sirepo:
     queues: "sequential,parallel"
   component:
     tls_crt_create: true
     tls_crt:
       dev_host:
+        - beforeother.{{ host }}
+        - m-petshop.{{ host }}
+        - other.{{ host }}
         - petshop.{{ host }}
+        - requiresecure.{{ host }}
         - sirepo.{{ host }}
         - {{ host }}
         - z5.radia.run
+        - alpha2.sirepo.com
       dev_master:
         - {{ master }}
   docker:
@@ -75,12 +83,18 @@ default:
       # first vhost is default mail_host
       - domains:
           - petshop.{{ host }}
+          - bprog.{{ host }}
         mail_domains:
           - petshop.{{ host }}
         nginx_aux_directives: |
           location /nginx_redirect/(.*) {
               return 301 $scheme://$http_host/$1;
           }
+
+      - facade: beforeother
+      - facade: m-petshop
+      - facade: other
+      - facade: requiresecure
   postgresql:
     # https://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server#effective_cache_size
     effective_cache_size: 244MB
@@ -138,6 +152,7 @@ channel:
     docker:
       iptables: true
     petshop:
+      dbi_password: petpass
       nginx:
         vhost: petshop.{{ host }}
     postgresql:
@@ -167,7 +182,8 @@ host:
         exports:
           /srv/sirepo/db/users: [ 10.10.10.0/24 ]
       rsconf_db:
-        components: [ nfs_server, rabbitmq, celery_sirepo, sirepo ]
+        # components: [ nfs_server, rabbitmq, celery_sirepo, sirepo ]
+        components: [ bop ]
     {{ master }}:
       base_os:
         volume_groups: []
