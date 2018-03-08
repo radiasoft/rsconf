@@ -8,7 +8,7 @@ from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
 from pykern import pkconfig
 from pykern import pkio
-from pykern.pkdebug import pkdp, pkdc
+from pykern.pkdebug import pkdp, pkdc, pkdlog, pkdexc
 import grp
 import os
 import subprocess
@@ -99,4 +99,8 @@ def default_command():
     dbt = db.T()
     for c, hosts in pkcollections.map_items(dbt.channel_hosts()):
         for h in hosts:
-            T(dbt, c, h).create_host()
+            try:
+                T(dbt, c, h).create_host()
+            except Exception:
+                pkdlog('{}: build failed:', h)
+                raise
