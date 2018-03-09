@@ -4,10 +4,6 @@
     if [[ -d {{ bop.db_host_d }}/RealmFile ]]; then
         return
     fi
-    if [[ $(systemctl is-active postgresql) != active ]]; then
-        rsconf_rerun_required 'postgresql needs to be running'
-        return
-    fi
     start_run_u=root {{ bop.run_d }}/start bash ${install_debug:+-x} <<'EOF1'
 #!/bin/bash
 set -e
@@ -17,7 +13,7 @@ chown '{{ rsconf_db.run_u }}' /var/www/facades/*/ddl
 su - '{{ rsconf_db.run_u }}' <<'EOF2'
 set -e
 install -m 600 /dev/stdin ~/.pgpass <<'EOF4'
-localhost:local:*:*:{{ postgresql.postgres_password }}
+localhost:*:*:*:{{ postgresql.postgres_password }}
 EOF4
 cat ~/.pgpass
 d=/tmp/bop_initdb_$$-$RANDOM
