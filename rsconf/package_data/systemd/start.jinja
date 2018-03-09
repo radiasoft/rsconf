@@ -14,6 +14,10 @@ if (( $# > 0 )); then
     if [[ -t 0 ]]; then
         flags+=( -t )
     fi
+    cmd=( {{ systemd.cmd }} )
+    if [[ ${cmd[@]} ]]; then
+        image_cmd+=( "${cmd[@]}" )
+    fi
     image_cmd+=( "$@" )
     if [[ ${start_run_u:=} ]]; then
         user=$start_run_u
