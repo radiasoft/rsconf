@@ -12,7 +12,8 @@ if (( $# > 0 )); then
     # No name if called on the command line
     flags=( -i )
     if [[ -t 0 ]]; then
-        flags+=( -t )
+        # probably debugging so turn on strace
+        flags+=( -t --cap-add SYS_PTRACE )
     fi
     cmd=( {{ systemd.cmd }} )
     if [[ ${cmd[@]} ]]; then
