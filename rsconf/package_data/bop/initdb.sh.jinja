@@ -13,7 +13,7 @@ chown '{{ rsconf_db.run_u }}' /var/www/facades/*/ddl
 su - '{{ rsconf_db.run_u }}' <<'EOF2'
 set -e
 install -m 600 /dev/stdin ~/.pgpass <<'EOF4'
-localhost:*:*:*:{{ postgresql.postgres_password }}
+localhost:*:*:postgres:{{ postgresql.postgres_password }}
 EOF4
 cat ~/.pgpass
 d=/tmp/bop_initdb_$$-$RANDOM
