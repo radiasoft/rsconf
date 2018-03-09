@@ -25,7 +25,7 @@ Some of the design goals are:
 To configure the initial master in Vagrant on a Mac or a Linux development environment:
 
 ```sh
-curl radia.run | bash -s vagrant-centos7 v3.radia.run
+radia_run vagrant-centos7 v3.radia.run
 vssh
 sudo su -
 curl radia.run | bash -s redhat-base
@@ -73,8 +73,8 @@ cd ~/src/biviosoftware
 test -d container-perl || gcl container-perl
 cd container-perl
 export build_push=1 build_docker_registry=$(hostname -f):5000
-curl radia.run | bash -s container-build
-curl radia.run | bash -s biviosoftware/container-bop Bivio b Bivio::PetShop petshop
+radia_run container-build
+radia_run biviosoftware/container-bop Bivio b Bivio::PetShop petshop
 ```
 
 
@@ -88,7 +88,7 @@ cat > test.sh <<'END'
 . ~/.bashrc
 set -e -x
 export host=v4.radia.run install_server=http://v3.radia.run:2916 install_channel=dev
-curl radia.run | bash -s vagrant-centos7 "$host" "$(dig +short "$host")"
+radia_run vagrant-centos7 "$host" "$(dig +short "$host")"
 vssh sudo su - <<EOF
 export install_channel=dev install_server="$install_server"
 # fails because of reboot
