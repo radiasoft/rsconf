@@ -5,6 +5,9 @@ postgresql_main() {
         return
     fi
     local old=/var/lib/pgsql
+    if [[ -L  $old ]]; then
+        install_err "$old: is a symlink, need to yum reinstall postgresql-server"
+    fi
     mv -f "$old" '{{ postgresql.run_d }}'
     # postgresql-setup hardwires /var/lib/pgsql for logs so don't bother
     # with anything but a symlink. $PGDATA will remain /var/lib/pgsql/data,

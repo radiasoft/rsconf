@@ -16,6 +16,9 @@ set -e
 chown '{{ rsconf_db.run_u }}' /var/www/facades/*/ddl
 su - '{{ rsconf_db.run_u }}' <<'EOF2'
 set -e
+install -m 600 /dev/stdin ~/.pgpass <<'EOF4'
+localhost:local:*:postgres:{{ postgresql.postgres_password }}
+EOF4
 d=/tmp/bop_initdb_$$-$RANDOM
 mkdir -p "$d/bconf.d"
 export BCONF="$d/bivio.bconf"
