@@ -16,12 +16,6 @@ use {{ bop.perl_root }}::BConf;
     },
     'Bivio::Ext::DBI' => {
         password => '{{ bop.dbi_password }}',
-        template1 => {
-            password => '{{ postgresql.postgres_password }}',
-        },
-        dbms => {
-            password => '{{ postgresql.postgres_password }}',
-        },
     },
     'Bivio::IO::Alert' => {
         want_time => 1,
