@@ -77,7 +77,11 @@ class T(pkcollections.Dict):
         from rsconf import component
 
         for c in components:
-            self.build_component(c)
+            try:
+                self.build_component(c)
+            except Exception:
+                pkdlog('{}: component failed:', c)
+                raise
 
     def write_root_bash(self, basename, lines):
         # python and perl scripts?
@@ -102,5 +106,5 @@ def default_command():
             try:
                 T(dbt, c, h).create_host()
             except Exception:
-                pkdlog('{}: build failed:', h)
+                pkdlog('{}: host failed:', h)
                 raise
