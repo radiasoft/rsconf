@@ -13,13 +13,13 @@ from pykern import pkjson
 def init(host):
     from rsconf.component import rsconf
 
-    _init_do(host, rsconf)
+    return _init_do(host, rsconf)
 
 
 def init_docker_registry(host):
     from rsconf.component import docker_registry
 
-    _init_do(host, docker_registry)
+    return _init_do(host, docker_registry)
 
 
 def _init_do(host, comp):
