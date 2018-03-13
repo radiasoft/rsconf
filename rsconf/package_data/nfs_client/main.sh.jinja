@@ -17,7 +17,7 @@ nfs_client_add() {
     # Technically can mount $fs twice so what we want to ensure is $mount is not twice
     rsconf_edit_no_change_res=0 rsconf_append /etc/fstab "[[:space:]]$mount[[:space:]]" "$fs $mount nfs $options 0 0"
     # https://stackoverflow.com/a/460061/3075806
-    if [[ ! $(stat -f -L -c %T "$mount" 2>/dev/null || true) != nfs ]]; then
+    if [[ $(stat -f -L -c %T "$mount" 2>/dev/null || true) != nfs ]]; then
         mount "$mount"
         rsconf_service_file_changed "$mount"
     fi
