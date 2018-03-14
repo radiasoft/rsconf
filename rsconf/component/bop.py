@@ -95,6 +95,13 @@ def _install_vhosts(self, j2_ctx):
     for vh in j2_ctx.bop.vhosts:
         h, j2_ctx.bop.domain_aliases = _domain(vh)
         j2_ctx.bop.aux_directives = vh.get('nginx_aux_directives', '')
-        nginx.install_vhost(self, vhost=h, resource_d='bop', j2_ctx=j2_ctx)
+        nginx.install_vhost(
+            self,
+            vhost=h,
+            backend_host=j2_ctx.rsconf_db.host,
+            backend_port=j2_ctx.bop.listen_base + 1,
+            resource_d='bop',
+            j2_ctx=j2_ctx,
+        )
         for m in vh.get('mail_domains', []):
             self.bopt.hdb.bop.mail_domains[m] = j2_ctx.bop.listen_base

@@ -25,6 +25,7 @@ class T(component.T):
         self.buildt.require_component('docker', 'nginx')
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.jupyterhub
+        z.vhost = j2_ctx.jupyterhub.vhosts[j2_ctx.rsconf_db.host]
         run_d = systemd.docker_unit_prepare(self)
         z.update(
             user_d=run_d.join(_USER_SUBDIR),

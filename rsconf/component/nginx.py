@@ -35,13 +35,15 @@ def install_auth(compt, filename, host_path, visibility, j2_ctx):
     )
 
 
-def install_vhost(compt, vhost, resource_d=None, j2_ctx=None):
+def install_vhost(compt, vhost, backend_host=None, backend_port=None, resource_d=None, j2_ctx=None):
     update_j2_ctx_and_install_access(compt, j2_ctx)
     kc = compt.install_tls_key_and_crt(vhost, CONF_D)
     j2_ctx.setdefault('nginx', pkcollections.Dict()).update(
         tls_crt=kc.crt,
         tls_key=kc.key,
         vhost=vhost,
+        backend_host=backend_host,
+        backend_port=backend_port,
     )
     compt.install_resource(
         (resource_d or compt.name) + '/nginx.conf',

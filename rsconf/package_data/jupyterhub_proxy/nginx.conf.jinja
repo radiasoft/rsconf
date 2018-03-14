@@ -1,0 +1,29 @@
+server {
+    listen {{ nginx.vhost }}:80;
+    server_name {{ nginx.vhost }};
+    return 301 https://$http_host$request_uri;
+}
+
+server {
+    listen {{ nginx.vhost }}:443 ssl;
+    server_name {{ nginx.vhost }};
+    root {{ nginx.default_root }};
+    ssl_certificate {{ nginx.tls_crt }};
+    ssl_certificate_key {{ nginx.tls_key }};
+    client_max_body_size 100m;
+    location / {
+        proxy_pass http://{{ nginx.backend_host }}:{{ nginx.backend_port }};
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        # https://www.kb.cert.org/vuls/id/797896
+        proxy_set_header Proxy "";
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Via $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+        proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+   }
+}

@@ -50,7 +50,7 @@ def default_command():
         user=pwd.getpwuid(os.getuid())[0],
         group=grp.getgrgid(os.getgid())[0],
         host='v4.radia.run',
-        all_host='z5.radia.run',
+        all_host='v5.radia.run',
         master='v3.radia.run',
         port=2916,
     )

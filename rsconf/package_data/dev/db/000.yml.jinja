@@ -31,15 +31,17 @@ default:
     tls_crt_create: true
     tls_crt:
       dev_host:
+        - alpha2.sirepo.com
         - beforeother.{{ host }}
+        - jupyter.{{ all_host }}
+        - jupyter.{{ master }}
         - m-petshop.{{ host }}
         - other.{{ host }}
         - petshop.{{ host }}
         - requiresecure.{{ host }}
         - sirepo.{{ host }}
+        - {{ all_host }}
         - {{ host }}
-        - z5.radia.run
-        - alpha2.sirepo.com
       dev_master:
         - {{ master }}
   docker:
@@ -54,7 +56,8 @@ default:
     #  client_id: ""
     #  client_secret: ""
     port: 7913
-    vhost: jupyter.{{ host }}
+    vhosts:
+      {{ host }}: jupyter.{{ master }}
   network:
     devices: {}
     trusted: {}
@@ -188,7 +191,7 @@ host:
       base_os:
         volume_groups: []
       rsconf_db:
-        components: [ docker_registry, rsconf, bkp ]
+        components: [ docker_registry, rsconf, jupyterhub_proxy, bkp ]
     # never installed, just for testing build
     {{ all_host }}:
       docker:
@@ -197,6 +200,8 @@ host:
         github:
           client_id: xyzzy
           client_secret: big-secret
+        vhosts:
+          {{ all_host }}: jupyter.{{ all_host }}
       network:
         public_ssh: true
         natted_nets: [ 10.10.10.0/24 ]
@@ -215,7 +220,7 @@ host:
         exports:
           /exports/foo: [ 10.10.10.0/24, localhost ]
       rsconf_db:
-        components: [ nfs_client, nfs_server, rabbitmq, celery_sirepo, sirepo, bop, jupyterhub ]
+        components: [ nfs_client, nfs_server, rabbitmq, celery_sirepo, sirepo, bop, jupyterhub, jupyterhub_proxy ]
 
 
 #Local Variables:

@@ -28,7 +28,11 @@ class T(component.T):
             srv_d=j2_ctx.rsconf_db.srv_d,
             host_subdir=db.HOST_SUBDIR,
         )
-        nginx.install_vhost(self, vhost=_vhost(j2_ctx), j2_ctx=j2_ctx)
+        nginx.install_vhost(
+            self,
+            vhost=_vhost(j2_ctx),
+            j2_ctx=j2_ctx,
+        )
         nginx.install_auth(
             self,
             PASSWD_SECRET_F,

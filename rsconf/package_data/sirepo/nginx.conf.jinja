@@ -16,6 +16,6 @@ server {
         client_max_body_size 50m;
         uwsgi_read_timeout 300s;
         uwsgi_send_timeout 300s;
-        uwsgi_pass {{ nginx.vhost }}:{{ sirepo.pkcli.service_port }};
+        uwsgi_pass {{ nginx.backend_host }}:{{ nginx.backend_port }};
     }
 }
