@@ -38,10 +38,12 @@ class T(component.T):
             gv += "    '{}'\n".format(d)
         gv += ')\n'
         z.global_vars = gv
-        hc = ''
+        x = ''
         for h in z.hosts:
-            hc += "    primary_host '{}'\n".format(h)
-        z.host_cmds = hc
+            x += "    primary_host '{}'\n".format(h)
+        for h in z.secondaries:
+            x += "    primary_secondary '{}'\n".format(h)
+        z.main_cmds = x
         te = run_d.join('primary')
         systemd.timer_enable(
             self,
