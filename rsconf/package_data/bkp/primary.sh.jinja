@@ -77,10 +77,10 @@ primary_secondary() {
     local secondary=$1
     local src_d cmd
     primary_log "$secondary: secondary begin"
-    for src_d in "$bkp_mirror_d/current/*.*" do
+    for src_d in "$bkp_mirror_d/current"/*.*; do
         primary_log "$(basename $src_d): secondary copy"
         # Over the WAN so run compression at rsync level
-        primary_rsync --compress "$src_d" "$host:/"
+        primary_rsync --compress "$src_d" "$secondary:/"
     done
     primary_log "$secondary: secondary end"
 }
