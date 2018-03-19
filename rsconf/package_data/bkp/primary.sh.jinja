@@ -75,7 +75,7 @@ primary_rsync() {
 
 primary_secondary() {
     local secondary=$1
-    local src_d cmd
+    local src_d
     primary_log "$secondary: secondary begin"
     for src_d in "$bkp_mirror_d/current"/*.*; do
         primary_log "$(basename $src_d): secondary copy"
