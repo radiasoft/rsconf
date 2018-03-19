@@ -56,10 +56,13 @@ class T(component.T):
         else:
             z.update(
                 inet_dev=defroute if defroute.net.name.is_global else None,
-                private_devs=['lo'] + [d.name for d in devs if d.net.name.is_private],
+            )
+            z.setdefault(
+                'private_devs',
+                ['lo'] + [d.name for d in devs if d.net.name.is_private],
             )
             # No public addresses, no iptables
-            z.iptables_enable = bool(z.inet_dev)
+            z.setdefault('iptables_enable', bool(z.inet_dev))
         if z.iptables_enable:
             # Only restart iptables service if we have iptables
             self.service_prepare((_IPTABLES, _SCRIPTS), name='iptables')
@@ -162,7 +165,8 @@ def _nets(j2_ctx):
         if 'nameservers' in v:
             v.nameservers = sorted([ipaddress.ip_address(x) for x in v.nameservers])
         nets[n] = v
-    j2_ctx.network.trusted_public_nets = sorted(
-        [n.name for n in nets.values() if n.name.is_global],
+    j2_ctx.network.setdefault(
+        'trusted_public_nets',
+        sorted([n.name for n in nets.values() if n.name.is_global]),
     )
     return nets, net_check
