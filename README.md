@@ -74,7 +74,10 @@ test -d container-perl || gcl container-perl
 cd container-perl
 export build_push=1 build_docker_registry=$(hostname -f):5000
 radia_run container-build
-radia_run biviosoftware/container-bop Bivio b Bivio::PetShop petshop
+radia_run biviosoftware/container-bop Bivio
+radia_run biviosoftware/container-bop BivioOrg
+radia_run biviosoftware/container-bop Artisans
+radia_run biviosoftware/container-bop Societas
 ```
 
 
@@ -86,7 +89,7 @@ cd ~/v4
 cat > test.sh <<'END'
 #!/bin/bash
 . ~/.bashrc
-set -e -x
+set -euxo pipefail
 export host=v4.radia.run install_server=http://v3.radia.run:2916 install_channel=dev
 radia_run vagrant-centos7 "$host" "$(dig +short "$host")"
 vssh sudo su - <<EOF
