@@ -26,6 +26,11 @@ class T(component.T):
             _JOURNAL_CONF_D.join('99-rsconf.conf'),
         )
         self.install_resource(
+            'base_os/logrotate.conf',
+            j2_ctx,
+            '/etc/logrotate.conf',
+        )
+        self.install_resource(
             'base_os/60-rsconf-base.conf',
             j2_ctx,
             '/etc/sysctl.d/60-rsconf-base.conf',

@@ -69,6 +69,20 @@ base_os_logical_volumes() {
     {{ base_os.logical_volume_cmds }}
 }
 
+base_os_logrotate() {
+    # These don't have sensible defaults. See our logrotate.conf.jinja
+    rm -f /etc/logrotate.d/{bootlog,yum}
+    if [[ -e /etc/logrotate.d/nginx ]]; then
+        # This retention policy should be global
+        rsconf_edit_no_change_res=0 rsconf_edit /etc/logrotate.d/nginx '#rotate' \
+            's/rotate/#rotate/'
+    fi
+    # Must exist for logrotate.conf.jinja to export and rotate the journal
+    if [[ ! -e /var/log/journal.export ]]; then
+        install -m 600 -o root -g root /var/log/journal.export
+    fi
+}
+
 base_os_main() {
     rsconf_radia_run_as_user root redhat-base
     if [[ ! -d {{ rsconf_db.host_run_d }} ]]; then
@@ -120,6 +134,7 @@ base_os_main() {
     base_os_journal_persist
     rsconf_edit_no_change_res=0 rsconf_append /etc/screenrc 'escape ^^^^'
     base_os_logical_volumes
+    base_os_logrotate
     if [[ -n $reboot ]]; then
         rsconf_reboot
     fi

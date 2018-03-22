@@ -1,0 +1,67 @@
+copytruncate
+compress
+create
+daily
+dateext
+rotate 28
+
+/var/log/boot.log {
+    create 0600 root root
+    missingok
+    monthly
+    notifempty
+    rotate 3
+}
+
+/var/log/btmp {
+    create 0600 root utmp
+    missingok
+    monthly
+    notifempty
+    rotate 3
+}
+
+/var/log/journal.export {
+    create 0600 root root
+    dateext
+    # Export the log with some overlap so we don's entries
+    firstaction
+	journalctl --since -25h --output export > /var/log/journal.export
+    endscript
+    # always empty
+    ifempty
+}
+
+/var/log/lastlog {
+    create 0644 root root
+    missingok
+    monthly
+    notifempty
+    rotate 3
+}
+
+/var/log/tallylog {
+    create 0600 root root
+    missingok
+    monthly
+    notifempty
+    rotate 3
+}
+
+/var/log/wtmp {
+    create 0664 root utmp
+    missingok
+    monthly
+    notifempty
+    rotate 3
+}
+
+/var/log/yum.log {
+    create 0600 root root
+    missingok
+    monthly
+    notifempty
+    rotate 3
+}
+
+include /etc/logrotate.d
