@@ -1,9 +1,13 @@
-copytruncate
 compress
+# https://www.rootusers.com/gzip-vs-bzip2-vs-xz-performance-comparison/
+compresscmd /usr/bin/xz
+compressext .xz
+copytruncate
 create
 daily
 dateext
 rotate 28
+uncompresscmd /usr/bin/unxz
 
 /var/log/boot.log {
     create 0600 root root
