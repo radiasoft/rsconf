@@ -76,4 +76,15 @@ uncompresscmd /usr/bin/unxz
     rotate 3
 }
 
+/srv/*/log/{access_log,error_log} {
+    missingok
+    notifempty
+    nosharedscripts
+    postrotate
+        #POSIT: bop/httpd.conf.jinja PidFile
+        #POSIT: container name same as directory
+        docker exec $(dirname $(dirname $1)) bash -c 'kill -USR1 $(cat /tmp/httpd.pid)'
+    endscript
+}
+
 include /etc/logrotate.d
