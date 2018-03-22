@@ -103,7 +103,7 @@ base_os_main() {
     rsconf_install_access 400 root root
     rsconf_install_file /etc/sysctl.d/60-rsconf-base.conf
 #TODO(robnagler) return result to test install?
-    sysctl -p --system
+    sysctl -q -p --system
     if (( $i == 0 )); then
         # Need to disable ipv6 for rpcbind and Python 3's ssl library seems to want
         # to try ipv6, and if it can't get it, it dies.
