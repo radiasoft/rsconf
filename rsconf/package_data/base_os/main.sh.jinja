@@ -79,7 +79,7 @@ base_os_logrotate() {
     fi
     # Must exist for logrotate.conf.jinja to export and rotate the journal
     if [[ ! -e /var/log/journal.export ]]; then
-        install -m 600 -o root -g root /var/log/journal.export
+        install -m 600 -o root -g root /dev/null /var/log/journal.export
     fi
 }
 
