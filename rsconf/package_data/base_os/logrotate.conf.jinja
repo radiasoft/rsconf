@@ -9,7 +9,8 @@ dateext
 rotate 28
 uncompresscmd /usr/bin/unxz
 
-/var/log/boot.log {
+/var/log/boot.log
+{
     create 0600 root root
     missingok
     monthly
@@ -17,7 +18,8 @@ uncompresscmd /usr/bin/unxz
     rotate 3
 }
 
-/var/log/btmp {
+/var/log/btmp
+{
     create 0600 root utmp
     missingok
     monthly
@@ -25,7 +27,8 @@ uncompresscmd /usr/bin/unxz
     rotate 3
 }
 
-/var/log/journal.export {
+/var/log/journal.export
+{
     create 0600 root root
     dateext
     # Export the log with some overlap so we don's entries
@@ -36,7 +39,8 @@ uncompresscmd /usr/bin/unxz
     ifempty
 }
 
-/var/log/lastlog {
+/var/log/lastlog
+{
     create 0644 root root
     missingok
     monthly
@@ -44,15 +48,8 @@ uncompresscmd /usr/bin/unxz
     rotate 3
 }
 
-# POSIT: /var/lib/pgsql/data/rsconf.conf
-/var/lib/pgsql/data/pg_log/postgresql.log {
-    create 0600 postgres postgres
-    missingok
-    notifempty
-    copytruncate
-}
-
-/var/log/tallylog {
+/var/log/tallylog
+{
     create 0600 root root
     missingok
     monthly
@@ -60,7 +57,8 @@ uncompresscmd /usr/bin/unxz
     rotate 3
 }
 
-/var/log/wtmp {
+/var/log/wtmp
+{
     create 0664 root utmp
     missingok
     monthly
@@ -68,23 +66,13 @@ uncompresscmd /usr/bin/unxz
     rotate 3
 }
 
-/var/log/yum.log {
+/var/log/yum.log
+{
     create 0600 root root
     missingok
     monthly
     notifempty
     rotate 3
-}
-
-/srv/*/log/{access_log,error_log} {
-    missingok
-    notifempty
-    nosharedscripts
-    postrotate
-        #POSIT: bop/httpd.conf.jinja PidFile
-        #POSIT: container name same as directory
-        docker exec $(dirname $(dirname $1)) bash -c 'kill -USR1 $(cat /tmp/httpd.pid)'
-    endscript
 }
 
 include /etc/logrotate.d

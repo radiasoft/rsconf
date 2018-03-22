@@ -49,7 +49,7 @@ RequestReadTimeout header=5
 
 ServerRoot /etc/httpd
 # /var/run is not accessible; not a security concern
-PidFile /tmp/httpd.pid
+PidFile {{ bop.pid_file }}
 TypesConfig /etc/mime.types
 UseCanonicalName Off
 LogFormat "%V %h %P %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined

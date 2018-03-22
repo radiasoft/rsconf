@@ -28,7 +28,8 @@ class T(component.T):
                 vhostt.bopt = self
                 self.buildt.build_component(vhostt)
             j2_ctx = self.hdb.j2_ctx_copy()
-            j2_ctx.bop.mail_domain_keys = sorted(self.hdb.bop.mail_domains.keys())
+            z = j2_ctx.bop
+            z.mail_domain_keys = sorted(self.hdb.bop.mail_domains.keys())
             nginx.update_j2_ctx_and_install_access(self, j2_ctx)
             self.install_resource(
                 'bop/nginx_common.conf',
@@ -38,12 +39,14 @@ class T(component.T):
             self.append_root_bash_with_main(j2_ctx)
             return
         j2_ctx = self.hdb.j2_ctx_copy()
-        j2_ctx.bop.app_name = self.name
-        db.merge_dict(j2_ctx.bop, j2_ctx[self.name])
+        z = j2_ctx.bop
+        z.app_name = self.name
+        db.merge_dict(z, j2_ctx[self.name])
         run_d = systemd.docker_unit_prepare(self)
         self.install_access(mode='700', owner=self.hdb.rsconf_db.run_u)
         self.install_directory(run_d)
-        j2_ctx.bop.run_d = run_d
+        z.run_d = run_d
+        z.pid_file = run_d.join('httpd.pid')
         volumes = ['/var/run/postgresql/.s.PGSQL.5432']
         for host_d, guest_d in (
             # POSIT: /etc/bivio.bconf has same values
@@ -53,7 +56,7 @@ class T(component.T):
             ('logbop', '/var/log/bop'),
         ):
             x = run_d.join(host_d)
-            j2_ctx.bop['{}_host_d'.format(host_d)] = x
+            z['{}_host_d'.format(host_d)] = x
             self.install_directory(x)
             volumes.append([x, guest_d])
         self.install_access(mode='400')
@@ -64,7 +67,16 @@ class T(component.T):
             x = run_d.join(host_f)
             self.install_resource('bop/' + host_f, j2_ctx, x)
             volumes.append([x, guest_f])
-        image = docker_registry.absolute_image(j2_ctx, j2_ctx.bop.docker_image)
+        self.install_access(mode='500')
+        z.postrotate = run_d.join('postrotate')
+        self.install_resource('bop/postrotate.sh', j2_ctx, z.postrotate)
+        self.install_access(mode='400', owner=j2_ctx.rsconf_db.root_u)
+        self.install_resource(
+            'bop/logrotate.conf',
+            j2_ctx,
+            '/etc/logrotate.d/' + z.app_name,
+        )
+        image = docker_registry.absolute_image(j2_ctx, z.docker_image)
         systemd.docker_unit_enable(
             self,
             image=image,
@@ -77,7 +89,7 @@ class T(component.T):
         self.append_root_bash_with_resource(
             'bop/initdb.sh',
             j2_ctx,
-            j2_ctx.bop.app_name + '_initdb',
+            z.app_name + '_initdb',
         )
         self.bopt.hdb.bop.aux_directives += j2_ctx.get('bop.nginx_aux_directives', '')
         _install_vhosts(self, j2_ctx)
