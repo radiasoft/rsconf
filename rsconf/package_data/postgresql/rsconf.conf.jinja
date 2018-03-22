@@ -7,9 +7,10 @@ checkpoint_completion_target = 0.9
 checkpoint_segments = 64
 listen_addresses = ''
 log_checkpoints = on
-log_filename = 'postgresql.log-%Y%m%d'
+# POSIT: /etc/logrotate.conf rotates the logs
+log_filename = 'postgresql.log'
 log_line_prefix = '%t %d %p '
-log_rotation_age = 1d
+log_rotation_age = 0
 maintenance_work_mem = 64MB
 max_connections = 128
 ssl = on

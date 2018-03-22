@@ -40,6 +40,14 @@ rotate 28
     rotate 3
 }
 
+# POSIT: /var/lib/pgsql/data/rsconf.conf
+/var/lib/pgsql/data/pg_log/postgresql.log {
+    create 0600 postgres postgres
+    missingok
+    notifempty
+    copytruncate
+}
+
 /var/log/tallylog {
     create 0600 root root
     missingok
