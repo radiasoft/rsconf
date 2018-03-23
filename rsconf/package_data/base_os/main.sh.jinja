@@ -32,7 +32,7 @@ base_os_journal_persist() {
 }
 
 base_os_logical_volume() {
-    local name=$1 gigabytes=$2 vg=$3 mount_d=$4 $mode=$5
+    local name=$1 gigabytes=$2 vg=$3 mount_d=$4 mode=$5
     local dev="/dev/mapper/$vg-$name"
     local x=$(lvs --units g --no-headings -o lv_size "$dev" 2>/dev/null)
     if ! grep -s -q  /etc/fstab; then
