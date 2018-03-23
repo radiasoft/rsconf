@@ -4,7 +4,7 @@ postgresql_main() {
     local old=/var/lib/pgsql/data/pg_log
     if [[ ! -L $old ]]; then
         # save the old logs, just in case
-        for f in $(ls -tr "$old"/*.log 2>/dev/null || true); then
+        for f in $(ls -tr "$old"/*.log 2>/dev/null || true); do
             cat $f >> '{{ postgresql.log_f }}'
         done
         chown postgres:postgres '{{ postgresql.log_f }}'
