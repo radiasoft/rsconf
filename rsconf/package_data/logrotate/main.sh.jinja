@@ -1,0 +1,22 @@
+#!/bin/bash
+
+logrotate_main() {
+    # We use a systemd timer so can have output in the journal, and not emailed (anacron requires email)
+    rm -f /etc/cron.daily/logrotate
+    # We have our own run directory
+    if [[ ! -L /var/lib/logrotate ]]; then
+        rm -rf /var/lib/logrotate
+        ln -r -s '{{ logrotate.run_d }}' /var/lib/logrotate
+    fi
+    # These don't have sensible defaults. See our logrotate.conf.jinja
+    rm -f /etc/logrotate.d/{bootlog,yum}
+    if [[ -e /etc/logrotate.d/nginx ]]; then
+        # This retention policy should be global
+        rsconf_edit_no_change_res=0 rsconf_edit /etc/logrotate.d/nginx '#rotate' \
+            's/\brotate/#rotate/'
+    fi
+    # Must exist for logrotate.conf.jinja to export and rotate the journal
+    if [[ ! -e /var/log/journal.export ]]; then
+        install -m 600 -o root -g root /dev/null /var/log/journal.export
+    fi
+}

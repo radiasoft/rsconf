@@ -26,11 +26,6 @@ class T(component.T):
             _JOURNAL_CONF_D.join('99-rsconf.conf'),
         )
         self.install_resource(
-            'base_os/logrotate.conf',
-            j2_ctx,
-            '/etc/logrotate.conf',
-        )
-        self.install_resource(
             'base_os/60-rsconf-base.conf',
             j2_ctx,
             '/etc/sysctl.d/60-rsconf-base.conf',
@@ -45,5 +40,4 @@ class T(component.T):
                     lv.name, lv.gigabytes, vg.name, lv.mount_d,
                 )
         j2_ctx.base_os.logical_volume_cmds = cmds
-        #TODO(robnagler) watch and update hostname? restart networking???
         self.append_root_bash_with_main(j2_ctx)

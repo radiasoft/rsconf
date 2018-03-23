@@ -3,6 +3,7 @@ default:
   base_os:
     ip_forward: false
   bkp:
+    archive_d: /srv/bkp/archive
     exclude:
       - /etc/selinux
     hosts:
@@ -10,13 +11,16 @@ default:
       - {{ master }}
     include:
       - /etc
+    log_dirs:
+      - /var/log
+      - /srv/*/log
+    max_try: 6
+    mirror_d: /srv/bkp/mirror
     # Time zones not accepted in systemd 219 (CentOS 7).
     # Times are in UTC. We may need to change the local time zone.
     on_calendar: "*-*-* 08:00:00"
     primary: {{ master }}
     secondaries: []
-    max_try: 6
-    mirror_d: /srv/bkp/mirror
   bop:
     docker_image: biviosoftware/bivio
     server_status_location: /bop-status
@@ -58,6 +62,10 @@ default:
     port: 7913
     vhosts:
       {{ host }}: jupyter.{{ master }}
+  logrotate:
+    verbose: true
+    # sometime before bkp.on_calendar
+    on_calendar: "*-*-* 07:30:00"
   network:
     devices: {}
     trusted: {}

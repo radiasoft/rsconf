@@ -1,0 +1,8 @@
+#!/bin/bash
+# Copied and cleaned up from /etc/cron.daily/logrotate.
+# Note that --state is not required as the default is to write state in /var/lib/logrotate/logrotate.status
+/usr/sbin/logrotate {{ logrotate.verbose_flag }} --state {{ logrotate.run_d }}/logrotate.status {{ logrotate.conf_f }}
+rc=$?
+if [ $rc != 0 ]; then
+    /usr/bin/logger -t logrotate "ALERT exited abnormally with [$rc]"
+fi

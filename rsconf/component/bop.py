@@ -16,6 +16,7 @@ class T(component.T):
     def internal_build(self):
         from rsconf import systemd
         from rsconf import db
+        from rsconf.component import logrotate
         from rsconf.component import nginx
         from rsconf.component import docker_registry
 
@@ -70,12 +71,7 @@ class T(component.T):
         self.install_access(mode='500')
         z.postrotate = run_d.join('postrotate')
         self.install_resource('bop/postrotate.sh', j2_ctx, z.postrotate)
-        self.install_access(mode='400', owner=j2_ctx.rsconf_db.root_u)
-        self.install_resource(
-            'bop/logrotate.conf',
-            j2_ctx,
-            '/etc/logrotate.d/' + z.app_name,
-        )
+        logrotate.install_conf(self, j2_ctx, resource_d='bop')
         image = docker_registry.absolute_image(j2_ctx, z.docker_image)
         systemd.docker_unit_enable(
             self,

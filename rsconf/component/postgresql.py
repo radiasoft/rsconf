@@ -14,6 +14,7 @@ class T(component.T):
 
     def internal_build(self):
         from rsconf import systemd
+        from rsconf.component import logrotate
 
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.postgresql
@@ -22,6 +23,8 @@ class T(component.T):
         z.conf_f = z.conf_d.join('postgresql.conf')
         z.run_u = 'postgres'
         z.log_filename = 'postgresql.log'
+        # POSIT: pg_log is the default
+        z.log_f = z.conf_d.join('pg_log', z.log_filename)
         self.install_access(mode='700', owner=z.run_u)
         self.append_root_bash('rsconf_yum_install postgresql-server')
         self.append_root_bash_with_main(j2_ctx)
@@ -46,9 +49,5 @@ class T(component.T):
         self.install_resource(
             'postgresql/pg_hba.conf', j2_ctx, z.conf_d.join('pg_hba.conf'))
         self.install_access(mode='400', owner=j2_ctx.rsconf_db.root_u)
-        self.install_resource(
-            'postgresql/logrotate.conf',
-            j2_ctx,
-            '/etc/logrotate.d/postgresql',
-        )
+        logrotate.install_conf(self, j2_ctx)
         systemd.unit_enable(self)
