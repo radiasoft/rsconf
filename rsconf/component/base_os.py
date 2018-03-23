@@ -37,7 +37,7 @@ class T(component.T):
         for vg in vgs:
             for lv in vg.logical_volumes:
                 cmds += "base_os_logical_volume '{}' '{}' '{}' '{}'\n".format(
-                    lv.name, lv.gigabytes, vg.name, lv.mount_d,
+                    lv.name, lv.gigabytes, vg.name, lv.mount_d, lv.get('mode', 700)
                 )
         j2_ctx.base_os.logical_volume_cmds = cmds
         self.append_root_bash_with_main(j2_ctx)
