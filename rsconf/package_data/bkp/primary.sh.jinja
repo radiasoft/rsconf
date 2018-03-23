@@ -3,6 +3,25 @@ set -euo pipefail
 
 {{ bkp.global_vars }}
 
+primary_archive_logs() {
+    local mirror_d=$1
+    local host=$(basename "$mirror_d")
+    local src year dst
+    #POSIT: $bkp_log_dirs has globs so don't quote
+    for src in $(shopt -s nullglob && cd "$mirror_d" && find ${bkp_log_dirs[@]} -type f -name '*20[0-9][0-9]*'); do
+        if [[ ! $src =~ \b(20[0-9][0-9])[0-9]{4} ]]; then
+            continue
+        fi
+        year=${BASH_REMATCH[1]}
+        dst="$bkp_archive_d/logs/$year/$host/$src"
+        if [[ -e $dst ]]; then
+            continue
+        fi
+        mkdir -m 700 -p "$(dirname "$dst")"
+        install -p -m 400 -o root -g root "$mirror_d/$src" "$dst"
+    done
+}
+
 primary_host() {
     local host=$1
     local out src_d try cmd
@@ -12,6 +31,7 @@ primary_host() {
     for src_d in "${bkp_include[@]}"; do
         primary_rsync "${bkp_exclude[@]}" "$host:$src_d" "$tgt_d"
     done
+    primary_archive_logs "$tgt_d"
 }
 
 primary_log() {

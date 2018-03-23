@@ -31,11 +31,16 @@ class T(component.T):
         for d in z.exclude:
             gv += "'--exclude={}'\n".format(d)
         gv += ')\n'
-        for i in 'max_try', 'mirror_d':
+        for i in 'archive_d', 'max_try', 'mirror_d':
             gv += "bkp_{}='{}'\n".format(i, z[i])
         gv += 'bkp_include=(\n'
         for d in z.include:
             gv += "    '{}'\n".format(d)
+        gv += ')\n'
+        gv += 'bkp_log_dirs=\n'
+        for d in z.bkp_log_dirs:
+            # POSIT: bkp_log_dirs looks in the mirror_d so relative needed
+            gv += "    '{}'\n".format(str(d).lstrip('/'))
         gv += ')\n'
         z.global_vars = gv
         x = ''
