@@ -8,6 +8,7 @@ checkpoint_segments = 64
 listen_addresses = ''
 log_checkpoints = on
 # POSIT: /etc/logrotate.conf rotates the logs
+log_directory = '{{ postgresql.log_d }}'
 log_filename = '{{ postgresql.log_filename }}'
 log_line_prefix = '%t %d %p '
 log_rotation_age = 0

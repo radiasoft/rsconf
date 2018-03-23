@@ -23,10 +23,13 @@ class T(component.T):
         z.conf_f = z.conf_d.join('postgresql.conf')
         z.run_u = 'postgres'
         z.log_filename = 'postgresql.log'
+        z.log_d = pkio.py_path('/var/log/postgresql')
         # POSIT: pg_log is the default
-        z.log_f = z.conf_d.join('pg_log', z.log_filename)
+        z.log_f = z.conf_d.join(z.log_filename)
         self.install_access(mode='700', owner=z.run_u)
         self.append_root_bash('rsconf_yum_install postgresql-server')
+        # Needs to be installed before main runs
+        self.install_directory(z.log_d)
         self.append_root_bash_with_main(j2_ctx)
         systemd.unit_prepare(self, z.run_d)
         self.append_root_bash(

@@ -1,10 +1,20 @@
 #!/bin/bash
 
 postgresql_main() {
+    local old=/var/lib/pgsql/data/pg_log
+    if [[ ! -L $old ]]; then
+        # save the old logs, just in case
+        for f in $(ls -tr "$old"/*.log 2>/dev/null || true); then
+            cat $f >> '{{ postgresql.log_f }}'
+        done
+        chown postgres:postgres '{{ postgresql.log_f }}'
+        rm -rf "$old"
+        ln -r -s '{{ postgresql.log_d }}' "$old"
+    fi
     if [[ -e  {{ postgresql.conf_f }} ]]; then
         return
     fi
-    local old=/var/lib/pgsql
+    old=/var/lib/pgsql
     if [[ -L  $old ]]; then
         install_err "$old: is a symlink, need to yum reinstall postgresql-server"
     fi
