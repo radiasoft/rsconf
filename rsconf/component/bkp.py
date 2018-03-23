@@ -37,8 +37,8 @@ class T(component.T):
         for d in z.include:
             gv += "    '{}'\n".format(d)
         gv += ')\n'
-        gv += 'bkp_log_dirs=\n'
-        for d in z.bkp_log_dirs:
+        gv += 'bkp_log_dirs=(\n'
+        for d in z.log_dirs:
             # POSIT: bkp_log_dirs looks in the mirror_d so relative needed
             gv += "    '{}'\n".format(str(d).lstrip('/'))
         gv += ')\n'
