@@ -58,7 +58,6 @@ base_os_logical_volume() {
     # the component that sets mount_d will set the permissions and owner
     mkdir -p "$mount_d"
     mount "$mount_d"
-    # Default is no permissions
     chmod "$mode" "$mount_d"
 }
 
