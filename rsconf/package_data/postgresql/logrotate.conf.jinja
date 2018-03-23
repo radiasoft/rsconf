@@ -1,0 +1,7 @@
+{{ postgresql.conf_d }}/{{ postgresql.log_filename }}
+{
+    create 0600 {{ postgresql.run_u }} {{ postgresql.run_u }}
+    missingok
+    notifempty
+    copytruncate
+}
