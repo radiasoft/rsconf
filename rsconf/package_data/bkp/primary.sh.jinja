@@ -42,6 +42,7 @@ primary_log() {
 primary_main() {
     primary_log "$(hostname -f ): begin primary"
 {{ bkp.main_cmds }}
+    primary_snapshot
     primary_log "$(hostname -f ): end primary"
 }
 
@@ -103,6 +104,14 @@ primary_secondary() {
         primary_rsync --compress "$src_d" "$secondary:/"
     done
     primary_log "$secondary: secondary end"
+}
+
+primary_snapshot() {
+    local src_d
+    local t=$(date +%Y%m%d%H%M%S)
+    primary_log "$t: snapshot begin"
+    cp -al "$bkp_mirror_d/current" "$bkp_mirror_d/$t"
+    primary_log "$t: snapshot end"
 }
 
 primary_main "$@"
