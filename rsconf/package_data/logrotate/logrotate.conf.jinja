@@ -1,3 +1,6 @@
+# https://ihazem.wordpress.com/2013/04/09/logrotate-olddir-directive-and-executing-logrotate-for-first-time/
+# logrotate.status needs to exist in order for logrotate to work
+# so the first time it runs, it never rotates.
 compress
 # https://www.rootusers.com/gzip-vs-bzip2-vs-xz-performance-comparison/
 compresscmd /usr/bin/xz
