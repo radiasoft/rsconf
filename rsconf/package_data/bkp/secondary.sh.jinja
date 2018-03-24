@@ -1,0 +1,36 @@
+#!/bin/bash
+device_1=/dev/??
+device_2=/dev/??
+mdadm --create --verbose --metadata 1.2 /dev/md/monthly --level=1 --raid-devices=2 $device_1 $device_2
+
+cat /proc/mdstat
+
+snapshot=/bkp/mirror/monthly
+# For testing, may want to restrict further
+current=/bkp/mirror/current
+rm -rf $snapshot
+cp -al $current $snapshot
+cryptsetup -y -v luksFormat --type luks2 $device_1 $keyfile
+vol=bkpmonthly
+cryptsetup open $device_1 $vol
+mke2fs -q -b 4096 -m 0 -O dir_index -O sparse_super -i 1048576 $device_1
+dst_root=/bkp/monthly
+# Just in case
+umount $dst_root >& /dev/null || true
+mkdir -m 700 -p $dst_root
+mount /dev/mapper/$vol $dst_root
+chmod 700 $dst_root
+# */* matches host.com/{var,etc,...}
+for src in $(cd $snapshot && find */* -type d); do
+    dst=$dst_root/$src
+    mkdir -p -m 700 $dst
+    # https://jnovy.fedorapeople.org/pxz/node1.html
+    # compression with 8 threads and max compression
+    (cd $snapshot/$src && find . -maxdepth 1 ! -type d -print0 | tar --create --null --files-from=- --file=-) | pxz -T8 -9 > $dst.txz
+done
+umount $dst
+cryptsetup close $vol
+sync
+how do you know when you can stop?
+cat /proc/mdstat
+mdadm --stop /dev/md0
