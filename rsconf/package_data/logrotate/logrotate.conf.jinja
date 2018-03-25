@@ -1,3 +1,8 @@
+# Started by Systemd not cron for easier debugging:
+# systemctl status logrotate.timer
+# systemctl status logrotate.service
+# journalctl -u logrotate
+#
 # https://ihazem.wordpress.com/2013/04/09/logrotate-olddir-directive-and-executing-logrotate-for-first-time/
 # logrotate.status needs to exist in order for logrotate to work
 # so the first time it runs, it never rotates.
