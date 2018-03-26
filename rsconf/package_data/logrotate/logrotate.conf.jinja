@@ -39,7 +39,7 @@ uncompresscmd /usr/bin/unxz
 {
     create 0600 root root
     dateext
-    # Export the log with some overlap so we don's entries
+    # Export the log with some overlap so we don't lose entries
     firstaction
 	journalctl --since -25h --output export > /var/log/journal.export
     endscript
