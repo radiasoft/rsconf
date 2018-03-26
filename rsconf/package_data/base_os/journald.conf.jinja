@@ -1,5 +1,6 @@
 [Journal]
 SplitMode=none
 Storage=persistent
-SystemMaxFileSize=20M
-SystemMaxUse=500M
+# Some processes write a lot of data to logs (e.g. JupyterHub)
+SystemMaxFileSize=40M
+SystemMaxUse=1G
