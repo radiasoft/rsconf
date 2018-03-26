@@ -2,8 +2,9 @@
 Description={{ systemd.service_name }}
 
 [Service]
-Type=oneshot
 ExecStart={{ systemd.timer_start_f }}
+SyslogIdentifier={{ systemd.service_name }}
+Type=oneshot
 
 [Install]
 WantedBy=multi-user.target

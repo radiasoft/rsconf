@@ -1,14 +1,15 @@
 [Unit]
+After=docker.service {{ systemd.after }}
 Description={{ systemd.service_name }}
 Requires=docker.service
-After=docker.service {{ systemd.after }}
 
 [Service]
+ExecStart={{ systemd.start }}
+ExecStartPre={{ systemd.remove }}
+ExecStop=-{{ systemd.stop }}
 Restart=on-failure
 RestartSec=10
-ExecStartPre={{ systemd.remove }}
-ExecStart={{ systemd.start }}
-ExecStop=-{{ systemd.stop }}
+SyslogIdentifier={{ systemd.service_name }}
 
 [Install]
 WantedBy=multi-user.target
