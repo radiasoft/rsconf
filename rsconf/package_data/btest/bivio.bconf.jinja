@@ -1,0 +1,37 @@
+# -*-perl-*-
+use strict;
+use Bivio::PetShop::BConf;
+{% if btest.bconf_is_unit %}
+Bivio::PetShop::BConf->dev(8888, {
+{% else %}
+Bivio::PetShop::BConf->merge_dir({
+{% endif %}
+    'Bivio::Biz::Action::AssertClient' => {
+        hosts => [qw(localhost.localdomain {{ btest.client_host }} )],
+    },
+    'Bivio::Biz::File' => {
+        root => '{{ btest.file_root }}',
+        backup_root => '{{ btest.file_backup_root }}',
+    },
+    'Bivio::Ext::DBI' => {
+        database => '{{ btest.dbi_database }}',
+    },
+    'Bivio::IO::Log' => {
+        directory => '{{ btest.log_directory }}',
+    },
+    'Bivio::Test::Language::HTTP' => {
+        home_page_uri => '{{ btest.http_home_page_uri }}',
+        local_mail_host => '{{ btest.http_local_mail_host }}',
+        remote_mail_host => '{{ btest.http_remote_mail_host }}',
+        email_user => '{{ btest.http_email_user }}',
+    },
+    'Bivio::UI::Facade' => {
+        local_file_root => '{{ btest.facade_local_file_root }}',
+        mail_host => '{{ btest.facade_mail_host }}',
+        http_host => '{{ btest.facade_http_host }}',
+    },
+    'Bivio::UI::HTML::Widget::SourceCode' => {
+        # POSIT: container-bop
+        source_dir => '{{ btest.source_code_source_dir',
+    },
+});
