@@ -71,12 +71,14 @@ class T(component.T):
         self.install_access(mode='500')
         z.postrotate = run_d.join('postrotate')
         self.install_resource('bop/postrotate.sh', j2_ctx, z.postrotate)
+        run = run_d.join('run')
+        self.install_resource('bop/run.sh', j2_ctx, run)
         logrotate.install_conf(self, j2_ctx, resource_d='bop')
         image = docker_registry.absolute_image(j2_ctx, z.docker_image)
         systemd.docker_unit_enable(
             self,
             image=image,
-            cmd='/usr/sbin/httpd -DFOREGROUND',
+            cmd=run,
             volumes=volumes,
         )
         if not 'docker_image' in self.bopt.hdb:
