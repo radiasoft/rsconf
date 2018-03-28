@@ -26,6 +26,7 @@ class T(component.T):
         self.buildt.require_component('base_users')
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.logrotate
+        z.run_u = j2_ctx.rsconf_db.root_u
         z.conf_f = CONF_F
         z.verbose_flag = '--verbose' if z.get('verbose', False) else ''
         z.run_d = systemd.timer_prepare(self, j2_ctx)
@@ -35,8 +36,9 @@ class T(component.T):
             j2_ctx=j2_ctx,
             on_calendar=z.on_calendar,
             timer_exec=run,
+            run_u=z.run_u,
         )
-        self.install_access(mode='500', owner=self.hdb.rsconf_db.root_u)
+        self.install_access(mode='500', owner=z.run_u)
         self.install_resource('logrotate/run.sh', j2_ctx, run)
         self.install_access(mode='400')
         self.install_resource('logrotate/logrotate.conf', j2_ctx, z.conf_f)

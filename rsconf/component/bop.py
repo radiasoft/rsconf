@@ -12,6 +12,9 @@ from pykern import pkcollections
 from pykern import pkconfig
 
 
+SOURCE_CODE_D = '/usr/share/Bivio-bOP-src'
+
+
 class T(component.T):
     def internal_build(self):
         from rsconf import systemd
@@ -46,6 +49,7 @@ class T(component.T):
         run_d = systemd.docker_unit_prepare(self)
         self.install_access(mode='700', owner=self.hdb.rsconf_db.run_u)
         self.install_directory(run_d)
+        z.source_code_d = SOURCE_CODE_D
         z.run_d = run_d
         z.pid_file = run_d.join('httpd.pid')
         volumes = ['/var/run/postgresql/.s.PGSQL.5432']

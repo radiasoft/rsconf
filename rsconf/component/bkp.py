@@ -26,6 +26,7 @@ class T(component.T):
 
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.bkp
+        z.run_u = j2_ctx.rsconf_db.root_u
         run_d = systemd.timer_prepare(self, j2_ctx)
         gv = 'bkp_exclude=(\n'
         for d in z.exclude:
@@ -55,8 +56,9 @@ class T(component.T):
             j2_ctx=j2_ctx,
             on_calendar=z.on_calendar,
             timer_exec=te,
+            run_u=z.run_u,
         )
-        self.install_access(mode='500', owner=j2_ctx.rsconf_db.root_u)
+        self.install_access(mode='500', owner=z.run_u)
         assert j2_ctx.rsconf_db.host == z.primary, \
             '{}: host must be in primary or secondaries'.format(
                 j2_ctx.rsconf_db.host,

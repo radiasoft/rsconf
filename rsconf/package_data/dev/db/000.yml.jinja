@@ -30,6 +30,10 @@ default:
     secret:
       algorithm: DES
       magic: XYZ
+  btest:
+    client_host: {{ master }}
+    apps: [ petshop ]
+    on_calendar: "*-*-* 12:00:00"
   celery_sirepo:
     queues: "sequential,parallel"
   component:
@@ -76,18 +80,16 @@ default:
   nginx:
     worker_processes: 1
   petshop:
+    can_secure: false
+    cookie_tag: PSD
     docker_image: biviosoftware/bivio
     http_host: petshop.{{ host }}
-    mail_host: petshop.{{ host }}
     listen_base: 8114
-    cookie_tag: PSD
-    can_secure: false
-    perl_root: Bivio::PetShop
-    num_servers: 4
-    # bivio.biz /var/www/facades/bivio.biz/plain/f/bOP/lib
-    # default /var/www/html
-    source_code_d: /var/www/facades/petshop/plain/s
+    mail_host: petshop.{{ host }}
     nginx_aux_directives: ''
+    num_servers: 4
+    perl_root: Bivio::PetShop
+    short_prefix: pet
     vhost_common:
       # Only for test
       host_suffix: {{ host }}
@@ -200,7 +202,7 @@ host:
       base_os:
         volume_groups: []
       rsconf_db:
-        components: [ docker_registry, rsconf, jupyterhub_proxy, bkp ]
+        components: [ docker_registry, rsconf, jupyterhub_proxy, bkp, btest ]
     # never installed, just for testing build
     {{ all_host }}:
       docker:

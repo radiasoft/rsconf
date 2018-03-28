@@ -1,0 +1,29 @@
+#!/bin/bash
+
+run_one_db_is_old() {
+    # file_root is a proxy for the database
+    local d='{{ btest.file_root }}'
+    # 6.5 days in seconds
+    [[ ! -e $d ]] || (( $(stat -c %Y $d) + 561600 < $(date -u +%s) ))
+}
+
+run_one_main() {
+    rm -rf previous
+    mv '{{ btest.current_base }}' previous >& /dev/null || true
+    mkdir '{{ btest.current_base }}'
+    cd '{{ btest.current_base }}'
+    # POSIT: container-bop/radiasoft-download.sh
+    cp -a '{{ btest.app_source_d }}' .
+    PERLLIB=$PWD BCONF='{{ btest.bconf.unit }}' (
+        set +e
+        bivio project link_facade_files
+        if run_one_db_is_old; then
+            bivio sql init_dbms || true
+            bivio sql -force create_test_db
+        fi
+        bivio test unit '{{ btest.root_for_unit }}'
+        BCONF='{{ btest.bconf.acceptance }}' bivio test acceptance '{{ btest.root_for_acceptance }}'
+    )
+}
+
+run_one_main
