@@ -1,0 +1,23 @@
+#!/bin/bash
+# simalar to systemd/start.sh.jinja
+set -euo pipefail
+
+image_cmd=( '{{ btest.docker_image }}' )
+flags=( --name '{{ btest.container_name }}' )
+user='{{ btest.app_run_u }}'
+if (( $# > 0 )); then
+    # No name if called on the command line
+    flags=( -i )
+    if [[ -t 0 ]]; then
+        # probably debugging so turn on strace
+        flags+=( -t --cap-add SYS_PTRACE )
+    fi
+    image_cmd+=( "$@" )
+    if [[ ${start_run_u:=} ]]; then
+        user=$start_run_u
+    fi
+else
+    image_cmd+=( '{{ btest.app_run_f }}' )
+fi
+# --init runs tini wrapper: https://github.com/krallin/tini
+exec docker run "${flags[@]}" --init --rm "--user=$user" --network=host -v '{{ btest.app_run_d}}:{{ btest.app_run_d }}' -v '/var/run/postgresql/.s.PGSQL.5432:/var/run/postgresql/.s.PGSQL.5432' "${image_cmd[@]}"
