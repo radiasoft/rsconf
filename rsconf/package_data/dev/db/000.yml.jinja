@@ -32,6 +32,8 @@ default:
       magic: XYZ
   btest:
     client_host: {{ master }}
+    email_user: {{ user }}
+    local_mail_host:
     apps: [ petshop ]
     on_calendar: "*-*-* 12:00:00"
   celery_sirepo:

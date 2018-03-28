@@ -4,6 +4,9 @@ use {{ bop.perl_root }}::BConf;
     'Bivio::Agent::Request' => {
         can_secure => {{ bop.can_secure | int }},
     },
+    'Bivio::Biz::Action::AssertClient' => {
+        hosts => [qw(localhost.localdomain {{ btest.client_host }} {{ bop.http_host }})],
+    },
     'Bivio::Biz::File' => {
         root => '/var/db/bop',
         backup_root => '/var/bkp/bop',
@@ -26,6 +29,10 @@ use {{ bop.perl_root }}::BConf;
     },
     'Bivio::IO::Log' => {
         directory => '/var/log/bop',
+    },
+    'Bivio::Test::Language::HTTP' => {
+        email_user => '{{ btest.email_user }}',
+        local_mail_host => '{{ btest.client_host }}',
     },
     'Bivio::Type::Secret' => {
         algorithm => '{{ bop.secret.algorithm }}',

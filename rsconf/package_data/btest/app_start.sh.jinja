@@ -20,4 +20,4 @@ else
     image_cmd+=( '{{ btest.app_run_f }}' )
 fi
 # --init runs tini wrapper: https://github.com/krallin/tini
-exec docker run "${flags[@]}" --init --rm "--user=$user" --network=host -v '{{ btest.app_run_d}}:{{ btest.app_run_d }}' -v '/var/run/postgresql/.s.PGSQL.5432:/var/run/postgresql/.s.PGSQL.5432' "${image_cmd[@]}"
+exec docker run "${flags[@]}" --init --rm "--user=$user" --network=host -v '{{ btest.app_run_d}}:{{ btest.app_run_d }}' -v '{{ btest.mail_d}}:{{ btest.mail_d }}' -v '/var/run/postgresql/.s.PGSQL.5432:/var/run/postgresql/.s.PGSQL.5432' "${image_cmd[@]}"

@@ -38,6 +38,14 @@ class T(component.T):
         z.app_run_u = j2_ctx.rsconf_db.run_u
         self.install_access(mode='700', owner=z.app_run_u)
         self.install_directory(z.apps_d)
+        z.mail_d = '/home/vagrant/btest-mail'
+        self.install_directory(z.mail_d)
+        self.install_access(mode='400')
+        self.install_resource(
+            'btest/vagrant_procmailrc',
+            j2_ctx,
+            '/home/vagrant/.procmailrc',
+        )
         z.run_app_cmds = ''
         for n in sorted(z.apps):
             a = j2_ctx[n]
@@ -66,7 +74,6 @@ class T(component.T):
             z.http_home_page_uri = 'https://' + a.http_host
             z.http_host = a.http_host
             z.mail_host = a.mail_host
-            z.email_user = z.app_run_u
             self.install_access(mode='400')
             z.bconf = pkcollections.Dict()
             for x in 'unit', 'acceptance':

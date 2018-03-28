@@ -25,10 +25,11 @@ use {{ btest.perl_root }}::BConf;
         directory => '{{ btest.log_d }}',
     },
     'Bivio::Test::Language::HTTP' => {
+        email_user => '{{ btest.email_user }}',
         home_page_uri => 'https://{{ btest.http_host }}',
         local_mail_host => '{{ btest.client_host }}',
+        mail_dir => '{{ btest.mail_d }}',
         remote_mail_host => '{{ btest.mail_host }}',
-        email_user => '{{ btest.email_user }}',
     },
     'Bivio::UI::Facade' => {
         local_file_root => '{{ btest.facade_local_file_root }}',

@@ -2,5 +2,11 @@ export SYSTEMD_COLORS=0
 # --quit-if-one-screen --quit-on-intr --no-init
 export SYSTEMD_LESS=FKX
 rsc() {
-    curl {{ rsconf_db.http_host }} | install_server={{ rsconf_db.http_host }} bash -s rsconf.sh "$@"
+    local args=( "$@" )
+    {% if rsconf_db.channel == "dev" %}{% raw %}
+    if (( ! ${#args[@]} )); then
+        args=( "$(hostname -f)" setup_dev )
+    fi
+    {% endraw %}{% endif %}
+    curl {{ rsconf_db.http_host }} | install_server={{ rsconf_db.http_host }} bash -s rsconf.sh "${args[@]}"
 }
