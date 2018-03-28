@@ -26,18 +26,19 @@ class T(component.T):
         z.run_u = j2_ctx.rsconf_db.root_u
         z.run_d = systemd.timer_prepare(self, j2_ctx)
         z.apps_d = z.run_d.join('apps')
-        run_all = z.run_d.join('run_all')
+        run_f = z.run_d.join('run')
         systemd.timer_enable(
             self,
             j2_ctx=j2_ctx,
             on_calendar=z.on_calendar,
-            timer_exec=run_all,
+            timer_exec=run_f,
             run_u=z.run_u,
         )
         z.source_code_d = bop.SOURCE_CODE_D
         z.app_run_u = j2_ctx.rsconf_db.run_u
         self.install_access(mode='700', owner=z.app_run_u)
         self.install_directory(z.apps_d)
+        z.run_app_cmds = ''
         for n in sorted(z.apps):
             a = j2_ctx[n]
             z.perl_root = a.perl_root
@@ -78,6 +79,7 @@ class T(component.T):
                 )
             self.install_access(mode='500')
             z.app_run_f = z.app_run_d.join('run')
+            #TODO(robnagler) send mail
             self.install_resource(
                 'btest/app_run.sh',
                 j2_ctx,
@@ -89,3 +91,10 @@ class T(component.T):
                 j2_ctx,
                 z.app_start_f,
             )
+            z.run_app_cmds += '{}\n'.format(z.app_start_f)
+        self.install_access(mode='500', owner=z.run_u)
+        self.install_resource(
+            'btest/run.sh',
+            j2_ctx,
+            run_f,
+        )
