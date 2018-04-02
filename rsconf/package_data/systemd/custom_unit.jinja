@@ -1,0 +1,34 @@
+[Unit]
+After=network.target remote-fs.target nss-lookup.target {{ systemd.after }}
+Description={{ systemd.service_name }}
+
+[Service]
+Environment=TZ=:/etc/localtime
+ExecStart={{ systemd.start }}
+ExecStartPre=/bin/rm -f {{ systemd.pid_file }}
+Group={{ systemd.run_u }}
+PIDFile={{ systemd.pid_file }}
+Restart=on-failure
+RestartSec=10
+SyslogIdentifier={{ systemd.service_name }}
+Type=forking
+User={{ systemd.run_u }}
+{% if systemd.reload %}
+ExecReload={{ systemd.reload }}
+{% endif %}
+{% if systemd.stop %}
+{#
+  If we have ExecStop, then send an ignored KillSignal first time.
+  SIGCONT is ignored by most processes so this allows ExecStop to do its job.
+  Systemd runs ExecStop then immediately sends KillSignal, which is TERM
+  by default and therefore makes ExecStop useless.
+  Second signal is SIGKILL, which kills all processes in the group.
+#}
+ExecStop={{ systemd.stop }}
+KillMode=process
+KillSignal=SIGCONT
+{% endif %}
+TimeoutStopSec=5
+
+[Install]
+WantedBy=multi-user.target

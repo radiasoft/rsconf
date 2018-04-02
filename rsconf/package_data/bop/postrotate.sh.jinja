@@ -1,5 +1,0 @@
-#!/bin/bash
-set -eou pipefail
-pid=$(<'{{ bop.pid_file }}')
-[[ $pid =~ ^[0-9]+$ ]]
-docker exec '{{ bop.app_name }}' kill -USR1 "$pid"
