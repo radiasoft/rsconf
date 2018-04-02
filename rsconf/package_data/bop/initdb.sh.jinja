@@ -5,32 +5,13 @@
         return
     fi
     set -e
-    su - '{{ bop.run_u }}' <<'EOF'
-set -e
-install -m 600 /dev/stdin ~/.pgpass <<'EOF4'
+    install -m 600 /dev/stdin ~/.pgpass <<'EOF'
 localhost:*:*:postgres:{{ postgresql.postgres_password }}
-EOF4
-cat ~/.pgpass
-d=/tmp/bop_initdb_$$-$RANDOM
-mkdir -p "$d/bconf.d"
-export BCONF="$d/bivio.bconf"
-cp /etc/bivio.bconf "$BCONF"
-cat >> "$d/bconf.d/temp.bconf" <<'EOF3'
-{
-    'Bivio::Ext::DBI' => {
-        template1 => {
-            password => '{{ postgresql.postgres_password }}',
-        },
-        dbms => {
-            password => '{{ postgresql.postgres_password }}',
-        },
-    },
-};
-EOF3
+EOF
 bivio sql init_dbms
 {% if not bop.is_production %}
     bivio sql -f create_test_db
 {% endif %}
-EOF
+    rm -f ~/.pgpass
     rsconf_service_trigger_restart '{{ bop.app_name }}'
 }

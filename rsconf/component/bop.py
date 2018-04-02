@@ -47,7 +47,12 @@ class T(component.T):
         z.app_name = self.name
         db.merge_dict(z, j2_ctx[self.name])
         run_d = systemd.custom_unit_prepare(self)
-        self.install_access(mode='700', owner=z.run_u)
+        z.conf_f = run_d.join('httpd.conf')
+        z.bconf_f = run_d.join('bivio.bconf')
+        z.log_postrotate_f = run_d.join('reload')
+        z.http_cmd = "/usr/sbin/httpd -d '{}' -f '{}'".format(z.run_d, z.conf_f)
+        z.source_code_d = SOURCE_CODE_D
+        z.run_d = run_d
         systemd.custom_unit_enable(
             self,
             start='start',
@@ -56,23 +61,15 @@ class T(component.T):
             resource_d='bop',
             run_u=z.run_u,
         )
-        z.http_cmd = "/usr/sbin/httpd -d '{}' -f '{}'".format(z.run_d, z.conf_f)
-        z.source_code_d = SOURCE_CODE_D
-        z.run_d = run_d
+        self.install_access(mode='700', owner=z.run_u)
         for d in 'bkp', 'db', 'log', 'logbop':
             x = run_d.join(d)
             z['{}_d'.format(d)] = x
             self.install_directory(x)
         self.install_access(mode='400')
-        for v, f in (
-            ('conf_f', 'httpd.conf')
-            ('bconf_f', 'bivio.bconf')
-        ):
-            x = run_d.join(f)
-            z[v] = x
-            self.install_resource('bop/' + f, j2_ctx, x)
+        self.install_resource('bop/httpd.conf', j2_ctx, z.conf_f)
+        self.install_resource('bop/bivio.bconf', j2_ctx, z.bconf_f)
         self.install_access(mode='500')
-        self.install_resource('bop/postrotate.sh', j2_ctx, run_d.join('reload'))
         logrotate.install_conf(self, j2_ctx, resource_d='bop')
         # After the unit files are installed
         self.append_root_bash_with_resource(

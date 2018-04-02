@@ -3,7 +3,7 @@
     missingok
     notifempty
     postrotate
-        {{ bop.postrotate_f }}
+        {{ bop.log_postrotate_f }}
     endscript
     # Ensure postrotate only runs once for all logs
     sharedscripts
