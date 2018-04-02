@@ -1,9 +1,5 @@
 #!/bin/bash
 
 bop_main() {
-    #POSIT: domains have not special chars
     postfix_setup_bop {{ bop.mail_domain_keys }}
-    # spamc copy, pulled from container dynamically?
-    # spamd is listening on a socket
-    # postgrey
 }

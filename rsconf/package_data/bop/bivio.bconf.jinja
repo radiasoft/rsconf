@@ -8,8 +8,8 @@ use {{ bop.perl_root }}::BConf;
         hosts => [qw(localhost.localdomain {{ btest.client_host }} {{ bop.http_host }})],
     },
     'Bivio::Biz::File' => {
-        root => '/var/db/bop',
-        backup_root => '/var/bkp/bop',
+        root => '{{ bop.db_d }}',
+        backup_root => '{{ bop.bkp_d }}',
     },
     'Bivio::Biz::Model::CRMForm' => {
         want_status_email => 0,
@@ -28,7 +28,7 @@ use {{ bop.perl_root }}::BConf;
         is_production => {{ bop.is_production | int }},
     },
     'Bivio::IO::Log' => {
-        directory => '/var/log/bop',
+        directory => '{{ bop.logbop_d }}',
     },
     'Bivio::Test::Language::HTTP' => {
         email_user => '{{ btest.email_user }}',
@@ -49,10 +49,10 @@ use {{ bop.perl_root }}::BConf;
         source_dir => '{{ bop.source_code_d }}',
     },
     'Bivio::Util::HTTPLog' => {
-        error_file => '/var/log/httpd/error_log',
+        error_file => '{{ bop.log_d }}/error_log',
         # avoid spambots
-        email => 'errors' . '@' . 'bivio.biz',
-        pager_email => 'critical-errors' . '@' . 'bivio.biz',
+        email => join('@', 'errors', 'bivio.biz'),
+        pager_email => join('@', 'critical-errors', 'bivio.biz'),
     },
 {{ bop.bconf_aux }}
 });

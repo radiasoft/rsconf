@@ -47,14 +47,13 @@ LimitRequestBody 240000000
 RequestHeader unset Proxy early
 RequestReadTimeout header=5
 
-ServerRoot /etc/httpd
-# /var/run is not accessible; not a security concern
-PidFile {{ bop.pid_file }}
+ServerRoot {{ systemd.run_d }}
+PidFile {{ systemd.pid_file }}
 TypesConfig /etc/mime.types
 UseCanonicalName Off
 LogFormat "%V %h %P %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
-CustomLog /var/log/httpd/access_log combined
-ErrorLog /var/log/httpd/error_log
+CustomLog {{ bop.log_d }}/access_log combined
+ErrorLog {{ bop.log_d }}/error_log
 LogLevel warn
 ExtendedStatus On
 TraceEnable off
@@ -69,7 +68,8 @@ DocumentRoot /var/www/html
 PerlWarn on
 PerlModule Apache2::compat
 
-# TODO: Override the translation handler to avoid local file permission checks
+PerlSetEnv BCONF {{ bop.bconf_f }}
+#TODO(robnagler) Override translation handler to avoid local file permission checks
 PerlModule Bivio::Ext::ApacheConstants
 PerlModule Bivio::Agent::HTTP::Dispatcher
 
@@ -80,8 +80,7 @@ PerlModule Bivio::Agent::HTTP::Dispatcher
 </Location>
 
 <Location /zz/zig>
-    #TODO: local host IP
-    Require host 127.0.0.1 .bivio.biz
+    Require host 127.0.0.1
     SetHandler server-status
     PerlResponseHandler Apache2::Status
 </Location>

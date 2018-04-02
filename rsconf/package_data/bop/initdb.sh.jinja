@@ -1,16 +1,11 @@
 #!/bin/bash
 
 {{ bop.app_name }}_initdb() {
-    if [[ -d {{ bop.db_host_d }}/RealmFile ]]; then
+    if [[ -d {{ bop.db_d }}/RealmFile ]]; then
         return
     fi
-    start_run_u=root {{ bop.run_d }}/start bash ${install_debug:+-x} <<'EOF1'
-#!/bin/bash
-set -e
-# create_test_db writes to /var/www/facades/<facade_uri>/ddl so need to
-# make writable. In a container so will go away next run.
-chown '{{ rsconf_db.run_u }}' /var/www/facades/*/ddl
-su - '{{ rsconf_db.run_u }}' <<'EOF2'
+    set -e
+    su - '{{ bop.run_u }}' <<'EOF'
 set -e
 install -m 600 /dev/stdin ~/.pgpass <<'EOF4'
 localhost:*:*:postgres:{{ postgresql.postgres_password }}
@@ -36,7 +31,6 @@ bivio sql init_dbms
 {% if not bop.is_production %}
     bivio sql -f create_test_db
 {% endif %}
-EOF2
-EOF1
+EOF
     rsconf_service_trigger_restart '{{ bop.app_name }}'
 }

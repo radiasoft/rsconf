@@ -1,9 +1,9 @@
-{{ bop.log_host_d }}/*_log
+{{ bop.log_d }}/*_log
 {
     missingok
     notifempty
     postrotate
-        {{ bop.postrotate }}
+        {{ bop.postrotate_f }}
     endscript
     # Ensure postrotate only runs once for all logs
     sharedscripts

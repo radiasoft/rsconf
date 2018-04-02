@@ -1,4 +1,7 @@
 #!/bin/bash
 set -eu -o pipefail
 rm -f '{{ bop.pid_file }}'
-/usr/sbin/httpd -DFOREGROUND
+if [[ ! -L modules ]]; then
+    ln -r -s /etc/httpd/modules .
+fi
+{{ bop.httpd_cmd }}

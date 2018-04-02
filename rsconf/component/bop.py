@@ -21,12 +21,11 @@ class T(component.T):
         from rsconf import db
         from rsconf.component import logrotate
         from rsconf.component import nginx
-        from rsconf.component import docker_registry
 
         if self.name == 'bop':
             self.hdb.bop.mail_domains = pkcollections.Dict()
             self.hdb.bop.aux_directives = ''
-            self.buildt.require_component('docker', 'postgresql', 'nginx', 'postfix')
+            self.buildt.require_component('postgresql', 'nginx', 'postfix')
             for n in sorted(self.hdb.bop.apps):
                 vhostt = T(n, self.buildt)
                 vhostt.bopt = self
@@ -44,49 +43,37 @@ class T(component.T):
             return
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.bop
+        z.run_u = j2_ctx.rsconf_db.run_u
         z.app_name = self.name
         db.merge_dict(z, j2_ctx[self.name])
-        run_d = systemd.docker_unit_prepare(self)
-        self.install_access(mode='700', owner=self.hdb.rsconf_db.run_u)
-        self.install_directory(run_d)
+        run_d = systemd.custom_unit_prepare(self)
+        self.install_access(mode='700', owner=z.run_u)
+        systemd.custom_unit_enable(
+            self,
+            start='start',
+            reload='reload',
+            stop='stop',
+            resource_d='bop',
+            run_u=z.run_u,
+        )
+        z.http_cmd = "/usr/sbin/httpd -d '{}' -f '{}'".format(z.run_d, z.conf_f)
         z.source_code_d = SOURCE_CODE_D
         z.run_d = run_d
-        z.pid_file = run_d.join('httpd.pid')
-        volumes = ['/var/run/postgresql/.s.PGSQL.5432']
-        for host_d, guest_d in (
-            # POSIT: /etc/bivio.bconf has same values
-            ('log', '/var/log/httpd'),
-            ('db', '/var/db/bop'),
-            ('bkp', '/var/bkp/bop'),
-            ('logbop', '/var/log/bop'),
-        ):
-            x = run_d.join(host_d)
-            z['{}_host_d'.format(host_d)] = x
+        for d in 'bkp', 'db', 'log', 'logbop':
+            x = run_d.join(d)
+            z['{}_d'.format(d)] = x
             self.install_directory(x)
-            volumes.append([x, guest_d])
         self.install_access(mode='400')
-        for host_f, guest_f in (
-            ('httpd.conf', '/etc/httpd/conf/httpd.conf'),
-            ('bivio.bconf', '/etc/bivio.bconf')
+        for v, f in (
+            ('conf_f', 'httpd.conf')
+            ('bconf_f', 'bivio.bconf')
         ):
-            x = run_d.join(host_f)
-            self.install_resource('bop/' + host_f, j2_ctx, x)
-            volumes.append([x, guest_f])
+            x = run_d.join(f)
+            z[v] = x
+            self.install_resource('bop/' + f, j2_ctx, x)
         self.install_access(mode='500')
-        z.postrotate = run_d.join('postrotate')
-        self.install_resource('bop/postrotate.sh', j2_ctx, z.postrotate)
-        run = run_d.join('run')
-        self.install_resource('bop/run.sh', j2_ctx, run)
+        self.install_resource('bop/postrotate.sh', j2_ctx, run_d.join('reload'))
         logrotate.install_conf(self, j2_ctx, resource_d='bop')
-        image = docker_registry.absolute_image(j2_ctx, z.docker_image)
-        systemd.docker_unit_enable(
-            self,
-            image=image,
-            cmd=run,
-            volumes=volumes,
-        )
-        if not 'docker_image' in self.bopt.hdb:
-            self.bopt.hdb.bop.docker_image = image
         # After the unit files are installed
         self.append_root_bash_with_resource(
             'bop/initdb.sh',

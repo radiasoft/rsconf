@@ -16,8 +16,6 @@ postfix_main() {
     #POSIT spamd_docker_image is binary compatible with host operating system
     docker run -i --rm '{{ spamd.docker_image }}' cat /usr/bin/spamc > "$tmp"
     rsconf_install_access 555 root root
-    rsconf_install_file "$tmp" /usr/bin/spamc
-    rm -f "$tmp"
     local x=(
         # https://help.ubuntu.com/community/PostfixGreylisting
         biff=no
@@ -50,34 +48,19 @@ postfix_main() {
     postconf -e "${x[@]}"
     rsconf_file_hash_check "$postfix_main_cf"
     local rsconf_edit_no_change_res=0
-    # http://www.postfix.org/FILTER_README.html
-    # https://janikarhunen.fi/tackle-spam-with-spamassassin-on-centos7-and-postfix.html
-    # http://forums.sentora.org/showthread.php?tid=1118
     rsconf_edit "$postfix_master_cf" \
-        '^smtp.*spamd' 's{^smtp\s+inet.*}{smtp       inet  n       -       n       -       200       smtpd -o content_filter=spamd}'
-    rsconf_append "$postfix_master_cf" \
-        'spamd unix  -       n       n       -       10       pipe flags=Rq user=nobody:nobody argv=/usr/bin/spamc --port={{ spamd.port }} -e /usr/sbin/sendmail -G -i -f ${sender} -- ${recipient}'
+        '^smtp.*inet.*200.*smtpd$' 's{^smtp\s+inet.*}{smtp       inet  n       -       n       -       200       smtpd}'
+    rsconf_edit "$postfix_master_cf" \
+        '! ^spamd' 's{^spamd.*\n}{}'
 }
 
 postfix_setup_bop() {
     local mail_domains=( "$@" )
-    local tmp=$TMPDIR/postfix_setup_bop-$RANDOM
+    rsconf_yum_install bivio-perl
+    rsconf_yum_install perl-Bivio
+    rsconf_file_hash_save "$postfix_main_cf"
     # https://janikarhunen.fi/tackle-spam-with-spamassassin-on-centos7-and-postfix.html
     # http://forums.sentora.org/showthread.php?tid=1118
-    rsconf_yum_install perl-libwww-perl
-    rsconf_install_access 555 root root
-    docker run -i --rm '{{ bop.docker_image }}' bash > "$tmp" <<'EOF2'
-echo '#!/usr/bin/perl -w'
-cat /usr/share/perl5/vendor_perl/Bivio/Util/SendmailHTTP.pm
-cat <<'EOF'
-package main;
-use strict;
-exit(Bivio::Util::SendmailHTTP->main(@ARGV));
-EOF
-EOF2
-    rsconf_install_file "$tmp" /usr/bin/b-sendmail-http
-    rm -f "$tmp"
-    rsconf_file_hash_save "$postfix_main_cf"
     postconf -e \
         'mailbox_transport=bsendmailhttp:unix' \
         'smtpd_timeout=${stress?12}${stress:300}' \
@@ -87,8 +70,11 @@ EOF2
     local rsconf_edit_no_change_res=0
     rsconf_edit "$postfix_master_cf" \
         '^local.*8' 's{^local\s.*}{local     unix  -       n       n       -       8       local}'
+    #TODO(20180501) remove this
+    rsconf_edit "$postfix_master_cf" \
+        '^bsendmailhttp.*/u/sr/bin/b-sendmail-http' 's{^bsendmailhttp.*\n}{}'
     rsconf_append "$postfix_master_cf" \
-        'bsendmailhttp unix  -       n       n       -       2       pipe flags=DRhu user=nobody:nobody argv=/usr/bin/b-sendmail-http ${client_address} ${recipient} localhost.localdomain:80/_mail_receive/%s /bin/false unused-param'
+        'bsendmailhttp unix  -       n       n       -       2       pipe flags=DRhu user=nobody:nobody argv=/usr/bin/b-spamc-http ${client_address} ${recipient} localhost.localdomain:80/_mail_receive/%s /bin/false unused-param'
     local h
     for h in "${mail_domains[@]}"; do
         rsconf_append "$postfix_local_host_names" "$h"

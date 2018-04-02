@@ -17,12 +17,55 @@ _SYSTEMD_DIR = pkio.py_path('/etc/systemd/system')
 #TODO(robnagler) when to download new version of docker container?
 #TODO(robnagler) docker pull happens explicitly, probably
 
+def custom_unit_enable(compt, start, reload=None, stop=None, after=None, run_u=None, resource_d=None):
+    """Must be last call"""
+    if not resource_d:
+        resource_d = compt.name
+    j2_ctx = compt.hdb.j2_ctx_copy()
+    z = pkcollections.Dict(compt.systemd)
+    z.update(
+        after=' '.join(after or []),
+        reload=reload,
+        run_u=run_u or j2_ctx.rsconf_db.run_u,
+        start=start,
+        stop=stop,
+        pid_file=z.run_d.join(systemd.service_name + '.pid')
+    )
+    scripts = ('reload_', 'start', 'stop')
+    compt.install_access(mode='700', owner=z.run_u)
+    compt.install_directory(z.run_d)
+    compt.install_access(mode='500')
+    for s in scripts:
+        if z[s]:
+            z[s] = z.run_d.join(s)
+            compt.install_resource(
+                resource_d + '/' + s '.sh', j2_ctx, z[s])
+    # See Poettering's omniscience about what's good for all of us here:
+    # https://github.com/systemd/systemd/issues/770
+    # These files should be 400, since there's no value in making them public.
+    compt.install_access(mode='444', owner=j2_ctx.rsconf_db.root_u)
+    compt.install_resource(
+        'systemd/service',
+        j2_ctx,
+        z.service_f,
+    )
+    unit_enable(compt)
+
+
+def custom_unit_prepare(compt, *watch_files):
+    """Must be first call"""
+    run_d = unit_run_d(compt.hdb, compt.name)
+    unit_prepare(compt, run_d, *watch_files)
+    compt.systemd.run_d = run_d
+    return run_d
+
+
 def docker_unit_enable(compt, image, cmd, env=None, volumes=None, after=None, run_u=None, ports=None):
     """Must be last call"""
     from rsconf.component import docker_registry
 
     j2_ctx = compt.hdb.j2_ctx_copy()
-    v = pkcollections.Dict(compt.systemd)
+    z = j2_ctx.setdefault('systemd', pkcollections.Dict())
     if env is None:
         env = pkcollections.Dict()
     if 'TZ' not in env:
@@ -30,7 +73,7 @@ def docker_unit_enable(compt, image, cmd, env=None, volumes=None, after=None, ru
         # https://blog.packagecloud.io/eng/2017/02/21/set-environment-variable-save-thousands-of-system-calls/
         env['TZ'] = ':/etc/localtime'
     image = docker_registry.absolute_image(j2_ctx, image)
-    v.update(
+    z.update(
         after=' '.join(after or []),
         service_exec=cmd,
         exports='\n'.join(
@@ -39,47 +82,43 @@ def docker_unit_enable(compt, image, cmd, env=None, volumes=None, after=None, ru
         image=image,
         run_u=run_u or j2_ctx.rsconf_db.run_u,
     )
-    v.volumes = ' '.join(
-        ["-v '{}'".format(_colon_arg(x)) for x in [v.run_d] + (volumes or [])],
+    z.volumes = ' '.join(
+        ["-v '{}'".format(_colon_arg(x)) for x in [z.run_d] + (volumes or [])],
     )
-    v.network = ' '.join(
+    z.network = ' '.join(
         ["-p '{}'".format(_colon_arg(x)) for x in (ports or [])],
     )
-    if not v.network:
-        v.network = '--network=host'
+    if not z.network:
+        z.network = '--network=host'
     scripts = ('cmd', 'env', 'remove', 'start', 'stop')
-    compt.install_access(mode='700', owner=v.run_u)
-    compt.install_directory(v.run_d)
+    compt.install_access(mode='700', owner=z.run_u)
+    compt.install_directory(z.run_d)
     compt.install_access(mode='500')
     for s in scripts:
-        v[s] = v.run_d.join(s)
+        z[s] = z.run_d.join(s)
     if not cmd:
-        v.cmd = ''
-    j2_ctx.setdefault('systemd', pkcollections.Dict()).update(v)
+        z.cmd = ''
     for s in scripts:
-        if v[s]:
-            compt.install_resource('systemd/' + s, j2_ctx, v[s])
+        if z[s]:
+            compt.install_resource('systemd/docker_' + s, j2_ctx, z[s])
     # See Poettering's omniscience about what's good for all of us here:
     # https://github.com/systemd/systemd/issues/770
     # These files should be 400, since there's no value in making them public.
     compt.install_access(mode='444', owner=j2_ctx.rsconf_db.root_u)
     compt.install_resource(
-        'systemd/service',
+        'systemd/docker_unit',
         j2_ctx,
-        v.service_f,
+        z.service_f,
     )
     compt.append_root_bash(
-        "rsconf_service_docker_pull '{}' '{}'".format(v.image, v.service_name),
+        "rsconf_service_docker_pull '{}' '{}'".format(z.image, z.service_name),
     )
     unit_enable(compt)
 
 
-def docker_unit_prepare(compt):
+def docker_unit_prepare(compt, *watch_files):
     """Must be first call"""
-    run_d = unit_run_d(compt.hdb, compt.name)
-    unit_prepare(compt, run_d)
-    compt.systemd.run_d = run_d
-    return run_d
+    return custom_unit_prepare(compt, *watch_files)
 
 
 def timer_enable(compt, j2_ctx, on_calendar, timer_exec, run_u=None):
@@ -92,12 +131,12 @@ def timer_enable(compt, j2_ctx, on_calendar, timer_exec, run_u=None):
     z.on_calendar = on_calendar
     z.timer_exec = timer_exec
     compt.install_resource(
-        'systemd/timer',
+        'systemd/timer_unit',
         j2_ctx,
         z.timer_f,
     )
     compt.install_resource(
-        'systemd/timer_service',
+        'systemd/timer_unit_service',
         j2_ctx,
         z.service_f,
     )

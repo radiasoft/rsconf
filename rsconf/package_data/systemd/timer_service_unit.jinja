@@ -2,6 +2,7 @@
 Description={{ systemd.service_name }}
 
 [Service]
+Environment=TZ=:/etc/localtime
 ExecStart={{ systemd.timer_start_f }}
 Group={{ systemd.run_u }}
 SyslogIdentifier={{ systemd.service_name }}
