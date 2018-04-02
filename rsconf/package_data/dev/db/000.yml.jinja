@@ -23,13 +23,12 @@ default:
     primary: {{ master }}
     secondaries: []
   bop:
-    docker_image: biviosoftware/bivio
-    server_status_location: /bop-status
-    is_production: false
     bconf_aux: ''
+    is_production: false
     secret:
       algorithm: DES
       magic: XYZ
+    server_status_location: /bop-status
   btest:
     client_host: {{ master }}
     email_user: {{ user }}
@@ -84,7 +83,6 @@ default:
   petshop:
     can_secure: false
     cookie_tag: PSD
-    docker_image: biviosoftware/bivio
     http_host: petshop.{{ host }}
     listen_base: 8114
     mail_host: petshop.{{ host }}
@@ -121,7 +119,6 @@ default:
     auth_local_method: md5
   postgrey:
     port: 10023
-    docker_image: biviosoftware/perl
     whitelist_recipients: []
   rabbitmq:
     docker_image: docker.io/radiasoft/rabbitmq
@@ -145,10 +142,7 @@ default:
       service_port: 7000
     server:
       oauth_login: false
-  spamd:
-    port: 10783
-    docker_image: biviosoftware/perl
-
+  spamd: {}
 
 channel:
   dev:

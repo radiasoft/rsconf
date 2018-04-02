@@ -1,3 +1,4 @@
+rpm/
 run/
 MANIFEST.in
 tox.ini

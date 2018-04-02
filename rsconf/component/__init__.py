@@ -82,14 +82,6 @@ class T(pkcollections.Dict):
             '{}: directory must be at least 700 mode (u=rwx)'
         self._bash_append(host_path, is_file=False)
 
-    def install_symlink(self, old_host_path, new_host_path):
-        new = new_host_path.bestrelpath(old_host_path)
-        _assert_host_path(new)
-        _assert_host_path(old_host_path)
-        self.append_root_bash(
-            "rsconf_install_symlink '{}' '{}'".format(old_host_path, new),
-        )
-
     def install_resource(self, name, j2_ctx, host_path):
         dst = self._bash_append_and_dst(host_path)
         dst.write(_render_resource(name, j2_ctx))
@@ -100,6 +92,24 @@ class T(pkcollections.Dict):
         src = self.secret_path_value(filename, gen_secret, visibility)[1]
         dst = self._bash_append_and_dst(host_path)
         src.copy(dst, mode=True)
+
+    def install_rpm(self, rpm_file):
+        if r in self.hdb.component.setdefault('_installed_rpms', set()):
+            return r
+        compt.component.bop._installed_rpms.add(r)
+        src = self.hdb.rsconf_db.rpm_source_d.join(rpm_file)
+        dst = self.hdb.rsconf_db.srv_host_d.join(rpm_file)
+        dst.mksymlinkto(src, absolute=False)
+        self.append_root_bash("rsconf_install_rpm '{}'".format(rpm_file))
+        return r
+
+    def install_symlink(self, old_host_path, new_host_path):
+        new = new_host_path.bestrelpath(old_host_path)
+        _assert_host_path(new)
+        _assert_host_path(old_host_path)
+        self.append_root_bash(
+            "rsconf_install_symlink '{}' '{}'".format(old_host_path, new),
+        )
 
     def install_tls_key_and_crt(self, domain, dst_d):
         kc = tls_key_and_crt(self.hdb, domain)
@@ -165,6 +175,7 @@ class T(pkcollections.Dict):
             raise AssertionError('{}: dst already exists'.format(dst))
         pkio.mkdir_parent_only(dst)
         return dst
+
 
 def create_t(name, buildt):
     """Instantiate component

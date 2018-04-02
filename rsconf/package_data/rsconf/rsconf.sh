@@ -270,10 +270,10 @@ rsconf_main() {
     local -A rsconf_install_access=()
     local -A rsconf_service_status=()
     local -A rsconf_service_watch=()
+    local -A rsconf_service_file_changed=()
     local -a rsconf_service_order=()
     local rsconf_rerun_required=
     install_script_eval 000.sh
-    rsconf_service_restart
     if [[ $rsconf_rerun_required ]]; then
         echo "$rsconf_rerun_required
 
@@ -313,6 +313,30 @@ rsconf_rerun_required() {
 "
 }
 
+rsconf_rpm_install() {
+    # installs a custom rpm from the local repo
+    local rpm_file=$1
+    shift
+    local rpm_base=$(basename "$rpm_file" .rpm)
+    local prev_rpm=$(rpm -q "$rpm_base" 2>&1 || true)
+    local tmp=$rpm_base-rsconf-tmp.rpm
+    install_download "$rpm_file" > "$tmp"
+    local new_rpm=$(rpm -qp "$tmp")
+    # Yum is wonky with update/install. We have to handle
+    # both fresh install and update, which install does, but
+    # it doesn't return an error if the update isn't done.
+    # You just have to check so this way is more robust
+    if [[ $curr_rpm == $prev_rpm ]]; then
+        return
+    fi
+    rsconf_yum_install "$tmp"
+    local curr_rpm=$(rpm -q "$rpm_base")
+    if [[ $curr_rpm != $new_rpm ]]; then
+        install_err "$curr_rpm: did not get installed, new=$new_rpm"
+    fi
+    rsconf_service_file_changed "$rpm_file"
+}
+
 rsconf_run() {
     local script=$1
     shift
@@ -337,7 +361,7 @@ rsconf_service_docker_pull() {
     install_exec docker pull "$image"
     if [[ $service ]]; then
         local curr_id=$(docker inspect --format='{{.Id}}' "$image" 2>/dev/null || true)
-        if [[ $prev_id != $curr_id || $container_image_id && $container_image_id != $curr_id ]]; then
+p        if [[ $prev_id != $curr_id || $container_image_id && $container_image_id != $curr_id ]]; then
             install_info "$image: new image, restart $service required"
             rsconf_service_trigger_restart "$service"
         fi
@@ -346,41 +370,38 @@ rsconf_service_docker_pull() {
 
 rsconf_service_file_changed() {
     local path=$1
-    local s
-    while [[ $path != / ]]; do
-        if [[ ${rsconf_service_watch[$path]} ]]; then
-            # POSIT: no specials in service names
-            for s in ${rsconf_service_watch[$path]}; do
-                rsconf_service_trigger_restart "$s"
-            done
-        fi
-        path=$(dirname "$path")
+    rsconf_service_file_changed[$path]=1
+}
+
+rsconf_service_file_changed_check() {
+    local service=$1
+    for watch in ${rsconf_service_watch[$service]}; do
+        for changed in "${!rsconf_service_file_changed[@]}"; do
+            if [[ $changed == $watch || $changed =~ ^$watch/ ]]; then
+                rsconf_service_trigger_restart "$service"
+                return
+            fi
+        done
     done
 }
 
 rsconf_service_prepare() {
-    local s=$1
-    local w x
-    rsconf_service_status[$s]=start
-    rsconf_service_order+=( $s )
-    for w in "$@"; do
-        if [[ ! ${rsconf_service_watch[$w]} ]]; then
-            rsconf_service_watch[$w]=$s
-            continue
-        fi
-        # POSIT: no specials in service names
-        for x in ${rsconf_service_watch[$w]}; do
-            if [[ $x == $s ]]; then
-                continue 2
-            fi
-        done
-        rsconf_service_watch[$w]+=" $s"
-    done
+    local service=$1
+    rsconf_service_status[$service]=start
+    rsconf_service_order+=( $start )
+    if [[ ${rsconf_service_watch[$service]-} ]]; then
+        install_err "$service: rsconf_service_prepare is not re-entrant"
+    fi
+    # POSIT: No spaces or specials
+    rsconf_service_watch[$service]="$*"
 }
 
 rsconf_service_restart() {
     local reloaded= s
     for s in ${rsconf_service_order[@]}; do
+        if [[ ${rsconf_service_status[$s]} == start ]]; then
+            rsconf_service_file_changed_check "$s"
+        fi
         if [[ ${rsconf_service_status[$s]} == restart ]]; then
             if [[ $reloaded ]]; then
                reloaded=1
@@ -389,10 +410,14 @@ rsconf_service_restart() {
             # Just restart, most daemons are fast
             install_info "$s: restarting"
             systemctl restart "$s"
+        elif [[ ${rsconf_service_status[$s]} == active ]]; then
+            # Only one re/start
+            continue
         else
             # test is really only necessary for the msg
             # https://askubuntu.com/a/836155
             # don't use "status", b/c reports "bad" for sysv init
+            # scripts (e.g. network)
             if ! systemctl is-active "$s" >&/dev/null; then
                 install_info "$s: starting"
                 systemctl start "$s"
@@ -405,7 +430,10 @@ rsconf_service_restart() {
 
 rsconf_service_trigger_restart() {
     local service=$1
-    rsconf_service_status[$service]=restart
+    # Only trigger restart once
+    if [[ ! ${rsconf_service_status[$service]-} =~ active|restart ]]; then
+        rsconf_service_status[$service]=restart
+    fi
 }
 
 rsconf_setup_dev() {

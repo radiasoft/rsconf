@@ -25,12 +25,14 @@ ZERO_YML = '0*.yml'
 SRV_SUBDIR = 'srv'
 DEFAULT_ROOT_SUBDIR = 'run'
 DB_SUBDIR = 'db'
+RPM_SUBDIR = 'rpm'
 SECRET_SUBDIR = 'secret'
 HOST_SUBDIR = 'host'
 LEVELS = ('default', 'channel', 'host')
 # Secrets are long so keep them simple
 _BASE62_CHARS = string.ascii_lowercase + string.digits + string.ascii_uppercase
 _HEX_CHARS = '0123456789abcdef'
+
 
 class Host(pkcollections.Dict):
     def j2_ctx_copy(self):
@@ -93,6 +95,7 @@ class T(pkcollections.Dict):
                 channel=channel,
                 db_d=db_d,
                 host=host.lower(),
+                rpm_source_d=self.root_d.join(RPM_SUBDIR),
                 secret_d=db_d.join(SECRET_SUBDIR),
                 srv_d=srv_d,
                 srv_host_d=srv_d.join(HOST_SUBDIR),
@@ -144,6 +147,16 @@ def merge_dict(base, new):
         base[k] = copy.deepcopy(new_v)
 
 
+def random_string(path=None, length=32, is_hex=False):
+    chars = _HEX_CHARS if is_hex else _BASE62_CHARS
+    r = random.SystemRandom()
+    res = ''.join(r.choice(chars) for _ in range(length))
+    if path:
+        with open(str(path), 'wb') as f:
+            f.write(res)
+    return res
+
+
 def secret_path(hdb, filename, visibility=None):
     if visibility:
         assert visibility in VISIBILITY_LIST, \
@@ -157,16 +170,6 @@ def secret_path(hdb, filename, visibility=None):
     p.append(filename)
     res = hdb.rsconf_db.secret_d.join(*p)
     pkio.mkdir_parent_only(res)
-    return res
-
-
-def random_string(path=None, length=32, is_hex=False):
-    chars = _HEX_CHARS if is_hex else _BASE62_CHARS
-    r = random.SystemRandom()
-    res = ''.join(r.choice(chars) for _ in range(length))
-    if path:
-        with open(str(path), 'wb') as f:
-            f.write(res)
     return res
 
 

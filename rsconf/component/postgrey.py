@@ -13,11 +13,12 @@ class T(component.T):
     def internal_build(self):
         from rsconf import systemd
         from rsconf.component import network
+        from rsconf.component import bop
 
         self.buildt.require_component('base_all')
         j2_ctx = self.hdb.j2_ctx_copy()
         network.update_j2_ctx(j2_ctx)
-        run_d = systemd.custom_unit_prepare(self)
+        run_d = bop.custom_unit_prepare(self, j2_ctx)
         j2_ctx.setdefault('postgrey', pkcollections.Dict()).update(
             dbdir=run_d.join('db'),
             etc=run_d.join('etc'),
