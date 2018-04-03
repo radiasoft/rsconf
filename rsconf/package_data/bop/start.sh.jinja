@@ -1,6 +1,6 @@
 #!/bin/bash
 set -eu -o pipefail
-rm -f '{{ bop.pid_file }}'
+rm -f '{{ systemd.pid_file }}'
 if [[ ! -L modules ]]; then
     ln -r -s /etc/httpd/modules .
 fi

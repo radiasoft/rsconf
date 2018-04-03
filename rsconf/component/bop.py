@@ -10,6 +10,7 @@ from pykern.pkdebug import pkdp
 from rsconf import component
 from pykern import pkcollections
 from pykern import pkconfig
+from pykern import pkio
 
 
 SOURCE_CODE_D = '/usr/share/Bivio-bOP-src'
@@ -48,17 +49,17 @@ class T(component.T):
         z.run_u = j2_ctx.rsconf_db.run_u
         z.app_name = self.name
         db.merge_dict(z, j2_ctx[self.name])
-        r = None if z.perl_root = 'Bivio::PetShop' else 'perl-{}.rpm'.format(z.perl_root)
-        run_d = custom_unit_prepare(self, j2_ctx, app_rpm=r)
-        z.conf_f = run_d.join('httpd.conf')
-        z.bconf_f = run_d.join('bivio.bconf')
-        z.log_postrotate_f = run_d.join('reload')
-        z.http_cmd = "/usr/sbin/httpd -d '{}' -f '{}'".format(z.run_d, z.conf_f)
+        r = None if z.perl_root == 'Bivio::PetShop' \
+            else 'perl-{}.rpm'.format(z.perl_root)
+        z.run_d = custom_unit_prepare(self, j2_ctx, app_rpm=r)
+        z.conf_f = z.run_d.join('httpd.conf')
+        z.bconf_f = z.run_d.join('bivio.bconf')
+        z.log_postrotate_f = z.run_d.join('reload')
+        z.httpd_cmd = "/usr/sbin/httpd -d '{}' -f '{}'".format(z.run_d, z.conf_f)
         z.source_code_d = SOURCE_CODE_D
-        z.run_d = run_d
         systemd.custom_unit_enable(
             self,
-            start='start',
+            j2_ctx,
             reload='reload',
             stop='stop',
             resource_d='bop',
@@ -66,12 +67,16 @@ class T(component.T):
         )
         self.install_access(mode='700', owner=z.run_u)
         for d in 'bkp', 'db', 'log', 'logbop':
-            x = run_d.join(d)
+            x = z.run_d.join(d)
             z['{}_d'.format(d)] = x
             self.install_directory(x)
         self.install_access(mode='400')
         self.install_resource('bop/httpd.conf', j2_ctx, z.conf_f)
         self.install_resource('bop/bivio.bconf', j2_ctx, z.bconf_f)
+        self.install_symlink(
+            pkio.py_path('/etc/httpd/modules'),
+            z.run_d.join('modules'),
+        )
         self.install_access(mode='500')
         logrotate.install_conf(self, j2_ctx, resource_d='bop')
         # After the unit files are installed
@@ -91,8 +96,8 @@ def custom_unit_prepare(compt, j2_ctx, app_rpm=None):
         if not r:
             continue
         watch.append(r)
-        compt.install_rpm(r)
-    return systemd.custom_unit_prepare(compt, *watch)
+        compt.install_rpm(j2_ctx, r)
+    return systemd.custom_unit_prepare(compt, j2_ctx, *watch)
 
 def _install_vhosts(self, j2_ctx):
     from rsconf.component import nginx

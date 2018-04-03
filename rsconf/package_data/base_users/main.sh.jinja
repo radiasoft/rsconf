@@ -8,7 +8,7 @@ base_users_main() {
         useradd -m -g {{ rsconf_db.run_u }} -u {{ rsconf_db.run_uid }} {{ rsconf_db.run_u }}
     fi
     rsconf_radia_run_as_user {{ rsconf_db.run_u }} home
-    set +e +o pipefail
+    set +euo pipefail
     . ~/.bashrc
-    set -e -o pipefail
+    set -euo pipefail
 }

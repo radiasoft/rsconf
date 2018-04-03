@@ -31,7 +31,7 @@ class T(component.T):
         # Needs to be installed before main runs
         self.install_directory(z.log_d)
         self.append_root_bash_with_main(j2_ctx)
-        systemd.unit_prepare(self, z.run_d)
+        systemd.unit_prepare(self, j2_ctx, z.run_d)
         self.append_root_bash(
             'rsconf_append "{}" "{}" || true'.format(
                 z.conf_f,
@@ -53,4 +53,4 @@ class T(component.T):
             'postgresql/pg_hba.conf', j2_ctx, z.conf_d.join('pg_hba.conf'))
         self.install_access(mode='400', owner=j2_ctx.rsconf_db.root_u)
         logrotate.install_conf(self, j2_ctx)
-        systemd.unit_enable(self)
+        systemd.unit_enable(self, j2_ctx)

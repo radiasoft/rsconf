@@ -16,7 +16,7 @@ class T(component.T):
 
         self.buildt.require_component('docker')
         j2_ctx = self.hdb.j2_ctx_copy()
-        run_d = systemd.docker_unit_prepare(self)
+        run_d = systemd.docker_unit_prepare(self, j2_ctx)
         env = pkcollections.Dict(
             HOME=run_d,
             RABBITMQ_CONFIG_FILE=run_d.join('rabbitmq'),
@@ -26,11 +26,12 @@ class T(component.T):
         )
         systemd.docker_unit_enable(
             self,
+            j2_ctx,
             image=docker_registry.absolute_image(j2_ctx, j2_ctx.rabbitmq.docker_image),
             env=env,
             cmd='/usr/lib/rabbitmq/bin/rabbitmq-server',
         )
-        self.install_access(mode='700', owner=self.hdb.rsconf_db.run_u)
+        self.install_access(mode='700', owner=j2_ctx.rsconf_db.run_u)
         self.install_directory(env.RABBITMQ_LOG_BASE)
         self.install_directory(env.RABBITMQ_MNESIA_BASE)
         for f in ('enabled_plugins', 'rabbitmq.config'):

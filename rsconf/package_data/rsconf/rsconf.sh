@@ -1,7 +1,6 @@
 #!/bin/bash
-#
-# rsconf library and main
-#
+set -euo pipefail
+
 rsconf_append() {
     local file=$1
     local egrep=$2
@@ -81,7 +80,7 @@ rsconf_file_hash() {
 
 rsconf_file_hash_check() {
     local file=$1
-    if [[ ! $rsconf_file_hash[$file] ]]; then
+    if [[ ! ${rsconf_file_hash[$file]:-} ]]; then
         install_err "$file: missing hash"
     fi
     local new=$(rsconf_file_hash "$file")
@@ -94,7 +93,7 @@ rsconf_file_hash_check() {
 
 rsconf_file_hash_save() {
     local file=$1
-    if [[ ${rsconf_file_hash[$file]} ]]; then
+    if [[ ${rsconf_file_hash[$file]:-} ]]; then
         install_err "$file: unchecked saved hash"
     fi
     rsconf_file_hash[$file]=$(rsconf_file_hash "$file")
@@ -124,7 +123,7 @@ rsconf_install_access() {
         install_err "$1: invalid or empty mode"
     fi
     rsconf_install_access[mode]=$1
-    if [[ ! $2 ]]; then
+    if [[ ! ${2:-} ]]; then
         return
     fi
     rsconf_install_access[user]=$2
@@ -150,7 +149,7 @@ rsconf_install_chxxx() {
         chmod "${rsconf_install_access[mode]}" "$path"
         change=1
     fi
-    if [[ ! $rsconf_no_check && $change ]]; then
+    if [[ ! ${rsconf_no_check:-} && $change ]]; then
         rsconf_service_file_changed "$path"
     fi
 }
@@ -180,7 +179,7 @@ rsconf_install_directory() {
 rsconf_install_file() {
     local path=$1
     local src=
-    if [[ $2 ]]; then
+    if [[ ${2:-} ]]; then
         src=$1
         path=$2
     fi
@@ -229,9 +228,32 @@ rsconf_install_mount_point() {
     rsconf_install_directory "$path"
 }
 
+rsconf_install_rpm() {
+    # installs a custom rpm from the local repo
+    local rpm_file=$1
+    local rpm_base=$(basename "$rpm_file" .rpm)
+    local prev_rpm=$(rpm -q "$rpm_base" 2>&1 || true)
+    local tmp=$rpm_file
+    install_download "$rpm_file" > "$tmp"
+    local new_rpm=$(rpm -qp "$tmp")
+    # Yum is wonky with update/install. We have to handle
+    # both fresh install and update, which install does, but
+    # it doesn't return an error if the update isn't done.
+    # You just have to check so this way is more robust
+    if [[ $new_rpm == $prev_rpm ]]; then
+        return
+    fi
+    rsconf_yum_install "$tmp"
+    local curr_rpm=$(rpm -q "$rpm_base")
+    if [[ $curr_rpm != $new_rpm ]]; then
+        install_err "$curr_rpm: did not get installed, new=$new_rpm"
+    fi
+    rsconf_service_file_changed "$rpm_file"
+}
+
 rsconf_install_symlink() {
     local old=$1
-    local new=$1
+    local new=$2
     if [[ -L $new ]]; then
         local e=$(readlink "$new")
         if [[ $e == $old ]]; then
@@ -256,7 +278,7 @@ rsconf_main() {
         shift
     fi
     local host=${1:-$(hostname -f)}
-    local setup_dev=$2
+    local setup_dev=${2:-}
     if [[ $host =~ / ]]; then
         install_err "$host: invalid host name"
     fi
@@ -313,30 +335,6 @@ rsconf_rerun_required() {
 "
 }
 
-rsconf_rpm_install() {
-    # installs a custom rpm from the local repo
-    local rpm_file=$1
-    shift
-    local rpm_base=$(basename "$rpm_file" .rpm)
-    local prev_rpm=$(rpm -q "$rpm_base" 2>&1 || true)
-    local tmp=$rpm_base-rsconf-tmp.rpm
-    install_download "$rpm_file" > "$tmp"
-    local new_rpm=$(rpm -qp "$tmp")
-    # Yum is wonky with update/install. We have to handle
-    # both fresh install and update, which install does, but
-    # it doesn't return an error if the update isn't done.
-    # You just have to check so this way is more robust
-    if [[ $curr_rpm == $prev_rpm ]]; then
-        return
-    fi
-    rsconf_yum_install "$tmp"
-    local curr_rpm=$(rpm -q "$rpm_base")
-    if [[ $curr_rpm != $new_rpm ]]; then
-        install_err "$curr_rpm: did not get installed, new=$new_rpm"
-    fi
-    rsconf_service_file_changed "$rpm_file"
-}
-
 rsconf_run() {
     local script=$1
     shift
@@ -361,7 +359,7 @@ rsconf_service_docker_pull() {
     install_exec docker pull "$image"
     if [[ $service ]]; then
         local curr_id=$(docker inspect --format='{{.Id}}' "$image" 2>/dev/null || true)
-p        if [[ $prev_id != $curr_id || $container_image_id && $container_image_id != $curr_id ]]; then
+        if [[ $prev_id != $curr_id || $container_image_id && $container_image_id != $curr_id ]]; then
             install_info "$image: new image, restart $service required"
             rsconf_service_trigger_restart "$service"
         fi
@@ -388,8 +386,8 @@ rsconf_service_file_changed_check() {
 rsconf_service_prepare() {
     local service=$1
     rsconf_service_status[$service]=start
-    rsconf_service_order+=( $start )
-    if [[ ${rsconf_service_watch[$service]-} ]]; then
+    rsconf_service_order+=( $service )
+    if [[ ${rsconf_service_watch[$service]:-} ]]; then
         install_err "$service: rsconf_service_prepare is not re-entrant"
     fi
     # POSIT: No spaces or specials
@@ -431,7 +429,7 @@ rsconf_service_restart() {
 rsconf_service_trigger_restart() {
     local service=$1
     # Only trigger restart once
-    if [[ ! ${rsconf_service_status[$service]-} =~ active|restart ]]; then
+    if [[ ! ${rsconf_service_status[$service]:-} =~ active|restart ]]; then
         rsconf_service_status[$service]=restart
     fi
 }

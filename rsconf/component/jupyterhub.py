@@ -26,7 +26,7 @@ class T(component.T):
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.jupyterhub
         z.vhost = j2_ctx.jupyterhub.vhosts[j2_ctx.rsconf_db.host]
-        run_d = systemd.docker_unit_prepare(self)
+        run_d = systemd.docker_unit_prepare(self, j2_ctx)
         z.update(
             user_d=run_d.join(_USER_SUBDIR),
             jupyter_docker_image=docker_registry.absolute_image(
@@ -58,6 +58,7 @@ class T(component.T):
         )
         systemd.docker_unit_enable(
             self,
+            j2_ctx,
             cmd='jupyterhub -f {}'.format(conf_f),
             image=docker_registry.absolute_image(j2_ctx, z.docker_image),
             ports=[int(z.port)],

@@ -35,7 +35,7 @@ class T(component.T):
 
         self.buildt.require_component('docker', 'nginx')
         j2_ctx = self.hdb.j2_ctx_copy()
-        run_d = systemd.docker_unit_prepare(self)
+        run_d = systemd.docker_unit_prepare(self, j2_ctx)
         db_d = run_d.join(_DB_SUBDIR)
         #TODO(robnagler) from sirepo or flask(?)
         beaker_secret_f = db_d.join('beaker_secret')
@@ -63,6 +63,7 @@ class T(component.T):
             env[f.upper().replace('.', '_')] = _env_value(j2_ctx.nested_get(f))
         systemd.docker_unit_enable(
             self,
+            j2_ctx,
             image=docker_registry.absolute_image(j2_ctx, j2_ctx.sirepo.docker_image),
             env=env,
             cmd='sirepo service uwsgi',

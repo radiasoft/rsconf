@@ -23,17 +23,11 @@ class T(component.T):
             dbdir=run_d.join('db'),
             etc=run_d.join('etc'),
         )
-        run = run_d.join('run')
-        systemd.custom_unit_enable(
-            self,
-            cmd=str(run),
-        )
+        systemd.custom_unit_enable(self, j2_ctx)
         self.install_access(mode='700', owner=self.hdb.rsconf_db.run_u)
         self.install_directory(run_d)
         self.install_directory(j2_ctx.postgrey.dbdir)
         self.install_directory(j2_ctx.postgrey.etc)
-        self.install_access(mode='500')
-        self.install_resource('postgrey/run.sh', j2_ctx, run)
         self.install_access(mode='400')
         self.install_resource(
             'postgrey/postgrey_whitelist_recipients',

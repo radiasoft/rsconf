@@ -17,21 +17,20 @@ _SYSTEMD_DIR = pkio.py_path('/etc/systemd/system')
 #TODO(robnagler) when to download new version of docker container?
 #TODO(robnagler) docker pull happens explicitly, probably
 
-def custom_unit_enable(compt, start, reload=None, stop=None, after=None, run_u=None, resource_d=None):
+def custom_unit_enable(compt, j2_ctx, start='start', reload=None, stop=None, after=None, run_u=None, resource_d=None):
     """Must be last call"""
     if not resource_d:
         resource_d = compt.name
-    j2_ctx = compt.hdb.j2_ctx_copy()
-    z = pkcollections.Dict(compt.systemd)
+    z = j2_ctx.systemd
     z.update(
         after=' '.join(after or []),
         reload=reload,
         run_u=run_u or j2_ctx.rsconf_db.run_u,
         start=start,
         stop=stop,
-        pid_file=z.run_d.join(systemd.service_name + '.pid')
+        pid_file=z.run_d.join(z.service_name + '.pid')
     )
-    scripts = ('reload_', 'start', 'stop')
+    scripts = ('reload', 'start', 'stop')
     compt.install_access(mode='700', owner=z.run_u)
     compt.install_directory(z.run_d)
     compt.install_access(mode='500')
@@ -39,33 +38,35 @@ def custom_unit_enable(compt, start, reload=None, stop=None, after=None, run_u=N
         if z[s]:
             z[s] = z.run_d.join(s)
             compt.install_resource(
-                resource_d + '/' + s '.sh', j2_ctx, z[s])
+                resource_d + '/' + s + '.sh',
+                j2_ctx,
+                z[s],
+            )
     # See Poettering's omniscience about what's good for all of us here:
     # https://github.com/systemd/systemd/issues/770
     # These files should be 400, since there's no value in making them public.
     compt.install_access(mode='444', owner=j2_ctx.rsconf_db.root_u)
     compt.install_resource(
-        'systemd/service',
+        'systemd/custom_unit',
         j2_ctx,
         z.service_f,
     )
-    unit_enable(compt)
+    unit_enable(compt, j2_ctx)
 
 
-def custom_unit_prepare(compt, *watch_files):
+def custom_unit_prepare(compt, j2_ctx, *watch_files):
     """Must be first call"""
-    run_d = unit_run_d(compt.hdb, compt.name)
-    unit_prepare(compt, run_d, *watch_files)
-    compt.systemd.run_d = run_d
+    run_d = unit_run_d(j2_ctx, compt.name)
+    unit_prepare(compt, j2_ctx, run_d, *watch_files)
+    j2_ctx.systemd.run_d = run_d
     return run_d
 
 
-def docker_unit_enable(compt, image, cmd, env=None, volumes=None, after=None, run_u=None, ports=None):
+def docker_unit_enable(compt, j2_ctx, image, cmd, env=None, volumes=None, after=None, run_u=None, ports=None):
     """Must be last call"""
     from rsconf.component import docker_registry
 
-    j2_ctx = compt.hdb.j2_ctx_copy()
-    z = j2_ctx.setdefault('systemd', pkcollections.Dict())
+    z = j2_ctx.systemd
     if env is None:
         env = pkcollections.Dict()
     if 'TZ' not in env:
@@ -113,12 +114,12 @@ def docker_unit_enable(compt, image, cmd, env=None, volumes=None, after=None, ru
     compt.append_root_bash(
         "rsconf_service_docker_pull '{}' '{}'".format(z.image, z.service_name),
     )
-    unit_enable(compt)
+    unit_enable(compt, j2_ctx)
 
 
-def docker_unit_prepare(compt, *watch_files):
+def docker_unit_prepare(compt, j2_ctx, *watch_files):
     """Must be first call"""
-    return custom_unit_prepare(compt, *watch_files)
+    return custom_unit_prepare(compt, j2_ctx, *watch_files)
 
 
 def timer_enable(compt, j2_ctx, on_calendar, timer_exec, run_u=None):
@@ -146,7 +147,7 @@ def timer_enable(compt, j2_ctx, on_calendar, timer_exec, run_u=None):
         j2_ctx,
         z.timer_start_f,
     )
-    unit_enable(compt)
+    unit_enable(compt, j2_ctx)
 
 
 def timer_prepare(compt, j2_ctx, *watch_files):
@@ -169,23 +170,23 @@ def timer_prepare(compt, j2_ctx, *watch_files):
     return run_d
 
 
-def unit_enable(compt):
+def unit_enable(compt, j2_ctx):
     # rsconf.sh does the actual work of enabling
     # good to have the hook here for clarity
     pass
 
 
-def unit_prepare(compt, *watch_files):
+def unit_prepare(compt, j2_ctx, *watch_files):
     """Must be first call"""
-    compt.systemd = pkcollections.Dict(
+    j2_ctx.systemd = pkcollections.Dict(
         service_name=compt.name,
         service_f=_SYSTEMD_DIR.join('{}.service'.format(compt.name)),
     )
-    compt.service_prepare((compt.systemd.service_f,) + watch_files)
+    compt.service_prepare((j2_ctx.systemd.service_f,) + watch_files)
 
 
-def unit_run_d(hdb, unit_name):
-    return hdb.rsconf_db.host_run_d.join(unit_name)
+def unit_run_d(j2_ctx, unit_name):
+    return j2_ctx.rsconf_db.host_run_d.join(unit_name)
 
 
 def _colon_arg(v):

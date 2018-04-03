@@ -8,7 +8,7 @@ postfix_main() {
     rsconf_file_hash_save "$postfix_main_cf"
     # https://codinfox.github.io/dev/2015/04/08/postfix-cannot-start/
     rsconf_yum_install procmail
-    if [[ ! -e $_postfix_local_host_names ]]; then
+    if [[ ! -e $postfix_local_host_names ]]; then
         rsconf_install_access 644 root root
         rsconf_install_file /dev/null "$postfix_local_host_names"
     fi
@@ -72,7 +72,7 @@ postfix_setup_bop() {
         '^local.*8' 's{^local\s.*}{local     unix  -       n       n       -       8       local}'
     #TODO(20180501) remove this
     rsconf_edit "$postfix_master_cf" \
-        '^bsendmailhttp.*/u/sr/bin/b-sendmail-http' 's{^bsendmailhttp.*\n}{}'
+        '! ^bsendmailhttp.*/usr/bin/b-sendmail-http' 's{^bsendmailhttp.*\n}{}'
     rsconf_append "$postfix_master_cf" \
         'bsendmailhttp unix  -       n       n       -       2       pipe flags=DRhu user=nobody:nobody argv=/usr/bin/b-spamc-http ${client_address} ${recipient} localhost.localdomain:80/_mail_receive/%s /bin/false unused-param'
     local h

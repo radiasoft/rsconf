@@ -93,22 +93,22 @@ class T(pkcollections.Dict):
         dst = self._bash_append_and_dst(host_path)
         src.copy(dst, mode=True)
 
-    def install_rpm(self, rpm_file):
-        if r in self.hdb.component.setdefault('_installed_rpms', set()):
-            return r
-        compt.component.bop._installed_rpms.add(r)
-        src = self.hdb.rsconf_db.rpm_source_d.join(rpm_file)
-        dst = self.hdb.rsconf_db.srv_host_d.join(rpm_file)
+    def install_rpm(self, j2_ctx, rpm_file):
+        if rpm_file in self.hdb.component.setdefault('_installed_rpms', set()):
+            return rpm_file
+        self.hdb.component._installed_rpms.add(rpm_file)
+        src = j2_ctx.rsconf_db.rpm_source_d.join(rpm_file)
+        dst = j2_ctx.build.dst_d.join(rpm_file)
         dst.mksymlinkto(src, absolute=False)
         self.append_root_bash("rsconf_install_rpm '{}'".format(rpm_file))
-        return r
+        return rpm_file
 
     def install_symlink(self, old_host_path, new_host_path):
-        new = new_host_path.bestrelpath(old_host_path)
-        _assert_host_path(new)
+        _assert_host_path(new_host_path)
+        rel = new_host_path.bestrelpath(old_host_path)
         _assert_host_path(old_host_path)
         self.append_root_bash(
-            "rsconf_install_symlink '{}' '{}'".format(old_host_path, new),
+            "rsconf_install_symlink '{}' '{}'".format(rel, new_host_path),
         )
 
     def install_tls_key_and_crt(self, domain, dst_d):

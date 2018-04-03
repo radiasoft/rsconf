@@ -22,8 +22,8 @@ class T(component.T):
         from rsconf import systemd
 
         self.buildt.require_component('base_all')
-        systemd.unit_prepare(self, _CONF_DIR)
         j2_ctx = self.hdb.j2_ctx_copy()
+        systemd.unit_prepare(self, j2_ctx, _CONF_DIR)
         j2_ctx.docker.update(
             data_d=systemd.unit_run_d(j2_ctx, 'docker'),
         )
@@ -56,7 +56,7 @@ class T(component.T):
             j2_ctx,
             _ROOT_CONFIG_JSON,
         )
-        systemd.unit_enable(self)
+        systemd.unit_enable(self, j2_ctx)
 
 
 def _dict(value):

@@ -108,8 +108,8 @@ class T(component.T):
 
         # https://docs.docker.com/registry/configuration/
         self.buildt.require_component('docker')
-        run_d = systemd.docker_unit_prepare(self)
         j2_ctx = self.hdb.j2_ctx_copy()
+        run_d = systemd.docker_unit_prepare(self, j2_ctx)
         assert update_j2_ctx(j2_ctx), \
             'no registry host'
         conf_f = run_d.join('config.yml')
@@ -118,6 +118,7 @@ class T(component.T):
         ]
         systemd.docker_unit_enable(
             self,
+            j2_ctx,
             # Specify pull from docker.io directly to avoid registry not yet running
             image=_DOCKER_HUB_HOST + '/library/registry:2',
             cmd=None,
