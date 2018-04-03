@@ -39,7 +39,6 @@ cd ..
 gcl rsconf
 cd rsconf
 pip install -e .
-rm -rf run
 mkdir run
 ln -s ../rpm run/rpm
 rsconf build
