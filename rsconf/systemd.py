@@ -13,7 +13,6 @@ import types
 
 _SYSTEMD_DIR = pkio.py_path('/etc/systemd/system')
 
-
 #TODO(robnagler) when to download new version of docker container?
 #TODO(robnagler) docker pull happens explicitly, probably
 
@@ -28,11 +27,16 @@ def custom_unit_enable(compt, j2_ctx, start='start', reload=None, stop=None, aft
         run_u=run_u or j2_ctx.rsconf_db.run_u,
         start=start,
         stop=stop,
-        pid_file=z.run_d.join(z.service_name + '.pid')
     )
     scripts = ('reload', 'start', 'stop')
     compt.install_access(mode='700', owner=z.run_u)
     compt.install_directory(z.run_d)
+    # pid_file has to be in a public directory that is writeable by run_u
+    # "PID file /srv/petshop/petshop.pid not readable (yet?) after start."
+    compt.install_access(mode='755')
+    pid_d = pkio.py_path('/run').join(z.service_name)
+    compt.install_directory(pid_d)
+    z.pid_file = pid_d.join(z.service_name + '.pid')
     compt.install_access(mode='500')
     for s in scripts:
         if z[s]:

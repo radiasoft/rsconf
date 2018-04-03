@@ -2,9 +2,7 @@
 Description={{ systemd.service_name }}
 
 [Timer]
-Environment=TZ=:/etc/localtime
 OnCalendar={{ systemd.on_calendar }}
-SyslogIdentifier={{ systemd.service_name }}
 
 [Install]
 WantedBy=timers.target

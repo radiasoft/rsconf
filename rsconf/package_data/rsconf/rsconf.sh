@@ -395,16 +395,14 @@ rsconf_service_prepare() {
 }
 
 rsconf_service_restart() {
-    local reloaded= s
+    local s
+    # Always reload at start. Just easier and more reliable
+    systemctl daemon-reload
     for s in ${rsconf_service_order[@]}; do
         if [[ ${rsconf_service_status[$s]} == start ]]; then
             rsconf_service_file_changed_check "$s"
         fi
         if [[ ${rsconf_service_status[$s]} == restart ]]; then
-            if [[ $reloaded ]]; then
-               reloaded=1
-               systemctl daemon-reload
-            fi
             # Just restart, most daemons are fast
             install_info "$s: restarting"
             systemctl restart "$s"

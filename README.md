@@ -45,7 +45,7 @@ cd ..
 gcl rsconf
 cd rsconf
 pip install -e .
-rm -rf run; rsconf build
+rm -rf run; mkdir run; ln -s ../rpm run/rpm; rsconf build
 bash run/nginx/start.sh
 ```
 
@@ -68,18 +68,18 @@ curl "$install_server" | bash -s rsconf.sh "$(hostname -f)" setup_dev
 On the master as dev user:
 
 ```bash
-sudo cat /root/.docker/config.json > ~/.docker/config.json
 cd ~/src/biviosoftware
 test -d container-perl || gcl container-perl
 cd container-perl
-export build_push=1 build_docker_registry=$(hostname -f):5000
+git pull
 radia_run container-build
-radia_run biviosoftware/container-bop Bivio
-radia_run biviosoftware/container-bop BivioOrg
-radia_run biviosoftware/container-bop Artisans
-radia_run biviosoftware/container-bop Societas
+cd ~/src/radiasoft/rsconf
+mkdir -p rpm
+export rpm_perl_install_dir=$PWD/rpm
+radia_run biviosoftware/rpm-perl bivio-perl
+radia_run biviosoftware/rpm-perl Bivio
+cp rpm/bivio-perl
 ```
-
 
 On the client, create a test.sh file and run it:
 
