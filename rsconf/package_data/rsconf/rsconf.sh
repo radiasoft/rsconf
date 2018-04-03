@@ -296,6 +296,7 @@ rsconf_main() {
     local -a rsconf_service_order=()
     local rsconf_rerun_required=
     install_script_eval 000.sh
+    rsconf_service_restart
     if [[ $rsconf_rerun_required ]]; then
         echo "$rsconf_rerun_required
 
