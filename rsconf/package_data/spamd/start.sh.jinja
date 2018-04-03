@@ -1,7 +1,8 @@
 #!/bin/bash
 set -eu -o pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
-sa-update
+# sa-update exits with 1 if there's no update
+sa-update || true
 local_cf="$( (ls /var/lib/spamassassin/[1-9]*/updates_spamassassin_org/local.cf || true) | tail -1)"
 if [[ -z $local_cf ]]; then
     echo 'Unable to find /var/lib/spamassassin/[1-9]*/updates_spamassassin_org/local.cf' 1>&2
@@ -39,7 +40,7 @@ EOF
 exec /bin/spamd \
     --daemonize \
     --helper-home-dir='{{ systemd.run_d }}' \
-    --ipv4-only \
     --max-children=3 \
     --nouser-config \
     --pidfile='{{ systemd.pid_file }}' \
+    --socketpath='{{ spamd.socket_path }}'

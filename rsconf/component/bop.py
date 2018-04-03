@@ -89,9 +89,13 @@ class T(component.T):
         _install_vhosts(self, j2_ctx)
 
 
-def custom_unit_prepare(compt, j2_ctx, app_rpm=None):
+def custom_unit_prepare(compt, j2_ctx, app_rpm=None, watch_files=()):
     from rsconf import systemd
-    watch = []
+    if not compt.hdb.bop.setdefault('_perl_installed', False):
+        compt.hdb.bop._perl_installed = True
+        compt.append_root_bash(
+            'install_repo_eval biviosoftware/container-perl base')
+    watch = list(watch_files)
     for r in COMMON_RPMS + (app_rpm,):
         if not r:
             continue

@@ -15,7 +15,6 @@ class T(component.T):
 
     def internal_build(self):
         from rsconf import systemd
-        from rsconf.component import docker_registry
 
         self.buildt.require_component('postgrey', 'spamd')
         j2_ctx = self.hdb.j2_ctx_copy()
@@ -27,10 +26,5 @@ class T(component.T):
             tls_cert_file=kc.crt,
             tls_key_file=kc.key,
         )
-        #TODO(robnagler) docker_image should be automatically prefixed
-        j2_ctx.bop.docker_image = docker_registry.absolute_image(
-            j2_ctx, j2_ctx.bop.docker_image)
-        j2_ctx.spamd.docker_image = docker_registry.absolute_image(
-            j2_ctx, j2_ctx.spamd.docker_image)
         self.append_root_bash_with_main(j2_ctx)
         systemd.unit_enable(self, j2_ctx)

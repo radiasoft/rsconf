@@ -16,6 +16,7 @@ class T(component.T):
         from rsconf import systemd
         from rsconf.component import logrotate
 
+        self.buildt.require_component('base_all')
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.postgresql
         z.run_d = j2_ctx.rsconf_db.host_run_d.join('postgresql')

@@ -12,10 +12,6 @@ postfix_main() {
         rsconf_install_access 644 root root
         rsconf_install_file /dev/null "$postfix_local_host_names"
     fi
-    local tmp=$TMPDIR/postfix_main-$RANDOM
-    #POSIT spamd_docker_image is binary compatible with host operating system
-    docker run -i --rm '{{ spamd.docker_image }}' cat /usr/bin/spamc > "$tmp"
-    rsconf_install_access 555 root root
     local x=(
         # https://help.ubuntu.com/community/PostfixGreylisting
         biff=no
