@@ -27,14 +27,16 @@ To configure the initial master in Vagrant on a Mac or a Linux development envir
 ```sh
 radia_run vagrant-centos7 v3.radia.run
 vssh
-sudo su -
+sudo su - <<'EOF'
 curl radia.run | bash -s redhat-base
 curl radia.run | bash -s home
 yum install -y nginx
-exit
+EOF
 curl radia.run | bash -s home
+set +euo pipefail
 . ~/.bashrc
 bivio_pyenv_2
+set -euo pipefail
 mkdir -p ~/src/radiasoft
 cd ~/src/radiasoft
 gcl download
@@ -45,7 +47,10 @@ cd ..
 gcl rsconf
 cd rsconf
 pip install -e .
-rm -rf run; mkdir run; ln -s ../rpm run/rpm; rsconf build
+rm -rf run
+mkdir run
+ln -s ../rpm run/rpm
+rsconf build
 bash run/nginx/start.sh
 ```
 

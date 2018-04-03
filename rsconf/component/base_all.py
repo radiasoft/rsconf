@@ -16,4 +16,4 @@ class T(component.T):
         self.buildt.require_component('network')
         self.buildt.require_component('base_users')
         self.buildt.require_component('logrotate')
-        self.append_root_bash(': nothing to do')
+        self.rsconf_service_restart()

@@ -328,7 +328,6 @@ rsconf_reboot() {
 
 rsconf_require() {
     rsconf_only_once=1 rsconf_run "$1"
-    rsconf_service_restart
 }
 
 rsconf_rerun_required() {

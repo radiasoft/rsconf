@@ -39,3 +39,4 @@ class T(component.T):
             '^{}$'.format(x),
             's<^#\s*RPCNFSDCOUNT.*><{}>'.format(x),
         )
+        self.rsconf_service_restart()

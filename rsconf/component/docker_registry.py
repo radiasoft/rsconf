@@ -151,3 +151,4 @@ class T(component.T):
         self.install_access(mode='400', owner=j2_ctx.docker_registry.run_u)
         self.install_resource(
             'docker_registry/config.yml', j2_ctx, j2_ctx.docker_registry.conf_f)
+        self.rsconf_service_restart()

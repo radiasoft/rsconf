@@ -55,3 +55,4 @@ class T(component.T):
         self.install_access(mode='400', owner=j2_ctx.rsconf_db.root_u)
         logrotate.install_conf(self, j2_ctx)
         systemd.unit_enable(self, j2_ctx)
+        self.rsconf_service_restart()

@@ -57,6 +57,7 @@ class T(component.T):
             _ROOT_CONFIG_JSON,
         )
         systemd.unit_enable(self, j2_ctx)
+        self.rsconf_service_restart()
 
 
 def _dict(value):

@@ -136,6 +136,9 @@ class T(pkcollections.Dict):
             ),
         )
 
+    def rsconf_service_restart(self):
+        self.append_root_bash('rsconf_service_restart')
+
     def secret_path_value(self, filename, gen_secret=None, visibility=None):
         from rsconf import db
 
