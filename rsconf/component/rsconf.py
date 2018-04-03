@@ -53,10 +53,9 @@ def host_init(j2_ctx, host):
             y = pkjson.load_any(f)
     else:
         y = pkcollections.Dict()
-    assert not host in y, \
-        '{}: host already initialized'.format(host)
-    y[host] = _passwd_entry(j2_ctx, host)
-    pkjson.dump_pretty(y, filename=jf)
+    if not host in y:
+        y[host] = _passwd_entry(j2_ctx, host)
+        pkjson.dump_pretty(y, filename=jf)
     return """install -m 600 /dev/stdin /root/.netrc <<'EOF'
 machine {} login {} password {}
 EOF
