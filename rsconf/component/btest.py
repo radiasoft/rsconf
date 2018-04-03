@@ -17,13 +17,12 @@ class T(component.T):
     def internal_build(self):
         from rsconf import systemd
         from rsconf import db
-        from rsconf.component import docker_registry
         from rsconf.component import bop
 
-        self.buildt.require_component('docker', 'postgresql', 'postfix')
+        self.buildt.require_component('postgresql', 'postfix')
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.btest
-        z.run_u = j2_ctx.rsconf_db.root_u
+        z.run_u = j2_ctx.rsconf_db.run_u
         z.run_d = systemd.timer_prepare(self, j2_ctx)
         z.apps_d = z.run_d.join('apps')
         run_f = z.run_d.join('run')
@@ -53,8 +52,7 @@ class T(component.T):
             self.install_access(mode='700')
             z.app_run_d = z.apps_d.join(n)
             self.install_directory(z.app_run_d)
-            z.docker_image = docker_registry.absolute_image(j2_ctx, a.docker_image)
-            z.container_name = 'btest_' + n
+            z.service_name = 'btest_' + n
             z.current_base = 'current'
             z.current_d = z.app_run_d.join(z.current_base)
             z.file_root = z.app_run_d.join('db')
@@ -92,13 +90,7 @@ class T(component.T):
                 j2_ctx,
                 z.app_run_f,
             )
-            z.app_start_f = z.app_run_d.join('start')
-            self.install_resource(
-                'btest/app_start.sh',
-                j2_ctx,
-                z.app_start_f,
-            )
-            z.run_app_cmds += '{}\n'.format(z.app_start_f)
+            z.run_app_cmds += '{}\n'.format(z.app_run_f)
         self.install_access(mode='500', owner=z.run_u)
         self.install_resource(
             'btest/run.sh',

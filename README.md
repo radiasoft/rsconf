@@ -29,9 +29,11 @@ radia_run vagrant-centos7 v3.radia.run
 vssh
 bivio_pyenv_2
 set -euo pipefail
+sudo yum install -y nginx
 mkdir -p ~/src/radiasoft
 cd ~/src/radiasoft
 gcl download
+gcl containers
 gcl pykern
 cd pykern
 pip install -e .
@@ -39,33 +41,36 @@ cd ..
 gcl rsconf
 cd rsconf
 pip install -e .
-mkdir run
-ln -s ../rpm run/rpm
 rsconf build
-bash run/nginx/start.sh
 ```
 
 On the master as root:
 
 ```bash
 sudo su -
-export host=v3.radia.run install_channel=dev install_server=http://v3.radia.run:2916
-curl "$install_server" | bash -s rsconf.sh "$host" setup_dev
+export host=v3.radia.run install_channel=dev install_server=file:///home/vagrant/src/radiasoft/rsconf/run/srv
+curl "$install_server/index.html" | bash -s rsconf.sh "$host" setup_dev
 exit
 exit
 vagrant reload
 vssh
-# NOTE: restart nginx like above (do not "rsconf build")
 sudo su -
-export install_channel=dev install_server=http://v3.radia.run:2916
-curl "$install_server" | bash -s rsconf.sh "$(hostname -f)" setup_dev
+export install_channel=dev install_server=file:///home/vagrant/src/radiasoft/rsconf/run/srv
+curl "$install_server/index.html" | bash -s rsconf.sh "$(hostname -f)" setup_dev
 ```
 
 On the master as dev user:
 
 ```bash
+# so usermod takes effect
+logout
+vssh
+cd ~/src/radiasoft/rsconf
+bash run/nginx/start.sh &
+export install_channel=dev install_server=http://v3.radia.run:2916
 cd ~/src/biviosoftware
-test -d container-perl || gcl container-perl
+gcl rpm-perl
+gcl container-perl
 cd container-perl
 git pull
 radia_run container-build
@@ -74,7 +79,6 @@ mkdir -p rpm
 export rpm_perl_install_dir=$PWD/rpm
 radia_run biviosoftware/rpm-perl bivio-perl
 radia_run biviosoftware/rpm-perl Bivio
-cp rpm/bivio-perl
 ```
 
 On the client, create a test.sh file and run it:

@@ -57,7 +57,7 @@ default:
   docker:
     iptables: false
   docker_registry:
-    host: {{ master }}
+    host: ''
   jupyterhub:
     admin_users: [ '{{ user }}' ]
     docker_image: docker.io/radiasoft/jupyterhub
@@ -198,7 +198,8 @@ host:
       base_os:
         volume_groups: []
       rsconf_db:
-        components: [ docker_registry, rsconf, jupyterhub_proxy, bkp, btest ]
+        components: [ rsconf ]
+# , jupyterhub_proxy, bkp, btest
     # never installed, just for testing build
     {{ all_host }}:
       docker:

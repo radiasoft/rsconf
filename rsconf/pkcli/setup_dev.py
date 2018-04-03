@@ -72,7 +72,9 @@ def default_command():
         dst = root_d.join(re.sub('.jinja$', '', x))
         pkio.mkdir_parent_only(dst)
         pkjinja.render_file(f, j2_ctx, output=dst, strict_undefined=True)
-
+    rpm_d = pkio.py_path(root_d.dirname)
+    pkio.mkdir_parent(rpm_d)
+    root_d.join('rpm').mksymlinkto(rpm_d, absolute=False)
     subprocess.check_call(['bash', str(secret_d.join('setup_dev.sh'))])
     # dev only, really insecure, but makes consistent builds easy
     _sym('~/src/radiasoft')

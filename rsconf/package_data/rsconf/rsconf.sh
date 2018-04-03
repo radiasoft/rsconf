@@ -69,7 +69,7 @@ rsconf_fedora_release_if() {
     # First supported release is 27, but this allows a general fedora test
     local expect=${1:-26}
     local ver=( $(cat /etc/fedora-release 2>/dev/null) )
-    [[ ${ver[2]} =~ ^[0-9]+$ ]] && (( $expect >= ${ver[2]} ))
+    [[ ${ver[@]+${ver[2]}} =~ ^[0-9]+$ ]] && (( $expect >= ${ver[2]} ))
 }
 
 rsconf_file_hash() {

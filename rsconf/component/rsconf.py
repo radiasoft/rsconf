@@ -20,7 +20,8 @@ class T(component.T):
         from rsconf.component import nginx
         from rsconf import db
 
-        self.buildt.require_component('nginx')
+        # docker is required to build container-perl
+        self.buildt.require_component('docker', 'nginx')
         j2_ctx = self.hdb.j2_ctx_copy()
         self.install_access(mode='700', owner=j2_ctx.rsconf_db.run_u)
         j2_ctx.rsconf = pkcollections.Dict(
