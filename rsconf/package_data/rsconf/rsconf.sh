@@ -246,9 +246,11 @@ rsconf_install_rpm() {
     # it doesn't return an error if the update isn't done.
     # You just have to check so this way is more robust
     if [[ $new_rpm == $prev_rpm ]]; then
+        rm -f "$tmp"
         return
     fi
     rsconf_yum_install "$tmp"
+    rm -f "$tmp"
     local curr_rpm=$(rpm -q "$rpm_base")
     if [[ $curr_rpm != $new_rpm ]]; then
         install_err "$curr_rpm: did not get installed, new=$new_rpm"
