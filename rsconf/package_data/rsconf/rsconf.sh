@@ -52,12 +52,12 @@ rsconf_edit() {
         need=1
         egrep=${BASH_REMATCH[1]}
     fi
-    local g=$( set +e; egrep -s -q "$egrep" "$file" && echo 1 )
+    local g=$( egrep -s -q "$egrep" "$file" && echo 1 || true )
     if [[ $g != $need ]]; then
         return ${rsconf_edit_no_change_res:-1}
     fi
     perl -pi -e "$perl" "$file"
-    g=$( set +e; egrep -s -q "$egrep" "$file" && echo 1 )
+    g=$( egrep -s -q "$egrep" "$file" && echo 1 || true )
     if [[ $g == $need ]]; then
         install_err "$perl: failed to modify: $file"
     fi
