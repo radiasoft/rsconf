@@ -13,7 +13,7 @@
 {% endfor %}
 # All these services protect themselves or are not running on most servers
 -A INPUT -i {{ network.inet_dev.name }} -p tcp -m state --state NEW -m tcp --match multiport --dports http,https,smtp,submission,pop3s,domain -j ACCEPT
--A INPUT -i {{ network.inet_dev.name }} -p udp -m state --match multiport --dports domain -j ACCEPT
+-A INPUT -i {{ network.inet_dev.name }} -p udp --match multiport --dports domain -j ACCEPT
 -A INPUT -i {{ network.inet_dev.name }} -m state --state RELATED,ESTABLISHED -j ACCEPT
 -A INPUT -i {{ network.inet_dev.name }} -m state --state INVALID -j REJECT --reject-with icmp-port-unreachable
 -A INPUT -i {{ network.inet_dev.name }} -p tcp -m tcp --tcp-flags SYN,RST,ACK ACK -m state --state NEW -j REJECT --reject-with tcp-reset
