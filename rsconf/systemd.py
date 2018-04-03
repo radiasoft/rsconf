@@ -129,12 +129,18 @@ def docker_unit_prepare(compt, j2_ctx, *watch_files):
 def timer_enable(compt, j2_ctx, on_calendar, timer_exec, run_u=None):
     z = j2_ctx.systemd
     z.run_u = run_u or j2_ctx.rsconf_db.run_u
-    compt.install_access(mode='700', owner=j2_ctx.rsconf_db.root_u)
+    compt.install_access(mode='700', owner=z.run_u)
     compt.install_directory(z.run_d)
     # required by systemd
-    compt.install_access(mode='444')
     z.on_calendar = on_calendar
     z.timer_exec = timer_exec
+    compt.install_access(mode='500')
+    compt.install_resource(
+        'systemd/timer_start',
+        j2_ctx,
+        z.timer_start_f,
+    )
+    compt.install_access(mode='444', owner=j2_ctx.rsconf_db.root_u)
     compt.install_resource(
         'systemd/timer_unit',
         j2_ctx,
@@ -144,12 +150,6 @@ def timer_enable(compt, j2_ctx, on_calendar, timer_exec, run_u=None):
         'systemd/timer_unit_service',
         j2_ctx,
         z.service_f,
-    )
-    compt.install_access(mode='500', owner=z.run_u)
-    compt.install_resource(
-        'systemd/timer_start',
-        j2_ctx,
-        z.timer_start_f,
     )
     unit_enable(compt, j2_ctx)
 
