@@ -192,15 +192,14 @@ host:
         exports:
           /srv/sirepo/db/users: [ 10.10.10.0/24 ]
       rsconf_db:
-        # components: [ nfs_server, rabbitmq, celery_sirepo, sirepo ]
-        components: [ bop ]
+        components: [ nfs_server, rabbitmq, celery_sirepo, sirepo, bop ]
     {{ master }}:
       base_os:
         volume_groups: []
       rsconf_db:
-        components: [ rsconf ]
-# , jupyterhub_proxy, bkp, btest
-    # never installed, just for testing build
+        #TODO(robnagler) need to edit this to just rsconf to bootstrap
+        components: [ rsconf, jupyterhub_proxy, bkp, btest ]
+    # This host never installed, just for testing build
     {{ all_host }}:
       docker:
         iptables: false
@@ -228,7 +227,7 @@ host:
         exports:
           /exports/foo: [ 10.10.10.0/24, localhost ]
       rsconf_db:
-        components: [ nfs_client, nfs_server, rabbitmq, celery_sirepo, sirepo, bop, jupyterhub, jupyterhub_proxy ]
+        components: [ nfs_client, nfs_server, rabbitmq, celery_sirepo, sirepo, bop, jupyterhub, jupyterhub_proxy, btest ]
 
 
 #Local Variables:

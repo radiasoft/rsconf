@@ -235,6 +235,11 @@ rsconf_install_rpm() {
     local prev_rpm=$(rpm -q "$rpm_base" 2>&1 || true)
     local tmp=$rpm_file
     install_download "$rpm_file" > "$tmp"
+    if [[ ! $(file "$tmp" 2>/dev/null) =~ RPM ]]; then
+        # Error messages from rpm -qp are strange:
+        # "error: open of <html> failed: No such file or directory"
+        install_err "$rpm_file: not found or not a valid RPM"
+    fi
     local new_rpm=$(rpm -qp "$tmp")
     # Yum is wonky with update/install. We have to handle
     # both fresh install and update, which install does, but
