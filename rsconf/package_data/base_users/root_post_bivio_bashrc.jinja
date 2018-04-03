@@ -8,5 +8,5 @@ rsc() {
         args=( "$(hostname -f)" setup_dev )
     fi
     {% endraw %}{% endif %}
-    curl {{ rsconf_db.http_host }} | install_server={{ rsconf_db.http_host }} bash -s rsconf.sh "${args[@]}"
+    curl {{ rsconf_db.http_host }} | install_server={{ rsconf_db.http_host }} bash -s rsconf.sh ${args+"${args[@]}"}
 }
