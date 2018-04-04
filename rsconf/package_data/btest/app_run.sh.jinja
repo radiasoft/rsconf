@@ -14,9 +14,10 @@ run_db_create() {
 }
 
 run_link_facade_files() {
-    # copied from container-bop/radiasoft-download.sh
+    # link_facade_files should not create javascript
     bivio project link_facade_files \
-        --Bivio::Ext::DBI.connection=Bivio::SQL::Connection::None
+        --Bivio::Ext::DBI.connection=Bivio::SQL::Connection::None \
+        --Bivio::IO::Config.is_dev=0
     local facade
     for facade in '{{ btest.facade_local_file_root }}'/*; do
         if [[ ! -L $facade/plain/b ]]; then

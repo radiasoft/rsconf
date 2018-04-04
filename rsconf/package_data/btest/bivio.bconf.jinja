@@ -14,10 +14,6 @@ use {{ btest.perl_root }}::BConf;
         root => '{{ btest.file_root }}',
         backup_root => '{{ btest.backup_root }}',
     },
-    # link_facade_files should not create javascript
-    'Bivio::IO::Config' => {
-        is_dev => 0,
-    },
     'Bivio::Ext::DBI' => {
         database => '{{ btest.database }}',
         dbms => {
