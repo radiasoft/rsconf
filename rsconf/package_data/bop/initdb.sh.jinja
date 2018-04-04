@@ -1,22 +1,17 @@
 #!/bin/bash
 
 {{ bop.app_name }}_initdb() {
-    # just in case (see below)
-    rm -f ~/.pgpass
+    # This is the sentinel that the db is created
     if [[ -d {{ bop.db_d }}/RealmFile ]]; then
         return
     fi
-    sudo su - '{{ bop.run_u }}' <<'EOF'
-    set -e
+    sudo -u '{{ bop.run_u }}' <<'EOF'
+    set -euo pipefail
     export BCONF='{{ bop.bconf_f }}'
-    install -m 600 /dev/stdin ~/.pgpass <<'EOF2'
-localhost:*:*:postgres:{{ postgresql.postgres_password }}
-EOF2
     bivio sql init_dbms || true
 {% if not bop.is_production %}
     bivio sql -f create_test_db
 {% endif %}
-    rm -f ~/.pgpass
 EOF
     rsconf_service_trigger_restart '{{ bop.app_name }}'
 }

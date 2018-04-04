@@ -20,6 +20,9 @@ use {{ btest.perl_root }}::BConf;
     },
     'Bivio::Ext::DBI' => {
         database => '{{ btest.database }}',
+        dbms => {
+            password => '{{ postgresql.postgres_password }}',
+        },
     },
     'Bivio::IO::Log' => {
         directory => '{{ btest.log_d }}',

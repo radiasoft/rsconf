@@ -22,9 +22,6 @@ use {{ bop.perl_root }}::BConf;
         dbms => {
             password => '{{ postgresql.postgres_password }}',
         },
-        template1 => {
-            password => '{{ postgresql.postgres_password }}',
-        },
     },
     'Bivio::IO::Alert' => {
         want_time => 1,
