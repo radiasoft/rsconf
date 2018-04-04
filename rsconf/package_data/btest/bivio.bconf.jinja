@@ -23,6 +23,9 @@ use {{ btest.perl_root }}::BConf;
         dbms => {
             password => '{{ postgresql.postgres_password }}',
         },
+        template1 => {
+            password => '{{ postgresql.postgres_password }}',
+        },
     },
     'Bivio::IO::Log' => {
         directory => '{{ btest.log_d }}',
