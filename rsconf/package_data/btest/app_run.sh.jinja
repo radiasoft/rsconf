@@ -28,9 +28,11 @@ run_link_facade_files() {
 
 run_main() {
     cd '{{ btest.app_run_d }}'
-    # Some tests make directories read-only
-    chmod -R u+rwX previous
-    rm -rf previous
+    if [[ -e previous ]]; then
+        # Some tests make directories read-only
+        chmod -R u+rwX previous || true
+        rm -rf previous
+    fi
     mv '{{ btest.current_base }}' previous >& /dev/null || true
     mkdir '{{ btest.current_base }}'
     cd '{{ btest.current_base }}'
