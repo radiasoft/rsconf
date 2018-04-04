@@ -2,22 +2,24 @@
 set -euo pipefail
 
 run_db_create() {
-    # file_root is a proxy for the database
-    local d='{{ btest.file_root }}'
+    # RealmFile is a proxy for the database
+    local d='{{ btest.file_root }}/RealmFile'
     # 6.5 days in seconds
     if [[ -e $d ]] && (( $(stat -c %Y $d) + 561600 > $(date -u +%s) )); then
         return
     fi
     bivio sql init_dbms || true
+    bivio sql write_bop_ddl_files
     bivio sql -force create_test_db
 }
 
 run_link_facade_files() {
     # copied from container-bop/radiasoft-download.sh
-    bivio project link_facade_files
+    bivio project link_facade_files \
+        --Bivio::Ext::DBI.connection=Bivio::SQL::Connection::None
     local facade
-    for facade in '{{ btest.file_root }}'/*; do
-        if [[ ! -L $facade ]]; then
+    for facade in '{{ btest.facade_local_file_root }}'/*; do
+        if [[ ! -L $facade/plain/b ]]; then
             mkdir -p "$facade/plain"
             ln -s -r /usr/share/Bivio-bOP-javascript "$facade/plain/b"
         fi
@@ -33,8 +35,8 @@ run_main() {
     # POSIT: container-bop/radiasoft-download.sh
     cp -a '{{ btest.app_source_d }}' .
     export PERLLIB='{{ btest.current_d }}' BCONF='{{ btest.bconf.unit }}'
-    run_db_create
     run_link_facade_files
+    run_db_create
     bivio test unit '{{ btest.root_for_unit }}' || true
     BCONF='{{ btest.bconf.acceptance }}' bivio test acceptance '{{ btest.root_for_acceptance }}'|| true
 }
