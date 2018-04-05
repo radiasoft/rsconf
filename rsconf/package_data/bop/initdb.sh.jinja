@@ -5,7 +5,7 @@
     if [[ -d {{ bop.db_d }}/RealmFile ]]; then
         return
     fi
-    sudo -u '{{ bop.run_u }}' <<'EOF'
+    sudo -u '{{ bop.run_u }}' /bin/bash <<'EOF'
     set -euo pipefail
     export BCONF='{{ bop.bconf_f }}'
     bivio sql init_dbms || true
