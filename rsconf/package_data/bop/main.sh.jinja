@@ -1,5 +1,5 @@
 #!/bin/bash
 
 bop_main() {
-    postfix_setup_bop {{ bop.mail_domain_keys }}
+    postfix_setup_bop '{{ bop.mail_domain_keys | join("' '") }}'
 }
