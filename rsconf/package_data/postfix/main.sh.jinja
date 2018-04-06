@@ -29,7 +29,9 @@ postfix_main() {
         smtp_tls_key_file='{{ postfix.tls_key_file }}'
         smtp_tls_security_level=may
         smtpd_banner='$myhostname ESMTP'
+        {% if rsconf_db.channel != 'dev' %}
         smtpd_client_restrictions='sleep 8'
+        {% endif %}
         smtpd_data_restrictions=reject_unauth_pipelining
         smtpd_delay_reject=no
         smtpd_helo_restrictions=reject_unknown_helo_hostname
