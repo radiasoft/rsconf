@@ -63,6 +63,8 @@ class T(component.T):
         z.log_postrotate_f = z.run_d.join('reload')
         z.httpd_cmd = "/usr/sbin/httpd -d '{}' -f '{}'".format(z.run_d, z.conf_f)
         z.source_code_d = SOURCE_CODE_D
+        # all apps are secured by TLS now
+        z.can_secure = True
         systemd.custom_unit_enable(
             self,
             j2_ctx,
