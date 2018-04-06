@@ -5,28 +5,38 @@ run_acceptance() {
     PERLLIB='{{ btest.current_d }}' BCONF='{{ btest.bconf.acceptance }}' bivio test acceptance "$@"
 }
 
-run_args() {
+run_with_args() {
     local t
+    local unit=()
+    local acceptance=()
     for t in "$@"; do
         case $t in
             *.btest)
-                run_acceptance "$t"
+                acceptance+=( "$t" )
                 ;;
             *.bunit|*.t)
-                run_unit "$t"
+                unit=+=( "$t" )
                 ;;
             *)
                 if [[ ! -d $t ]]; then
                     install_err "$t: unknown test type"
                 fi
                 if [[ $(shopt -s nullglob && cd "$t" && echo *.btest) ]]; then
-                    run_acceptance "$t"
+                    acceptance+=( "$t" )
                 else
-                    run_unit "$t"
+                    unit+=( "$t" )
                 fi
                 ;;
         esac
     done
+    {% raw %}
+    if (( ${#unit[@]} )); then
+        run_unit "${unit[@]}"
+    fi
+    if (( ${#acceptance[@]} )); then
+        run_acceptance "${acceptance[@]}"
+    fi
+    {% endraw %}
 }
 
 run_db_create() {
@@ -57,7 +67,7 @@ run_link_facade_files() {
 
 run_main() {
     if [[ $@ ]]; then
-        run_args "$@"
+        run_with_args "$@"
         return $?
     fi
     cd '{{ btest.app_run_d }}'
