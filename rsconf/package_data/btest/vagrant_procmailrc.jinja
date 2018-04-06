@@ -1,3 +1,11 @@
 UMASK=07
+{% if rsconf_db.channel == 'dev' %}
+VERBOSE=yes
+LOGFILE=/home/vagrant/procmail.log
+UMASK=07
+:0 c
+{{ btest.mail_copy_d }}/.
+{% endif %}
+
 :0
 {{ btest.mail_d }}/.

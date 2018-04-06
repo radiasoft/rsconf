@@ -1,6 +1,34 @@
 #!/bin/bash
 set -euo pipefail
 
+run_acceptance() {
+    PERLLIB='{{ btest.current_d }}' BCONF='{{ btest.bconf.acceptance }}' bivio test acceptance "$@"
+}
+
+run_args() {
+    local t
+    for t in "$@"; do
+        case $t in
+            *.btest)
+                run_acceptance "$t"
+                ;;
+            *.bunit|*.t)
+                run_unit "$t"
+                ;;
+            *)
+                if [[ ! -d $t ]]; then
+                    install_err "$t: unknown test type"
+                fi
+                if [[ $(shopt -s nullglob && cd "$t" && echo *.btest) ]]; then
+                    run_acceptance "$t"
+                else
+                    run_unit "$t"
+                fi
+                ;;
+        esac
+    done
+}
+
 run_db_create() {
     # RealmFile is a proxy for the database
     local d='{{ btest.file_root }}/RealmFile'
@@ -28,6 +56,10 @@ run_link_facade_files() {
 }
 
 run_main() {
+    if [[ $@ ]]; then
+        run_args "$@"
+        return $?
+    fi
     cd '{{ btest.app_run_d }}'
     if [[ -e previous ]]; then
         # Some tests make directories read-only
@@ -42,8 +74,12 @@ run_main() {
     export PERLLIB='{{ btest.current_d }}' BCONF='{{ btest.bconf.unit }}'
     run_link_facade_files
     run_db_create
-    bivio test unit '{{ btest.root_for_unit }}' || true
-    BCONF='{{ btest.bconf.acceptance }}' bivio test acceptance '{{ btest.root_for_acceptance }}'|| true
+    run_unit '{{ btest.root_for_unit }}' || true
+    run_acceptance '{{ btest.root_for_acceptance }}'|| true
+}
+
+run_unit() {
+    PERLLIB='{{ btest.current_d }}' BCONF='{{ btest.bconf.unit }}' bivio test unit "$@"
 }
 
 run_main "$@"

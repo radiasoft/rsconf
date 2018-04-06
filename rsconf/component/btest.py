@@ -39,6 +39,9 @@ class T(component.T):
         self.install_directory(z.apps_d)
         z.mail_d = '/home/vagrant/btest-mail'
         self.install_directory(z.mail_d)
+        if j2_ctx.rsconf_db.channel == 'dev':
+            z.mail_copy_d = z.mail_d + '-copy'
+            self.install_directory(z.mail_copy_d)
         self.install_access(mode='400')
         self.install_resource(
             'btest/vagrant_procmailrc',
