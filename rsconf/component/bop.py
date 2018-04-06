@@ -49,8 +49,14 @@ class T(component.T):
         z.run_u = j2_ctx.rsconf_db.run_u
         z.app_name = self.name
         db.merge_dict(z, j2_ctx[self.name])
-        r = None if z.perl_root == 'Bivio::PetShop' \
-            else 'perl-{}.rpm'.format(z.perl_root)
+        z.is_test = not z.is_production
+        if z.perl_root == 'Bivio::PetShop':
+            r = None
+            # Assumed by crm-ticket-deletion.btest
+            z.want_status_email = True
+        else:
+            r = 'perl-{}.rpm'.format(z.perl_root)
+            z.want_status_email = False
         z.run_d = custom_unit_prepare(self, j2_ctx, app_rpm=r)
         z.conf_f = z.run_d.join('httpd.conf')
         z.bconf_f = z.run_d.join('bivio.bconf')

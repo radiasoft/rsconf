@@ -4,15 +4,17 @@ use {{ bop.perl_root }}::BConf;
     'Bivio::Agent::Request' => {
         can_secure => {{ bop.can_secure | int }},
     },
+    {% if bop.is_test %}
     'Bivio::Biz::Action::AssertClient' => {
         hosts => [qw(localhost.localdomain {{ btest.client_host }} {{ bop.http_host }})],
     },
+    {% endif %}
     'Bivio::Biz::File' => {
         root => '{{ bop.db_d }}',
         backup_root => '{{ bop.bkp_d }}',
     },
     'Bivio::Biz::Model::CRMForm' => {
-        want_status_email => 0,
+        want_status_email => {{ bop.want_status_email | int }},
     },
     'Bivio::Delegate::Cookie' => {
         tag => '{{ bop.cookie_tag }}',
@@ -36,10 +38,12 @@ use {{ bop.perl_root }}::BConf;
     'Bivio::IO::Log' => {
         directory => '{{ bop.logbop_d }}',
     },
+    {% if bop.is_test %}
     'Bivio::Test::Language::HTTP' => {
         email_user => '{{ btest.email_user }}',
         local_mail_host => '{{ btest.client_host }}',
     },
+    {% endif %}
     'Bivio::Type::Secret' => {
         algorithm => '{{ bop.secret.algorithm }}',
         key => pack('h*', '{{ bop.secret.key_hex }}'),
@@ -48,8 +52,10 @@ use {{ bop.perl_root }}::BConf;
     'Bivio::UI::Facade' => {
         local_file_root => '/var/www/facades',
         want_local_file_cache => 1,
+        {% if bop.is_test %}
         http_host => '{{ bop.http_host }}',
         mail_host => '{{ bop.mail_host }}',
+        {% endif %}
     },
     'Bivio::UI::HTML::Widget::SourceCode' => {
         source_dir => '{{ bop.source_code_d }}',
