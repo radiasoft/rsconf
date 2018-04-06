@@ -1,4 +1,3 @@
 #!/bin/bash
 set -eu -o pipefail
-rm -f '{{ systemd.pid_file }}'
 {{ bop.httpd_cmd }}

@@ -3,6 +3,10 @@ After=network.target remote-fs.target nss-lookup.target {{ systemd.after }}
 Description={{ systemd.service_name }}
 
 [Service]
+{#
+  Tested on CentOS 7, and it does have the localtime stat problem
+  https://blog.packagecloud.io/eng/2017/02/21/set-environment-variable-save-thousands-of-system-calls/
+#}
 Environment=TZ=:/etc/localtime
 ExecStart={{ systemd.start }}
 ExecStartPre=/bin/rm -f {{ systemd.pid_file }}
@@ -10,6 +14,8 @@ Group={{ systemd.run_u }}
 PIDFile={{ systemd.pid_file }}
 Restart=on-failure
 RestartSec=10
+{# Creates directory in /run owned by User #}
+RuntimeDirectory={{ systemd.service_name }}
 SyslogIdentifier={{ systemd.service_name }}
 Type=forking
 User={{ systemd.run_u }}

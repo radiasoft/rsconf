@@ -35,7 +35,7 @@ def custom_unit_enable(compt, j2_ctx, start='start', reload=None, stop=None, aft
     # "PID file /srv/petshop/petshop.pid not readable (yet?) after start."
     compt.install_access(mode='755')
     pid_d = pkio.py_path('/run').join(z.service_name)
-    compt.install_directory(pid_d)
+    # systemd creates RuntimeDirectory in /run see custom_unit.service
     z.pid_file = pid_d.join(z.service_name + '.pid')
     compt.install_access(mode='500')
     for s in scripts:
