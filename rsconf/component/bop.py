@@ -57,6 +57,7 @@ class T(component.T):
         else:
             r = 'perl-{}.rpm'.format(z.perl_root)
             z.want_status_email = False
+        z.setdefault('client_max_body_size', '50M')
         z.run_d = custom_unit_prepare(self, j2_ctx, app_rpm=r)
         z.conf_f = z.run_d.join('httpd.conf')
         z.bconf_f = z.run_d.join('bivio.bconf')

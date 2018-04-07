@@ -10,7 +10,7 @@ server {
     root {{ nginx.default_root }};
     ssl_certificate {{ nginx.tls_crt }};
     ssl_certificate_key {{ nginx.tls_key }};
-
+    client_max_body_size {{ bop.client_max_body_size }}M;
     {{ bop.aux_directives | indent(4, indentfirst=False) }}
 
     location ~ /_ {
