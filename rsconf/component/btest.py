@@ -100,3 +100,4 @@ class T(component.T):
             j2_ctx,
             run_f,
         )
+        self.append_root_bash_with_main(j2_ctx)

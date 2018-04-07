@@ -79,6 +79,13 @@ postfix_setup_bop() {
     done
 }
 
+postfix_setup_btest() {
+    local mail_domains=( "$@" )
+    for h in "${mail_domains[@]}"; do
+        rsconf_append "$postfix_local_host_names" "$h"
+    done
+}
+
 # Testing email
 true <<'EOF2'
 /usr/sbin/sendmail fourem@petshop.v4.radia.run <<'EOF'
