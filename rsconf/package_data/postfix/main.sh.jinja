@@ -80,6 +80,7 @@ postfix_setup_bop() {
 }
 
 postfix_setup_btest() {
+    local rsconf_edit_no_change_res=0
     local mail_domains=( "$@" )
     for h in "${mail_domains[@]}"; do
         rsconf_append "$postfix_local_host_names" "$h"
