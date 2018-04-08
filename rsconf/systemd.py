@@ -66,7 +66,7 @@ def custom_unit_prepare(compt, j2_ctx, *watch_files):
     return run_d
 
 
-def docker_unit_enable(compt, j2_ctx, image, cmd, env=None, volumes=None, after=None, run_u=None, ports=None):
+def docker_unit_enable(compt, j2_ctx, image, cmd, env=None, volumes=None, after=None, run_u=None, ports=None, extra_run_flags=None):
     """Must be last call"""
     from rsconf.component import docker_registry
 
@@ -80,6 +80,7 @@ def docker_unit_enable(compt, j2_ctx, image, cmd, env=None, volumes=None, after=
     image = docker_registry.absolute_image(j2_ctx, image)
     z.update(
         after=' '.join(after or []),
+        extra_run_flags=extra_run_flags and ' '.join("'{}'".format(f) for f in extra_run_flags),
         service_exec=cmd,
         exports='\n'.join(
             ["export '{}={}'".format(k, env[k]) for k in sorted(env.keys())],

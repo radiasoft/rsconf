@@ -28,4 +28,4 @@ else
     image_cmd+=( {{ systemd.cmd }} )
 fi
 # --init runs tini wrapper: https://github.com/krallin/tini
-exec docker run "${flags[@]}" --init --rm "--user=$user" {{ systemd.network }} {{ systemd.volumes }} "${image_cmd[@]}"
+exec docker run "${flags[@]}" --init --rm "--user=$user" {{ systemd.network }} {{ systemd.volumes }} {{ systemd.extra_run_flags }} "${image_cmd[@]}"

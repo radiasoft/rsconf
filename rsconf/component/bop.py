@@ -17,6 +17,8 @@ SOURCE_CODE_D = '/usr/share/Bivio-bOP-src'
 
 COMMON_RPMS = ('bivio-perl.rpm', 'perl-Bivio.rpm')
 
+_DEFAULT_CLIENT_MAX_BODY_SIZE = '50M'
+
 class T(component.T):
     def internal_build(self):
         from rsconf import systemd
@@ -35,6 +37,7 @@ class T(component.T):
             j2_ctx = self.hdb.j2_ctx_copy()
             z = j2_ctx.bop
             z.mail_domain_keys = sorted(self.hdb.bop.mail_domains.keys())
+            z.setdefault('client_max_body_size', _DEFAULT_CLIENT_MAX_BODY_SIZE)
             nginx.update_j2_ctx_and_install_access(self, j2_ctx)
             self.install_resource(
                 'bop/nginx_common.conf',
@@ -57,7 +60,7 @@ class T(component.T):
         else:
             r = 'perl-{}.rpm'.format(z.perl_root)
             z.want_status_email = False
-        z.setdefault('client_max_body_size', '50M')
+        z.setdefault('client_max_body_size', _DEFAULT_CLIENT_MAX_BODY_SIZE)
         z.run_d = custom_unit_prepare(self, j2_ctx, app_rpm=r)
         z.conf_f = z.run_d.join('httpd.conf')
         z.bconf_f = z.run_d.join('bivio.bconf')
