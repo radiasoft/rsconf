@@ -80,7 +80,7 @@ def docker_unit_enable(compt, j2_ctx, image, cmd, env=None, volumes=None, after=
     image = docker_registry.absolute_image(j2_ctx, image)
     z.update(
         after=' '.join(after or []),
-        extra_run_flags=extra_run_flags and ' '.join("'{}'".format(f) for f in extra_run_flags),
+        extra_run_flags=' '.join("'{}'".format(f) for f in extra_run_flags) if extra_run_flags else '',
         service_exec=cmd,
         exports='\n'.join(
             ["export '{}={}'".format(k, env[k]) for k in sorted(env.keys())],
