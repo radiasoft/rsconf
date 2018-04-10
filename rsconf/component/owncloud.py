@@ -1,3 +1,5 @@
+
+
 set in /etc/entrypoint.d/50-folders.sh
 OWNCLOUD_VOLUME_ROOT=/mnt/data
 export OWNCLOUD_VERSION=10.0
