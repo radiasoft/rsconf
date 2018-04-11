@@ -10,6 +10,7 @@ from pykern import pkcollections
 
 
 class T(component.T):
+
     def internal_build(self):
         from rsconf import systemd
         from rsconf.component import sirepo

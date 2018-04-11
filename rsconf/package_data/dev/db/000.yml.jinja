@@ -79,6 +79,17 @@ default:
     num_servers: 16
   nginx:
     worker_processes: 1
+  owncloud:
+    docker_image: docker.io/owncloud/server:10.0.7
+    mariadb_database: owncloud
+    mariadb_username: owncloud
+    port: 7010
+  owncloud_mariadb:
+    docker_image: docker.io/library/mariadb:10.2.14
+    port: 7011
+  owncloud_redis:
+    docker_image: docker.io/library/redis:4.0.9
+    port: 7012
   petshop:
     cookie_tag: PSD
     http_host: petshop.{{ host }}
@@ -160,12 +171,10 @@ channel:
     docker:
       iptables: true
     petshop:
-      dbi_password: petpass
       nginx:
         vhost: petshop.{{ host }}
     postgresql:
       auth_local_method: trust
-      postgres_password: pgpass
     sirepo:
       celery_tasks:
         celeryd_concurrency: 1

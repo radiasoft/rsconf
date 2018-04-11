@@ -8,7 +8,9 @@ port {{ owncloud_redis.port }}
 tcp-backlog 511
 timeout 0
 tcp-keepalive 300
+# docker
 daemonize no
+# doesn't work unless the systemd socket is bound
 supervised no
 # /run isn't available, and isn't written because non-daemonized
 pidfile /tmp/redis.pid

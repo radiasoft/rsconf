@@ -53,6 +53,106 @@ docker run -d \
 
 cat /root/owncloud/toppath.conf
 
+declare -x OWNCLOUD_REDIS_ENABLED
+[[ -z "${OWNCLOUD_REDIS_ENABLED}" ]] && OWNCLOUD_REDIS_ENABLED="false"
+
+declare -x OWNCLOUD_REDIS_HOST
+[[ -z "${OWNCLOUD_REDIS_HOST}" ]] && OWNCLOUD_REDIS_HOST="redis"
+
+declare -x OWNCLOUD_REDIS_PORT
+[[ -z "${OWNCLOUD_REDIS_PORT}" ]] && OWNCLOUD_REDIS_PORT="6379"
+
+declare -x OWNCLOUD_REDIS_PASSWORD
+[[ -z "${OWNCLOUD_REDIS_PASSWORD}" ]] && OWNCLOUD_REDIS_PASSWORD=""
+
+declare -x OWNCLOUD_REDIS_DB
+[[ -z "${OWNCLOUD_REDIS_DB}" ]] && OWNCLOUD_REDIS_DB=""
+
+declare -x OWNCLOUD_DB_TYPE
+[[ -z "${OWNCLOUD_DB_TYPE}" ]] && OWNCLOUD_DB_TYPE="sqlite"
+
+declare -x OWNCLOUD_DB_HOST
+[[ -z "${OWNCLOUD_DB_HOST}" ]] && OWNCLOUD_DB_HOST=""
+
+declare -x OWNCLOUD_DB_NAME
+[[ -z "${OWNCLOUD_DB_NAME}" ]] && OWNCLOUD_DB_NAME="owncloud"
+
+declare -x OWNCLOUD_DB_USERNAME
+[[ -z "${OWNCLOUD_DB_USERNAME}" ]] && OWNCLOUD_DB_USERNAME=""
+
+declare -x OWNCLOUD_DB_PASSWORD
+[[ -z "${OWNCLOUD_DB_PASSWORD}" ]] && OWNCLOUD_DB_PASSWORD=""
+
+declare -x OWNCLOUD_DB_PREFIX
+[[ -z "${OWNCLOUD_DB_PREFIX}" ]] && OWNCLOUD_DB_PREFIX="oc_"
+
+declare -x OWNCLOUD_DB_TIMEOUT
+[[ -z "${OWNCLOUD_DB_TIMEOUT}" ]] && OWNCLOUD_DB_TIMEOUT="180"
+
+declare -x OWNCLOUD_DB_FAIL
+[[ -z "${OWNCLOUD_DB_FAIL}" ]] && OWNCLOUD_DB_FAIL="true"
+
+declare -x OWNCLOUD_UTF8MB4_ENABLED
+[[ -z "${OWNCLOUD_UTF8MB4_ENABLED}" ]] && OWNCLOUD_UTF8MB4_ENABLED="false"
+
+true
+
+
+cat /root/ow*/toppath.conf
+<VirtualHost *:80>
+  ServerAdmin webmaster@localhost
+  DocumentRoot /var/www/owncloud
+
+  ErrorLog ${APACHE_LOG_DIR}/error.log
+  CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+  <Directory /var/www/owncloud>
+    AllowOverride All
+    Options -Indexes +FollowSymlinks
+
+    <IfModule mod_dav.c>
+      Dav off
+    </IfModule>
+
+    SetEnv HOME /var/www/owncloud
+    SetEnv HTTP_HOME /var/www/owncloud
+  </Directory>
+
+  <IfModule mod_headers.c>
+    Header always set Strict-Transport-Security "max-age=15768000; preload"
+  </IfModule>
+</VirtualHost>
+
+<IfModule mod_ssl.c>
+  <VirtualHost *:443>
+    ServerAdmin webmaster@localhost
+    DocumentRoot /var/www/owncloud
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+    <Directory /var/www/owncloud>
+      AllowOverride All
+      Options -Indexes +FollowSymlinks
+
+      <IfModule mod_dav.c>
+        Dav off
+      </IfModule>
+
+      SetEnv HOME /var/www/owncloud
+      SetEnv HTTP_HOME /var/www/owncloud
+    </Directory>
+
+    <IfModule mod_headers.c>
+      Header always set Strict-Transport-Security "max-age=15768000; preload"
+    </IfModule>
+
+    SSLEngine on
+    SSLCertificateFile ${OWNCLOUD_VOLUME_CERTS}/ssl-cert.crt
+    SSLCertificateKeyFile ${OWNCLOUD_VOLUME_CERTS}/ssl-cert.key
+  </VirtualHost>
+</IfModule>
+
 TODO: change port to 7080 and 7443 or whatever
 
 <VirtualHost *:80>
@@ -70,6 +170,9 @@ then
 else
   echo "Fixing base perms..."
   find /var/www/owncloud \( \! -user www-data -o \! -group www-data \) -print0 | xargs -r -0 chown www-data:www-data
+
+
+proxy_set_header X-Forwarded-Host $http_host;
 
 
 OWNCLOUD_DB_HOST setup on different port
