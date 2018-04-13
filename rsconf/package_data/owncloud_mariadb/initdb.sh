@@ -1,14 +1,3 @@
-# alpine package
-# apk info --who-owns /usr/bin/mysqld
-/usr/bin/mysqld is owned by mariadb-10.2.13-r1
-10.2.14, 10.2, 10, latest (10.2/Dockerfile)
-
-don't use mysqld_safe, because it restarts and daemonizes
-
-do not pass --daemonize
-
-STARTCMD="/usr/bin/mysqld_safe"
-
 if [ ! -d "/var/lib/mysql/mysql" ]
 then
   if [ -z "${MARIADB_ROOT_PASSWORD}" ]

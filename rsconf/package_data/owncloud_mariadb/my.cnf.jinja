@@ -1,12 +1,16 @@
+# Copied from webhippie/mariadb, which ultimately doesn't allow you to override
+# the one thing we need "port".
 [client]
-port = {{ owncloud_mysqld.port }}
-socket = /run/mysqld/mysqld.sock
+port = {{ owncloud_mariadb.port }}
+# unused, but needs to exist
+socket = /tmp/mysqld.sock
 
 default-character-set = utf8
 
 [mysqld]
-port = {{ owncloud_mysqld.port }}
-socket = /run/mysqld/mysqld.sock
+port = {{ owncloud_mariadb.port }}
+# unused, but needs to exist
+socket = /tmp/mysqld.sock
 
 character-set-server = utf8
 collation-server = utf8_general_ci
@@ -28,9 +32,9 @@ binlog_format = mixed
 
 server-id = 1
 
-innodb_data_home_dir = {{ owncloud_mysqld.data_d }}
+innodb_data_home_dir = {{ owncloud_mariadb.db_d }}
 innodb_data_file_path = ibdata1:10M:autoextend
-innodb_log_group_home_dir = {{ owncloud_mysqld.data_d }}
+innodb_log_group_home_dir = {{ owncloud_mariadb.db_d }}
 innodb_buffer_pool_size = 16M
 innodb_log_file_size = 5M
 innodb_log_buffer_size = 8M

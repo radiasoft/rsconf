@@ -199,7 +199,8 @@ host:
         exports:
           /srv/sirepo/db/users: [ 10.10.10.0/24 ]
       rsconf_db:
-        components: [ nfs_server, rabbitmq, celery_sirepo, sirepo, bop ]
+        # components: [ nfs_server, rabbitmq, celery_sirepo, sirepo, bop ]
+        components: [ owncloud_redis, owncloud_mariadb ]
     {{ master }}:
       base_os:
         volume_groups: []
@@ -234,7 +235,7 @@ host:
         exports:
           /exports/foo: [ 10.10.10.0/24, localhost ]
       rsconf_db:
-        components: [ nfs_client, nfs_server, rabbitmq, celery_sirepo, sirepo, bop, jupyterhub, jupyterhub_proxy, btest, owncloud_redis ]
+        components: [ nfs_client, nfs_server, rabbitmq, celery_sirepo, sirepo, bop, jupyterhub, jupyterhub_proxy, btest, owncloud_redis, owncloud_mariadb ]
 
 
 #Local Variables:

@@ -1,0 +1,30 @@
+#!/bin/bash
+
+owncloud_mariadb_main() {
+    # if this directory exists, then db was initialized
+    if [[ -e  {{ owncloud_mariadb.db_d }}/mysql ]]; then
+        return
+    fi
+
+    {{ systemd.start }} /bin/bash <<'EOF'
+    # cross-bootstrap avoids referring to a host name, which inside a docker
+    # container is irrelevant. mysql_install_db is a complex beast so we'll
+    # run it, but it's probaby only one line of code that needs to be run. The
+    # rest are checks that are irrelevant to us. It has to run as root.
+    mysql_install_db --cross-bootstrap --datadir='{{ owncloud_mariadb.db_d }}'
+EOF
+    # Now intitialize the database, removing the "test" db and any users
+    # which were created by mysql_install_db.
+    {{ systemd.start }} /bin/bash <<'EOF'
+    cat <<'EOF2' | {{ systemd.service_exec }} --init-file=/dev/stdin
+        DELETE FROM mysql.user;
+        CREATE USER 'root'@'%' IDENTIFIED BY '{{ owncloud_mariadb.root_password }}';
+        GRANT ALL ON *.* TO 'root'@'%' WITH GRANT OPTION;
+        DROP DATABASE IF EXISTS test;
+        FLUSH PRIVILEGES;
+        CREATE DATABASE IF NOT EXISTS '{{ owncloud.mariadb_database }}';
+        echo "GRANT ALL PRIVILEGES ON '{{ owncloud.mariadb_database }}'.* TO '{{ owncloud.mariadb_username }}'@'%' IDENTIFIED BY '{{ owncloud.mariadb_password }}';
+        FLUSH PRIVILEGES;
+EOF2
+EOF
+}
