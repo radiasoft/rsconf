@@ -25,7 +25,8 @@ class T(component.T):
             self,
             j2_ctx,
             image=docker_registry.absolute_image(j2_ctx, z.docker_image),
-            cmd="/usr/bin/redis-server '{}'".format(z.conf_f),
+            # find in path (probably /usr/local/bin, but might be /usr/bin)
+            cmd="redis-server '{}'".format(z.conf_f),
         )
         self.install_access(mode='700', owner=z.run_u)
         self.install_directory(z.db_d)

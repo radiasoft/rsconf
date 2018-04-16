@@ -80,15 +80,15 @@ default:
   nginx:
     worker_processes: 1
   owncloud:
-    docker_image: docker.io/owncloud/server:10.0.7
+    docker_image: docker.io/radiasoft/owncloud
     mariadb_database: owncloud
     mariadb_username: owncloud
     port: 7010
   owncloud_mariadb:
-    docker_image: docker.io/library/mariadb:10.2.14
+    docker_image: docker.io/radiasoft/mariadb
     port: 7011
   owncloud_redis:
-    docker_image: docker.io/library/redis:4.0.9
+    docker_image: docker.io/radiasoft/redis
     port: 7012
   petshop:
     cookie_tag: PSD

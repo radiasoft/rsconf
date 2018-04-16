@@ -7,6 +7,7 @@ owncloud_mariadb_main() {
     fi
 
     {{ systemd.start }} /bin/bash <<'EOF'
+    set -euo pipefail
     # cross-bootstrap avoids referring to a host name, which inside a docker
     # container is irrelevant. mysql_install_db is a complex beast so we'll
     # run it, but it's probaby only one line of code that needs to be run. The
@@ -16,15 +17,38 @@ EOF
     # Now intitialize the database, removing the "test" db and any users
     # which were created by mysql_install_db.
     {{ systemd.start }} /bin/bash <<'EOF'
-    cat <<'EOF2' | {{ systemd.service_exec }} --init-file=/dev/stdin
+    set -euo pipefail
+    init_log='{{ owncloud_mariadb.run_d }}/db_init.log'
+    {{ systemd.service_exec }} --init-file=/dev/stdin <<'EOF2' >& "$init_log" &
         DELETE FROM mysql.user;
         CREATE USER 'root'@'%' IDENTIFIED BY '{{ owncloud_mariadb.root_password }}';
         GRANT ALL ON *.* TO 'root'@'%' WITH GRANT OPTION;
         DROP DATABASE IF EXISTS test;
         FLUSH PRIVILEGES;
-        CREATE DATABASE IF NOT EXISTS '{{ owncloud.mariadb_database }}';
-        echo "GRANT ALL PRIVILEGES ON '{{ owncloud.mariadb_database }}'.* TO '{{ owncloud.mariadb_username }}'@'%' IDENTIFIED BY '{{ owncloud.mariadb_password }}';
+        CREATE DATABASE IF NOT EXISTS `{{ owncloud.mariadb_database }}`;
+        GRANT ALL PRIVILEGES ON `{{ owncloud.mariadb_database }}`.* TO '{{ owncloud.mariadb_username }}'@'%' IDENTIFIED BY '{{ owncloud.mariadb_password }}';
         FLUSH PRIVILEGES;
 EOF2
+    # fastest path to stopping server after it processes init-file and starts
+    # serving. You can't exit from the init-file, and you can't use
+    # https://mariadb.com/kb/en/library/mysql_secure_installation/
+    # b/c it requires sudo
+    pid=$!
+    for x in $(seq 10); do
+        sleep 1
+        if grep 'ready for connections' "$init_log" >& /dev/null; then
+            break
+        fi
+    done
+    # Normal termination
+    kill -TERM "$pid"
+    for x in $(seq 10); do
+        sleep 1
+        if ! kill -0 "$pid" >& /dev/null; then
+            exit 0
+        fi
+    done
+    kill -KILL "$pid"
+    exit 1
 EOF
 }

@@ -26,9 +26,13 @@ class T(component.T):
             j2_ctx,
             volumes=[
                 [z.conf_f, '/etc/my.cnf'],
+                # hardwired in some places, not sure where, and hardwired
+                # in Dockefile so just mount as an alias
+                [z.db_d, '/var/lib/mysql'],
             ],
             image=docker_registry.absolute_image(j2_ctx, z.docker_image),
-            cmd='/usr/libexec/mysqld',
+            # find in path (probably /usr/sbin, but might be /usr/libexec)
+            cmd='mysqld',
         )
         self.install_access(mode='700', owner=z.run_u)
         self.install_directory(z.db_d)
