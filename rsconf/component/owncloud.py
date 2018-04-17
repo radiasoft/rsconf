@@ -15,7 +15,7 @@ class T(component.T):
         from rsconf.component import nginx
         from rsconf.component import docker_registry
 
-        self.buildt.require_component('docker', 'nginx')
+        self.buildt.require_component('docker', 'nginx', 'owncloud_mariadb')
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.owncloud
         z.run_u = j2_ctx.rsconf_db.run_u

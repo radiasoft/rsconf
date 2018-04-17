@@ -81,12 +81,12 @@ default:
   nginx:
     worker_processes: 1
   owncloud:
-    domain: owncloud.{{ host }}
     admin_user: admin
     db_name: owncloud
-    db_user: owncloud
     db_prefix: oc_
+    db_user: owncloud
     docker_image: docker.io/radiasoft/owncloud
+    domain: owncloud.{{ host }}
     port: 7010
   owncloud_mariadb:
     docker_image: docker.io/radiasoft/mariadb
@@ -204,7 +204,7 @@ host:
           /srv/sirepo/db/users: [ 10.10.10.0/24 ]
       rsconf_db:
         # components: [ nfs_server, rabbitmq, celery_sirepo, sirepo, bop ]
-        components: [ owncloud_mariadb, owncloud ]
+        components: [ owncloud ]
     {{ master }}:
       base_os:
         volume_groups: []
@@ -239,7 +239,7 @@ host:
         exports:
           /exports/foo: [ 10.10.10.0/24, localhost ]
       rsconf_db:
-        components: [ nfs_client, nfs_server, rabbitmq, celery_sirepo, sirepo, bop, jupyterhub, jupyterhub_proxy, btest, owncloud_redis, owncloud_mariadb, owncloud ]
+        components: [ nfs_client, nfs_server, rabbitmq, celery_sirepo, sirepo, bop, jupyterhub, jupyterhub_proxy, btest, owncloud ]
 
 
 #Local Variables:
