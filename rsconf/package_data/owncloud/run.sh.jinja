@@ -15,6 +15,8 @@ if [[ ! -e '{{ owncloud.conf_f }}' ]]; then
         --database-pass '{{ owncloud.db_password }}' \
         --database-table-prefix '{{ owncloud.db_prefix }}' \
         --database-user '{{ owncloud.db_user }}'
+    occ config:system:set overwrite.cli.url --value 'http://127.0.0.1:{{ owncloud.port }}'
+    occ config:system:set trusted_domains 0 --value={{ owncloud.domain }}
 fi
 export APACHE_CONFDIR=/etc/apache2
 export APACHE_ENVVARS=$APACHE_CONFDIR/envvars
