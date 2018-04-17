@@ -26,15 +26,18 @@ class T(component.T):
         z.apache_envvars_f = z.run_d.join('envvars')
         # Created dynamically every run
         z.apache_run_d = '/tmp/apache2'
-        z.apps_d = z.db_d.join('apps')
         z.conf_d = z.db_d.join('config')
         z.conf_f = z.conf_d.join('config.php')
         z.files_d = z.db_d.join('files')
         z.init_conf_f = z.run_d.join('init_config.php')
         z.log_d = z.run_d.join('log')
         z.sessions_d = z.db_d.join('sessions')
-        # assumes docker --network=host
-        z.db_host = 'localhost:{}'.format(j2_ctx.owncloud_mariadb.port)
+        # 127.0.0.1 assumes docker --network=host
+        # If you connect to "localhost" (not 127.0.0.1) mysql fails to connect,
+        # because the socket isn't there, instead of trying TCP (port supplied).
+        # mysql -h localhost -P 7011 -u owncloud
+        # ERROR 2002 (HY000): Can't connect to local MySQL server through socket '/var/run/mysqld/mysqld.sock' (2)
+        z.db_host = '127.0.0.1:{}'.format(j2_ctx.owncloud_mariadb.port)
         systemd.docker_unit_enable(
             self,
             j2_ctx,
@@ -53,7 +56,7 @@ class T(component.T):
             run_u=z.run_u,
         )
         self.install_access(mode='700', owner=z.run_u)
-        for d in z.db_d, z.log_d, z.apps_d, z.files_d, z.sessions_d, z.conf_d:
+        for d in z.db_d, z.log_d, z.files_d, z.sessions_d, z.conf_d:
             self.install_directory(d)
         self.install_access(mode='400')
         self.install_resource('owncloud/init_config.php', j2_ctx, z.init_conf_f)
@@ -65,7 +68,7 @@ class T(component.T):
         nginx.install_vhost(
             self,
             vhost=z.domain,
-            backend_host='localhost',
+            backend_host='127.0.0.1',
             backend_port=z.port,
             j2_ctx=j2_ctx,
         )

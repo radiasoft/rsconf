@@ -6,8 +6,15 @@ mkdir -m 700 '{{ owncloud.apache_run_d }}'
 if [[ ! -e '{{ owncloud.conf_f }}' ]]; then
     install -m 600 '{{ owncloud.init_conf_f }}' '{{ owncloud.conf_f }}'
     occ maintenance:install --no-interaction \
+        --admin-pass '{{ owncloud.admin_password }}' \
         --admin-user '{{ owncloud.admin_user }}' \
-        --admin-pass '{{ owncloud.admin_password }}'
+        --data-dir '{{ owncloud.files_d }}' \
+        --database mysql \
+        --database-host '{{ owncloud.db_host }}' \
+        --database-name '{{ owncloud.db_name }}' \
+        --database-pass '{{ owncloud.db_password }}' \
+        --database-table-prefix '{{ owncloud.db_prefix }}' \
+        --database-user '{{ owncloud.db_user }}'
 fi
 export APACHE_CONFDIR=/etc/apache2
 export APACHE_ENVVARS=$APACHE_CONFDIR/envvars
