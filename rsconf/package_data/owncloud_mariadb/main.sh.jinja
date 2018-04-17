@@ -25,8 +25,8 @@ EOF
         GRANT ALL ON *.* TO 'root'@'%' WITH GRANT OPTION;
         DROP DATABASE IF EXISTS test;
         FLUSH PRIVILEGES;
-        CREATE DATABASE IF NOT EXISTS `{{ owncloud.mariadb_database }}`;
-        GRANT ALL PRIVILEGES ON `{{ owncloud.mariadb_database }}`.* TO '{{ owncloud.mariadb_username }}'@'%' IDENTIFIED BY '{{ owncloud.mariadb_password }}';
+        CREATE DATABASE IF NOT EXISTS `{{ owncloud.db_name }}`;
+        GRANT ALL PRIVILEGES ON `{{ owncloud.db_name }}`.* TO '{{ owncloud.db_user }}'@'%' IDENTIFIED BY '{{ owncloud.db_password }}';
         FLUSH PRIVILEGES;
 EOF2
     # fastest path to stopping server after it processes init-file and starts

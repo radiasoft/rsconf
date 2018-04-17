@@ -1,222 +1,71 @@
+# -*- coding: utf-8 -*-
+u"""create owncloud server config
 
+:copyright: Copyright (c) 2018 RadiaSoft LLC.  All Rights Reserved.
+:license: http://www.apache.org/licenses/LICENSE-2.0.html
+"""
+from __future__ import absolute_import, division, print_function
+from rsconf import component
+from pykern import pkcollections
 
-set in /etc/entrypoint.d/50-folders.sh
-OWNCLOUD_VOLUME_ROOT=/mnt/data
-export OWNCLOUD_VERSION=10.0
-export OWNCLOUD_DOMAIN=localhost
-export OWNCLOUD_ADMIN_USERNAME=admin
-export OWNCLOUD_ADMIN_PASSWORD=admin
-export OWNCLOUD_HTTP_PORT=80
-export OWNCLOUD_HTTPS_PORT=443
+class T(component.T):
 
-docker volume create owncloud_files
+    def internal_build(self):
+        from rsconf import systemd
+        from rsconf.component import nginx
+        from rsconf.component import docker_registry
 
-docker run -d \
-  --name owncloud \
-  --link mariadb:db \
-  --link redis:redis \
-  -p 80:80 \
-  -p 443:443 \
-  -e OWNCLOUD_DOMAIN=${OWNCLOUD_DOMAIN} \
-  -e OWNCLOUD_DB_TYPE=mysql \
-  -e OWNCLOUD_DB_NAME=owncloud \
-  -e OWNCLOUD_DB_USERNAME=owncloud \
-  -e OWNCLOUD_DB_PASSWORD=owncloud \
-  -e OWNCLOUD_DB_HOST=db \
-  -e OWNCLOUD_ADMIN_USERNAME=${OWNCLOUD_ADMIN_USERNAME} \
-  -e OWNCLOUD_ADMIN_PASSWORD=${OWNCLOUD_ADMIN_PASSWORD} \
-  -e OWNCLOUD_REDIS_ENABLED=true \
-  -e OWNCLOUD_REDIS_HOST=redis \
-  --volume owncloud_files:/mnt/data \
-  owncloud/server:${OWNCLOUD_VERSION}
-docker volume create owncloud_redis
-
-docker run -d \
-  --name redis \
-  -e REDIS_DATABASES=1 \
-  --volume owncloud_redis:/var/lib/redis \
-  webhippie/redis:latest
-
-docker volume create owncloud_mysql
-docker volume create owncloud_backup
-
-docker run -d \
-  --name mariadb \
-  -e MARIADB_ROOT_PASSWORD=owncloud \
-  -e MARIADB_USERNAME=owncloud \
-  -e MARIADB_PASSWORD=owncloud \
-  -e MARIADB_DATABASE=owncloud \
-  --volume owncloud_mysql:/var/lib/mysql \
-  --volume owncloud_backup:/var/lib/backup \
-  webhippie/mariadb:latest
-
-
-cat /root/owncloud/toppath.conf
-
-declare -x OWNCLOUD_REDIS_ENABLED
-[[ -z "${OWNCLOUD_REDIS_ENABLED}" ]] && OWNCLOUD_REDIS_ENABLED="false"
-
-declare -x OWNCLOUD_REDIS_HOST
-[[ -z "${OWNCLOUD_REDIS_HOST}" ]] && OWNCLOUD_REDIS_HOST="redis"
-
-declare -x OWNCLOUD_REDIS_PORT
-[[ -z "${OWNCLOUD_REDIS_PORT}" ]] && OWNCLOUD_REDIS_PORT="6379"
-
-declare -x OWNCLOUD_REDIS_PASSWORD
-[[ -z "${OWNCLOUD_REDIS_PASSWORD}" ]] && OWNCLOUD_REDIS_PASSWORD=""
-
-declare -x OWNCLOUD_REDIS_DB
-[[ -z "${OWNCLOUD_REDIS_DB}" ]] && OWNCLOUD_REDIS_DB=""
-
-declare -x OWNCLOUD_DB_TYPE
-[[ -z "${OWNCLOUD_DB_TYPE}" ]] && OWNCLOUD_DB_TYPE="sqlite"
-
-declare -x OWNCLOUD_DB_HOST
-[[ -z "${OWNCLOUD_DB_HOST}" ]] && OWNCLOUD_DB_HOST=""
-
-declare -x OWNCLOUD_DB_NAME
-[[ -z "${OWNCLOUD_DB_NAME}" ]] && OWNCLOUD_DB_NAME="owncloud"
-
-declare -x OWNCLOUD_DB_USERNAME
-[[ -z "${OWNCLOUD_DB_USERNAME}" ]] && OWNCLOUD_DB_USERNAME=""
-
-declare -x OWNCLOUD_DB_PASSWORD
-[[ -z "${OWNCLOUD_DB_PASSWORD}" ]] && OWNCLOUD_DB_PASSWORD=""
-
-declare -x OWNCLOUD_DB_PREFIX
-[[ -z "${OWNCLOUD_DB_PREFIX}" ]] && OWNCLOUD_DB_PREFIX="oc_"
-
-declare -x OWNCLOUD_DB_TIMEOUT
-[[ -z "${OWNCLOUD_DB_TIMEOUT}" ]] && OWNCLOUD_DB_TIMEOUT="180"
-
-declare -x OWNCLOUD_DB_FAIL
-[[ -z "${OWNCLOUD_DB_FAIL}" ]] && OWNCLOUD_DB_FAIL="true"
-
-declare -x OWNCLOUD_UTF8MB4_ENABLED
-[[ -z "${OWNCLOUD_UTF8MB4_ENABLED}" ]] && OWNCLOUD_UTF8MB4_ENABLED="false"
-
-true
-
-
-cat /root/ow*/toppath.conf
-<VirtualHost *:80>
-  ServerAdmin webmaster@localhost
-  DocumentRoot /var/www/owncloud
-
-  ErrorLog ${APACHE_LOG_DIR}/error.log
-  CustomLog ${APACHE_LOG_DIR}/access.log combined
-
-  <Directory /var/www/owncloud>
-    AllowOverride All
-    Options -Indexes +FollowSymlinks
-
-    <IfModule mod_dav.c>
-      Dav off
-    </IfModule>
-
-    SetEnv HOME /var/www/owncloud
-    SetEnv HTTP_HOME /var/www/owncloud
-  </Directory>
-
-  <IfModule mod_headers.c>
-    Header always set Strict-Transport-Security "max-age=15768000; preload"
-  </IfModule>
-</VirtualHost>
-
-<IfModule mod_ssl.c>
-  <VirtualHost *:443>
-    ServerAdmin webmaster@localhost
-    DocumentRoot /var/www/owncloud
-
-    ErrorLog ${APACHE_LOG_DIR}/error.log
-    CustomLog ${APACHE_LOG_DIR}/access.log combined
-
-    <Directory /var/www/owncloud>
-      AllowOverride All
-      Options -Indexes +FollowSymlinks
-
-      <IfModule mod_dav.c>
-        Dav off
-      </IfModule>
-
-      SetEnv HOME /var/www/owncloud
-      SetEnv HTTP_HOME /var/www/owncloud
-    </Directory>
-
-    <IfModule mod_headers.c>
-      Header always set Strict-Transport-Security "max-age=15768000; preload"
-    </IfModule>
-
-    SSLEngine on
-    SSLCertificateFile ${OWNCLOUD_VOLUME_CERTS}/ssl-cert.crt
-    SSLCertificateKeyFile ${OWNCLOUD_VOLUME_CERTS}/ssl-cert.key
-  </VirtualHost>
-</IfModule>
-
-TODO: change port to 7080 and 7443 or whatever
-
-<VirtualHost *:80>
-  ServerAdmin webmaster@localhost
-  DocumentRoot /var/www/owncloud
-
-TODO: don't chown because it's wrong
-
-# cat 25-chown.sh
-#!/usr/bin/env bash
-
-if [[ ${OWNCLOUD_SKIP_CHOWN} == "true" ]]
-then
-  echo "Skipping chown as requested..."
-else
-  echo "Fixing base perms..."
-  find /var/www/owncloud \( \! -user www-data -o \! -group www-data \) -print0 | xargs -r -0 chown www-data:www-data
-
-
-proxy_set_header X-Forwarded-Host $http_host;
-
-
-OWNCLOUD_DB_HOST setup on different port
-
-  "mysql")
-
-    if ! grep -q ":" <<<${OWNCLOUD_DB_HOST}
-    then
-      OWNCLOUD_DB_HOST=${OWNCLOUD_DB_HOST}:3306
-    fi
-
-
-odocker.io/library/redis:3.2.11
-
-permissions of /srv/owncloud_redis,owncloud_mariadb, does not need 711 because mount will be sufficient
-/srv/owncloud
-
-useradd -d /srv/
-
-OWNCLOUD_SKIP_CHOWN=true
-OWNCLOUD_DB_HOST=localhost
-
-OWNCLOUD_REDIS_ENABLED=true
-OWNCLOUD_REDIS_HOST=localhost
-OWNCLOUD_REDIS_PORT=999
-OWNCLOUD_REDIS_PASSWORD=whatever
-# don't need this
-#OWNCLOUD_REDIS_DB=whatever
-
-pass in ENV REDIS_OPTS to set port
-
-redis:x:101:102:redis:/var/lib/redis:/bin/false
-118d0c17c714:/etc/entrypoint.d# grep redis /etc/group
-grep redis /etc/group
-redis:x:102:redis
-
-# on boot, remove:
-
-/etc/s6/redis/setup
-
-processes have to start as root
-
-
-rm -f /etc/s6/redis/setup
--e REDIS_DATABASES=1 -e REDIS_PROTECTED=true -e REDIS_OPTS='--bind 127.0.0.1'
-
-vagrant can be user
+        self.buildt.require_component('docker', 'nginx')
+        j2_ctx = self.hdb.j2_ctx_copy()
+        z = j2_ctx.owncloud
+        z.run_u = j2_ctx.rsconf_db.run_u
+        z.run_d = systemd.docker_unit_prepare(self, j2_ctx)
+        z.db_d = z.run_d.join('db')
+        z.run_f = z.run_d.join('run')
+        z.apache_conf_f = z.run_d.join('apache.conf')
+        z.apache_envvars_f = z.run_d.join('envvars')
+        # Created dynamically every run
+        z.apache_run_d = '/tmp/apache2'
+        z.apps_d = z.db_d.join('apps')
+        z.conf_d = z.db_d.join('config')
+        z.conf_f = z.conf_d.join('config.php')
+        z.files_d = z.db_d.join('files')
+        z.init_conf_f = z.run_d.join('init_config.php')
+        z.log_d = z.run_d.join('log')
+        z.sessions_d = z.db_d.join('sessions')
+        # assumes docker --network=host
+        z.db_host = 'localhost:{}'.format(j2_ctx.owncloud_mariadb.port)
+        systemd.docker_unit_enable(
+            self,
+            j2_ctx,
+            volumes=[
+                # /mnt/data/sessions is hardwired in
+                # /etc/php/7.0/mods-available/owncloud.ini. We could overrided
+                # but this is just as easy, and likely to make other things work
+                # that are hardwired.
+                [z.db_d, '/mnt/data'],
+                [z.conf_d, '/var/www/owncloud/config'],
+                [z.apache_conf_f, '/etc/apache2/sites-enabled/000-default.conf'],
+                [z.apache_envvars_f, '/etc/apache2/envvars'],
+            ],
+            image=docker_registry.absolute_image(j2_ctx, z.docker_image),
+            cmd=z.run_f,
+            run_u=z.run_u,
+        )
+        self.install_access(mode='700', owner=z.run_u)
+        for d in z.db_d, z.log_d, z.apps_d, z.files_d, z.sessions_d, z.conf_d:
+            self.install_directory(d)
+        self.install_access(mode='400')
+        self.install_resource('owncloud/init_config.php', j2_ctx, z.init_conf_f)
+        self.install_resource('owncloud/apache.conf', j2_ctx, z.apache_conf_f)
+        self.install_resource('owncloud/apache_envvars', j2_ctx, z.apache_envvars_f)
+        self.install_access(mode='500')
+        self.install_resource('owncloud/run.sh', j2_ctx, z.run_f)
+        #TODO(robnagler) logrotate
+        nginx.install_vhost(
+            self,
+            vhost=z.domain,
+            backend_host='localhost',
+            backend_port=z.port,
+            j2_ctx=j2_ctx,
+        )

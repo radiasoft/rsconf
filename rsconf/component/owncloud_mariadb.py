@@ -33,6 +33,7 @@ class T(component.T):
             image=docker_registry.absolute_image(j2_ctx, z.docker_image),
             # find in path (probably /usr/sbin, but might be /usr/libexec)
             cmd='mysqld',
+            run_u=z.run_u,
         )
         self.install_access(mode='700', owner=z.run_u)
         self.install_directory(z.db_d)
