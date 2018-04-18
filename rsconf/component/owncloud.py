@@ -14,8 +14,9 @@ class T(component.T):
         from rsconf import systemd
         from rsconf.component import nginx
         from rsconf.component import docker_registry
+        from rsconf.component import db_bkp
 
-        self.buildt.require_component('docker', 'nginx', 'owncloud_mariadb')
+        self.buildt.require_component('docker', 'nginx', 'owncloud_mariadb', 'db_bkp')
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.owncloud
         z.run_u = j2_ctx.rsconf_db.run_u
@@ -37,7 +38,8 @@ class T(component.T):
         # because the socket isn't there, instead of trying TCP (port supplied).
         # mysql -h localhost -P 7011 -u owncloud
         # ERROR 2002 (HY000): Can't connect to local MySQL server through socket '/var/run/mysqld/mysqld.sock' (2)
-        z.db_host = '127.0.0.1:{}'.format(j2_ctx.owncloud_mariadb.port)
+        z.db_ip = '127.0.0.1'
+        z.db_host = '{}:{}'.format(z.db_ip, j2_ctx.owncloud_mariadb.port)
         systemd.docker_unit_enable(
             self,
             j2_ctx,
@@ -64,7 +66,6 @@ class T(component.T):
         self.install_resource('owncloud/apache_envvars', j2_ctx, z.apache_envvars_f)
         self.install_access(mode='500')
         self.install_resource('owncloud/run.sh', j2_ctx, z.run_f)
-        #TODO(robnagler) logrotate
         nginx.install_vhost(
             self,
             vhost=z.domain,
@@ -72,3 +73,10 @@ class T(component.T):
             backend_port=z.port,
             j2_ctx=j2_ctx,
         )
+        db_bkp.install_script_and_subdir(
+            self,
+            j2_ctx,
+            run_u=z.run_u,
+            run_d=z.run_d,
+        )
+        #TODO(robnagler) logrotate

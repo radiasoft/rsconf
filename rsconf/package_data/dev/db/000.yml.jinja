@@ -54,6 +54,8 @@ default:
         - {{ host }}
       dev_master:
         - {{ master }}
+  db_bkp:
+    on_calendar: "*-*-* 06:30:00"
   docker:
     iptables: false
   docker_registry:

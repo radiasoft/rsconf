@@ -1,0 +1,23 @@
+#!/bin/bash
+set -euo pipefail
+
+db_bkp_main() {
+    local f d u g
+    local date=$(date +%Y%m%d%H%M%S)
+    for f in '{{ rsconf_db.host_run_d }}'/*/'{{ db_bkp.script_name }}'; do
+        d=$(dirname "$f")/'{{ db_bkp.subdir_name }}'/$date
+        db_bkp_msg "$d: begin"
+        install -m 700 $(stat --printf='-o %u -g %g' "$f") -d "$d"
+        if ! (cd "$d" && source "$f"); then
+            db_bkp_msg "$d: FAILED"
+        fi
+        # TODO(robnagler) trim directories
+    done
+    db_bkp_msg done
+}
+
+db_bkp_msg() {
+    echo "$@" 1>&2
+}
+
+db_bkp_main "$@"
