@@ -82,6 +82,22 @@ class T(pkcollections.Dict):
             '{}: directory must be at least 700 mode (u=rwx)'
         self._bash_append(host_path, is_file=False)
 
+    def install_perl_rpm(self, j2_ctx, rpm_base, channel=None):
+        rpm_file = '{}-{}.rpm'.format(
+            rpm_base,
+            channel or j2_ctx.rsconf_db.channel,
+        )
+        if rpm_file in self.hdb.component.setdefault('_installed_rpms', set()):
+            return rpm_file
+        self.hdb.component._installed_rpms.add(rpm_file)
+        src = j2_ctx.rsconf_db.rpm_source_d.join(rpm_file)
+        assert src.check(), \
+            '{}: rpm does not exist'.format(rpm_file)
+        dst = j2_ctx.build.dst_d.join(rpm_file)
+        dst.mksymlinkto(src, absolute=False)
+        self.append_root_bash("rsconf_install_perl_rpm '{}' '{}'".format(rpm_base, rpm_file))
+        return rpm_file
+
     def install_resource(self, name, j2_ctx, host_path):
         dst = self._bash_append_and_dst(host_path)
         dst.write(_render_resource(name, j2_ctx))
@@ -92,16 +108,6 @@ class T(pkcollections.Dict):
         src = self.secret_path_value(filename, gen_secret, visibility)[1]
         dst = self._bash_append_and_dst(host_path)
         src.copy(dst, mode=True)
-
-    def install_rpm(self, j2_ctx, rpm_file):
-        if rpm_file in self.hdb.component.setdefault('_installed_rpms', set()):
-            return rpm_file
-        self.hdb.component._installed_rpms.add(rpm_file)
-        src = j2_ctx.rsconf_db.rpm_source_d.join(rpm_file)
-        dst = j2_ctx.build.dst_d.join(rpm_file)
-        dst.mksymlinkto(src, absolute=False)
-        self.append_root_bash("rsconf_install_rpm '{}'".format(rpm_file))
-        return rpm_file
 
     def install_symlink(self, old_host_path, new_host_path):
         _assert_host_path(new_host_path)

@@ -15,7 +15,9 @@ from pykern import pkio
 
 SOURCE_CODE_D = '/usr/share/Bivio-bOP-src'
 
-COMMON_RPMS = ('bivio-perl.rpm', 'perl-Bivio.rpm')
+PETSHOP_ROOT = 'Bivio::PetShop'
+
+COMMON_RPMS = ('bivio-perl', 'perl-Bivio')
 
 _DEFAULT_CLIENT_MAX_BODY_SIZE = '50M'
 
@@ -44,24 +46,20 @@ class T(component.T):
                 j2_ctx,
                 nginx.CONF_D.join('bop_common.conf'),
             )
+            # after the rpms are installed
             self.append_root_bash_with_main(j2_ctx)
             return
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.bop
-        rpms = list(COMMON_RPMS)
         z.run_u = j2_ctx.rsconf_db.run_u
         z.app_name = self.name
         db.merge_dict(z, j2_ctx[self.name])
         z.is_test = not z.is_production
-        if z.perl_root == 'Bivio::PetShop':
-            r = None
-            # Assumed by crm-ticket-deletion.btest
-            z.want_status_email = True
-        else:
-            r = 'perl-{}.rpm'.format(z.perl_root)
-            z.want_status_email = False
+        # Assumed by PetShop's crm-ticket-deletion.btest
+        z.want_status_email = z.perl_root == PETSHOP_ROOT
         z.setdefault('client_max_body_size', _DEFAULT_CLIENT_MAX_BODY_SIZE)
-        z.run_d = custom_unit_prepare(self, j2_ctx, app_rpm=r)
+        watch = install_perl_rpms(self, j2_ctx, perl_root=z.perl_root)
+        z.run_d = systemd.custom_unit_prepare(self, j2_ctx, *watch)
         z.conf_f = z.run_d.join('httpd.conf')
         z.bconf_f = z.run_d.join('bivio.bconf')
         z.log_postrotate_f = z.run_d.join('reload')
@@ -101,19 +99,19 @@ class T(component.T):
         _install_vhosts(self, j2_ctx)
 
 
-def custom_unit_prepare(compt, j2_ctx, app_rpm=None, watch_files=()):
+def install_perl_rpms(compt, j2_ctx, perl_root=None, channel=None):
     from rsconf import systemd
     if not compt.hdb.bop.setdefault('_perl_installed', False):
         compt.hdb.bop._perl_installed = True
         compt.append_root_bash(
             'install_repo_eval biviosoftware/container-perl base')
-    watch = list(watch_files)
-    for r in COMMON_RPMS + (app_rpm,):
-        if not r:
-            continue
-        watch.append(r)
-        compt.install_rpm(j2_ctx, r)
-    return systemd.custom_unit_prepare(compt, j2_ctx, *watch)
+    watch = list(COMMON_RPMS)
+    if perl_root and perl_root != PETSHOP_ROOT:
+        watch.append('perl-{}'.format(perl_root))
+    for r in watch:
+        compt.install_perl_rpm(j2_ctx, r, channel=channel)
+    return watch
+
 
 def _install_vhosts(self, j2_ctx):
     from rsconf.component import nginx

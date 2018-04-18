@@ -52,7 +52,7 @@ class T(component.T):
         for n in sorted(z.apps):
             a = j2_ctx[n]
             z.perl_root = a.perl_root
-            self.install_access(mode='700')
+            self.install_access(mode='700', owner=z.app_run_u)
             z.app_run_d = z.apps_d.join(n)
             self.install_directory(z.app_run_d)
             z.service_name = 'btest_' + n
@@ -94,6 +94,12 @@ class T(component.T):
                 z.app_run_f,
             )
             z.run_app_cmds += '{}\n'.format(z.app_run_f)
+            bop.install_perl_rpms(
+                self,
+                j2_ctx,
+                perl_root=z.perl_root,
+                channel=_force_alpha_or_dev(j2_ctx.rsconf_db.channel),
+            )
         self.install_access(mode='500', owner=z.run_u)
         self.install_resource(
             'btest/run.sh',
@@ -101,3 +107,13 @@ class T(component.T):
             run_f,
         )
         self.append_root_bash_with_main(j2_ctx)
+
+
+def _force_alpha_or_dev(channel):
+    """btest should never be beta or prod
+
+    might be running on a machine that's prod for other reasons
+    """
+    if channel in ('dev', 'alpha'):
+        return channel
+    return 'alpha'

@@ -54,8 +54,6 @@ postfix_main() {
 
 postfix_setup_bop() {
     local mail_domains=( "$@" )
-    rsconf_yum_install bivio-perl
-    rsconf_yum_install perl-Bivio
     rsconf_file_hash_save "$postfix_main_cf"
     # https://janikarhunen.fi/tackle-spam-with-spamassassin-on-centos7-and-postfix.html
     # http://forums.sentora.org/showthread.php?tid=1118

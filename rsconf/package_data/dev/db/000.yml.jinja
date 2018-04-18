@@ -22,6 +22,23 @@ default:
     on_calendar: "*-*-* 08:00:00"
     primary: {{ master }}
     secondaries: []
+  bivioorg:
+    cookie_tag: BOD
+    http_host: bivio.org.{{ host }}
+    listen_base: 8138
+    mail_host: bivio.org.{{ host }}
+    nginx_aux_directives: ''
+    num_servers: 4
+    perl_root: BivioOrg
+    short_prefix: bo
+    vhosts:
+      # first vhost is default mail_host
+      - facade: bivio.org
+        mail_domains:
+          - bivio.org.{{ host }}
+      - facade: viarob.com
+        mail_domains:
+          - viarob.com.{{ host }}
   bop:
     bconf_aux: ''
     is_production: false
@@ -29,10 +46,13 @@ default:
       algorithm: DES
       magic: XYZ
     server_status_location: /bop-status
+    vhost_common:
+      # Only for test
+      host_suffix: {{ host }}
   btest:
     client_host: {{ master }}
     email_user: {{ user }}
-    apps: [ petshop ]
+    apps: [ bivioorg, petshop ]
     on_calendar: "*-*-* 12:00:00"
   celery_sirepo:
     queues: "sequential,parallel"
@@ -42,6 +62,8 @@ default:
       dev_host:
         - alpha2.sirepo.com
         - beforeother.{{ host }}
+        - bivio.org.{{ host }}
+        - bivio.biz.{{ host }}
         - jupyter.{{ all_host }}
         - jupyter.{{ master }}
         - m-petshop.{{ host }}
@@ -50,6 +72,7 @@ default:
         - petshop.{{ host }}
         - requiresecure.{{ host }}
         - sirepo.{{ host }}
+        - viarob.com.{{ host }}
         - {{ all_host }}
         - {{ host }}
       dev_master:
@@ -103,11 +126,9 @@ default:
     mail_host: petshop.{{ host }}
     nginx_aux_directives: ''
     num_servers: 4
+    perl_rpm: perl-Bivio
     perl_root: Bivio::PetShop
     short_prefix: pet
-    vhost_common:
-      # Only for test
-      host_suffix: {{ host }}
     vhosts:
       # first vhost is default mail_host
       - domains:
@@ -173,12 +194,9 @@ channel:
               gigabytes: 99
               mount_d: /srv/docker
     bop:
-      apps: [ petshop ]
+      apps: [ bivioorg, petshop ]
     docker:
       iptables: true
-    petshop:
-      nginx:
-        vhost: petshop.{{ host }}
     postgresql:
       auth_local_method: trust
     sirepo:
@@ -205,8 +223,8 @@ host:
         exports:
           /srv/sirepo/db/users: [ 10.10.10.0/24 ]
       rsconf_db:
-        # components: [ nfs_server, rabbitmq, celery_sirepo, sirepo, bop ]
-        components: [ owncloud ]
+        # components: [ nfs_server, rabbitmq, celery_sirepo, sirepo, bop, owncloud ]
+        components: [ bop ]
     {{ master }}:
       base_os:
         volume_groups: []

@@ -228,10 +228,10 @@ rsconf_install_mount_point() {
     rsconf_install_directory "$path"
 }
 
-rsconf_install_rpm() {
+rsconf_install_perl_rpm() {
     # installs a custom rpm from the local repo
-    local rpm_file=$1
-    local rpm_base=$(basename "$rpm_file" .rpm)
+    local rpm_base=$1
+    local rpm_file=$2
     local prev_rpm=$(rpm -q "$rpm_base" 2>&1 || true)
     local tmp=$rpm_file
     install_download "$rpm_file" > "$tmp"

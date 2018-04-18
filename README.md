@@ -76,9 +76,8 @@ git pull
 radia_run container-build
 cd ~/src/radiasoft/rsconf
 mkdir -p rpm
-export rpm_perl_install_dir=$PWD/rpm
-radia_run biviosoftware/rpm-perl bivio-perl
-radia_run biviosoftware/rpm-perl Bivio
+rpm_perl_install_dir=$PWD/rpm radia_run biviosoftware/rpm-perl bivio-perl
+rpm_perl_install_dir=$PWD/rpm radia_run biviosoftware/rpm-perl Bivio
 ```
 
 On the client, create a test.sh file and run it:
