@@ -24,24 +24,19 @@ default:
     secondaries: []
   bivioorg:
     cookie_tag: BOD
-    http_host: bivio.org.{{ host }}
     listen_base: 8138
-    mail_host: bivio.org.{{ host }}
-    nginx_aux_directives: ''
-    num_servers: 4
     perl_root: BivioOrg
     short_prefix: bo
     vhosts:
       # first vhost is default mail_host
       - facade: bivio.org
-        mail_domains:
-          - bivio.org.{{ host }}
+        receive_mail: true
       - facade: viarob.com
-        mail_domains:
-          - viarob.com.{{ host }}
+        receive_mail: true
   bop:
     bconf_aux: ''
     is_production: false
+    num_servers: 2
     secret:
       algorithm: DES
       magic: XYZ
@@ -134,8 +129,7 @@ default:
       - domains:
           - petshop.{{ host }}
           - bprog.{{ host }}
-        mail_domains:
-          - petshop.{{ host }}
+        receive_mail: true
         nginx_aux_directives: |
           location /nginx_redirect/(.*) {
               return 301 $scheme://$http_host/$1;

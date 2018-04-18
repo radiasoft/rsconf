@@ -50,7 +50,7 @@ class T(component.T):
         )
         z.run_app_cmds = ''
         for n in sorted(z.apps):
-            a = j2_ctx[n]
+            a = bop.merge_app_vars(j2_ctx, n)
             z.perl_root = a.perl_root
             self.install_access(mode='700', owner=z.app_run_u)
             z.app_run_d = z.apps_d.join(n)

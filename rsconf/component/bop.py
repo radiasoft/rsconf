@@ -8,6 +8,7 @@ from __future__ import absolute_import, division, print_function
 import re
 from pykern.pkdebug import pkdp
 from rsconf import component
+from rsconf import db
 from pykern import pkcollections
 from pykern import pkconfig
 from pykern import pkio
@@ -24,7 +25,6 @@ _DEFAULT_CLIENT_MAX_BODY_SIZE = '50M'
 class T(component.T):
     def internal_build(self):
         from rsconf import systemd
-        from rsconf import db
         from rsconf.component import logrotate
         from rsconf.component import nginx
 
@@ -50,23 +50,13 @@ class T(component.T):
             self.append_root_bash_with_main(j2_ctx)
             return
         j2_ctx = self.hdb.j2_ctx_copy()
-        z = j2_ctx.bop
-        z.run_u = j2_ctx.rsconf_db.run_u
-        z.app_name = self.name
-        db.merge_dict(z, j2_ctx[self.name])
-        z.is_test = not z.is_production
-        # Assumed by PetShop's crm-ticket-deletion.btest
-        z.want_status_email = z.perl_root == PETSHOP_ROOT
-        z.setdefault('client_max_body_size', _DEFAULT_CLIENT_MAX_BODY_SIZE)
+        z = merge_app_vars(j2_ctx, self.name)
         watch = install_perl_rpms(self, j2_ctx, perl_root=z.perl_root)
         z.run_d = systemd.custom_unit_prepare(self, j2_ctx, *watch)
         z.conf_f = z.run_d.join('httpd.conf')
         z.bconf_f = z.run_d.join('bivio.bconf')
         z.log_postrotate_f = z.run_d.join('reload')
         z.httpd_cmd = "/usr/sbin/httpd -d '{}' -f '{}'".format(z.run_d, z.conf_f)
-        z.source_code_d = SOURCE_CODE_D
-        # all apps are secured by TLS now
-        z.can_secure = True
         systemd.custom_unit_enable(
             self,
             j2_ctx,
@@ -113,17 +103,38 @@ def install_perl_rpms(compt, j2_ctx, perl_root=None, channel=None):
     return watch
 
 
+def merge_app_vars(j2_ctx, app_name):
+    z = j2_ctx.bop
+    z.setdefault('is_production', False)
+    z.is_test = not z.is_production
+    z.run_u = j2_ctx.rsconf_db.run_u
+    db.merge_dict(z, j2_ctx[app_name])
+    z.app_name = app_name
+    # all apps are secured by TLS now
+    z.can_secure = True
+    z.setdefault('bconf_aux', '')
+    z.setdefault('client_max_body_size', _DEFAULT_CLIENT_MAX_BODY_SIZE)
+    z.source_code_d = SOURCE_CODE_D
+    # Assumed by PetShop's crm-ticket-deletion.btest
+    z.want_status_email = z.perl_root == PETSHOP_ROOT
+    if z.is_test:
+        z.http_host = _domain(j2_ctx, z.vhosts[0])[0]
+        z.mail_host = z.http_host
+    return z
+
+
+def _domain(j2_ctx, vh):
+    res = vh.get('domains')
+    if res:
+        return res[0], res[1:]
+    return vh.get('facade') + '.' + j2_ctx.bop.vhost_common.host_suffix, []
+
+
 def _install_vhosts(self, j2_ctx):
     from rsconf.component import nginx
 
-    def _domain(vh):
-        res = vh.get('domains')
-        if res:
-            return res[0], res[1:]
-        return vh.get('facade') + '.' + j2_ctx.bop.vhost_common.host_suffix, []
-
     for vh in j2_ctx.bop.vhosts:
-        h, j2_ctx.bop.domain_aliases = _domain(vh)
+        h, j2_ctx.bop.domain_aliases = _domain(j2_ctx, vh)
         j2_ctx.bop.aux_directives = vh.get('nginx_aux_directives', '')
         nginx.install_vhost(
             self,
@@ -133,5 +144,10 @@ def _install_vhosts(self, j2_ctx):
             resource_d='bop',
             j2_ctx=j2_ctx,
         )
+        if 'receive_mail' in vh:
+            assert not 'mail_domains' in vh, \
+                '{}: receive_mail and mail_domains: both set'.format(h)
+            if vh.receive_mail:
+                vh.mail_domains = [h]
         for m in vh.get('mail_domains', []):
             self.bopt.hdb.bop.mail_domains[m] = j2_ctx.bop.listen_base
