@@ -18,7 +18,22 @@ $CONFIG = array (
   'installed' => false,
   'filelocking.enabled' => true,
   'memcache.local' => '\\OC\\Memcache\\APCu',
-  {#
+  'apps_paths' => array(
+    0 => array(
+      'path' => '/var/www/owncloud/apps',
+      'url' => '/apps',
+      'writable' => false
+    ),
+  ),
+  'theme' => '',
+  'loglevel' => 0,
+  'log_type' => 'errorlog',
+  'maintenance' => false,
+  'trashbin_retention_obligation' => 'auto, 30',
+  'mysql.utf8mb4' => false,
+  'enable_certificate_management' => false,
+);
+{# For Redis, not tried
   'memcache.distributed => '\\OC\\Memcache\\Redis',
   'memcache.locking => '\\OC\\Memcache\\Redis',
   'redis' =>
@@ -28,21 +43,4 @@ $CONFIG = array (
     'port' => {{ owncloud_redis.port }},
     'password' => '{{ owncloud_redis.password }}',
   ),
-  #}
-  {#
-  'apps_paths' => array(
-      0 => array(
-          'path' => '/var/www/owncloud/apps',
-          'url' => '/apps',
-          'writable' => false
-      ),
-  ),
-  #}
-  'theme' => '',
-  'loglevel' => 0,
-  'log_type' => 'errorlog',
-  'maintenance' => false,
-  'trashbin_retention_obligation' => 'auto, 30',
-  'mysql.utf8mb4' => false,
-  'enable_certificate_management' => false,
-);
+#}
