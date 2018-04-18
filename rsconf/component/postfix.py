@@ -28,3 +28,4 @@ class T(component.T):
         )
         self.append_root_bash_with_main(j2_ctx)
         systemd.unit_enable(self, j2_ctx)
+        self.append_root_bash('rsconf_service_restart_at_end postfix')

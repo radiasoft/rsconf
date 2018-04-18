@@ -297,13 +297,14 @@ rsconf_main() {
     # Dynamically scoped; must be inline here
     local -A rsconf_file_hash=()
     local -A rsconf_install_access=()
+    local -A rsconf_service_file_changed=()
+    local -A rsconf_service_restart_at_end=()
     local -A rsconf_service_status=()
     local -A rsconf_service_watch=()
-    local -A rsconf_service_file_changed=()
     local -a rsconf_service_order=()
     local rsconf_rerun_required=
     install_script_eval 000.sh
-    rsconf_service_restart
+    rsconf_at_end=1 rsconf_service_restart
     if [[ $rsconf_rerun_required ]]; then
         echo "$rsconf_rerun_required
 
@@ -406,6 +407,9 @@ rsconf_service_restart() {
     # Always reload at start. Just easier and more reliable
     systemctl daemon-reload
     for s in ${rsconf_service_order[@]}; do
+        if [[ ! ${rsconf_at_end:-1} && ${rsconf_service_restart_at_end[$s]:+1} ]]; then
+            continue
+        fi
         if [[ ${rsconf_service_status[$s]} == start ]]; then
             rsconf_service_file_changed_check "$s"
         fi
@@ -429,6 +433,11 @@ rsconf_service_restart() {
         systemctl enable "$s"
         rsconf_service_status[$s]=active
     done
+}
+
+rsconf_service_restart_at_end() {
+    local s=$1
+    rsconf_service_restart_at_end[$s]=1
 }
 
 rsconf_service_trigger_restart() {
