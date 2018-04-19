@@ -407,7 +407,7 @@ rsconf_service_restart() {
     # Always reload at start. Just easier and more reliable
     systemctl daemon-reload
     for s in ${rsconf_service_order[@]}; do
-        if [[ ! ${rsconf_at_end:-1} && ${rsconf_service_restart_at_end[$s]:+1} ]]; then
+        if [[ ! ${rsconf_at_end:-} && ${rsconf_service_restart_at_end[$s]:+1} ]]; then
             continue
         fi
         if [[ ${rsconf_service_status[$s]} == start ]]; then
