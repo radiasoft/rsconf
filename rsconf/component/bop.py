@@ -67,6 +67,7 @@ class T(component.T):
             run_u=z.run_u,
         )
         self.install_access(mode='700', owner=z.run_u)
+        # bkp is only used by Societas/Biz/Util/Club.pm
         for d in 'bkp', 'db', 'log', 'logbop':
             x = z.run_d.join(d)
             z['{}_d'.format(d)] = x

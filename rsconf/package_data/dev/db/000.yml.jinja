@@ -73,6 +73,7 @@ default:
       dev_master:
         - {{ master }}
   db_bkp:
+    max_copies: 2
     on_calendar: "*-*-* 06:30:00"
   docker:
     iptables: false

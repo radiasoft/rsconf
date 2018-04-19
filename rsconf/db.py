@@ -99,7 +99,9 @@ class T(pkcollections.Dict):
                 secret_d=db_d.join(SECRET_SUBDIR),
                 srv_d=srv_d,
                 srv_host_d=srv_d.join(HOST_SUBDIR),
-                # Useful constants
+                # https://jnovy.fedorapeople.org/pxz/node1.html
+                # compression with 8 threads and max compression
+                # Useful (random) constants
                 compress_cmd='pxz -T8 -9',
             )
         )
