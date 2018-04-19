@@ -99,6 +99,8 @@ class T(pkcollections.Dict):
                 secret_d=db_d.join(SECRET_SUBDIR),
                 srv_d=srv_d,
                 srv_host_d=srv_d.join(HOST_SUBDIR),
+                # Useful constants
+                compress_cmd='pxz -T8 -9',
             )
         )
         merge_dict(res, v)

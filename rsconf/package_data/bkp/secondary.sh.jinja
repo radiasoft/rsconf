@@ -27,7 +27,7 @@ for src in $(cd $snapshot && find */* -type d); do
     # https://jnovy.fedorapeople.org/pxz/node1.html
     # compression with 8 threads and max compression
     # Just dump the file in to the directory since we aren't prefixing with the directory name
-    (cd $snapshot/$src && find . -maxdepth 1 ! -type d -print0 | tar --create --null --files-from=- --file=-) | pxz -T8 -9 > $dst/0.txz
+    (cd $snapshot/$src && find . -maxdepth 1 ! -type d -print0 | tar --create --null --files-from=- --file=-) | {{ rsconf_db.compress_cmd }} > $dst/0.txz
 done
 umount $dst
 cryptsetup close $vol

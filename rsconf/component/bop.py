@@ -25,13 +25,14 @@ _DEFAULT_CLIENT_MAX_BODY_SIZE = '50M'
 class T(component.T):
     def internal_build(self):
         from rsconf import systemd
+        from rsconf.component import db_bkp
         from rsconf.component import logrotate
         from rsconf.component import nginx
 
         if self.name == 'bop':
             self.hdb.bop.mail_domains = pkcollections.Dict()
             self.hdb.bop.aux_directives = ''
-            self.buildt.require_component('postgresql', 'nginx', 'postfix')
+            self.buildt.require_component('postgresql', 'nginx', 'postfix', 'db_bkp')
             for n in sorted(self.hdb.bop.apps):
                 vhostt = T(n, self.buildt)
                 vhostt.bopt = self
@@ -87,6 +88,13 @@ class T(component.T):
         )
         self.bopt.hdb.bop.aux_directives += j2_ctx.get('bop.nginx_aux_directives', '')
         _install_vhosts(self, j2_ctx)
+        db_bkp.install_script_and_subdir(
+            self,
+            j2_ctx,
+            resource_d='bop',
+            run_u=z.run_u,
+            run_d=z.run_d,
+        )
 
 
 def install_perl_rpms(compt, j2_ctx, perl_root=None, channel=None):

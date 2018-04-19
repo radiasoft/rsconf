@@ -1,8 +1,9 @@
 #!/bin/bash
+set -eou pipefail
 docker exec '{{ systemd.service_name }}' mysqldump \
     -h '{{ owncloud.db_ip }}' \
     -P '{{ owncloud_mariadb.port }}' \
     -u '{{ owncloud.db_user }}' \
     -p'{{ owncloud.db_password }}' \
     '{{ owncloud.db_name }}' | \
-    pxz -T8 -9 > owncloud.sql.xz
+    {{ rsconf_db.compress_cmd }} > owncloud.sql.xz
