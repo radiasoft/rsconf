@@ -14,8 +14,8 @@ while mdadm --detail /dev/md/monthly | grep -i resyncing >& /dev/null; do
     sleep 300
 done
 #https://wiki.archlinux.org/index.php/Dm-crypt/Encrypting_an_entire_system
-cryptsetup -y -v luksFormat --type luks2 /dev/md/monthly "$key_f"
-cryptsetup open /dev/md/monthly monthly
+cryptsetup luksFormat --type luks2 /dev/md/monthly "$key_f"
+cryptsetup --key-file "$key_f" open /dev/md/monthly monthly
 mkfs -t xfs -n ftype=1 /dev/mapper/monthly
 mkdir -p /bkp/monthly
 # Just in case
@@ -29,16 +29,17 @@ chmod 700 /bkp/monthly
 ) | while IFS= read -r -d $'\0' src_d; do
     dst_d=/bkp/monthly/"$src_d"
     mkdir -p "$dst_d"
-    if [[ ! $(find "/bkp/mirror/monthly/$src" -maxdepth 1 ! -type d) ]]; then
+    if [[ ! $(find "/bkp/mirror/monthly/$src_d" -maxdepth 1 ! -type d) ]]; then
         continue
     fi
     (
         # Just dump the file in to the dir since we aren't prefixing with the dir name
-        cd /bkp/mirror/monthly;
-        find "$src" -maxdepth 1 ! -type d -print0 \
+        cd "/bkp/mirror/monthly/$src_d"
+        find . -maxdepth 1 ! -type d -print0 \
             | tar --create --null --files-from=- --file=-
     ) | pxz -T8 -9 > "$dst_d"/0.txz
 done
+chmod -R a-w /bkp/monthly
 umount /bkp/monthly
 cryptsetup close monthly
 sync
