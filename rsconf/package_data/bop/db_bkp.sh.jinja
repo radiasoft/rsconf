@@ -2,7 +2,16 @@
 set -eou pipefail
 BCONF='{{ bop.bconf_f }}' bivio sql export_db .
 {{ rsconf_db.compress_cmd }} *pg_dump
-find '{{ bop.bkp_d }}' '{{ bop.logbop_d }}' \
+declare -a dirs=()
+for d in '{{ bop.bkp_d }}' '{{ bop.logbop_d }}' \
+    '{{ bop.db_d }}'/{RealmMailBounce,MailReceiveDispatchForm}; do
+    # prevent failing on:
+    # find: '/srv/bivioorg/db/MailReceiveDispatchForm': No such file or directory
+    if [[ -d $d ]]; then
+        dirs+=( "$d" )
+    fi
+done
+find "${dirs[@]}" \
     '{{ bop.db_d }}'/{RealmMailBounce,MailReceiveDispatchForm} \
     \( -type f -mtime +'{{ db_bkp.max_copies }}' -exec rm -f {} \; \) \
     -o -type d -mtime +2 -empty -exec rmdir {} \; -prune;
