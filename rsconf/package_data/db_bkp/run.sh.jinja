@@ -1,6 +1,13 @@
-
 #!/bin/bash
 set -euo pipefail
+
+db_bkp_docker_clean() {
+    db_bkp_msg "$d: db_bkp_docker_clean"
+    if type docker >& /dev/null; then
+        # Clean dangling images
+        docker rmi $(docker images --filter dangling=true -q || true) >& /dev/null || true
+    fi
+}
 
 db_bkp_main() {
     local f d
@@ -12,6 +19,7 @@ db_bkp_main() {
         db_bkp_trim "$(dirname "$d")"
         db_bkp_msg "$d: end"
     done
+    db_bkp_docker_clean
     db_bkp_msg done
 }
 
