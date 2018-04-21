@@ -1,3 +1,6 @@
 #!/bin/bash
+# /etc/bashrc not robust for error checking so can't set -eu.
+# Need bashrc to generate $CLASSPATH
+. ~/.bashrc
 set -eu -o pipefail
 exec {{ bop.httpd_cmd }}
