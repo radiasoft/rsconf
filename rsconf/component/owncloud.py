@@ -8,6 +8,22 @@ from __future__ import absolute_import, division, print_function
 from rsconf import component
 from pykern import pkcollections
 
+# Migration from 9.x to 10.x involved a few fixups, just FTR
+## Output by the upgrade
+#occ app:disable activity
+#occ app:disable gallery
+#occ app:disable files_texteditor
+#occ app:disable files_pdfviewer
+#occ upgrade --no-interaction
+## https://github.com/owncloud/core/issues/28285
+#occ migrations:execute core 20170320173955
+## https://github.com/owncloud/core/issues/28510
+#occ user:sync --no-interaction 'OC\User\Database'
+## to files:scan, must turn off "single-user" maintenance:mode
+#occ maintenance:mode --off
+## https://central.owncloud.org/t/file-was-deleted-from-the-server/8002/4
+#occ files:scan --no-interaction --all
+
 class T(component.T):
 
     def internal_build(self):
