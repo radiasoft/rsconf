@@ -7,3 +7,4 @@ docker exec '{{ systemd.service_name }}' mysqldump \
     -p'{{ owncloud.db_password }}' \
     '{{ owncloud.db_name }}' | \
     {{ rsconf_db.compress_cmd }} > owncloud.sql.xz
+chown '{{ owncloud.run_u }}:{{ owncloud.run_u }}' owncloud.sql.xz
