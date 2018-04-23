@@ -104,11 +104,12 @@ def install_perl_rpms(compt, j2_ctx, perl_root=None, channel=None):
         compt.hdb.bop._perl_installed = True
         compt.append_root_bash(
             'install_repo_eval biviosoftware/container-perl base')
-    watch = list(COMMON_RPMS)
+    todo = list(COMMON_RPMS)
     if perl_root and perl_root != PETSHOP_ROOT:
-        watch.append('perl-{}'.format(perl_root))
-    for r in watch:
-        compt.install_perl_rpm(j2_ctx, r, channel=channel)
+        todo.append('perl-{}'.format(perl_root))
+    watch = []
+    for r in todo:
+        watch.append(compt.install_perl_rpm(j2_ctx, r, channel=channel))
     return watch
 
 
