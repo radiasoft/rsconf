@@ -23,14 +23,13 @@ class T(component.T):
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.btest
         z.run_u = j2_ctx.rsconf_db.run_u
-        z.run_d = systemd.timer_prepare(self, j2_ctx)
+        z.run_d = systemd.timer_prepare(self, j2_ctx, on_calendar=z.on_calendar)
         z.apps_d = z.run_d.join('apps')
         run_f = z.run_d.join('run')
         systemd.timer_enable(
             self,
             j2_ctx=j2_ctx,
-            on_calendar=z.on_calendar,
-            timer_exec=run_f,
+            cmd=run_f,
             run_u=z.run_u,
         )
         z.source_code_d = bop.SOURCE_CODE_D

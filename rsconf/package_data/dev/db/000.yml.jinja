@@ -79,6 +79,12 @@ default:
     iptables: false
   docker_registry:
     host: ''
+  github_bkp:
+    docker_image: docker.io/radiasoft/python2
+    exclude_re: ''
+    # Relatively early, because it takes a long time (3 hours)
+    on_calendar: "*-*-* 03:00:00"
+    test_mode: True
   jupyterhub:
     admin_users: [ '{{ user }}' ]
     docker_image: docker.io/radiasoft/jupyterhub
@@ -225,7 +231,7 @@ host:
         volume_groups: []
       rsconf_db:
         #TODO(robnagler) need to edit this to just rsconf to bootstrap
-        components: [ rsconf, jupyterhub_proxy, bkp, btest ]
+        components: [ rsconf, jupyterhub_proxy, bkp, btest, github_bkp ]
     # This host never installed, just for testing build
     {{ all_host }}:
       docker:
@@ -254,7 +260,20 @@ host:
         exports:
           /exports/foo: [ 10.10.10.0/24, localhost ]
       rsconf_db:
-        components: [ nfs_client, nfs_server, rabbitmq, celery_sirepo, sirepo, bop, jupyterhub, jupyterhub_proxy, btest, owncloud ]
+        components:
+          # order matters on startup, because not all dependencies
+          # are expressed in the require_component or imports
+          - nfs_client
+          - nfs_server
+          - rabbitmq
+          - celery_sirepo
+          - sirepo
+          - bop
+          - btest
+          - jupyterhub
+          - jupyterhub_proxy
+          - owncloud
+          - github_bkp
 
 
 #Local Variables:

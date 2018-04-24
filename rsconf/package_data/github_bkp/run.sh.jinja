@@ -1,0 +1,5 @@
+#!/bin/bash
+set -euo pipefail
+pip install 'git+git://github.com/radiasoft/pykern#egg=pykern'
+cd {{ github_bkp.db_d }}
+exec pykern github backup

@@ -47,13 +47,12 @@ class T(component.T):
         j2_ctx = self.hdb.j2_ctx_copy()
         z = set_defaults(j2_ctx)
         z.run_u = j2_ctx.rsconf_db.root_u
-        run_d = systemd.timer_prepare(self, j2_ctx)
+        run_d = systemd.timer_prepare(self, j2_ctx, on_calendar=z.on_calendar)
         run_f = run_d.join('run')
         systemd.timer_enable(
             self,
             j2_ctx=j2_ctx,
-            on_calendar=z.on_calendar,
-            timer_exec=run_f,
+            cmd=run_f,
             run_u=z.run_u,
         )
         self.install_access(mode='500', owner=z.run_u)

@@ -63,6 +63,7 @@ def custom_unit_prepare(compt, j2_ctx, *watch_files):
     run_d = unit_run_d(j2_ctx, compt.name)
     unit_prepare(compt, j2_ctx, run_d, *watch_files)
     j2_ctx.systemd.run_d = run_d
+    j2_ctx.systemd.is_timer = False
     return run_d
 
 
@@ -111,6 +112,12 @@ def docker_unit_enable(compt, j2_ctx, image, cmd, env=None, volumes=None, after=
     # https://github.com/systemd/systemd/issues/770
     # These files should be 400, since there's no value in making them public.
     compt.install_access(mode='444', owner=j2_ctx.rsconf_db.root_u)
+    if z.is_timer:
+        compt.install_resource(
+            'systemd/timer_unit',
+            j2_ctx,
+            z.timer_f,
+        )
     compt.install_resource(
         'systemd/docker_unit',
         j2_ctx,
@@ -127,14 +134,13 @@ def docker_unit_prepare(compt, j2_ctx, *watch_files):
     return custom_unit_prepare(compt, j2_ctx, *watch_files)
 
 
-def timer_enable(compt, j2_ctx, on_calendar, timer_exec, run_u=None):
+def timer_enable(compt, j2_ctx, cmd, run_u=None):
     z = j2_ctx.systemd
     z.run_u = run_u or j2_ctx.rsconf_db.run_u
     compt.install_access(mode='700', owner=z.run_u)
     compt.install_directory(z.run_d)
     # required by systemd
-    z.on_calendar = on_calendar
-    z.timer_exec = timer_exec
+    z.timer_exec = cmd
     compt.install_access(mode='500')
     compt.install_resource(
         'systemd/timer_start',
@@ -155,12 +161,14 @@ def timer_enable(compt, j2_ctx, on_calendar, timer_exec, run_u=None):
     unit_enable(compt, j2_ctx)
 
 
-def timer_prepare(compt, j2_ctx, *watch_files):
+def timer_prepare(compt, j2_ctx, on_calendar, *watch_files):
     """Must be first call"""
     n = compt.name
     tn = n + '.timer'
     run_d = unit_run_d(j2_ctx, n)
     j2_ctx.systemd = pkcollections.Dict(
+        is_timer=True,
+        on_calendar=on_calendar,
         run_d=run_d,
         service_f=_SYSTEMD_DIR.join(n + '.service'),
         service_name=n,
