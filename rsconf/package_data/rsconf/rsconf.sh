@@ -410,24 +410,27 @@ rsconf_service_restart() {
         if [[ ! ${rsconf_at_end:-} && ${rsconf_service_restart_at_end[$s]:+1} ]]; then
             continue
         fi
-        if [[ ${rsconf_service_status[$s]} == start ]]; then
-            rsconf_service_file_changed_check "$s"
-        fi
-        if [[ ${rsconf_service_status[$s]} == restart ]]; then
-            # Just restart, most daemons are fast
-            install_info "$s: restarting"
-            systemctl restart "$s"
-        elif [[ ${rsconf_service_status[$s]} == active ]]; then
-            # Only one re/start
-            continue
-        else
-            # test is really only necessary for the msg
-            # https://askubuntu.com/a/836155
-            # don't use "status", b/c reports "bad" for sysv init
-            # scripts (e.g. network)
-            if ! systemctl is-active "$s" >&/dev/null; then
-                install_info "$s: starting"
-                systemctl start "$s"
+        # timers are only enabled, not re/started
+        if [[ ! $s =~ \.timer$ ]]; then
+            if [[ ${rsconf_service_status[$s]} == start ]]; then
+                rsconf_service_file_changed_check "$s"
+            fi
+            if [[ ${rsconf_service_status[$s]} == restart ]]; then
+                # Just restart, most daemons are fast
+                install_info "$s: restarting"
+                systemctl restart "$s"
+            elif [[ ${rsconf_service_status[$s]} == active ]]; then
+                # Only one re/start
+                continue
+            else
+                # test is really only necessary for the msg
+                # https://askubuntu.com/a/836155
+                # don't use "status", b/c reports "bad" for sysv init
+                # scripts (e.g. network)
+                if ! systemctl is-active "$s" >&/dev/null; then
+                    install_info "$s: starting"
+                    systemctl start "$s"
+                fi
             fi
         fi
         systemctl enable "$s"
