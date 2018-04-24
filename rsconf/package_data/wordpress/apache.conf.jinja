@@ -1,0 +1,11 @@
+ErrorLog {{ wordpress.log_d }}/error.log
+CustomLog {{ wordpress.log_d }}/access.log combined
+
+{# assumes docker --network=host #}
+{% for s in wordpress.sites %}
+Listen 127.0.0.1:{{ s.port }}
+<VirtualHost 127.0.0.1:{{ s.port }}>
+    ServerAdmin webmaster@{{ s.domain }}
+    DocumentRoot {{ s.srv_d }}
+</VirtualHost>
+{% endfor %}

@@ -1,0 +1,10 @@
+#!/bin/bash
+set -eou pipefail
+{% for s in sites %}
+mysqldump \
+    -u '{{ s.db_user }}' \
+    -p'{{ s.db_password }}' \
+    '{{ s.db_name }}' | \
+    {{ rsconf_db.compress_cmd }} > {{ s.domain_name }}.sql.xz
+chown '{{ owncloud.run_u }}:{{ owncloud.run_u }}' {{ s.domain_name }}.sql.xz
+{% endfor %}
