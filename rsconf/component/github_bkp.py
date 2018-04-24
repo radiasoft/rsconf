@@ -25,7 +25,7 @@ class T(component.T):
         env = pkcollections.Dict(
             PYKERN_PKCLI_GITHUB_EXCLUDE_RE=z.exclude_re,
             PYKERN_PKCLI_GITHUB_PASSWORD=z.password,
-            PYKERN_PKCLI_GITHUB_TEST_MODE=z.test_mode,
+            PYKERN_PKCLI_GITHUB_TEST_MODE=z.setdefault('test_mode', False),
             PYKERN_PKCLI_GITHUB_USER=z.user,
         )
         systemd.docker_unit_enable(
