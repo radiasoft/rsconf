@@ -16,7 +16,7 @@ class T(component.T):
 
         self.buildt.require_component('docker')
         j2_ctx = self.hdb.j2_ctx_copy()
-        z = j2_ctx.owncloud_mariadb
+        z = j2_ctx.rs_mariadb
         z.run_u = j2_ctx.rsconf_db.run_u
         z.run_d = systemd.docker_unit_prepare(self, j2_ctx)
         z.conf_f = z.run_d.join('my.cnf')
@@ -38,5 +38,5 @@ class T(component.T):
         self.install_access(mode='700', owner=z.run_u)
         self.install_directory(z.db_d)
         self.install_access(mode='400')
-        self.install_resource('owncloud_mariadb/my.cnf', j2_ctx, z.conf_f)
+        self.install_resource('rs_mariadb/my.cnf', j2_ctx, z.conf_f)
         self.append_root_bash_with_main(j2_ctx)

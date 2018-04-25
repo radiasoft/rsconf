@@ -33,7 +33,7 @@ class T(component.T):
         from rsconf.component import logrotate
         from rsconf.component import nginx
 
-        self.buildt.require_component('docker', 'nginx', 'owncloud_mariadb', 'db_bkp')
+        self.buildt.require_component('docker', 'nginx', 'rs_mariadb', 'db_bkp')
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.owncloud
         z.run_u = j2_ctx.rsconf_db.run_u
@@ -56,7 +56,7 @@ class T(component.T):
         # mysql -h localhost -P 7011 -u owncloud
         # ERROR 2002 (HY000): Can't connect to local MySQL server through socket '/var/run/mysqld/mysqld.sock' (2)
         z.db_ip = '127.0.0.1'
-        z.db_host = '{}:{}'.format(z.db_ip, j2_ctx.owncloud_mariadb.port)
+        z.db_host = '{}:{}'.format(z.db_ip, j2_ctx.rs_mariadb.port)
         systemd.docker_unit_enable(
             self,
             j2_ctx,

@@ -2,7 +2,7 @@
 set -eou pipefail
 docker exec '{{ systemd.service_name }}' mysqldump \
     -h '{{ owncloud.db_ip }}' \
-    -P '{{ owncloud_mariadb.port }}' \
+    -P '{{ rs_mariadb.port }}' \
     -u '{{ owncloud.db_user }}' \
     -p'{{ owncloud.db_password }}' \
     '{{ owncloud.db_name }}' | \

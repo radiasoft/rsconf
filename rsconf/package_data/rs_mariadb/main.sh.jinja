@@ -1,8 +1,8 @@
 #!/bin/bash
 
-owncloud_mariadb_main() {
+rs_mariadb_main() {
     # if this directory exists, then db was initialized
-    if [[ -e  {{ owncloud_mariadb.db_d }}/mysql ]]; then
+    if [[ -e  {{ rs_mariadb.db_d }}/mysql ]]; then
         return
     fi
 
@@ -12,16 +12,16 @@ owncloud_mariadb_main() {
     # container is irrelevant. mysql_install_db is a complex beast so we'll
     # run it, but it's probaby only one line of code that needs to be run. The
     # rest are checks that are irrelevant to us. It has to run as root.
-    mysql_install_db --cross-bootstrap --datadir='{{ owncloud_mariadb.db_d }}'
+    mysql_install_db --cross-bootstrap --datadir='{{ rs_mariadb.db_d }}'
 EOF
     # Now intitialize the database, removing the "test" db and any users
     # which were created by mysql_install_db.
     {{ systemd.start }} /bin/bash <<'EOF'
     set -euo pipefail
-    init_log='{{ owncloud_mariadb.run_d }}/db_init.log'
+    init_log='{{ rs_mariadb.run_d }}/db_init.log'
     {{ systemd.service_exec }} --init-file=/dev/stdin <<'EOF2' >& "$init_log" &
         DELETE FROM mysql.user;
-        CREATE USER 'root'@'%' IDENTIFIED BY '{{ owncloud_mariadb.root_password }}';
+        CREATE USER 'root'@'%' IDENTIFIED BY '{{ rs_mariadb.root_password }}';
         GRANT ALL ON *.* TO 'root'@'%' WITH GRANT OPTION;
         DROP DATABASE IF EXISTS test;
         FLUSH PRIVILEGES;

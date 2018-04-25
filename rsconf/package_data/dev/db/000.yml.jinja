@@ -115,7 +115,7 @@ default:
     docker_image: docker.io/radiasoft/owncloud
     domain: owncloud.{{ host }}
     port: 7010
-  owncloud_mariadb:
+  rs_mariadb:
     docker_image: docker.io/radiasoft/mariadb
     port: 7011
   owncloud_redis:
@@ -225,7 +225,7 @@ host:
           /srv/sirepo/db/users: [ 10.10.10.0/24 ]
       rsconf_db:
         # components: [ nfs_server, rabbitmq, celery_sirepo, sirepo, bop, owncloud ]
-        components: [ bop ]
+        components: [ owncloud ]
     {{ master }}:
       base_os:
         volume_groups: []
