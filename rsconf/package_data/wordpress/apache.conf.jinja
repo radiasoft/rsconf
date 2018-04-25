@@ -1,8 +1,13 @@
-ErrorLog {{ wordpress.log_d }}/error.log
 CustomLog {{ wordpress.log_d }}/access.log combined
+ErrorLog {{ wordpress.log_d }}/error.log
+MaxConnectionsPerChild 120
+MaxRequestWorkers {{ wordpress.num_servers }}
+MaxSpareServers	{{ wordpress.num_servers }}
+MinSpareServers {{ wordpress.num_servers }}
 
 {# assumes docker --network=host #}
 {% for s in wordpress.sites %}
+{# https://blog.chmouel.com/2016/09/22/the-trick-to-get-your-wordpress-behind-a-reverse-proxy/ #}
 Listen 127.0.0.1:{{ s.port }}
 <VirtualHost 127.0.0.1:{{ s.port }}>
     ServerAdmin webmaster@{{ s.domain }}
