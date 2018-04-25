@@ -251,7 +251,7 @@ rsconf_install_perl_rpm() {
             rm -f "$tmp"
             return
         fi
-        install_msg "$rpm: rpm is modified, reinstalling"
+        install_msg "$prev_rpm: rpm is modified, reinstalling"
         reinstall=1
     fi
     rsconf_yum_reinstall=$reinstall rsconf_yum_install "$tmp"
