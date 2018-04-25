@@ -245,11 +245,16 @@ rsconf_install_perl_rpm() {
     # both fresh install and update, which install does, but
     # it doesn't return an error if the update isn't done.
     # You just have to check so this way is more robust
+    local reinstall=
     if [[ $new_rpm == $prev_rpm ]]; then
-        rm -f "$tmp"
-        return
+        if rpm --verify "$rpm_base"; then
+            rm -f "$tmp"
+            return
+        fi
+        install_msg "$rpm: rpm is modified, reinstalling"
+        reinstall=1
     fi
-    rsconf_yum_install "$tmp"
+    rsconf_yum_reinstall=$reinstall rsconf_yum_install "$tmp"
     rm -f "$tmp"
     local curr_rpm=$(rpm -q "$rpm_base")
     if [[ $curr_rpm != $new_rpm ]]; then
@@ -484,8 +489,12 @@ rsconf_yum_install() {
             todo+=( "$x" )
         fi
     done
+    local cmd=install
+    if [[ ${rsconf_yum_reinstall:-} ]]; then
+        cmd=reinstall
+    fi
     if (( ${#todo[@]} > 0 )); then
-        yum install --color=never -y -q "${todo[@]}"
+        yum "$cmd" --color=never -y -q "${todo[@]}"
     fi
 }
 
