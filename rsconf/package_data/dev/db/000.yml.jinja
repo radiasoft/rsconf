@@ -117,6 +117,7 @@ default:
     port: 7010
   rs_mariadb:
     docker_image: docker.io/radiasoft/mariadb
+    ip: 127.0.0.1
     port: 7011
   owncloud_redis:
     docker_image: docker.io/radiasoft/redis
@@ -180,6 +181,8 @@ default:
     server:
       oauth_login: false
   spamd: {}
+  wordpress:
+    docker_image: docker.io/radiasoft/wordpress
 
 channel:
   dev:
@@ -216,6 +219,12 @@ channel:
           gateway: 104.237.137.1
           search: radia.run
           nameservers: [ 162.159.27.72, 162.159.24.39 ]
+    wordpress:
+      vhosts:
+        wp1.{{ host }}:
+          port: 7101
+          db_name: wp1
+          db_user: wp1user
 
 host:
   dev:
@@ -225,7 +234,7 @@ host:
           /srv/sirepo/db/users: [ 10.10.10.0/24 ]
       rsconf_db:
         # components: [ nfs_server, rabbitmq, celery_sirepo, sirepo, bop, owncloud ]
-        components: [ owncloud ]
+        components: [ owncloud, wordpress ]
     {{ master }}:
       base_os:
         volume_groups: []
@@ -274,6 +283,7 @@ host:
           - jupyterhub_proxy
           - owncloud
           - github_bkp
+          - wordpress
 
 
 #Local Variables:

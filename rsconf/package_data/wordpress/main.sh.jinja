@@ -1,0 +1,58 @@
+#!/bin/bash
+
+wordpress_init() {
+    local db=$1
+    local user=$2
+    local pw=$3
+    rs_mariadb_init "$db" "$user" "$pw"
+    curl -L -s -S https://wordpress.org/latest.tar.gz | tar xzf -
+    mv wordpress/* .
+    rmdir wordpress
+    # Only really used for testing
+    rm -f wp-config-sample.php
+    cat <<'EOF' > .htaccess
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+EOF
+    (
+        cat <<EOF
+<?php
+define('DB_NAME', '$db');
+define('DB_USER', '$user');
+define('DB_PASSWORD', '$pw');
+define('DB_HOST', '{{ wordpress.db_host }}');
+define('DB_CHARSET', 'utf8');
+define('DB_COLLATE', '');
+EOF
+        curl -L -s -S https://api.wordpress.org/secret-key/1.1/salt/
+        cat <<'EOF'
+$table_prefix  = 'wp_';
+define('WP_DEBUG', false);
+if ( !defined('ABSPATH') )
+	define('ABSPATH', dirname(__FILE__) . '/');
+require_once(ABSPATH . 'wp-settings.php');
+EOF
+    ) > wp-config.php
+    chown -R '{{ wordpress.run_u }}:{{ wordpress.run_u }}' .
+}
+
+wordpress_main() {
+    {% for h, v in wordpress.vhosts.items() %}
+        if [[ -e {{ v.srv_d }}/wp-config.php ]]; then
+            return
+        fi
+        {% if rsconf_db.channel == 'prod' %}
+            install_err '{{ v.srv_d }}: needs a wordpress install'
+        {% else %}
+            (
+                cd '{{ v.srv_d }}';
+                wordpress_init '{{ v.db_name }}' '{{ v.db_user }}' '{{ v.db_password }}'
+            )
+        {% endif %}
+    {% endfor %}
+
+}

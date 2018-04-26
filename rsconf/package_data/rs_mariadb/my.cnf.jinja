@@ -8,7 +8,7 @@ socket = /tmp/mysqld.sock
 default-character-set = utf8
 
 [mysqld]
-bind-address = 127.0.0.1
+bind-address = {{ rs_mariadb.ip }}
 port = {{ rs_mariadb.port }}
 # unused, but needs to exist
 socket = /tmp/mysqld.sock

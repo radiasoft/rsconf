@@ -1,5 +1,27 @@
 #!/bin/bash
 
+rs_mariadb_init() {
+    #NOTE: $db should be a non-conflicting name so we can avoid using
+    #   mysql backticks for quoting (create database `$db`), which results
+    # in: "wp1: command not found" because of the EOF (here) doc.
+    local db=$1
+    local user=$2
+    local pw=$3
+    docker exec -i {{ systemd.service_name }} bash <<EOF
+set -euo pipefail
+export MYSQL_PWD='{{ rs_mariadb.root_password }}'
+if mysql -h '{{ rs_mariadb.ip }}' -P '{{ rs_mariadb.port }}' -u root -e 'use $db';
+ then
+    exit
+fi
+mysql -h '{{ rs_mariadb.ip }}' -P '{{ rs_mariadb.port }}' -u root <<'EOF2'
+CREATE DATABASE $db;
+GRANT ALL PRIVILEGES ON $db.* TO '$user'@'%' IDENTIFIED BY '$pw';
+FLUSH PRIVILEGES;
+EOF2
+EOF
+}
+
 rs_mariadb_main() {
     # if this directory exists, then db was initialized
     if [[ -e  {{ rs_mariadb.db_d }}/mysql ]]; then
@@ -24,9 +46,6 @@ EOF
         CREATE USER 'root'@'%' IDENTIFIED BY '{{ rs_mariadb.root_password }}';
         GRANT ALL ON *.* TO 'root'@'%' WITH GRANT OPTION;
         DROP DATABASE IF EXISTS test;
-        FLUSH PRIVILEGES;
-        CREATE DATABASE IF NOT EXISTS `{{ owncloud.db_name }}`;
-        GRANT ALL PRIVILEGES ON `{{ owncloud.db_name }}`.* TO '{{ owncloud.db_user }}'@'%' IDENTIFIED BY '{{ owncloud.db_password }}';
         FLUSH PRIVILEGES;
 EOF2
     # fastest path to stopping server after it processes init-file and starts

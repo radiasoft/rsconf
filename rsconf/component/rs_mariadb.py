@@ -12,6 +12,7 @@ class T(component.T):
 
     def internal_build(self):
         from rsconf import systemd
+        from rsconf.component import db_bkp
         from rsconf.component import docker_registry
 
         self.buildt.require_component('docker')
@@ -39,4 +40,11 @@ class T(component.T):
         self.install_directory(z.db_d)
         self.install_access(mode='400')
         self.install_resource('rs_mariadb/my.cnf', j2_ctx, z.conf_f)
+        db_bkp.install_script_and_subdir(
+            self,
+            j2_ctx,
+            run_u=z.run_u,
+            run_d=z.run_d,
+        )
         self.append_root_bash_with_main(j2_ctx)
+        self.rsconf_service_restart()

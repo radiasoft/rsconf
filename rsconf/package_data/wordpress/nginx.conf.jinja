@@ -1,20 +1,25 @@
-{% for s in wordpress.sites %}
-server {
-    listen {{ s.domain_name }}:80;
-    server_name {{ s.domain_name }};
-    root {{ nginx.default_root }};
-    location / {
-        allow all;
-        proxy_pass http://127.0.0.1:{{ s.port }};
-        proxy_redirect off;
-        # https://www.kb.cert.org/vuls/id/797896
-        proxy_set_header Proxy "";
-        proxy_set_header Host $http_host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header Via $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+{% for h, v in wordpress.vhosts.items() %}
+    server {
+        listen {{ h }}:80;
+        server_name {{ h }};
+        root {{ nginx.default_root }};
+        location / {
+            allow all;
+            proxy_pass http://{{ wordpress.ip }}:{{ v.port }};
+            proxy_redirect off;
+            # https://www.kb.cert.org/vuls/id/797896
+            proxy_set_header Proxy "";
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header Via $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+        }
     }
-}
+    server {
+        listen www.{{ h }}:80;
+        server_name www.{{ h }};
+        return 301 http://{{ h }}$request_uri;
+    }
 {% endfor %}
