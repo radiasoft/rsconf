@@ -97,7 +97,6 @@ class T(component.T):
                 self,
                 j2_ctx,
                 perl_root=z.perl_root,
-                channel=_force_alpha_or_dev(j2_ctx.rsconf_db.channel),
             )
         self.install_access(mode='500', owner=z.run_u)
         self.install_resource(
@@ -106,13 +105,3 @@ class T(component.T):
             run_f,
         )
         self.append_root_bash_with_main(j2_ctx)
-
-
-def _force_alpha_or_dev(channel):
-    """btest should never be beta or prod
-
-    might be running on a machine that's prod for other reasons
-    """
-    if channel in ('dev', 'alpha'):
-        return channel
-    return 'alpha'

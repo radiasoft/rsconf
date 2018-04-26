@@ -98,7 +98,7 @@ class T(component.T):
         )
 
 
-def install_perl_rpms(compt, j2_ctx, perl_root=None, channel=None):
+def install_perl_rpms(compt, j2_ctx, perl_root=None):
     from rsconf import systemd
     if not compt.hdb.bop.setdefault('_perl_installed', False):
         compt.hdb.bop._perl_installed = True
@@ -108,8 +108,9 @@ def install_perl_rpms(compt, j2_ctx, perl_root=None, channel=None):
     if perl_root and perl_root != PETSHOP_ROOT:
         todo.append('perl-{}'.format(perl_root))
     watch = []
+    c = j2_ctx.bop.setdefault('perl_rpm_channel', j2_ctx.rsconf_db.channel)
     for r in todo:
-        watch.append(compt.install_perl_rpm(j2_ctx, r, channel=channel))
+        watch.append(compt.install_perl_rpm(j2_ctx, r, channel=c))
     return watch
 
 
