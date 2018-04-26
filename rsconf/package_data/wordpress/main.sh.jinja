@@ -45,14 +45,10 @@ wordpress_main() {
         if [[ -e {{ v.srv_d }}/wp-config.php ]]; then
             return
         fi
-        {% if rsconf_db.channel == 'prod' %}
-            install_err '{{ v.srv_d }}: needs a wordpress install'
-        {% else %}
-            (
-                cd '{{ v.srv_d }}';
-                wordpress_init '{{ v.db_name }}' '{{ v.db_user }}' '{{ v.db_password }}'
-            )
-        {% endif %}
+        (
+            cd '{{ v.srv_d }}';
+            wordpress_init '{{ v.db_name }}' '{{ v.db_user }}' '{{ v.db_password }}'
+        )
     {% endfor %}
 
 }
