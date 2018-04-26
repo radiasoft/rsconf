@@ -117,7 +117,10 @@ def merge_dict(base, new):
             base[k] = copy.deepcopy(new_v)
             continue
         base_v = base[k]
-        if isinstance(new_v, dict) or isinstance(base_v, dict):
+        if isinstance(new_v, dict) and len(new_v) == 1 and \
+           'RSCONF_DB_REPLACE' in new_v:
+            new_v = new_v.RSCONF_DB_REPLACE
+        elif isinstance(new_v, dict) or isinstance(base_v, dict):
             if new_v is None or base_v is None:
                 # Just replace, because new_v overrides type in case of None
                 base[k] = copy.deepcopy(new_v)
@@ -128,7 +131,7 @@ def merge_dict(base, new):
                     '{}: type mismatch between new value ({}) and base ({})'.format(
                         k, new_v, base_v))
             continue
-        if isinstance(new_v, list) or isinstance(base_v, list):
+        elif isinstance(new_v, list) or isinstance(base_v, list):
             if new_v is None or base_v is None:
                 # Just replace, because new_v overrides type in case of None
                 pass
@@ -141,7 +144,7 @@ def merge_dict(base, new):
                         k, new_v, base_v))
             base[k] = copy.deepcopy(new_v)
             continue
-        if type(new_v) != type(base_v) and not (
+        elif type(new_v) != type(base_v) and not (
             isinstance(new_v, pkconfig.STRING_TYPES) and isinstance(base_v, pkconfig.STRING_TYPES)
             or new_v is None or base_v is None
         ):
