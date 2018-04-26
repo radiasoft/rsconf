@@ -1,7 +1,5 @@
 #!/bin/bash
 
 owncloud_main() {
-    #TODO(robnagler) remove after 4/30/2018
-    rm -f '{{ owncloud.run_d }}/db_bkp.sh'
     rs_mariadb_init '{{ owncloud.db_name }}' '{{ owncloud.db_user }}' '{{ owncloud.db_password }}'
 }
