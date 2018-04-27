@@ -44,9 +44,15 @@ umount /bkp/monthly
 cryptsetup close monthly
 mdadm --stop /dev/md/monthly
 
-
 # recovery
 mdadm --assemble --scan --readonly
+
+# if you see: mdadm: No arrays found in config file or automatically
+# then
+cat /proc/mdstat
+mdadm --stop /dev/md127
+mdadm --assemble --force --readonly /dev/md127 /dev/sdb
+
 cryptsetup open --readonly /dev/md/*:monthly monthly
 mount -o ro /dev/mapper/monthly /mnt
 do stuff
