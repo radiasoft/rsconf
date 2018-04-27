@@ -49,3 +49,7 @@ mdadm --stop /dev/md/monthly
 mdadm --assemble --scan --readonly
 cryptsetup open --readonly /dev/md/*:monthly monthly
 mount -o ro /dev/mapper/monthly /mnt
+do stuff
+umount /mnt
+cryptsetup close monthly
+mdadm --stop /dev/md/*:monthly
