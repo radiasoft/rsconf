@@ -43,3 +43,9 @@ chmod -R a-w /bkp/monthly
 umount /bkp/monthly
 cryptsetup close monthly
 mdadm --stop /dev/md/monthly
+
+
+# recovery
+mdadm --assemble --scan --readonly
+cryptsetup open --readonly /dev/md/*:monthly monthly
+mount -o ro /dev/mapper/monthly /mnt
