@@ -33,7 +33,10 @@ postfix_main() {
         smtpd_client_restrictions='sleep 8'
         {% endif %}
         smtpd_data_restrictions=reject_unauth_pipelining
-        {# toggling smtpd_delay_reject would cause an unnecessary restart #}
+        {#
+           avoid toggling smtpd_delay_reject (in postfix_setup_sasl) which
+           would cause an unnecessary restart
+        #}
         {% if not 'sasl_users_flattened' in postfix %}
             smtpd_delay_reject=no
         {% endif %}
