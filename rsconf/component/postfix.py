@@ -50,7 +50,6 @@ class T(component.T):
         if 'myhostname' in z:
             h = z.myhostname
         elif 'primary_public_ip' in j2_ctx.network:
-            pkdp(j2_ctx.network.primary_public_ip)
             h = socket.gethostbyaddr(j2_ctx.network.primary_public_ip)[0]
             assert _HOSTNAME_RE.search(h).group(1).lower() \
                 == _HOSTNAME_RE.search(j2_ctx.rsconf_db.host).group(1).lower(), \
