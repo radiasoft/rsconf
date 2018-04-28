@@ -238,6 +238,10 @@ host:
     {{ master }}:
       base_os:
         volume_groups: []
+      postfix:
+        sasl_users:
+          {{ master }}:
+            test1: testpass
       rsconf_db:
         #TODO(robnagler) need to edit this to just rsconf to bootstrap
         components: [ rsconf, jupyterhub_proxy, bkp, btest, github_bkp ]

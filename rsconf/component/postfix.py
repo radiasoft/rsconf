@@ -22,10 +22,29 @@ class T(component.T):
         systemd.unit_prepare(self,j2_ctx, _CONF_D)
         self.install_access(mode='400', owner=j2_ctx.rsconf_db.root_u)
         kc = self.install_tls_key_and_crt(j2_ctx.rsconf_db.host, _CONF_D)
-        j2_ctx.setdefault('postfix', pkcollections.Dict()).update(
+        z = j2_ctx.setdefault('postfix', pkcollections.Dict())
+        z.update(
             tls_cert_file=kc.crt,
             tls_key_file=kc.key,
         )
+        if z.setdefault('sasl_users', []):
+            assert z.sasl_users
+            z.sasl_users_flattened = []
+            for domain, u in z.sasl_users.items():
+                for user, password in u.items():
+                    z.sasl_users_flattened.append(
+                        pkcollections.Dict(
+                            domain=domain,
+                            user=user,
+                            password=password,
+                        ),
+                    )
+            self.install_resource(
+                'postfix/smtpd-sasldb.conf',
+                j2_ctx,
+                '/etc/sasl2/smtpd-sasldb.conf',
+            )
+            assert j2_ctx.postfix.sasl_users_flattened
         self.append_root_bash_with_main(j2_ctx)
         systemd.unit_enable(self, j2_ctx)
         self.append_root_bash('rsconf_service_restart_at_end postfix')

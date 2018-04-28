@@ -33,7 +33,10 @@ postfix_main() {
         smtpd_client_restrictions='sleep 8'
         {% endif %}
         smtpd_data_restrictions=reject_unauth_pipelining
-        smtpd_delay_reject=no
+        {# toggling smtpd_delay_reject would cause an unnecessary restart #}
+        {% if not 'sasl_users_flattened' in postfix %}
+            smtpd_delay_reject=no
+        {% endif %}
         smtpd_helo_restrictions=reject_unknown_helo_hostname
         smtpd_recipient_restrictions='reject_unauth_pipelining,permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination,reject_non_fqdn_recipient,reject_unknown_recipient_domain,check_policy_service inet:127.0.0.1:{{ postgrey.port }}'
         smtpd_relay_restrictions=permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination
@@ -44,12 +47,15 @@ postfix_main() {
         smtpd_tls_security_level=may
     )
     postconf -e "${x[@]}"
-    rsconf_file_hash_check "$postfix_main_cf"
     local rsconf_edit_no_change_res=0
     rsconf_edit "$postfix_master_cf" \
         '^smtp.*inet.*200.*smtpd$' 's{^smtp\s+inet.*}{smtp       inet  n       -       n       -       200       smtpd}'
     rsconf_edit "$postfix_master_cf" \
         '! ^spamd' 's{^spamd.*\n}{}'
+    {% if 'sasl_users_flattened' in postfix %}
+        postfix_setup_sasl
+    {% endif %}
+    rsconf_file_hash_check "$postfix_main_cf"
 }
 
 postfix_setup_bop() {
@@ -83,6 +89,46 @@ postfix_setup_btest() {
     for h in "${mail_domains[@]}"; do
         rsconf_append "$postfix_local_host_names" "$h"
     done
+}
+
+postfix_setup_sasl() {
+    {# To debug:
+    # 	postconf -e 'smtpd_tls_loglevel = 3' 'debug_peer_list = 127.0.0.1'
+    #	service postfix restart
+    #
+    #   saslpasswd2 -c -u v3.radia.run testuser
+    #   chown root:mail /etc/sasldb2
+    #   chmod 640 /etc/sasldb2
+    #   printf '\0%s\0%s' 'test1@v3.radia.run' 'testpass' | openssl base64
+    #   AHRlc3R1c2VyQGJpdmlvLmJpegB0ZXN0cGFzcw==
+    #
+    #   openssl s_client -starttls smtp -connect localhost:587
+    #   You should see a long output:
+    #   ....
+    #   250 DSN
+    #
+    #	Then enter:
+    #	EHLO localhost.localdomain
+    #   AUTH PLAIN AHRlc3QxQHYzLnJhZGlhLnJ1bgB0ZXN0cGFzcw==
+    #
+    #   You'll see:
+    #   235 2.7.0 Authentication successful
+    #
+    #	Can try:
+    #   VRFY test1@v3.radia.run
+    #}
+    rsconf_yum_install cyrus-sasl cyrus-sasl-plain
+    postconf -e smtpd_sasl_path=smtpd-sasldb smtpd_delay_reject=yes
+    local rsconf_edit_no_change_res=0
+    rsconf_edit "$postfix_master_cf" \
+        '^submission' 's{^#submission.*}{submission inet n       -       n       -       -       smtpd -o smtpd_sasl_auth_enable=yes -o smtpd_tls_auth_only=yes -o smtpd_tls_security_level=encrypt -o smtpd_recipient_restrictions=permit_sasl_authenticated,reject -o smtpd_client_restrictions=permit_sasl_authenticated,reject}'
+    {% if 'sasl_users_flattened' in postfix %}
+        {% for u in postfix.sasl_users_flattened %}
+            echo '{{ u.password }}' | saslpasswd2 -c -p -u '{{ u.domain }}' '{{ u.user }}'
+        {% endfor %}
+    {% endif %}
+    chown root:mail /etc/sasldb2
+    chmod 640 /etc/sasldb2
 }
 
 # Testing email
