@@ -1,13 +1,14 @@
-# Standard aliases that should route to a real person
+{# Standard aliases that should route to a real person #}
 abuse: root
 hostmaster: root
 mailer-daemon: root
 postmaster: root
 webmaster: root
-
-# These are system accounts for which we would never want to receive
-# mail. The standard aliases routes to "root", which means we'll just
-# throw it away anyway. This just seems better
+{#
+    These are system accounts for which we would never want to receive
+    mail. The standard aliases routes to "root", which means we'll just
+    throw it away anyway. This just seems better
+#}
 adm: /dev/null
 apache: /dev/null
 bin: /dev/null
@@ -31,12 +32,12 @@ sshd: /dev/null
 sync: /dev/null
 systemd-network: /dev/null
 tss: /dev/null
-
-# This is an odd duck. If you have NIS setup, you can then possibly
-# run "decode" attacks, which are completely unlikely. Either way,
-# it's an alias we've always had so keep it.
+{#
+    This is an odd duck. If you have NIS setup, you can then possibly
+    run "decode" attacks, which are completely unlikely. Either way,
+    it's an alias we've always had so keep it.
+#}
 decode: /dev/null
-
 {% for i in postfix.aliases|sort %}
 {{ i }}: {{ postfix.aliases[i] }}
 {% endfor %}
