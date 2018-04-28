@@ -66,6 +66,8 @@ class T(component.T):
         if z.iptables_enable:
             # Only restart iptables service if we have iptables
             self.service_prepare((_IPTABLES, _SCRIPTS), name='iptables')
+        if z.inet_dev:
+            self.hdb.network.primary_public_ip = z.inet_dev.ip
         self._write_files(j2_ctx, devs)
 
     def _write_files(self, j2_ctx, devs):

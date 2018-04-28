@@ -22,7 +22,10 @@ postfix_main() {
         mailbox_size_limit=0
         message_size_limit=50000000
         mydestination="\$myhostname,localhost,$postfix_local_host_names"
+        mydomain='{{ postfix.mydomain }}'
+        myhostname='{{ postfix.myhostname }}'
         mynetworks=127.0.0.0/8
+        myorigin='{{ postfix.myorigin }}'
         recipient_delimiter=+
         smtp_tls_CAfile=/etc/pki/tls/certs/ca-bundle.crt
         smtp_tls_cert_file='{{ postfix.tls_cert_file }}'

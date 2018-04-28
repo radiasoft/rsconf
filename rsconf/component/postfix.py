@@ -6,23 +6,30 @@ u"""create postfix configuration
 """
 from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
+from pykern.pkdebug import pkdp
 from pykern import pkio
 from rsconf import component
+import re
+import socket
 
 _CONF_D = pkio.py_path('/etc/postfix')
+
+# We require three part host name
+_HOSTNAME_RE = re.compile(r'^[^\.]+\.([^\.]+\.[^\.]+)$');
 
 class T(component.T):
 
     def internal_build(self):
         from rsconf import systemd
 
-        self.buildt.require_component('postgrey', 'spamd')
+        self.buildt.require_component('network', 'postgrey', 'spamd')
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.setdefault('postfix', pkcollections.Dict())
         self.append_root_bash('rsconf_yum_install postfix')
         systemd.unit_prepare(self,j2_ctx, _CONF_D)
         self._setup_virtual_aliases(j2_ctx, z)
         self._setup_sasl(j2_ctx, z)
+        self._setup_mynames(j2_ctx, z)
         # New install access
         self.install_access(mode='400', owner=j2_ctx.rsconf_db.root_u)
         kc = self.install_tls_key_and_crt(j2_ctx.rsconf_db.host, _CONF_D)
@@ -38,6 +45,28 @@ class T(component.T):
         self.append_root_bash_with_main(j2_ctx)
         systemd.unit_enable(self, j2_ctx)
         self.append_root_bash('rsconf_service_restart_at_end postfix')
+
+    def _setup_mynames(self, j2_ctx, z):
+        if 'myhostname' in z:
+            h = z.myhostname
+        elif 'primary_public_ip' in j2_ctx.network:
+            pkdp(j2_ctx.network.primary_public_ip)
+            h = socket.gethostbyaddr(j2_ctx.network.primary_public_ip)[0]
+            assert _HOSTNAME_RE.search(h).group(1).lower() \
+                == _HOSTNAME_RE.search(j2_ctx.rsconf_db.host).group(1).lower(), \
+                '{}: reverse dns for {} does not match SLD of {}'.format(
+                    h,
+                    j2_ctx.network.primary_public_ip,
+                    j2_ctx.rsconf_db.host,
+                )
+        else:
+            h = j2_ctx.rsconf_db.host
+        # just in case
+        h = h.lower()
+        # allow overrides, but also assert "h"
+        z.setdefault('mydomain', _HOSTNAME_RE.search(h).group(1))
+        z.setdefault('myorigin', h)
+        z.setdefault('myhostname', h)
 
     def _setup_sasl(self, j2_ctx, z):
         if not z.setdefault('sasl_users', []):

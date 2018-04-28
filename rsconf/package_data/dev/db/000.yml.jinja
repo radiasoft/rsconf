@@ -220,8 +220,8 @@ channel:
         10.10.10.0/24:
           gateway: 10.10.10.1
         # random network to test
-        104.237.137.0/24:
-          gateway: 104.237.137.1
+        216.17.132.32/27:
+          gateway: 216.17.132.62
           search: radia.run
           nameservers: [ 162.159.27.72, 162.159.24.39 ]
     wordpress:
@@ -275,9 +275,9 @@ host:
             ip: 10.10.10.5
             is_natted: True
           em2:
-            ip: 104.237.137.2
+            ip: 216.17.132.33
         trusted:
-          104.237.137.0/24:
+          216.17.132.32/27:
             # Switch to CloudFlare (test RSCONF_DB_REPLACE)
             nameservers:
               RSCONF_DB_REPLACE: [ 1.1.1.1, 1.0.0.1 ]
@@ -289,6 +289,10 @@ host:
         num_servers: 64
         exports:
           /exports/foo: [ 10.10.10.0/24, localhost ]
+      postfix:
+        # if you do not set this, you'll get to test the SLD matching:
+        # fnl1i.bivio.biz: reverse dns for 216.17.132.33 does not match SLD of v5.radia.run
+        myhostname: '{{ master }}'
       rsconf_db:
         components:
           # order matters on startup, because not all dependencies
