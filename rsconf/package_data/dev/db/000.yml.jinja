@@ -115,10 +115,6 @@ default:
     docker_image: docker.io/radiasoft/owncloud
     domain: owncloud.{{ host }}
     port: 7010
-  rs_mariadb:
-    docker_image: docker.io/radiasoft/mariadb
-    ip: 127.0.0.1
-    port: 7011
   owncloud_redis:
     docker_image: docker.io/radiasoft/redis
     port: 7012
@@ -147,6 +143,11 @@ default:
       - facade: m-petshop
       - facade: other
       - facade: requiresecure
+  postfix:
+    aliases:
+      root: root@{{ master }}
+      errors: errors@{{ master }}
+      critical-errors: critical-errors@{{ master }}
   postgresql:
     # https://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server#effective_cache_size
     effective_cache_size: 244MB
@@ -169,6 +170,10 @@ default:
     run_u: {{ user }}
     run_uid: {{ uid }}
     srv_group: {{ group }}
+  rs_mariadb:
+    docker_image: docker.io/radiasoft/mariadb
+    ip: 127.0.0.1
+    port: 7011
   sirepo:
     docker_image: docker.io/radiasoft/sirepo
     oauth:
@@ -239,9 +244,16 @@ host:
       base_os:
         volume_groups: []
       postfix:
+        aliases:
+          RSCONF_DB_REPLACE:
+            # root and errors gets delivered locally so we replace
+            blackhole: /dev/null
         sasl_users:
           {{ master }}:
             test1: testpass
+        virtual_aliases:
+          wp1.{{ master }}:
+            vagrant: vagrant
       rsconf_db:
         #TODO(robnagler) need to edit this to just rsconf to bootstrap
         components: [ rsconf, jupyterhub_proxy, bkp, btest, github_bkp ]

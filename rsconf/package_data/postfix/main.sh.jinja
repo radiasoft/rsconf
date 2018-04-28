@@ -58,6 +58,11 @@ postfix_main() {
     {% if 'sasl_users_flattened' in postfix %}
         postfix_setup_sasl
     {% endif %}
+    {% if 'virtual_alias_f' in postfix %}
+        postfix_setup_virtual_aliases
+    {% endif %}
+    # never hurts
+    newaliases
     rsconf_file_hash_check "$postfix_main_cf"
 }
 
@@ -94,6 +99,7 @@ postfix_setup_btest() {
     done
 }
 
+{% if 'sasl_users_flattened' in postfix %}
 postfix_setup_sasl() {
     {# To debug:
     # 	postconf -e 'smtpd_tls_loglevel = 3' 'debug_peer_list = 127.0.0.1'
@@ -119,20 +125,34 @@ postfix_setup_sasl() {
     #
     #	Can try:
     #   VRFY test1@v3.radia.run
+    #
+    # db_dump -p /etc/sasldb2
+    # regenerate sasl_users:
+    # db_dump -p /etc/sasldb2 | perl -n -e 's{ ([^\\]+)\\00([^\\]+).*user}{} && print "$1\@$2: "; m{ (\S{10,24})} && print "$1\n"'
     #}
     rsconf_yum_install cyrus-sasl cyrus-sasl-plain
     postconf -e smtpd_sasl_path=smtpd-sasldb smtpd_delay_reject=yes
     local rsconf_edit_no_change_res=0
     rsconf_edit "$postfix_master_cf" \
         '^submission' 's{^#submission.*}{submission inet n       -       n       -       -       smtpd -o smtpd_sasl_auth_enable=yes -o smtpd_tls_auth_only=yes -o smtpd_tls_security_level=encrypt -o smtpd_recipient_restrictions=permit_sasl_authenticated,reject -o smtpd_client_restrictions=permit_sasl_authenticated,reject}'
-    {% if 'sasl_users_flattened' in postfix %}
-        {% for u in postfix.sasl_users_flattened %}
-            echo '{{ u.password }}' | saslpasswd2 -c -p -u '{{ u.domain }}' '{{ u.user }}'
-        {% endfor %}
-    {% endif %}
+    {% for u in postfix.sasl_users_flattened %}
+        echo '{{ u.password }}' | saslpasswd2 -c -p -u '{{ u.domain }}' '{{ u.user }}'
+    {% endfor %}
     chown root:mail /etc/sasldb2
     chmod 640 /etc/sasldb2
 }
+{% endif %}
+
+{% if 'virtual_alias_f' in postfix %}
+postfix_setup_virtual_aliases() {
+    {#
+     # DEBUG: postmap -s hash:/etc/postfix/virtual_alias
+    #}
+    postconf -e virtual_alias_maps=hash:'{{ postfix.virtual_alias_f }}' \
+        virtual_alias_domains='{{ postfix.virtual_alias_domains_f }}'
+    postmap -i hash:'{{ postfix.virtual_alias_f }}' < '{{ postfix.virtual_alias_f }}'
+}
+{% endif %}
 
 # Testing email
 true <<'EOF2'

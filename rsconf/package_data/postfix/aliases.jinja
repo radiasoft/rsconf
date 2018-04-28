@@ -1,0 +1,42 @@
+# Standard aliases that should route to a real person
+abuse: root
+hostmaster: root
+mailer-daemon: root
+postmaster: root
+webmaster: root
+
+# These are system accounts for which we would never want to receive
+# mail. The standard aliases routes to "root", which means we'll just
+# throw it away anyway. This just seems better
+adm: /dev/null
+apache: /dev/null
+bin: /dev/null
+chrony: /dev/null
+daemon: /dev/null
+dbus: /dev/null
+ftp: /dev/null
+games: /dev/null
+halt: /dev/null
+lp: /dev/null
+mail: /dev/null
+nginx: /dev/null
+nobody: /dev/null
+operator: /dev/null
+polkitd: /dev/null
+postfix: /dev/null
+postgres: /dev/null
+root: /dev/null
+shutdown: /dev/null
+sshd: /dev/null
+sync: /dev/null
+systemd-network: /dev/null
+tss: /dev/null
+
+# This is an odd duck. If you have NIS setup, you can then possibly
+# run "decode" attacks, which are completely unlikely. Either way,
+# it's an alias we've always had so keep it.
+decode: /dev/null
+
+{% for i in postfix.aliases|sort %}
+{{ i }}: {{ postfix.aliases[i] }}
+{% endfor %}
