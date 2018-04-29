@@ -37,6 +37,6 @@ class T(component.T):
         self.rsconf_edit(
             _SYSCONFIG_NFS,
             '^{}$'.format(x),
-            's<^#\s*RPCNFSDCOUNT.*><{}>'.format(x),
+            's<^#?\s*RPCNFSDCOUNT.*><{}>'.format(x),
         )
         self.rsconf_service_restart()
