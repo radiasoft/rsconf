@@ -12,11 +12,24 @@ import time
 
 KEY_EXT = '.key'
 
-
 CRT_EXT = '.crt'
 
+def gen_csr_and_key(basename=None, *domains):
+    """Generate a csr and key
 
-def gen_self_signed_crt(*domains, **kwargs):
+    Creates the files basename.{csr,key}
+
+    Args:
+        basename (str or py.path): root of files [default: domains[0]]
+        domains (tuple): list of domains
+
+    Returns:
+        dict: key, crt
+    """
+    return _gen_req('csr', basename, domains)
+
+
+def gen_self_signed_crt(basename=None, *domains):
     """Generate a self-signed certificate
 
     Creates the files basename.{key,crt}
@@ -28,53 +41,7 @@ def gen_self_signed_crt(*domains, **kwargs):
     Returns:
         dict: key, crt
     """
-    first = domains[0]
-    if 'basename' in kwargs:
-        basename = kwargs['basename']
-    if not basename:
-        basename = first
-    alt = ''
-    if len(domains) > 1:
-        alt = """x509_extensions = v3_req
-[v3_req]
-subjectAltName = {}""".format(', '.join(['DNS:' + x for x in domains[1:]]))
-    c = """
-[req]
-distinguished_name = subj
-prompt = no
-{}
-
-[subj]
-C = US
-ST = Colorado
-L = Boulder
-CN = {}""".format(alt, first)
-    basename = pkio.py_path(kwargs['basename'])
-    cfg = basename + '.cfg'
-    pkio.write_text(cfg, c)
-    crt = basename + CRT_EXT
-    key = basename + KEY_EXT
-    subprocess.check_output([
-        'openssl',
-        'req',
-        '-x509',
-        '-nodes',
-        '-days',
-        '9999',
-        '-set_serial',
-        str(int(time.time())),
-        '-newkey',
-        'rsa:2048',
-        '-sha256',
-        '-keyout',
-        str(key),
-        '-out',
-        str(crt),
-        '-config',
-        str(cfg),
-    ], stderr=subprocess.STDOUT)
-    cfg.remove(ignore_errors=True)
-    return dict(crt=crt, key=key)
+    return _gen_req(CRT_EXT[1:], basename, domains)
 
 
 def is_self_signed_crt(filename):
@@ -123,3 +90,56 @@ def read_csr(filename):
     return subprocess.check_output(
         ['openssl', 'req', '-text', '-noout', '-verify', '-in', str(filename)],
     )
+
+
+def _gen_req(which, basename, domains):
+    first = domains[0]
+    if not basename:
+        basename = first
+    alt = ''
+    if len(domains) > 1:
+        alt = """x509_extensions = v3_req
+[v3_req]
+subjectAltName = {}""".format(', '.join(['DNS:' + x for x in domains[1:]]))
+    c = """
+[req]
+distinguished_name = subj
+prompt = no
+{}
+
+[subj]
+C = US
+ST = Colorado
+L = Boulder
+CN = {}""".format(alt, first)
+    cfg = basename + '.cfg'
+    pkio.write_text(cfg, c)
+    key = basename + KEY_EXT
+    out = basename + '.' + which
+    cmd = [
+        'openssl',
+        'req',
+        '-nodes',
+        '-newkey',
+        'rsa:2048',
+        '-keyout',
+        str(key),
+        '-out',
+        out,
+        '-config',
+        str(cfg),
+    ]
+    if which == 'crt':
+        cmd += [
+            '-x509',
+            '-days',
+            '9999',
+            '-set_serial',
+            str(int(time.time())),
+            '-sha256',
+        ]
+    subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+    pkio.unchecked_remove(cfg)
+    res = dict(key=key)
+    res[which] = out
+    return res
