@@ -498,4 +498,4 @@ rsconf_yum_install() {
     fi
 }
 
-rsconf_main "${install_extra_args[@]}"
+rsconf_main ${install_extra_args[@]+"${install_extra_args[@]}"}
