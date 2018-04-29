@@ -5,6 +5,7 @@ u"""SSL cert operations
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
+from pykern.pkdebug import pkdp
 from pykern import pkio
 import subprocess
 import time
@@ -93,14 +94,17 @@ def read_csr(filename):
 
 
 def _gen_req(which, basename, domains):
+    pkdp(domains)
     first = domains[0]
     if not basename:
         basename = first
     alt = ''
     if len(domains) > 1:
-        alt = """x509_extensions = v3_req
+        alt = """{}_extensions = v3_req
 [v3_req]
-subjectAltName = {}""".format(', '.join(['DNS:' + x for x in domains[1:]]))
+subjectAltName = {}""".format(
+    'req' if which == 'csr' else 'x509',
+    ', '.join(['DNS:' + x for x in domains[1:]]))
     c = """
 [req]
 distinguished_name = subj
@@ -139,7 +143,7 @@ CN = {}""".format(alt, first)
             '-sha256',
         ]
     subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-    pkio.unchecked_remove(cfg)
+    # pkio.unchecked_remove(cfg)
     res = dict(key=key)
     res[which] = out
     return res
