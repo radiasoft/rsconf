@@ -143,7 +143,7 @@ CN = {}""".format(alt, first)
             '-sha256',
         ]
     subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-    # pkio.unchecked_remove(cfg)
+    pkio.unchecked_remove(cfg)
     res = dict(key=key)
     res[which] = out
     return res
