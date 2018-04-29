@@ -286,7 +286,7 @@ rsconf_install_symlink() {
 
 rsconf_main() {
     # POSIT: radiasoft/download/bin/install.sh: skip repo arg
-    if [[ $1 == rsconf.sh ]]; then
+    if [[ ${1+$1} == rsconf.sh ]]; then
         shift
     fi
     local host=${1:-$(hostname -f)}
