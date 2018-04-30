@@ -94,7 +94,6 @@ def read_csr(filename):
 
 
 def _gen_req(which, basename, domains):
-    pkdp(domains)
     first = domains[0]
     if not basename:
         basename = first
