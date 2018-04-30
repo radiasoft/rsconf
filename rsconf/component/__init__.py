@@ -211,7 +211,9 @@ def tls_key_and_crt(hdb, domain):
         assert hdb.component.tls_crt_create, \
             '{}: missing crt for: {}'.format(src_crt, domain)
         pkio.mkdir_parent_only(src_crt)
-        tls.gen_self_signed_crt(*domains, basename=src)
+        # https://stackoverflow.com/a/42730929
+        # Cannot pass (basename=str(src), *domains)
+        tls.gen_self_signed_crt(str(src), *domains)
     assert src_key.check(), \
         '{}: missing key for: {}'.format(src_key, domain)
     return pkcollections.Dict(key=src_key, crt=src_crt)
