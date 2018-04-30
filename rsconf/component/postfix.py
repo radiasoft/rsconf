@@ -12,6 +12,12 @@ from rsconf import component
 import re
 import socket
 
+# Fixing things and debugging
+# Display queue: postqueue -p
+# Delete all the deferred messages: postsuper -d ALL deferred
+#
+
+
 _CONF_D = pkio.py_path('/etc/postfix')
 
 # We require three part host name
