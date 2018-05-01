@@ -1,5 +1,7 @@
 #!/bin/bash
 export BCONF='{{ bop.bconf_f }}'
+export BIVIO_IO_ALERT_WANT_TIME=0
+export BIVIO_IO_ALERT_WANT_PID=0
 bivio sql export_db .
 {{ rsconf_db.compress_cmd }} *pg_dump
 declare -a dirs=()
