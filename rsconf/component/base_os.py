@@ -32,6 +32,7 @@ class T(component.T):
         )
         self.install_access(mode='444')
         self.install_resource('base_os/hostname', j2_ctx, '/etc/hostname')
+        self.install_resource('base_os/motd', j2_ctx, '/etc/motd')
         vgs = j2_ctx.base_os.volume_groups
         cmds = ''
         for vg in vgs:
