@@ -2,19 +2,21 @@
 set -euo pipefail
 dev1=/dev/sde
 dev2=/dev/sdf
-key_f={{ bkp.monthly_key_f }}
-umask 077
 mdadm --create --verbose --metadata 1.2 /dev/md/monthly --level=1 --raid-devices=2 "$dev1" "$dev2"
-# For testing, may want to restrict further
-rm -rf /bkp/mirror/monthly
-cp -al /bkp/mirror/current /bkp/mirror/monthly
 echo 'Waiting to resync'
 while mdadm --detail /dev/md/monthly | grep -i resyncing >& /dev/null; do
     # takes a very long time (hours) so don't poll too frequently
     sleep 300
 done
+
+umask 077
+# For testing, may want to restrict further
+rm -rf /bkp/mirror/monthly
+cp -al /bkp/mirror/current /bkp/mirror/monthly
+
+key_f={{ bkp.monthly_key_f }}
 #https://wiki.archlinux.org/index.php/Dm-crypt/Encrypting_an_entire_system
-cryptsetup luksFormat --type luks2 /dev/md/monthly "$key_f"
+cryptsetup luksFormat --batch-mode --type luks2 /dev/md/monthly "$key_f"
 cryptsetup --key-file "$key_f" open /dev/md/monthly monthly
 mkfs -t xfs -n ftype=1 /dev/mapper/monthly
 mkdir -p /bkp/monthly
