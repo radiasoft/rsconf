@@ -9,6 +9,7 @@ import re
 from pykern.pkdebug import pkdp
 from rsconf import component
 from rsconf import db
+from rsconf import systemd
 from pykern import pkcollections
 from pykern import pkconfig
 from pykern import pkio
@@ -24,7 +25,6 @@ _DEFAULT_CLIENT_MAX_BODY_SIZE = '50M'
 
 class T(component.T):
     def internal_build(self):
-        from rsconf import systemd
         from rsconf.component import db_bkp
         from rsconf.component import logrotate
         from rsconf.component import nginx
@@ -53,11 +53,7 @@ class T(component.T):
         j2_ctx = self.hdb.j2_ctx_copy()
         z = merge_app_vars(j2_ctx, self.name)
         watch = install_perl_rpms(self, j2_ctx, perl_root=z.perl_root)
-        z.run_d = systemd.custom_unit_prepare(self, j2_ctx, *watch)
-        z.conf_f = z.run_d.join('httpd.conf')
-        z.bconf_f = z.run_d.join('bivio.bconf')
-        z.log_postrotate_f = z.run_d.join('reload')
-        z.httpd_cmd = "/usr/sbin/httpd -d '{}' -f '{}'".format(z.run_d, z.conf_f)
+        systemd.custom_unit_prepare(self, j2_ctx, watch)
         systemd.custom_unit_enable(
             self,
             j2_ctx,
@@ -131,6 +127,11 @@ def merge_app_vars(j2_ctx, app_name):
     if z.is_test:
         z.http_host = _domain(j2_ctx, z.vhosts[0])[0]
         z.mail_host = z.http_host
+    z.run_d = systemd.unit_run_d(j2_ctx, app_name)
+    z.conf_f = z.run_d.join('httpd.conf')
+    z.bconf_f = z.run_d.join('bivio.bconf')
+    z.log_postrotate_f = z.run_d.join('reload')
+    z.httpd_cmd = "/usr/sbin/httpd -d '{}' -f '{}'".format(z.run_d, z.conf_f)
     return z
 
 

@@ -32,7 +32,7 @@ class T(component.T):
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.setdefault('postfix', pkcollections.Dict())
         self.append_root_bash('rsconf_yum_install postfix')
-        systemd.unit_prepare(self,j2_ctx, _CONF_D)
+        systemd.unit_prepare(self,j2_ctx, [_CONF_D])
         self._setup_virtual_aliases(j2_ctx, z)
         self._setup_sasl(j2_ctx, z)
         self._setup_mynames(j2_ctx, z)

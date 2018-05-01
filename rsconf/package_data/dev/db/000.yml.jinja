@@ -44,7 +44,7 @@ default:
     vhost_common:
       # Only for test
       host_suffix: {{ host }}
-  bop_nightly:
+  bop_timer:
     petshop:
       first_one:
         on_calendar: "*-*-* 12:00:00"
@@ -52,7 +52,7 @@ default:
           true
 
       second_thing:
-        on_calendar: '*-*-1 00:00:00"
+        on_calendar: "*-*-1 00:00:00"
         bash: |
           echo doing that thing
 
@@ -251,7 +251,7 @@ host:
           /srv/sirepo/db/users: [ 10.10.10.0/24 ]
       rsconf_db:
         # components: [ nfs_server, rabbitmq, celery_sirepo, sirepo, bop, owncloud ]
-        components: [ bop, bop_timer ]
+        components: [ bop ]
     {{ master }}:
       base_os:
         volume_groups: []

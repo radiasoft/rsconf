@@ -32,7 +32,7 @@ class T(component.T):
         # Needs to be installed before main runs
         self.install_directory(z.log_d)
         self.append_root_bash_with_main(j2_ctx)
-        systemd.unit_prepare(self, j2_ctx, z.run_d)
+        systemd.unit_prepare(self, j2_ctx, [z.run_d])
         self.append_root_bash(
             'rsconf_append "{}" "{}" || true'.format(
                 z.conf_f,

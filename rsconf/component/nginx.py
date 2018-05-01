@@ -68,7 +68,7 @@ class T(component.T):
         self.buildt.require_component('base_all')
         self.append_root_bash('rsconf_yum_install nginx')
         j2_ctx = self.hdb.j2_ctx_copy()
-        systemd.unit_prepare(self, j2_ctx, _CONF_ROOT_D)
+        systemd.unit_prepare(self, j2_ctx, [_CONF_ROOT_D])
         self.install_access(mode='400', owner=self.hdb.rsconf_db.root_u)
         self.install_resource('nginx/global.conf', j2_ctx, _GLOBAL_CONF)
         systemd.unit_enable(self, j2_ctx)

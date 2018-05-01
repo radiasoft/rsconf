@@ -58,10 +58,10 @@ def custom_unit_enable(compt, j2_ctx, start='start', reload=None, stop=None, aft
     unit_enable(compt, j2_ctx)
 
 
-def custom_unit_prepare(compt, j2_ctx, *watch_files):
+def custom_unit_prepare(compt, j2_ctx, watch_files=()):
     """Must be first call"""
     run_d = unit_run_d(j2_ctx, compt.name)
-    unit_prepare(compt, j2_ctx, run_d, *watch_files)
+    unit_prepare(compt, j2_ctx, [run_d] + list(watch_files))
     j2_ctx.systemd.run_d = run_d
     j2_ctx.systemd.is_timer = False
     return run_d
@@ -129,9 +129,9 @@ def docker_unit_enable(compt, j2_ctx, image, cmd, env=None, volumes=None, after=
     unit_enable(compt, j2_ctx)
 
 
-def docker_unit_prepare(compt, j2_ctx, *watch_files):
+def docker_unit_prepare(compt, j2_ctx, watch_files=()):
     """Must be first call"""
-    return custom_unit_prepare(compt, j2_ctx, *watch_files)
+    return custom_unit_prepare(compt, j2_ctx, watch_files)
 
 
 def timer_enable(compt, j2_ctx, cmd, run_u=None):
@@ -161,9 +161,9 @@ def timer_enable(compt, j2_ctx, cmd, run_u=None):
     unit_enable(compt, j2_ctx)
 
 
-def timer_prepare(compt, j2_ctx, on_calendar, *watch_files):
+def timer_prepare(compt, j2_ctx, on_calendar, watch_files=(), service_name=None):
     """Must be first call"""
-    n = compt.name
+    n = service_name or compt.name
     tn = n + '.timer'
     run_d = unit_run_d(j2_ctx, n)
     j2_ctx.systemd = pkcollections.Dict(
@@ -177,7 +177,7 @@ def timer_prepare(compt, j2_ctx, on_calendar, *watch_files):
         timer_start_f=run_d.join('start'),
     )
     compt.service_prepare(
-        (j2_ctx.systemd.service_f, j2_ctx.systemd.timer_f, run_d) + watch_files,
+        [j2_ctx.systemd.service_f, j2_ctx.systemd.timer_f, run_d] + list(watch_files),
         name=tn,
     )
     return run_d
@@ -189,13 +189,13 @@ def unit_enable(compt, j2_ctx):
     pass
 
 
-def unit_prepare(compt, j2_ctx, *watch_files):
+def unit_prepare(compt, j2_ctx, watch_files=()):
     """Must be first call"""
     j2_ctx.systemd = pkcollections.Dict(
         service_name=compt.name,
         service_f=_SYSTEMD_DIR.join('{}.service'.format(compt.name)),
     )
-    compt.service_prepare((j2_ctx.systemd.service_f,) + watch_files)
+    compt.service_prepare([j2_ctx.systemd.service_f] + list(watch_files))
 
 
 def unit_run_d(j2_ctx, unit_name):

@@ -19,7 +19,7 @@ class T(component.T):
         j2_ctx = self.hdb.j2_ctx_copy()
         network.update_j2_ctx(j2_ctx)
         watch = bop.install_perl_rpms(self, j2_ctx)
-        run_d = systemd.custom_unit_prepare(self, j2_ctx, *watch)
+        run_d = systemd.custom_unit_prepare(self, j2_ctx, watch)
         j2_ctx.setdefault('postgrey', pkcollections.Dict()).update(
             dbdir=run_d.join('db'),
             etc=run_d.join('etc'),

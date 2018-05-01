@@ -23,7 +23,7 @@ class T(component.T):
 
         self.buildt.require_component('base_all')
         j2_ctx = self.hdb.j2_ctx_copy()
-        systemd.unit_prepare(self, j2_ctx, _CONF_DIR)
+        systemd.unit_prepare(self, j2_ctx, [_CONF_DIR])
         j2_ctx.docker.update(
             data_d=systemd.unit_run_d(j2_ctx, 'docker'),
         )
