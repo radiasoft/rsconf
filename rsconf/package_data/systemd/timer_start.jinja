@@ -4,4 +4,4 @@ if [[ -r ~/.bashrc ]]; then
 fi
 set -euo pipefail
 cd '{{ systemd.run_d }}'
-exec {{ systemd.timer_exec }}
+source {{ systemd.timer_exec }}

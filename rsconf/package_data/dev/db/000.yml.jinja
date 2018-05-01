@@ -45,16 +45,18 @@ default:
       # Only for test
       host_suffix: {{ host }}
   bop_timer:
-    petshop:
-      first_one:
-        on_calendar: "*-*-* 12:00:00"
-        bash: |
-          true
+    apps:
+      petshop:
+        timers:
+          first_one:
+            on_calendar: "*-*-* 12:00:00"
+            bash_script: |
+              true
 
-      second_thing:
-        on_calendar: "*-*-1 00:00:00"
-        bash: |
-          echo doing that thing
+          second_thing:
+            on_calendar: "*-*-1 00:00:00"
+            bash_script: |
+              echo doing that thing
 
   btest:
     client_host: {{ master }}
@@ -251,7 +253,7 @@ host:
           /srv/sirepo/db/users: [ 10.10.10.0/24 ]
       rsconf_db:
         # components: [ nfs_server, rabbitmq, celery_sirepo, sirepo, bop, owncloud ]
-        components: [ bop ]
+        components: [ bop, bop_timer ]
     {{ master }}:
       base_os:
         volume_groups: []
