@@ -1,7 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 export BCONF={{ bop_timer.bconf_f }}
-{# See package_data/bop/bivio.bconf.jinja #}
 export BIVIO_IO_ALERT_WANT_TIME=0
 export BIVIO_IO_ALERT_WANT_PID=0
 {{ bop_timer.bash_script }}
