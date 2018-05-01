@@ -1,9 +1,6 @@
 #!/bin/bash
-set -eou pipefail
-su - '{{ bop.run_u }}' -c "bash -s '$PWD'" <<'EOF'
-set -eou pipefail
-cd "$1"
-BCONF='{{ bop.bconf_f }}' bivio sql export_db .
+export BCONF='{{ bop.bconf_f }}'
+bivio sql export_db .
 {{ rsconf_db.compress_cmd }} *pg_dump
 declare -a dirs=()
 for d in '{{ bop.bkp_d }}' '{{ bop.logbop_d }}' \
@@ -18,4 +15,3 @@ find "${dirs[@]}" \
     \( -type f -mtime +'{{ db_bkp.max_copies }}' -exec rm -f {} \; \) \
     -o -type d -mtime +2 -empty -exec rmdir {} \; -prune;
 find '{{ bop.db_d }}'/RealmFile -name '.*#*' -mtime +3 -exec rm -f {} \;
-EOF

@@ -1,13 +1,20 @@
 # -*-perl-*-
 use {{ bop.perl_root }}::BConf;
+
+my($env_bool) = sub {
+    my($bool, $default) = @_;
+    return ! exists($ENV{$bool}) ? $default
+        : $ENV{$bool} ? 1 : 0;
+};
+
 {{ bop.perl_root }}::BConf->merge_dir({
     'Bivio::Agent::Request' => {
         can_secure => {{ bop.can_secure | int }},
     },
     {% if bop.is_test %}
-    'Bivio::Biz::Action::AssertClient' => {
-        hosts => [qw(localhost.localdomain {{ btest.client_host }} {{ bop.http_host }})],
-    },
+        'Bivio::Biz::Action::AssertClient' => {
+            hosts => [qw(localhost.localdomain {{ btest.client_host }} {{ bop.http_host }})],
+        },
     {% endif %}
     'Bivio::Biz::File' => {
         root => '{{ bop.db_d }}',
@@ -29,8 +36,8 @@ use {{ bop.perl_root }}::BConf;
         },
     },
     'Bivio::IO::Alert' => {
-        want_time => 1,
-        want_pid => 1,
+        want_pid => $env_bool->('BIVIO_IO_ALERT_WANT_PID', 1),
+        want_time => $env_bool->('BIVIO_IO_ALERT_WANT_TIME', 1),
     },
     'Bivio::IO::Config' => {
         is_production => {{ bop.is_production | int }},
@@ -39,10 +46,10 @@ use {{ bop.perl_root }}::BConf;
         directory => '{{ bop.logbop_d }}',
     },
     {% if bop.is_test %}
-    'Bivio::Test::Language::HTTP' => {
-        email_user => '{{ btest.email_user }}',
-        local_mail_host => '{{ btest.client_host }}',
-    },
+        'Bivio::Test::Language::HTTP' => {
+            email_user => '{{ btest.email_user }}',
+            local_mail_host => '{{ btest.client_host }}',
+        },
     {% endif %}
     'Bivio::Type::Secret' => {
         algorithm => '{{ bop.secret.algorithm }}',
@@ -53,8 +60,8 @@ use {{ bop.perl_root }}::BConf;
         local_file_root => '/var/www/facades',
         want_local_file_cache => 1,
         {% if bop.is_test %}
-        http_host => '{{ bop.http_host }}',
-        mail_host => '{{ bop.mail_host }}',
+            http_host => '{{ bop.http_host }}',
+            mail_host => '{{ bop.mail_host }}',
         {% endif %}
     },
     'Bivio::UI::HTML::Widget::SourceCode' => {
