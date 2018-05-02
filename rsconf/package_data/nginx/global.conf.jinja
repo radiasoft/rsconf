@@ -94,6 +94,10 @@ http {
     proxy_set_header Proxy "";
     {# "Old school" for logs in owncloud and wordpress #}
     proxy_set_header Via $remote_addr;
+    {# tornado, used by jupyterhub, gives X-Real-Ip precendence over X-Forwarded-For
+       so we set that, since there's some code about "trusted_downstream" which we
+       don't want to configure. #}
+    proxy_set_header X-Real-Ip $remote_addr;
     {#
     Looked through owncloud, and it only references X-Forwarded-For. Lots of
     People recommend setting X-Real-IP, but that's not used.
