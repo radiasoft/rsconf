@@ -1,11 +1,24 @@
+{# Via comes from nginx/global.conf.jinja #}
+LogFormat "%V %{Via}i %P %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+CustomLog {{ owncloud.log_d }}/access.log combined
+ErrorLog {{ owncloud.log_d }}/error.log
+
 {# assumes docker --network=host #}
 Listen 127.0.0.1:{{ owncloud.port }}
+
+{#
+This doesn't work, because mod_remoteip is unavailable in the native container.
+Owncloud references X-Forwarded-For manually so this module is unnecessary since
+access is granted to all anyway (implicitly by default)
+
+LoadModule remoteip_module modules/mod_remoteip.so
+RemoteIPInternalProxy 127.0.0.1
+RemoteIPHeader X-Forwarded-For
+#}
+
 <VirtualHost 127.0.0.1:{{ owncloud.port }}>
   ServerAdmin webmaster@{{ owncloud.domain }}
   DocumentRoot /var/www/owncloud
-
-  ErrorLog {{ owncloud.log_d }}/error.log
-  CustomLog {{ owncloud.log_d }}/access.log combined
 
   <Directory /var/www/owncloud>
     AllowOverride All

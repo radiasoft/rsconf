@@ -13,7 +13,9 @@ my($env_bool) = sub {
     },
     {% if bop.is_test %}
         'Bivio::Biz::Action::AssertClient' => {
-            hosts => [qw(localhost.localdomain {{ btest.client_host }} {{ bop.http_host }})],
+            # do not include localhost, because if there's a bug in the proxy, it will fail.
+            # It is only for test so should only be btest.client_host.
+            hosts => [qw({{ btest.client_host }})],
         },
     {% endif %}
     'Bivio::Biz::File' => {

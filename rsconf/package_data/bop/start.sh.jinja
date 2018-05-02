@@ -1,6 +1,12 @@
 #!/bin/bash
-# /etc/bashrc not robust for error checking so can't set -eu.
-# Need bashrc to generate $CLASSPATH
+{#
+ /etc/bashrc not robust for error checking so can't set -eu.
+ Need bashrc to generate $CLASSPATH
+#}
 . ~/.bashrc
 set -eu -o pipefail
+{# If you don't do this, then apache will start even if config is bad and not write the pid file
+  in the right place
+#}
+{{ bop.httpd_cmd }} -t
 exec {{ bop.httpd_cmd }}

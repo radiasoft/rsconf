@@ -1,28 +1,30 @@
-# The order of this list matters a bit
-# AddOutputFilterByType
+{# The order of this list matters a bit #}
+{# AddOutputFilterByType #}
 LoadModule mime_module		modules/mod_mime.so
-# status
+{# status #}
 LoadModule status_module		modules/mod_status.so
-# SetHandler
+{# SetHandler #}
 LoadModule actions_module		modules/mod_actions.so
-# Require host
+{# Require host #}
 LoadModule authz_host_module		modules/mod_authz_host.so
-# RequestHeader
+{# RequestHeader #}
 LoadModule headers_module		modules/mod_headers.so
-# LogFormat
+{# LogFormat #}
 LoadModule log_config_module		modules/mod_log_config.so
-# PerlModule
+{# PerlModule #}
 LoadModule perl_module		modules/mod_perl.so
-# RequestReadTimeout
+{# RequestReadTimeout #}
 LoadModule reqtimeout_module		modules/mod_reqtimeout.so
 LoadModule authz_core_module		modules/mod_authz_core.so
 LoadModule mpm_prefork_module		modules/mod_mpm_prefork.so
-# BrowserMatch
+{# BrowserMatch #}
 LoadModule setenvif_module		modules/mod_setenvif.so
-# User/Group
+{# User/Group #}
 LoadModule unixd_module		modules/mod_unixd.so
-# AddOutputFilterByType
+{# AddOutputFilterByType #}
 LoadModule filter_module		modules/mod_filter.so
+{# RemoteIPHeader RemoteIPInternalProxy #}
+LoadModule remoteip_module		modules/mod_remoteip.so
 
 Listen {{ bop.listen_base }}
 Listen {{ bop.listen_base + 1 }}
@@ -43,7 +45,7 @@ StartServers {{ bop.num_servers }}
 MaxRequestWorkers {{ bop.num_servers }}
 MaxConnectionsPerChild 120
 LimitRequestBody 240000000
-# https://www.apache.org/security/asf-httpoxy-response.txt
+{# https://www.apache.org/security/asf-httpoxy-response.txt #}
 RequestHeader unset Proxy early
 RequestReadTimeout header=5
 
@@ -51,12 +53,19 @@ ServerRoot {{ systemd.run_d }}
 PidFile {{ systemd.pid_file }}
 TypesConfig /etc/mime.types
 UseCanonicalName Off
-LogFormat "%V %h %P %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+LogFormat "%V %a %P %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
 CustomLog {{ bop.log_d }}/access_log combined
 ErrorLog {{ bop.log_d }}/error_log
 LogLevel warn
 ExtendedStatus On
 TraceEnable off
+
+{#
+  RemoteIPTrustedProxy does not trust private IPs as addresses X-Forwarded-For so RemoteIPInternalProxy
+  is the more "trusting", which is what we want
+#}
+RemoteIPInternalProxy 127.0.0.1
+RemoteIPHeader X-Forwarded-For
 
 DocumentRoot /var/www/html
 
@@ -69,7 +78,7 @@ PerlWarn on
 PerlModule Apache2::compat
 
 PerlSetEnv BCONF {{ bop.bconf_f }}
-#TODO(robnagler) Override translation handler to avoid local file permission checks
+{#TODO(robnagler) Override translation handler to avoid local file permission checks #}
 PerlModule Bivio::Ext::ApacheConstants
 PerlModule Bivio::Agent::HTTP::Dispatcher
 
