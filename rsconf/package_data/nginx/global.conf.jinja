@@ -71,8 +71,10 @@ http {
 #}
     ssl_session_cache shared:SSL:10m;
     ssl_session_tickets off;
-    # This will be output on self-signed certs
-    # [warn] "ssl_stapling" ignored, issuer certificate not found
+    {#
+      This will be output on self-signed certs
+      [warn] "ssl_stapling" ignored, issuer certificate not found
+    #}
     ssl_stapling on;
     ssl_stapling_verify on;
 {#TODO(robnagler) Is this necessary?
