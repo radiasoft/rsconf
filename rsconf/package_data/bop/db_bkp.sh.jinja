@@ -6,7 +6,7 @@ bivio sql export_db .
 {{ rsconf_db.compress_cmd }} *pg_dump
 declare -a dirs=()
 for d in '{{ bop.bkp_d }}' '{{ bop.logbop_d }}' \
-    '{{ bop.db_d }}'/{RealmMailBounce,MailReceiveDispatchForm}; do
+    '{{ bop.db_d }}'/{RealmMail,RealmMailBounce,MailReceiveDispatchForm,LegacyClubUploadForm,OFXImportForm}; do
     # prevent failing on:
     # find: '/srv/bivioorg/db/MailReceiveDispatchForm': No such file or directory
     if [[ -d $d ]]; then
