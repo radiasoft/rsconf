@@ -112,7 +112,7 @@ def install_perl_rpms(compt, j2_ctx, perl_root=None):
 
 def merge_app_vars(j2_ctx, app_name):
     z = j2_ctx.bop
-    z.setdefault('is_production', False)
+    z.setdefault('is_production', j2_ctx.rsconf_db.channel == 'prod')
     z.is_test = not z.is_production
     z.run_u = j2_ctx.rsconf_db.run_u
     db.merge_dict(z, j2_ctx[app_name])
