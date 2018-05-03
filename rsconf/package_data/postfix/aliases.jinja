@@ -37,6 +37,9 @@ tss: /dev/null
     it's an alias we've always had so keep it.
 #}
 decode: /dev/null
+{# we've had this forever so useful to keep #}
+devnull: /dev/null
+
 {% for i in postfix.aliases|sort %}
 {{ i }}: {{ postfix.aliases[i] }}
 {% endfor %}
