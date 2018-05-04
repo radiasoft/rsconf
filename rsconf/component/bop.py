@@ -145,14 +145,16 @@ def _domain(j2_ctx, vh):
 def _install_vhosts(self, j2_ctx):
     from rsconf.component import nginx
 
-    for vh in j2_ctx.bop.vhosts:
-        h, j2_ctx.bop.domain_aliases = _domain(j2_ctx, vh)
-        j2_ctx.bop.aux_directives = vh.get('nginx_aux_directives', '')
+    z = j2_ctx.bop
+    for vh in z.vhosts:
+        h, aliases = _domain(j2_ctx, vh)
+        z.aux_directives = vh.get('nginx_aux_directives', '')
+        z.redirects = nginx.render_redirects(self, j2_ctx, aliases, h)
         nginx.install_vhost(
             self,
             vhost=h,
             backend_host=j2_ctx.rsconf_db.host,
-            backend_port=j2_ctx.bop.listen_base + 1,
+            backend_port=z.listen_base + 1,
             resource_d='bop',
             j2_ctx=j2_ctx,
         )
@@ -162,4 +164,4 @@ def _install_vhosts(self, j2_ctx):
             if vh.receive_mail:
                 vh.mail_domains = [h]
         for m in vh.get('mail_domains', []):
-            self.bopt.hdb.bop.mail_domains[m] = j2_ctx.bop.listen_base
+            self.bopt.hdb.bop.mail_domains[m] = z.listen_base

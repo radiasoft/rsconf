@@ -24,10 +24,4 @@ server {
     }
 }
 
-{% for h in bop.domain_aliases %}
-server {
-    listen {{ h }}:80;
-    server_name {{ h }};
-    return 301 https://{{ nginx.vhost }}$request_uri;
-}
-{% endfor %}
+{{ bop.redirects }}

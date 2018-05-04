@@ -55,6 +55,12 @@ class T(pkcollections.Dict):
         self._root_bash.extend(self._root_bash_aux)
         self.buildt.write_root_bash(self.name, self._root_bash)
 
+    def has_tls(self, j2_ctx, domain):
+        for domains in j2_ctx.component.tls_crt.values():
+            if domain in domains:
+                return True
+        return False
+
     def install_abspath(self, abs_path, host_path, ignore_exists=False):
         dst = self._bash_append_and_dst(host_path, ignore_exists=ignore_exists)
         if dst:

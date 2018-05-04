@@ -34,8 +34,6 @@ default:
       - facade: viarob.com
         receive_mail: true
   bop:
-    bconf_aux: ''
-    is_production: false
     num_servers: 2
     secret:
       algorithm: DES
@@ -150,7 +148,7 @@ default:
         receive_mail: true
         nginx_aux_directives: |
           location /nginx_redirect/(.*) {
-              return 301 $scheme://$http_host/$1;
+              return 301 $scheme://$host/$1;
           }
 
       - facade: beforeother
@@ -248,6 +246,16 @@ channel:
 host:
   dev:
     {{ host }}:
+      nginx:
+        redirects:
+          - host_or_uri: www.google.com
+            server_names:
+              - redirect1.{{ host }}
+              - redirect2.{{ host }}
+          - host_or_uri: https://beta.sirepo.com/warp
+            server_names:
+              - redirect3.{{ host }}
+            want_www: true
       nfs_server:
         exports:
           /srv/sirepo/db/users: [ 10.10.10.0/24 ]
