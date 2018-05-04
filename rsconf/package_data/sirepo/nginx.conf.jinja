@@ -1,7 +1,7 @@
 server {
     listen {{ nginx.vhost }}:80;
     server_name {{ nginx.vhost }};
-    return 301 https://$http_host$request_uri;
+    return 301 https://{{ nginx.vhost }}$request_uri;
 }
 
 server {
