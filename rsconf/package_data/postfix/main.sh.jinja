@@ -153,7 +153,7 @@ postfix_setup_virtual_aliases() {
     #}
     postconf -e virtual_alias_maps=hash:'{{ postfix.virtual_alias_f }}' \
         virtual_alias_domains='{{ postfix.virtual_alias_domains_f }}'
-    postmap -i hash:'{{ postfix.virtual_alias_f }}' < '{{ postfix.virtual_alias_f }}'
+    postmap -i -r hash:'{{ postfix.virtual_alias_f }}' < '{{ postfix.virtual_alias_f }}'
 }
 {% endif %}
 
