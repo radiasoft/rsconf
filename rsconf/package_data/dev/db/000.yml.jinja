@@ -2,6 +2,20 @@
 default:
   base_os:
     ip_forward: false
+  base_users:
+    add:
+      - {{ user }}
+    spec:
+      joeblow:
+        uid: 2002
+        email: devnull@bivio.biz
+      marysmith:
+        uid: 2003
+        email: blackhole@example.com
+      {{ user }}:
+        uid: {{ uid }}
+        email: {{ user }}@{{ master }}
+        want_shell: true
   bkp:
     archive_d: /srv/bkp/archive
     exclude:
@@ -265,14 +279,24 @@ host:
     {{ master }}:
       base_os:
         volume_groups: []
+      base_users:
+        add:
+          - joeblow
+          - marysmith
+        spec:
+          {{ user }}:
+            want_mailbox: true
+          joeblow:
+            want_shell: true
+            want_mailbox: true
+      dovecot:
+        users:
+          - joeblow
       postfix:
         aliases:
           RSCONF_DB_REPLACE:
             # root and errors gets delivered locally so we replace
             blackhole: /dev/null
-        sasl_users:
-          {{ master }}:
-            test1: testpass
         virtual_aliases:
           wp1.{{ master }}:
             vagrant: vagrant

@@ -99,11 +99,15 @@ rsconf_file_hash_save() {
     rsconf_file_hash[$file]=$(rsconf_file_hash "$file")
 }
 
+rsconf_unchecked_gid() {
+    local group=$1
+    cut -d: -f3 <(getent group "$group") || true
+}
+
 rsconf_group() {
     local group=$1
     local gid=$2
-    local x=( $(IFS=: getent group "$group" 2>/dev/null || true) )
-    local exist_gid=${x[2]}
+    local exist_gid=$(rsconf_unchecked_gid "$group")
     if [[ $exist_gid ]]; then
         if [[ $exist_gid != $gid ]]; then
             install_err "$exist_gid: unexpected gid (expect=$gid) for group $group"

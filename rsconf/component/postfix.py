@@ -28,7 +28,7 @@ class T(component.T):
     def internal_build(self):
         from rsconf import systemd
 
-        self.buildt.require_component('network', 'postgrey', 'spamd')
+        self.buildt.require_component('base_all', 'postgrey', 'spamd')
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.setdefault('postfix', pkcollections.Dict())
         self.append_root_bash('rsconf_yum_install postfix')
@@ -43,6 +43,8 @@ class T(component.T):
             tls_cert_file=kc.crt,
             tls_key_file=kc.key,
         )
+        # see base_users.py which may clear email_aliases by setting to None
+        z.aliases.update(j2_ctx.base_users.email_aliases)
         self.install_resource(
             'postfix/aliases',
             j2_ctx,
@@ -93,6 +95,7 @@ class T(component.T):
             '/etc/sasl2/smtpd-sasldb.conf',
         )
         assert j2_ctx.postfix.sasl_users_flattened
+        self.hdb.postfix.sasl_users_flattened = j2_ctx.postfix.sasl_users_flattened
 
     def _setup_virtual_aliases(self, j2_ctx, z):
         if not z.setdefault('virtual_aliases', []):
@@ -104,3 +107,11 @@ class T(component.T):
             'postfix/virtual_alias_domains', j2_ctx, z.virtual_alias_domains_f)
         self.install_resource(
             'postfix/virtual_alias', j2_ctx, z.virtual_alias_f)
+
+
+def sasl_user_password(j2_ctx, user):
+    # POSIT: user local part is globally unique
+    for u in j2_ctx.postfix.sasl_users_flattened:
+        if u.user == user:
+            return u.password
+    raise AssertionError('{}: not found in sasl users'.format(user))

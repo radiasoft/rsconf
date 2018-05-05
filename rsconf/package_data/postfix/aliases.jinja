@@ -39,7 +39,8 @@ tss: /dev/null
 decode: /dev/null
 {# we've had this forever so useful to keep #}
 devnull: /dev/null
-
 {% for i in postfix.aliases|sort %}
+{% if postfix.aliases[i] %}
 {{ i }}: {{ postfix.aliases[i] }}
+{% endif %}
 {% endfor %}
