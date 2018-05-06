@@ -27,16 +27,16 @@ class T(component.T):
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.dovecot
         z.passdb_scheme = 'SHA512-CRYPT'
-        z.user_mail_d = '~/Maildir'
+        z.user_mail_d = 'Maildir'
         # Needs to happen first to get read for install
-        self.service_prepare([CONF_D])
+        self.service_prepare([CONF_ROOT_D])
+        z.users_flattened = self._users_flattened(j2_ctx, z)
         self.install_access(mode='400', owner=j2_ctx.rsconf_db.root_u)
-        kc = self.install_tls_key_and_crt(j2_ctx.rsconf_db.host, CONF_D)
+        kc = self.install_tls_key_and_crt(j2_ctx.rsconf_db.host, CONF_ROOT_D)
         z.tls_crt = kc.crt
         z.tls_key = kc.key
         z.users_f = CONF_ROOT_D.join('users')
-        z.users_flattened = self._users_flattened(j2_ctx, z)
-        self.install_access(mode='400')
+        z.run_u = 'dovecot'
         self.install_resource(
             'dovecot/rsconf.conf',
             j2_ctx,
@@ -46,15 +46,13 @@ class T(component.T):
         self.install_access(
             mode='440',
             owner=j2_ctx.rsconf_db.root_u,
-            group='dovecot',
+            group=z.run_u,
         )
         self.install_resource(
             'dovecot/users',
             j2_ctx,
             z.users_f,
         )
-        self.append_root_bash_with_main(j2_ctx)
-
 
     def _users_flattened(self, j2_ctx, z):
         from pykern import pkjson
@@ -83,6 +81,8 @@ class T(component.T):
             i = base_users.hdb_info(j2_ctx, u)
             i.pw_hash = pw_db[u]
             i.home_d = db.user_home_path(j2_ctx, u)
+            self.install_access(mode='700', owner=i.uid, group=i.gid)
+            self.install_directory(i.home_d.join(z.user_mail_d))
             res.append(i)
         if pw_modified:
             pkjson.dump_pretty(pw_db, filename=pw_f)

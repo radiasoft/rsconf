@@ -6,7 +6,7 @@ ssl_protocols = !SSLv2 !SSLv3 !TLSv1
 ssl_cipher_list = kEECDH:+kEECDH+SHA:kEDH:+kEDH+SHA:+kEDH+CAMELLIA:kECDH:+kECDH+SHA:kRSA:+kRSA+SHA:+kRSA+CAMELLIA:!aNULL:!eNULL:!SSLv2:!RC4:!MD5:!DES:!EXP:!SEED:!IDEA:!3DES
 ssl_prefer_server_ciphers = yes
 
-mail_location = maildir:{{ dovecot.user_mail_d }}
+mail_location = maildir:~/{{ dovecot.user_mail_d }}
 lda_mailbox_autocreate = no
 passdb {
   driver = passwd-file
