@@ -58,6 +58,25 @@ class T(component.T):
             z.users_f,
         )
 
+    def _setup_procmail(self, j2_ctx, z, i):
+        z.procmail_d = i.home_d.join('procmail')
+        z.procmail_log_f = z.procmail_d.join('log')
+        #TODO(robnagler) email alias users
+        z.procmail_deliver = '| /usr/libexec/dovecot/deliver'
+        #TODO(robnagler) control spam filtering
+        z.procmail_spam_level = 3
+        self.install_access(mode='700', owner=i.uid, group=i.gid)
+        self.install_directory(i.home_d.join(z.user_mail_d))
+        self.install_directory(z.procmail_d)
+        self.install_access(mode='400')
+        self.install_resource(
+            'dovecot/procmailrc',
+            j2_ctx,
+            i.home_d.join('.procmailrc'),
+        )
+        self.install_access(mode='600')
+        self.install_ensure_file_exists(z.procmail_log_f)
+
     def _users_flattened(self, j2_ctx, z):
         from pykern import pkjson
         from rsconf import db
@@ -82,9 +101,8 @@ class T(component.T):
             i = base_users.hdb_info(j2_ctx, u)
             i.pw_hash = pw_db[u]
             i.home_d = db.user_home_path(j2_ctx, u)
-            self.install_access(mode='700', owner=i.uid, group=i.gid)
-            self.install_directory(i.home_d.join(z.user_mail_d))
             res.append(i)
+            self._setup_procmail(j2_ctx, z, i)
         if pw_modified:
             pkjson.dump_pretty(pw_db, filename=pw_f)
         return sorted(res, key=lambda x: x.name)

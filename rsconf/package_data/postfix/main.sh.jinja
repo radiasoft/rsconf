@@ -56,8 +56,6 @@ postfix_main() {
     local rsconf_edit_no_change_res=0
     rsconf_edit "$postfix_master_cf" \
         '^smtp.*inet.*200.*smtpd$' 's{^smtp\s+inet.*}{smtp       inet  n       -       n       -       200       smtpd}'
-    rsconf_edit "$postfix_master_cf" \
-        '! ^spamd' 's{^spamd.*\n}{}'
     {% if 'sasl_users_flattened' in postfix %}
         postfix_setup_sasl
     {% endif %}

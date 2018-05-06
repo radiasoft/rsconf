@@ -88,6 +88,9 @@ class T(pkcollections.Dict):
             '{}: directory must be at least 700 mode (u=rwx)'
         self._bash_append(host_path, is_file=False)
 
+    def install_ensure_file_exists(self, host_path):
+        self._bash_append(host_path, is_file=True, ensure_exists=True)
+
     def install_perl_rpm(self, j2_ctx, rpm_base, channel=None):
         rpm_file = '{}-{}.rpm'.format(
             rpm_base,
@@ -172,13 +175,16 @@ class T(pkcollections.Dict):
             ),
         )
 
-    def _bash_append(self, host_path, is_file=True):
+    def _bash_append(self, host_path, is_file=True, ensure_exists=False):
         _assert_host_path(host_path)
+        if is_file:
+            op = 'ensure_file_exists' if ensure_exists else 'file'
+        else:
+            assert not ensure_exists, \
+                '{}: do not pass ensure_exists for directories'.format(host_path)
+            op = 'directory'
         self.append_root_bash(
-            "rsconf_install_{} '{}'".format(
-                'file' if is_file else 'directory',
-                host_path,
-            ),
+            "rsconf_install_{} '{}'".format(op, host_path),
         )
 
     def _bash_append_and_dst(self, host_path, ignore_exists=False):

@@ -180,6 +180,25 @@ rsconf_install_directory() {
     rsconf_service_file_changed "$path"
 }
 
+rsconf_install_ensure_file_exists() {
+    local path=$1
+    if [[ -e $path ]]; then
+        if [[ -L $path && ! -f $path ]]; then
+            install_err "$path: is a link or not a plain file"
+        fi
+        rsconf_install_chxxx "$path"
+        return
+    fi
+    # parent directory must already exist
+    local parent=$(dirname "$path")
+    if [[ ! -e $parent ]]; then
+        install_err "$path: parent directory ($parent) does not exist"
+    fi
+    touch "$path"
+    rsconf_no_check=1 rsconf_install_chxxx "$path"
+    rsconf_service_file_changed "$path"
+}
+
 rsconf_install_file() {
     local path=$1
     local src=

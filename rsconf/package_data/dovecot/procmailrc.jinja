@@ -1,0 +1,31 @@
+LOCKEXT=.lock
+UMASK=07
+VERBOSE=yes
+LOGFILE={{ dovecot.procmail_log_f }}
+
+{% if dovecot.procmail_spam_level %}
+:0 fw
+| spamc
+
+:0 H:
+* ^X-Spam-Flag: Y
+{{ dovecot.procmail_d }}/caught-spam
+
+{% if dovecot.procmail_spam_level <= 4 %}
+:0 H:
+* ^X-Spam-Level: \\*\\*\\*\\*
+{{ dovecot.procmail_d }}/caught-spam4
+
+{% if dovecot.procmail_spam_level <= 3 %}
+:0 H:
+* ^X-Spam-Level: \\*\\*\\*
+{{ dovecot.procmail_d }}/caught-spam3
+{% endif %}
+{% endif %}
+{% endif %}
+
+:0 c:
+{{ dovecot.procmail_d }}/caught-default
+
+:0
+{{ dovecot.procmail_deliver }}
