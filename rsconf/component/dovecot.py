@@ -10,11 +10,13 @@ from pykern import pkcollections
 from pykern import pkio
 from pykern.pkdebug import pkdp
 
+
 CONF_ROOT_D = pkio.py_path('/etc/dovecot')
 CONF_D = CONF_ROOT_D.join('conf.d')
 _PASSWORD_SECRET_JSON_F = 'dovecot_password.json'
 _PASSWORD_SECRET_F = 'dovecot_password'
 _PASSWORD_VISIBILITY = 'host'
+
 
 class T(component.T):
 
@@ -37,12 +39,14 @@ class T(component.T):
         z.tls_key = kc.key
         z.users_f = CONF_ROOT_D.join('users')
         z.run_u = 'dovecot'
+        # general config needs public access
+        self.install_access(mode='444')
         self.install_resource(
             'dovecot/rsconf.conf',
             j2_ctx,
             CONF_D.join('99-rsconf.conf'),
         )
-        # passwords in a separate file, perhaps in a user file?
+        # password file needs to be readable by dovecot user
         self.install_access(
             mode='440',
             owner=j2_ctx.rsconf_db.root_u,
@@ -58,7 +62,6 @@ class T(component.T):
         from pykern import pkjson
         from rsconf import db
         from rsconf.component import base_users
-        import subprocess
 
         pw_f = db.secret_path(
             j2_ctx,
@@ -75,9 +78,7 @@ class T(component.T):
         for u, pw in z.pop_users.items():
             if not u in pw_db:
                 pw_modified = True
-                pw_db[u] = subprocess.check_output(
-                    ['dovecot', 'pw', '-s', z.passdb_scheme, '-p', pw],
-                ).strip()
+                pw_db[u] = '{' + z.passdb_scheme + '}' + _sha512_crypt(pw)
             i = base_users.hdb_info(j2_ctx, u)
             i.pw_hash = pw_db[u]
             i.home_d = db.user_home_path(j2_ctx, u)
@@ -87,3 +88,10 @@ class T(component.T):
         if pw_modified:
             pkjson.dump_pretty(pw_db, filename=pw_f)
         return sorted(res, key=lambda x: x.name)
+
+
+def _sha512_crypt(password):
+    from rsconf import db
+    import crypt
+
+    return crypt.crypt(password, '$6$' + db.random_string(length=16))
