@@ -13,12 +13,12 @@ LOGFILE={{ dovecot.procmail_log_f }}
 
 {% if dovecot.procmail_spam_level <= 4 %}
 :0 H:
-* ^X-Spam-Level: \\*\\*\\*\\*
+* ^X-Spam-Level: \*\*\*\*
 {{ dovecot.procmail_d }}/caught-spam4
 
 {% if dovecot.procmail_spam_level <= 3 %}
 :0 H:
-* ^X-Spam-Level: \\*\\*\\*
+* ^X-Spam-Level: \*\*\*
 {{ dovecot.procmail_d }}/caught-spam3
 {% endif %}
 {% endif %}
