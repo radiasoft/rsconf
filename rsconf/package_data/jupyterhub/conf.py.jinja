@@ -49,7 +49,7 @@ c.DockerSpawner.volumes = {
         # POSIT: notebook_dir in
         # radiasoft/container-beamsim-jupyter/container-conf/build.sh
         # parameterize anyway, because matches above
-        'bind': '/home/{{ jupyterhub.jupyter_run_u }}/jupyter',
+        'bind': '{{ jupyterhub.home_d }}/jupyter',
     },
 }
 

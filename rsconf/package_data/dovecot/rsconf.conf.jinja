@@ -1,0 +1,19 @@
+ssl = yes
+ssl_cert = <{{ dovecot.tls_crt }}
+ssl_key = <{{ dovecot.tls_key }}
+# https://access.redhat.com/articles/1470523
+ssl_protocols = !SSLv2 !SSLv3 !TLSv1
+ssl_cipher_list = kEECDH:+kEECDH+SHA:kEDH:+kEDH+SHA:+kEDH+CAMELLIA:kECDH:+kECDH+SHA:kRSA:+kRSA+SHA:+kRSA+CAMELLIA:!aNULL:!eNULL:!SSLv2:!RC4:!MD5:!DES:!EXP:!SEED:!IDEA:!3DES
+ssl_prefer_server_ciphers = yes
+
+mail_location = maildir:{{ dovecot.user_mail_d }}
+lda_mailbox_autocreate = no
+passdb {
+  driver = passwd-file
+  args = scheme={{ dovecot.passdb_scheme }} username_format=%u {{ dovecot.users_f }}
+}
+
+userdb {
+  driver = passwd-file
+  args = username_format=%u {{ dovecot.users_f }}
+}

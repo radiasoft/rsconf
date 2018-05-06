@@ -35,6 +35,7 @@ class T(component.T):
             run_u=j2_ctx.rsconf_db.root_u,
             jupyter_run_u=j2_ctx.rsconf_db.run_u,
         )
+        z.home_d = db.user_home_path(j2_ctx, z.jupyter_run_u)
         self.install_access(mode='711', owner=z.run_u)
         self.install_directory(run_d)
         self.install_access(mode='700', owner=z.jupyter_run_u)

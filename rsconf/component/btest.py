@@ -36,7 +36,9 @@ class T(component.T):
         z.app_run_u = j2_ctx.rsconf_db.run_u
         self.install_access(mode='700', owner=z.app_run_u)
         self.install_directory(z.apps_d)
-        z.mail_d = '/home/vagrant/btest-mail'
+        z.home_d = db.user_home_path(j2_ctx, z.app_run_u)
+        # POSIT: Bivio::Test::Language::HTTP
+        z.mail_d = z.home_d.join('btest-mail')
         self.install_directory(z.mail_d)
         if j2_ctx.rsconf_db.channel == 'dev':
             z.mail_copy_d = z.mail_d + '-copy'
@@ -45,7 +47,7 @@ class T(component.T):
         self.install_resource(
             'btest/vagrant_procmailrc',
             j2_ctx,
-            '/home/vagrant/.procmailrc',
+            z.home_d.join('.procmailrc'),
         )
         z.run_app_cmds = ''
         for n in sorted(z.apps):

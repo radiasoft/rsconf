@@ -40,3 +40,7 @@ class T(component.T):
         self.hdb.base_users.email_aliases = z.email_aliases
         self.hdb.base_users.added = z.added
         self.append_root_bash_with_main(j2_ctx)
+
+
+def hdb_info(j2_ctx, name):
+    return copy.deepcopy(j2_ctx.base_users.added[name])

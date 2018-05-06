@@ -22,6 +22,8 @@ VISIBILITY_GLOBAL = VISIBILITY_LIST[0]
 
 ZERO_YML = '0*.yml'
 
+USER_HOME_ROOT_D = pkio.py_path('/home')
+
 SRV_SUBDIR = 'srv'
 DEFAULT_ROOT_SUBDIR = 'run'
 DB_SUBDIR = 'db'
@@ -178,6 +180,10 @@ def secret_path(hdb, filename, visibility=None):
     res = hdb.rsconf_db.secret_d.join(*p)
     pkio.mkdir_parent_only(res)
     return res
+
+
+def user_home_path(hdb, user):
+    return USER_HOME_ROOT_D.join(user)
 
 
 @pkconfig.parse_none

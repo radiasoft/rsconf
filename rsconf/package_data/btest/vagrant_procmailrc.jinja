@@ -1,6 +1,6 @@
 UMASK=07
 {% if rsconf_db.channel == 'dev' %}
-LOGFILE=/home/vagrant/procmail.log
+LOGFILE={{ btest.home_d }}/procmail.log
 VERBOSE=yes
 UMASK=07
 :0 c
