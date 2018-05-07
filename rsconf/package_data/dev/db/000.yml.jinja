@@ -8,10 +8,10 @@ default:
     spec:
       joeblow:
         uid: 2002
-        email: devnull@bivio.biz
+        email: devnull@{{ master }}
       marysmith:
         uid: 2003
-        email: blackhole@example.com
+        email: blackhole@{{ master }}
       {{ user }}:
         uid: {{ uid }}
         email: {{ user }}@{{ master }}
@@ -284,11 +284,8 @@ host:
           - joeblow
           - marysmith
         spec:
-          {{ user }}:
-            want_mailbox: true
           joeblow:
             want_shell: true
-            want_mailbox: true
       postfix:
         aliases:
           RSCONF_DB_REPLACE:

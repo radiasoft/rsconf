@@ -26,6 +26,9 @@ class T(component.T):
         z.add_cmds = ''
         z.email_aliases = pkcollections.Dict()
         z.added = pkcollections.Dict()
+        mailboxes = set(
+            j2_ctx.dovecot.alias_users + j2_ctx.dovecot.pop_users.keys(),
+        ) if 'dovecot' in j2_ctx else set()
         for u in z.add:
             assert not u in z.added, \
                 '{}: duplicate user'.format(u)
@@ -34,7 +37,10 @@ class T(component.T):
             i.setdefault('gid', i.uid)
             s = 1 if i.setdefault('want_shell', False) else ''
             z.add_cmds += "base_users_add '{name}' '{uid}' '{gid}' '{s}'\n".format(s=s, **i)
-            z.email_aliases[u] = None if i.setdefault('want_mailbox', False) else i.email
+            z.email_aliases[u] = None if self.setdefault(
+                'want_mailbox',
+                u in mailboxes,
+            ) else i.email
             z.added[u] = i
         # POSIT: postfix will use this as an override for its aliases
         self.hdb.base_users.email_aliases = z.email_aliases
