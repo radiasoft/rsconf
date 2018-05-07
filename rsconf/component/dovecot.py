@@ -67,7 +67,6 @@ class T(component.T):
             else '| /usr/libexec/dovecot/deliver'
         z.procmail_spam_level = i.setdefault('spam_level', 3)
         self.install_access(mode='700', owner=i.uid, group=i.gid)
-        self.install_directory(i.home_d.join(z.user_mail_d))
         self.install_directory(z.procmail_d)
         self.install_access(mode='400')
         self.install_resource(
@@ -100,6 +99,8 @@ class T(component.T):
             i.home_d = db.user_home_path(j2_ctx, u)
             res.append(i)
             self._setup_procmail(j2_ctx, z, i)
+            self.install_access(mode='700', owner=i.uid, group=i.gid)
+            self.install_directory(i.home_d.join(z.user_mail_d))
         if pw_modified:
             pkjson.dump_pretty(pw_db, filename=pw_f)
         return sorted(res, key=lambda x: x.name)
