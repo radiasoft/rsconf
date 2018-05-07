@@ -438,21 +438,17 @@ rsconf_service_restart() {
         if [[ ! ${rsconf_at_end:-} && ${rsconf_service_restart_at_end[$s]:+1} ]]; then
             continue
         fi
-        # timers are only enabled & started, not restarted, because
-        # restarting sometimes stops the service and restarts it.
-        if [[ ! $s =~ \.timer$ ]]; then
-            if [[ ${rsconf_service_status[$s]} == start ]]; then
-                rsconf_service_file_changed_check "$s"
-            fi
-            if [[ ${rsconf_service_status[$s]} == restart ]]; then
-                # Just restart, most daemons are fast
-                install_info "$s: restarting"
-                systemctl restart "$s"
-                rsconf_service_status[$s]=active
-            elif [[ ${rsconf_service_status[$s]} == active ]]; then
-                # Only one re/start per install
-                continue
-            fi
+        if [[ ${rsconf_service_status[$s]} == start ]]; then
+            rsconf_service_file_changed_check "$s"
+        fi
+        if [[ ${rsconf_service_status[$s]} == restart ]]; then
+            # Just restart, most daemons are fast
+            install_info "$s: restarting"
+            systemctl restart "$s"
+            rsconf_service_status[$s]=active
+        elif [[ ${rsconf_service_status[$s]} == active ]]; then
+            # Only one re/start per install
+            continue
         fi
         if [[ ${rsconf_service_status[$s]} == start ]]; then
             # https://askubuntu.com/a/836155
