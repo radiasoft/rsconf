@@ -44,7 +44,8 @@ MaxSpareServers {{ bop.num_servers }}
 StartServers {{ bop.num_servers }}
 MaxRequestWorkers {{ bop.num_servers }}
 MaxConnectionsPerChild 120
-LimitRequestBody 240000000
+{# nginx.conf.jinja controls this limit #}
+LimitRequestBody 0
 {# https://www.apache.org/security/asf-httpoxy-response.txt #}
 RequestHeader unset Proxy early
 RequestReadTimeout header=5
