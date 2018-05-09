@@ -159,6 +159,7 @@ default:
       - domains:
           - petshop.{{ host }}
           - bprog.{{ host }}
+        facade: petshop
         receive_mail: true
         nginx_aux_directives: |
           location /nginx_redirect/(.*) {

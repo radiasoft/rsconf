@@ -59,7 +59,7 @@ my($env_bool) = sub {
         magic => '{{ bop.secret.magic }}',
     },
     'Bivio::UI::Facade' => {
-        local_file_root => '/var/www/facades',
+        local_file_root => '{{ bop.local_file_root_d }}',
         want_local_file_cache => 1,
         {% if bop.is_test %}
             http_host => '{{ bop.http_host }}',

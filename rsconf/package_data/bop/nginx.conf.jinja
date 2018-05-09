@@ -7,21 +7,29 @@ server {
 server {
     listen {{ nginx.vhost }}:443 ssl;
     server_name {{ nginx.vhost }};
-    root {{ nginx.default_root }};
+
+    root {{ bop.facade_static_files_d }};
     ssl_certificate {{ nginx.tls_crt }};
     ssl_certificate_key {{ nginx.tls_key }};
     client_max_body_size {{ bop.client_max_body_size }};
-    {{ bop.aux_directives | indent(4, indentfirst=False) }}
+    error_page 502 503 {{ bop.maintenance_uri }};
 
-    location ~ /_ {
+    location ~ ^/_ {
         deny all;
         return 403;
     }
 
     location / {
         allow all;
+        autoindex off;
+        try_files $uri @backend;
+    }
+
+    location @backend {
         proxy_pass http://127.0.0.1:{{ nginx.backend_port }};
     }
+
+    {{ bop.aux_directives | indent(4, indentfirst=False) }}
 }
 
 {{ bop.redirects }}

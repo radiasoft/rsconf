@@ -16,7 +16,7 @@ _SYSTEMD_DIR = pkio.py_path('/etc/systemd/system')
 #TODO(robnagler) when to download new version of docker container?
 #TODO(robnagler) docker pull happens explicitly, probably
 
-def custom_unit_enable(compt, j2_ctx, start='start', reload=None, stop=None, after=None, run_u=None, resource_d=None):
+def custom_unit_enable(compt, j2_ctx, start='start', reload=None, stop=None, after=None, run_u=None, resource_d=None, run_d_mode='700'):
     """Must be last call"""
     if not resource_d:
         resource_d = compt.name
@@ -29,7 +29,7 @@ def custom_unit_enable(compt, j2_ctx, start='start', reload=None, stop=None, aft
         stop=stop,
     )
     scripts = ('reload', 'start', 'stop')
-    compt.install_access(mode='700', owner=z.run_u)
+    compt.install_access(mode=run_d_mode, owner=z.run_u)
     compt.install_directory(z.run_d)
     # pid_file has to be in a public directory that is writeable by run_u
     # "PID file /srv/petshop/petshop.pid not readable (yet?) after start."

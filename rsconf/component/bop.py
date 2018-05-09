@@ -30,16 +30,19 @@ class T(component.T):
         from rsconf.component import nginx
 
         if self.name == 'bop':
-            self.hdb.bop.mail_domains = pkcollections.Dict()
-            self.hdb.bop.aux_directives = ''
+            self.hdb.bop.update(pkcollections.Dict(
+                aux_directives='',
+                facade_setup_cmds='',
+                mail_domains=pkcollections.Dict(),
+            ))
             self.buildt.require_component('postgresql', 'nginx', 'postfix', 'db_bkp')
             for n in sorted(self.hdb.bop.apps):
-                vhostt = T(n, self.buildt)
-                vhostt.bopt = self
-                self.buildt.build_component(vhostt)
+                appt = T(n, self.buildt)
+                appt.bopt = self
+                self.buildt.build_component(appt)
             j2_ctx = self.hdb.j2_ctx_copy()
             z = j2_ctx.bop
-            z.mail_domain_keys = sorted(self.hdb.bop.mail_domains.keys())
+            z.mail_domain_keys = sorted(z.mail_domains.keys())
             z.setdefault('client_max_body_size', _DEFAULT_CLIENT_MAX_BODY_SIZE)
             nginx.update_j2_ctx_and_install_access(self, j2_ctx)
             self.install_resource(
@@ -61,6 +64,7 @@ class T(component.T):
             stop='stop',
             resource_d='bop',
             run_u=z.run_u,
+            run_d_mode='711',
         )
         self.install_access(mode='700', owner=z.run_u)
         # bkp is only used by Societas/Biz/Util/Club.pm
@@ -68,7 +72,10 @@ class T(component.T):
             x = z.run_d.join(d)
             z['{}_d'.format(d)] = x
             self.install_directory(x)
-        self.install_access(mode='400')
+        self.install_access(mode='711')
+        z.srv_d = z.run_d.join('srv')
+        self.install_directory(z.srv_d)
+        self.install_access(mode='440')
         self.install_resource('bop/httpd.conf', j2_ctx, z.conf_f)
         self.install_resource('bop/bivio.bconf', j2_ctx, z.bconf_f)
         self.install_symlink(
@@ -84,7 +91,7 @@ class T(component.T):
             z.app_name + '_initdb',
         )
         self.bopt.hdb.bop.aux_directives += j2_ctx.get('bop.nginx_aux_directives', '')
-        _install_vhosts(self, j2_ctx)
+        self._install_vhosts(j2_ctx)
         db_bkp.install_script_and_subdir(
             self,
             j2_ctx,
@@ -92,6 +99,52 @@ class T(component.T):
             run_u=z.run_u,
             run_d=z.run_d,
         )
+
+    def _install_facade_static_files_d(self, j2_ctx, z, vh):
+        z.facade_static_files_d = z.srv_d.join(vh.facade)
+        self.install_access(mode='711', owner=z.run_u)
+        self.install_directory(z.facade_static_files_d)
+        m_d = z.facade_static_files_d.join('m')
+        z.maintenance_uri = '/m/maintenance.html'
+        # most neutral format, because we have jpg, gif, and png
+        z.logo_uri = '/m/logo.png'
+        self.install_directory(m_d)
+        self.install_access(mode='444')
+        self.install_resource(
+            'bop/maintenance.html',
+            j2_ctx,
+            m_d.join('maintenance.html'),
+        )
+        self.bopt.hdb.bop.facade_setup_cmds += "bop_facade_setup '{}' '{}' '{}'\n".format(
+            z.local_file_root_d.join(vh.facade, 'plain'),
+            z.facade_static_files_d,
+            z.logo_uri,
+        )
+
+    def _install_vhosts(self, j2_ctx):
+        from rsconf.component import nginx
+
+        z = j2_ctx.bop
+        for vh in z.vhosts:
+            h, aliases = _domain(j2_ctx, vh)
+            self._install_facade_static_files_d(j2_ctx, z, vh)
+            z.aux_directives = vh.get('nginx_aux_directives', '')
+            z.redirects = nginx.render_redirects(self, j2_ctx, aliases, h)
+            nginx.install_vhost(
+                self,
+                vhost=h,
+                backend_host=j2_ctx.rsconf_db.host,
+                backend_port=z.listen_base + 1,
+                resource_d='bop',
+                j2_ctx=j2_ctx,
+            )
+            if 'receive_mail' in vh:
+                assert not 'mail_domains' in vh, \
+                    '{}: receive_mail and mail_domains: both set'.format(h)
+                if vh.receive_mail:
+                    vh.mail_domains = [h]
+            for m in vh.get('mail_domains', []):
+                self.bopt.hdb.bop.mail_domains[m] = z.listen_base
 
 
 def install_perl_rpms(compt, j2_ctx, perl_root=None):
@@ -132,6 +185,7 @@ def merge_app_vars(j2_ctx, app_name):
     z.bconf_f = z.run_d.join('bivio.bconf')
     z.log_postrotate_f = z.run_d.join('reload')
     z.httpd_cmd = "/usr/sbin/httpd -d '{}' -f '{}'".format(z.run_d, z.conf_f)
+    z.local_file_root_d = pkio.py_path('/var/www/facades')
     return z
 
 
@@ -140,28 +194,3 @@ def _domain(j2_ctx, vh):
     if res:
         return res[0], res[1:]
     return vh.get('facade') + '.' + j2_ctx.bop.vhost_common.host_suffix, []
-
-
-def _install_vhosts(self, j2_ctx):
-    from rsconf.component import nginx
-
-    z = j2_ctx.bop
-    for vh in z.vhosts:
-        h, aliases = _domain(j2_ctx, vh)
-        z.aux_directives = vh.get('nginx_aux_directives', '')
-        z.redirects = nginx.render_redirects(self, j2_ctx, aliases, h)
-        nginx.install_vhost(
-            self,
-            vhost=h,
-            backend_host=j2_ctx.rsconf_db.host,
-            backend_port=z.listen_base + 1,
-            resource_d='bop',
-            j2_ctx=j2_ctx,
-        )
-        if 'receive_mail' in vh:
-            assert not 'mail_domains' in vh, \
-                '{}: receive_mail and mail_domains: both set'.format(h)
-            if vh.receive_mail:
-                vh.mail_domains = [h]
-        for m in vh.get('mail_domains', []):
-            self.bopt.hdb.bop.mail_domains[m] = z.listen_base

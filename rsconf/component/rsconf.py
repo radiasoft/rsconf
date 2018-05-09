@@ -23,7 +23,6 @@ class T(component.T):
         # docker is required to build container-perl
         self.buildt.require_component('docker', 'nginx')
         j2_ctx = self.hdb.j2_ctx_copy()
-        self.install_access(mode='700', owner=j2_ctx.rsconf_db.run_u)
         j2_ctx.rsconf = pkcollections.Dict(
             auth_f=nginx.CONF_D.join(PASSWD_SECRET_F),
             srv_d=j2_ctx.rsconf_db.srv_d,
