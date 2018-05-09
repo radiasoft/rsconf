@@ -7,7 +7,6 @@ server {
 server {
     listen {{ nginx.vhost }}:443 ssl;
     server_name {{ nginx.vhost }};
-
     root {{ bop.facade_static_files_d }};
     ssl_certificate {{ nginx.tls_crt }};
     ssl_certificate_key {{ nginx.tls_key }};
