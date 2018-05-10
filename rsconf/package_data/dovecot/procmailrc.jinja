@@ -2,7 +2,9 @@ LOCKEXT=.lock
 UMASK=07
 VERBOSE=yes
 LOGFILE={{ dovecot.procmail_log_f }}
-
+{% if dovecot.procmail_want_include %}
+INCLUDERC=$HOME/.bivio_procmailrc
+{% endif %}
 {% if dovecot.procmail_spam_level %}
 :0 fw
 | spamc

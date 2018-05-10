@@ -66,6 +66,7 @@ class T(component.T):
         z.procmail_deliver = '! ' + i.email if is_alias \
             else '| /usr/libexec/dovecot/deliver'
         z.procmail_spam_level = i.setdefault('spam_level', 3)
+        z.procmail_want_include = i.get('procmail_want_include', False)
         self.install_access(mode='700', owner=i.uid, group=i.gid)
         self.install_directory(z.procmail_d)
         self.install_access(mode='400')
