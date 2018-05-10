@@ -46,7 +46,9 @@ run_db_create() {
     if [[ -e $d ]] && (( $(stat -c %Y $d) + 561600 > $(date -u +%s) )); then
         return
     fi
-    bivio sql init_dbms || true
+    if ! bivio sql tables >& /dev/null; then
+        bivio sql init_dbms
+    fi
     bivio sql write_bop_ddl_files
     bivio sql -force create_test_db
 }
