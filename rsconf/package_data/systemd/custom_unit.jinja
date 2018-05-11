@@ -10,12 +10,16 @@ Description={{ systemd.service_name }}
 Environment=TZ=:/etc/localtime
 ExecStart={{ systemd.start }}
 ExecStartPre=/bin/rm -f {{ systemd.pid_file }}
-Group={{ systemd.run_u }}
+Group={{ systemd.run_group }}
 PIDFile={{ systemd.pid_file }}
+{# https://access.redhat.com/blogs/766093/posts/1976243 #}
+PrivateTmp=true
 Restart=on-failure
 RestartSec=10
 {# Creates directory in /run owned by User #}
 RuntimeDirectory={{ systemd.service_name }}
+{# needed if the process is owned by a different group #}
+RuntimeDirectoryMode=775
 SyslogIdentifier={{ systemd.service_name }}
 Type=forking
 User={{ systemd.run_u }}

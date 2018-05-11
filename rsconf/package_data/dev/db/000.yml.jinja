@@ -298,7 +298,7 @@ host:
             vagrant: vagrant
       rsconf_db:
         #TODO(robnagler) need to edit this to just rsconf to bootstrap
-        components: [ rsconf, jupyterhub_proxy, bkp, btest, github_bkp, dovecot ]
+        components: [ rsconf, jupyterhub_proxy, bkp, btest, github_bkp, dovecot, bivio_named ]
     # This host never installed, just for testing build
     {{ all_host }}:
       docker:

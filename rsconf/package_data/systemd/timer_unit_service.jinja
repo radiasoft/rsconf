@@ -5,6 +5,8 @@ Description={{ systemd.service_name }}
 Environment=TZ=:/etc/localtime
 ExecStart={{ systemd.timer_start_f }}
 Group={{ systemd.run_u }}
+{# https://access.redhat.com/blogs/766093/posts/1976243 #}
+PrivateTmp=true
 SyslogIdentifier={{ systemd.service_name }}
 Type=oneshot
 User={{ systemd.run_u }}

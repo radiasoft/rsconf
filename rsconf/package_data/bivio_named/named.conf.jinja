@@ -1,0 +1,35 @@
+options {
+    allow-transfer { none; };
+    directory "{{ bivio_named.db_d }}";
+    key-directory "{{ systemd.runtime_d }}";
+    hostname none;
+    listen-on { {{ bivio_named.listen_on }} 127.0.0.1; };
+    {# the server will write this at the end, and we don't care #}
+    memstatistics-file "{{ bivio_named.stats_f }}";
+    pid-file "{{ systemd.pid_file }}";
+    {#
+      Avoid DOS attacks
+      http://www.zytrax.com/books/dns/ch7/hkpng.html#rate-limit
+    #}
+    rate-limit {
+        responses-per-second 5;
+        window 5;
+    };
+    recursion no;
+    session-keyfile "{{ bivio_named.session_key_f }}";
+    statistics-file "{{ bivio_named.stats_f }}";
+    {# http://www.zytrax.com/books/dns/ch7/hkpng.html#version #}
+    version "none";
+};
+{#
+   do not enable rndc; do not needed it for authoritative name server. There's
+   no need for this unless we are managing dynamic dns or other stuff where the
+   server needs to write files.
+#}
+controls {
+};
+logging {
+    {# buggy servers or bad actors will fill the log file #}
+    category lame-servers { null; };
+};
+include "{{ bivio_named.zones_f }}";
