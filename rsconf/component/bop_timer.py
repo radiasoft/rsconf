@@ -25,11 +25,13 @@ class T(component.T):
         self.buildt.require_component('bop')
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.bop_timer
-        for app_name in sorted(z.apps.keys()):
+        for app_name in sorted(j2_ctx.bop.apps):
+            if not app_name in z.spec:
+                continue
             app_vars = bop.merge_app_vars(j2_ctx, app_name)
             z.run_u = app_vars.run_u
             z.bconf_f = app_vars.bconf_f
-            timers = z.apps[app_name].timers
+            timers = z.spec[app_name]
             for t in sorted(timers.keys()):
                 tv = timers[t]
                 z.bash_script = tv.bash_script
