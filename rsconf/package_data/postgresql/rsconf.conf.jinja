@@ -1,22 +1,33 @@
-# system specific
+{# depends on memory size #}
 effective_cache_size = {{ postgresql.effective_cache_size }}
 shared_buffers = {{ postgresql.shared_buffers }}
 
-# https://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server
-checkpoint_completion_target = 0.9
-checkpoint_segments = 64
 listen_addresses = ''
 log_checkpoints = on
-# POSIT: /etc/logrotate.conf rotates the logs
+{# POSIT: /etc/logrotate.conf rotates the logs #}
 log_directory = '{{ postgresql.log_d }}'
 log_filename = '{{ postgresql.log_filename }}'
 log_line_prefix = '%t %d %p '
 log_rotation_age = 0
-maintenance_work_mem = 64MB
+{# probably should be configurable, but reasonable estimate for now #}
 max_connections = 128
 ssl = on
 ssl_cert_file = '{{ postgresql.ssl_cert_file }}'
 ssl_ciphers = 'DHE-RSA-AES256-SHA:AES256-SHA:DHE-RSA-AES128-SHA:RC4-SHA:HIGH:!ADH'
 ssl_key_file = '{{ postgresql.ssl_key_file }}'
+{#
+   Assumes SSDs and reasonable size memory (note maintenance_work_mem)
+   http://www.paulnorman.ca/blog/2014/11/new-server-postgresql-tuning/
+   https://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server
+#}
+autovacuum_analyze_scale_factor = 0.2
+autovacuum_vacuum_scale_factor = 0.05
+checkpoint_completion_target = 0.9
+checkpoint_segments = 64
+cpu_operator_cost = 0.5
+cpu_tuple_cost = 0.05
+maintenance_work_mem = 1GB
+random_page_cost = 1.0
+seq_page_cost = 1.0
 wal_buffers = 64MB
 work_mem = 4MB
