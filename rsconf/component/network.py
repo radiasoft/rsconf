@@ -90,7 +90,7 @@ class T(component.T):
             'trusted_public_nets',
             sorted([n.name for n in self.__trusted_nets.values() if n.name.is_global]),
         )
-        self.__untrusted_nets = self._nets(j2_ctx, z.trusted)
+        self.__untrusted_nets = self._nets(j2_ctx, z.untrusted)
         devs = []
         routes = []
         defroute = None
