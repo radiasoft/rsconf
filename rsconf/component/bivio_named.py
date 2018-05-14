@@ -28,9 +28,12 @@ class T(component.T):
             etc=run_d.join('etc'),
         )
         z = j2_ctx.bivio_named
-        z.listen_on = j2_ctx.network.get('primary_public_ip', '')
-        if j2_ctx.rsconf_db.channel != 'dev':
-            assert z.listen_on, \
+        z.listen_on = '127.0.0.1;'
+        ip = j2_ctx.network.get('primary_public_ip', '')
+        if ip:
+            z.listen_on += ' ' + ip + ';'
+        else:
+            assert j2_ctx.rsconf_db.channel == 'dev', \
                 'primary_public_ip: must have a public ip to run named'
         z.run_group = 'named'
         # Default is 10K+

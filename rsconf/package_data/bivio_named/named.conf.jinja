@@ -3,7 +3,7 @@ options {
     directory "{{ bivio_named.db_d }}";
     key-directory "{{ systemd.runtime_d }}";
     hostname none;
-    listen-on { {{ bivio_named.listen_on }} 127.0.0.1; };
+    listen-on { {{ bivio_named.listen_on }} };
     {# the server will write this at the end, and we don't care #}
     memstatistics-file "{{ bivio_named.stats_f }}";
     pid-file "{{ systemd.pid_file }}";
