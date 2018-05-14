@@ -318,11 +318,18 @@ host:
             is_natted: True
           em2:
             ip: 216.17.132.33
+          eth0:
+            ip: 104.237.137.251
         trusted:
+          104.237.137.251/32:
+            nameservers: [ 8.8.8.8 ]
           216.17.132.32/27:
             # Switch to CloudFlare (test RSCONF_DB_REPLACE)
             nameservers:
               RSCONF_DB_REPLACE: [ 1.1.1.1, 1.0.0.1 ]
+        untrusted:
+          104.237.137.251/24:
+            nameservers: [ 1.0.0.1 ]
       nfs_client:
         mounts:
           {{ master }}:
