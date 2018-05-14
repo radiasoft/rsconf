@@ -37,7 +37,7 @@ rsconf_append_authorized_key() {
     if [[ ! -e $keys_f ]]; then
         install -m 600 -o "$user" -g "$user" /dev/null "$keys_f"
     fi
-    rsconf_append "$keys_f" "$key"
+    rsconf_edit_no_change_res=0 rsconf_append "$keys_f" "$key"
 }
 
 rsconf_edit() {

@@ -13,7 +13,7 @@ from rsconf import systemd
 
 def append_authorized_key(compt, j2_ctx):
     compt.append_root_bash(
-        "rsconf_edit_no_change_res=0 rsconf_append_authorized_key '{}' '{}'".format(
+        "rsconf_append_authorized_key '{}' '{}'".format(
             j2_ctx.rsconf_db.root_u,
             j2_ctx.bkp.ssh_key,
         ),

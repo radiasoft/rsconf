@@ -72,6 +72,9 @@ base_os_logical_volumes() {
 
 base_os_main() {
     rsconf_radia_run_as_user root redhat-base
+    {% if "ssh_key" in rsconf and rsconf.ssh_key %}
+    rsconf_append_authorized_key '{{ rsconf_db.root_u }}' '{{ rsconf.ssh_key }}'
+    {% endif %}
     if [[ ! -d {{ rsconf_db.host_run_d }} ]]; then
         mkdir -p {{ rsconf_db.host_run_d }}
         chmod 755 {{ rsconf_db.host_run_d }}
