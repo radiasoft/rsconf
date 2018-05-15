@@ -26,8 +26,13 @@ LoadModule filter_module		modules/mod_filter.so
 {# RemoteIPHeader RemoteIPInternalProxy #}
 LoadModule remoteip_module		modules/mod_remoteip.so
 
-Listen {{ bop.listen_base }}
-Listen {{ bop.listen_base + 1 }}
+{#
+  only need to connect on localhost. Do not use localhost, because
+  seems to open too many ports.
+  (98)Address already in use: AH00072: make_sock: could not bind to address 127.0.0.1:8114
+#}
+Listen 127.0.0.1:{{ bop.listen_base }}
+Listen 127.0.0.1:{{ bop.listen_base + 1 }}
 
 User {{ rsconf_db.run_u }}
 Group {{ rsconf_db.run_u }}
