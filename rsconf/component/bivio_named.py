@@ -20,8 +20,7 @@ class T(component.T):
         self.append_root_bash('rsconf_yum_install bind')
         j2_ctx = self.hdb.j2_ctx_copy()
         network.update_j2_ctx(j2_ctx)
-        # we never promote bivio-named, since there's no staging
-        rpm = self.install_perl_rpm(j2_ctx, 'bivio-named', channel='alpha')
+        rpm = self.install_perl_rpm(j2_ctx, 'bivio-named')
         run_d = systemd.custom_unit_prepare(self, j2_ctx, [rpm])
         j2_ctx.setdefault('bivio_named', pkcollections.Dict()).update(
             dbdir=run_d.join('db'),
