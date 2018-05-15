@@ -4,18 +4,6 @@ postfix_local_host_names=/etc/postfix/local-host-names
 postfix_main_cf=/etc/postfix/main.cf
 postfix_master_cf=/etc/postfix/master.cf
 
-postfix_ehlo_workaround() {
-    {#
-        If EHLO returns an unknown hosts, add it here.
-        https://userlinux.net/postfix-resolving-etchosts-entries.html
-        postconf edits will be checked by caller.
-    #}
-    postconf -e lmtp_host_lookup=native smtp_host_lookup=native
-    local rsconf_edit_no_change_res=0
-    {# fedconnect sends EHLO ashfcprodmail01.css.srv #}
-    rsconf_append /etc/hosts '173.227.247.89 smtp.fedconnect.net ashfcprodmail01.css.srv'
-}
-
 postfix_main() {
     rsconf_file_hash_save "$postfix_main_cf"
     {# https://codinfox.github.io/dev/2015/04/08/postfix-cannot-start/ #}
@@ -55,7 +43,6 @@ postfix_main() {
         {% if not 'sasl_users_flattened' in postfix %}
             smtpd_delay_reject=no
         {% endif %}
-        smtpd_helo_restrictions=reject_unknown_helo_hostname
         smtpd_recipient_restrictions='reject_unauth_pipelining,permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination,reject_non_fqdn_recipient,reject_unknown_recipient_domain,check_policy_service inet:127.0.0.1:{{ postgrey.port }}'
         smtpd_relay_restrictions=permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination
         smtpd_sender_restrictions=reject_unauth_pipelining,permit_mynetworks,reject_non_fqdn_sender,reject_unknown_sender_domain
@@ -65,10 +52,17 @@ postfix_main() {
         smtpd_tls_security_level=may
     )
     postconf -e "${x[@]}"
+    {#
+        Too restrictive
+        smtpd_helo_restrictions=reject_unknown_helo_hostname
+
+        TODO(robnagler) remove after hosts updated
+    #}
+    postconf -X smtpd_helo_restrictions lmtp_host_lookup smtp_host_lookup
+
     local rsconf_edit_no_change_res=0
     rsconf_edit "$postfix_master_cf" \
         '^smtp.*inet.*200.*smtpd$' 's{^smtp\s+inet.*}{smtp       inet  n       -       n       -       200       smtpd}'
-    postfix_ehlo_workaround
     {% if 'sasl_users_flattened' in postfix %}
         postfix_setup_sasl
     {% endif %}
