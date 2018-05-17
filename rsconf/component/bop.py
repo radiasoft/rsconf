@@ -82,7 +82,6 @@ class T(component.T):
             pkio.py_path('/etc/httpd/modules'),
             z.run_d.join('modules'),
         )
-        self.install_access(mode='500')
         logrotate.install_conf(self, j2_ctx, resource_d='bop')
         # After the unit files are installed
         self.append_root_bash_with_resource(
