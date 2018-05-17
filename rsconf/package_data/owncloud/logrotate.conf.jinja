@@ -1,0 +1,10 @@
+{{ owncloud.log_d }}/*.log
+{
+    missingok
+    notifempty
+    postrotate
+        {{ owncloud.log_postrotate_f }}
+    endscript
+    # Ensure postrotate only runs once for all logs
+    sharedscripts
+}

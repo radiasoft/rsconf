@@ -49,6 +49,7 @@ class T(component.T):
         z.init_conf_f = z.run_d.join('init_config.php')
         z.log_d = z.run_d.join('log')
         z.sessions_d = z.db_d.join('sessions')
+        z.log_postrotate_f = z.run_d.join('reload')
         # 127.0.0.1 assumes docker --network=host
         # If you connect to "localhost" (not 127.0.0.1) mysql fails to connect,
         # because the socket isn't there, instead of trying TCP (port supplied).
@@ -84,6 +85,8 @@ class T(component.T):
         self.install_resource('owncloud/apache_envvars', j2_ctx, z.apache_envvars_f)
         self.install_access(mode='500')
         self.install_resource('owncloud/run.sh', j2_ctx, z.run_f)
+        self.install_resource('owncloud/reload.sh', j2_ctx, z.log_postrotate_f)
+        logrotate.install_conf(self, j2_ctx)
         nginx.install_vhost(
             self,
             vhost=z.domain,
