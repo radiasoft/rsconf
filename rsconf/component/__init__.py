@@ -11,6 +11,7 @@ from pykern import pkio
 from pykern.pkdebug import pkdp, pkdc, pkdlog
 import hashlib
 import re
+import subprocess
 
 _DONE = 'done'
 _START = 'start'
@@ -63,9 +64,11 @@ class T(pkcollections.Dict):
         return False
 
     def install_abspath(self, abs_path, host_path, ignore_exists=False):
-        dst = self._bash_append_and_dst(host_path, ignore_exists=ignore_exists)
-        if dst:
-            abs_path.copy(dst, mode=True)
+        self._bash_append_and_dst(
+            host_path,
+            ignore_exists=ignore_exists,
+            file_src=abs_path,
+        )
 
     def install_access(self, mode=None, owner=None, group=None):
         if not mode is None:
@@ -105,7 +108,12 @@ class T(pkcollections.Dict):
             '{}: rpm does not exist'.format(rpm_file)
         dst = j2_ctx.build.dst_d.join(rpm_file)
         dst.mksymlinkto(src, absolute=False)
-        self.append_root_bash("rsconf_install_perl_rpm '{}' '{}'".format(rpm_base, rpm_file))
+        version = subprocess.check_output(['rpm', '-qp',  str(src)]).strip()
+        self.append_root_bash("rsconf_install_perl_rpm '{}' '{}' '{}'".format(
+            rpm_base,
+            rpm_file,
+            version,
+        ))
         return rpm_file
 
     def install_resource(self, name, j2_ctx, host_path):
@@ -115,11 +123,8 @@ class T(pkcollections.Dict):
         )
 
     def install_secret_path(self, filename, host_path, gen_secret=None, visibility=None):
-        from rsconf import db
-
         src = self.secret_path_value(filename, gen_secret, visibility)[1]
-        dst = self._bash_append_and_dst(host_path)
-        src.copy(dst, mode=True)
+        dst = self._bash_append_and_dst(host_path, file_src=src)
 
     def install_symlink(self, old_host_path, new_host_path):
         _assert_host_path(new_host_path)
@@ -196,7 +201,7 @@ class T(pkcollections.Dict):
             "rsconf_install_{} '{}'{}".format(op, host_path, md5),
         )
 
-    def _bash_append_and_dst(self, host_path, ignore_exists=False, file_contents=None):
+    def _bash_append_and_dst(self, host_path, ignore_exists=False, file_contents=None, file_src=None):
         dst = self.hdb.build.dst_d.join(host_path)
         if dst.check():
             if ignore_exists:
@@ -204,9 +209,13 @@ class T(pkcollections.Dict):
             raise AssertionError('{}: dst already exists'.format(dst))
         pkio.mkdir_parent_only(dst)
         md5 = None
+        if file_src:
+            assert file_contents is None, \
+                '{}: do not pass both file_contents and file_src'.format(host_path)
+            file_contents = file_src.read()
         if file_contents:
             dst.write(file_contents)
-            md5=_md5(file_contents)
+            md5 = _md5(file_contents)
         self._bash_append(host_path, md5=md5)
         return dst
 

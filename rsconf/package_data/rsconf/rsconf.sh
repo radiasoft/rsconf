@@ -249,7 +249,20 @@ rsconf_install_perl_rpm() {
     # installs a custom rpm from the local repo
     local rpm_base=$1
     local rpm_file=$2
-    local prev_rpm=$(rpm -q "$rpm_base" 2>&1 || true)
+    local rpm_version=$3
+    local prev_version=$(rpm -q "$rpm_base" 2>&1 || true)
+    # Yum is wonky with update/install. We have to handle
+    # both fresh install and update, which install does, but
+    # it doesn't return an error if the update isn't done.
+    # You just have to check so this way is more robust
+    local reinstall=
+    if [[ $rpm_version == $prev_version ]]; then
+        if rpm --verify "$rpm_base"; then
+            return
+        fi
+        install_msg "$rpm_version: rpm is modified, reinstalling"
+        reinstall=1
+    fi
     local tmp=$rpm_file
     install_download "$rpm_file" > "$tmp"
     if [[ ! $(file "$tmp" 2>/dev/null) =~ RPM ]]; then
@@ -257,25 +270,11 @@ rsconf_install_perl_rpm() {
         # "error: open of <html> failed: No such file or directory"
         install_err "$rpm_file: not found or not a valid RPM"
     fi
-    local new_rpm=$(rpm -qp "$tmp")
-    # Yum is wonky with update/install. We have to handle
-    # both fresh install and update, which install does, but
-    # it doesn't return an error if the update isn't done.
-    # You just have to check so this way is more robust
-    local reinstall=
-    if [[ $new_rpm == $prev_rpm ]]; then
-        if rpm --verify "$rpm_base"; then
-            rm -f "$tmp"
-            return
-        fi
-        install_msg "$prev_rpm: rpm is modified, reinstalling"
-        reinstall=1
-    fi
     rsconf_yum_reinstall=$reinstall rsconf_yum_install "$tmp"
     rm -f "$tmp"
     local curr_rpm=$(rpm -q "$rpm_base")
-    if [[ $curr_rpm != $new_rpm ]]; then
-        install_err "$curr_rpm: did not get installed, new=$new_rpm"
+    if [[ $curr_rpm != $rpm_version ]]; then
+        install_err "$curr_rpm: did not get installed, new=$rpm_version"
     fi
     rsconf_service_file_changed "$rpm_file"
 }
