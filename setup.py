@@ -4,17 +4,6 @@ u"""rsconf setup script
 :copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-# All imports (except __future__) must come after this block.
-# setuptools, in particular, caches data about the current state
-# of modules so it has to be imported after the pykern import.
-try:
-    from pykern import pksetup
-except ImportError:
-    import pip
-    pip.main(['install', 'pykern'])
-    from pykern import pksetup
-
-
 pksetup.setup(
     name='rsconf',
     author='RadiaSoft LLC',
