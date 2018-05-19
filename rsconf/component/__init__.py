@@ -9,6 +9,7 @@ from pykern import pkcollections
 from pykern import pkconfig
 from pykern import pkio
 from pykern.pkdebug import pkdp, pkdc, pkdlog
+import hashlib
 import re
 
 _DONE = 'done'
@@ -108,8 +109,10 @@ class T(pkcollections.Dict):
         return rpm_file
 
     def install_resource(self, name, j2_ctx, host_path):
-        dst = self._bash_append_and_dst(host_path)
-        dst.write(_render_resource(name, j2_ctx))
+        self._bash_append_and_dst(
+            host_path,
+            file_contents=_render_resource(name, j2_ctx),
+        )
 
     def install_secret_path(self, filename, host_path, gen_secret=None, visibility=None):
         from rsconf import db
@@ -175,26 +178,36 @@ class T(pkcollections.Dict):
             ),
         )
 
-    def _bash_append(self, host_path, is_file=True, ensure_exists=False):
+    def _bash_append(self, host_path, is_file=True, ensure_exists=False, md5=None):
         _assert_host_path(host_path)
         if is_file:
             op = 'ensure_file_exists' if ensure_exists else 'file'
+            if md5:
+                md5 = " '{}'".format(md5)
         else:
             assert not ensure_exists, \
                 '{}: do not pass ensure_exists for directories'.format(host_path)
+            assert not md5, \
+                '{}: do not pass md5 for directories'.format(host_path)
             op = 'directory'
+        if not md5:
+            md5 = ''
         self.append_root_bash(
-            "rsconf_install_{} '{}'".format(op, host_path),
+            "rsconf_install_{} '{}'{}".format(op, host_path, md5),
         )
 
-    def _bash_append_and_dst(self, host_path, ignore_exists=False):
-        self._bash_append(host_path)
+    def _bash_append_and_dst(self, host_path, ignore_exists=False, file_contents=None):
         dst = self.hdb.build.dst_d.join(host_path)
         if dst.check():
             if ignore_exists:
                 return None
             raise AssertionError('{}: dst already exists'.format(dst))
         pkio.mkdir_parent_only(dst)
+        md5 = None
+        if file_contents:
+            dst.write(file_contents)
+            md5=_md5(file_contents)
+        self._bash_append(host_path, md5=md5)
         return dst
 
 
@@ -241,6 +254,12 @@ def _find_tls_crt(hdb, domain):
         if domain in domains:
             return crt, domains
     raise AssertionError('{}: tls crt for domain not found'.format(domain))
+
+
+def _md5(data):
+    m = hashlib.md5()
+    m.update(data)
+    return m.hexdigest()
 
 
 def _render_resource(name, j2_ctx):

@@ -201,9 +201,14 @@ rsconf_install_ensure_file_exists() {
 
 rsconf_install_file() {
     local path=$1
+    local md5=${2:-}
     local tmp
     if [[ -d "$path" ]]; then
         install_err "$path: is a directory, must be a file (remove first)"
+    fi
+    if [[ $md5 ]] && echo "$md5 $path" | md5sum -c --strict >& /dev/null; then
+        rsconf_install_chxxx "$path"
+        return
     fi
     tmp=$path-rsconf-tmp
     install_download "$path" > "$tmp"
@@ -212,7 +217,7 @@ rsconf_install_file() {
     if grep -s -q -i '^<title>' "$tmp"; then
         install_err "$path: unexpected HTML file (directory listing?)"
     fi
-    if cmp "$tmp" "$path" >& /dev/null; then
+    if [[ ! $md5 ]] && cmp "$tmp" "$path" >& /dev/null; then
         rm -f "$tmp"
         rsconf_install_chxxx "$path"
         return
