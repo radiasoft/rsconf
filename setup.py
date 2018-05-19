@@ -4,6 +4,8 @@ u"""rsconf setup script
 :copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
+from pykern import pksetup
+
 pksetup.setup(
     name='rsconf',
     author='RadiaSoft LLC',
