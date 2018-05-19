@@ -1,21 +1,16 @@
 #!/bin/bash
 
-postfix_local_host_names=/etc/postfix/local-host-names
+postfix_local_host_names={{ postfix.local_host_names_f }}
 postfix_main_cf=/etc/postfix/main.cf
 postfix_master_cf=/etc/postfix/master.cf
 
 postfix_main() {
     rsconf_file_hash_save "$postfix_main_cf"
-    {# https://codinfox.github.io/dev/2015/04/08/postfix-cannot-start/ #}
-    rsconf_yum_install procmail
-    if [[ ! -e $postfix_local_host_names ]]; then
-        rsconf_install_access 644 root root
-        rsconf_install_file /dev/null "$postfix_local_host_names"
-    fi
     local x=(
         {# https://help.ubuntu.com/community/PostfixGreylisting #}
         biff=no
         inet_interfaces=all
+        {# https://codinfox.github.io/dev/2015/04/08/postfix-cannot-start/ #}
         inet_protocols=ipv4
         local_recipient_maps=
         mailbox_command='/usr/bin/procmail -t -Y -a "$EXTENSION" -d "$USER"'

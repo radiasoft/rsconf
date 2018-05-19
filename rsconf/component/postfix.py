@@ -31,14 +31,17 @@ class T(component.T):
         self.buildt.require_component('base_all', 'postgrey', 'spamd')
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.setdefault('postfix', pkcollections.Dict())
-        self.append_root_bash('rsconf_yum_install postfix')
+        self.append_root_bash('rsconf_yum_install postfix procmail')
         systemd.unit_prepare(self,j2_ctx, [_CONF_D])
         self._setup_virtual_aliases(j2_ctx, z)
         self._setup_sasl(j2_ctx, z)
         self._setup_mynames(j2_ctx, z)
+        z.local_host_names_f = '/etc/postfix/local-host-names'
         # New install access
         self.install_access(mode='400', owner=j2_ctx.rsconf_db.root_u)
         kc = self.install_tls_key_and_crt(j2_ctx.rsconf_db.host, _CONF_D)
+        self.install_access(mode='644')
+        self.install_ensure_file_exists(z.local_host_names_f)
         z.update(
             tls_cert_file=kc.crt,
             tls_key_file=kc.key,
