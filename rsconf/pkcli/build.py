@@ -43,35 +43,21 @@ class T(pkcollections.Dict):
         # dependencies in build() must come first
         self.components_required.append(compt.name)
 
-    def create_host(self):
-        prev_umask = None
+    def create_host(self, dst_d):
+        h = self.hdb.rsconf_db.host
         try:
-            prev_umask = os.umask(027)
-            dst_d = self.hdb.rsconf_db.srv_host_d.join(self.hdb.rsconf_db.host)
-            new = dst_d + '-new'
-            self.hdb.build = pkcollections.Dict(dst_d=new)
-            old = dst_d + '-old'
-            pkio.unchecked_remove(new, old)
-            pkio.mkdir_parent(new)
+            dst_d = dst_d.join(h)
+            pkio.mkdir_parent(dst_d)
+            self.hdb.build = pkcollections.Dict(dst_d=dst_d)
             self.require_component(*self.hdb.rsconf_db.components)
             self.write_root_bash(
                 '000',
                 ['export install_channel={}'.format(self.hdb.rsconf_db.channel)] \
                     + ['rsconf_require ' + x for x in self.components_required],
             )
-            if dst_d.check():
-                dst_d.rename(old)
-            else:
-                old = None
-            subprocess.check_call(['chgrp', '-R', self.hdb.rsconf_db.srv_group, str(new)])
-            subprocess.check_call(['chmod', '-R', 'g+rX', str(new)])
-            new.rename(dst_d)
-            if old:
-                pkio.unchecked_remove(old)
-        finally:
-            if prev_umask:
-                os.umask(prev_umask)
-
+        except Exception:
+            pkdlog('{}: host failed:', h)
+            raise
 
     def require_component(self, *components):
         from rsconf import component
@@ -100,11 +86,32 @@ def default_command():
 
         setup_dev.default_command()
 
-    dbt = db.T()
-    for c, hosts in pkcollections.map_items(dbt.channel_hosts()):
-        for h in hosts:
-            try:
-                T(dbt, c, h).create_host()
-            except Exception:
-                pkdlog('{}: host failed:', h)
-                raise
+    prev_umask = None
+    try:
+        prev_umask = os.umask(027)
+        dbt = db.T()
+        # Outside of srv_d so nginx doesn't see it. However,
+        # make sure the same levels of directory so relative
+        # links to rpm still work.
+        # POSIT: srv_host_d is one level below srv_d
+        tmp_d = (dbt.srv_d + '-tmp').join(db.HOST_SUBDIR)
+        old_d = tmp_d + '-old'
+        new_d = tmp_d + '-new'
+        pkio.unchecked_remove(new_d, old_d)
+        pkio.mkdir_parent(new_d)
+        #TODO(robnagler) make this global pkconfig. Doesn't make sense to
+        # be configured in rsconf_db, because not host-based.
+        for c, hosts in pkcollections.map_items(dbt.channel_hosts()):
+            for h in hosts:
+                t = T(dbt, c, h)
+                t.create_host(new_d)
+        subprocess.check_call(['chgrp', '-R', db.cfg.srv_group, str(new_d)])
+        subprocess.check_call(['chmod', '-R', 'g+rX', str(new_d)])
+        pkio.unchecked_remove(old_d)
+        dst_d = dbt.srv_host_d
+        if dst_d.check():
+            dst_d.rename(old_d)
+        new_d.rename(dst_d)
+    finally:
+        if prev_umask:
+            os.umask(prev_umask)

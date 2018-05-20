@@ -47,8 +47,12 @@ class T(pkcollections.Dict):
         super(T, self).__init__(*args, **kwargs)
         self.root_d = pkio.py_path(cfg.root_d)
         self.db_d = self.root_d.join(DB_SUBDIR)
+        self.rpm_source_d = self.root_d.join(RPM_SUBDIR)
+        self.secret_d = self.db_d.join(SECRET_SUBDIR)
+        self.srv_d = self.root_d.join(SRV_SUBDIR)
+        self.srv_host_d = self.srv_d.join(HOST_SUBDIR)
         self.base = pkcollections.Dict()
-        for d in self.db_d, self.db_d.join(SECRET_SUBDIR):
+        for d in self.db_d, self.secret_d:
             for f in pkio.sorted_glob(d.join(ZERO_YML)):
                 v = pkyaml.load_str(
                     pkjinja.render_file(
@@ -90,17 +94,15 @@ class T(pkcollections.Dict):
                     if not v:
                         continue
             merge_dict(res, v)
-        db_d = self.root_d.join(DB_SUBDIR)
-        srv_d = self.root_d.join(SRV_SUBDIR)
         v = pkcollections.Dict(
             rsconf_db=pkcollections.Dict(
                 channel=channel,
-                db_d=db_d,
+                db_d=self.db_d,
                 host=host.lower(),
-                rpm_source_d=self.root_d.join(RPM_SUBDIR),
-                secret_d=db_d.join(SECRET_SUBDIR),
-                srv_d=srv_d,
-                srv_host_d=srv_d.join(HOST_SUBDIR),
+                rpm_source_d=self.rpm_source_d,
+                secret_d=self.secret_d,
+                srv_d=self.srv_d,
+                srv_host_d=self.srv_host_d,
                 # https://jnovy.fedorapeople.org/pxz/node1.html
                 # compression with 8 threads and max compression
                 # Useful (random) constants
@@ -212,6 +214,19 @@ def _cfg_root(value):
         value = root.join(DEFAULT_ROOT_SUBDIR)
     return value
 
+@pkconfig.parse_none
+def _cfg_srv_group(value):
+    """Set srv_group"""
+    import grp
+    import os
+
+    if value:
+        return grp.getgrnam(value).gr_name
+    assert pkconfig.channel_in('dev'), \
+        'must be configured except in DEV'
+    return grp.getgrgid(os.getgid()).gr_name
+
+
 
 def _update_paths(base):
     for k in list(base.keys()):
@@ -223,4 +238,5 @@ def _update_paths(base):
 
 cfg = pkconfig.init(
     root_d=(None, _cfg_root, 'Top of rsconf tree'),
+    srv_group=(None, _cfg_srv_group, 'Group id of files to srv directory'),
 )
