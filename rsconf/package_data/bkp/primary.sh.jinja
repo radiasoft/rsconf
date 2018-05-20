@@ -83,7 +83,7 @@ primary_rsync() {
             return
         fi
         if [[ ! $out =~ ssh_exchange_identification ]] ||
-            (( $try >= $max_try ))
+            (( $try >= $bkp_max_try ))
         then
             primary_log "$out"
             return
