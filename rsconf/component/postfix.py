@@ -28,7 +28,7 @@ class T(component.T):
     def internal_build(self):
         from rsconf import systemd
 
-        self.buildt.require_component('base_all', 'postgrey', 'spamd')
+        self.buildt.require_component('postgrey', 'spamd')
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.setdefault('postfix', pkcollections.Dict())
         self.append_root_bash('rsconf_yum_install postfix procmail')
