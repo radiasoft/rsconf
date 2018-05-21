@@ -111,7 +111,7 @@ class T(component.T):
         j2_ctx.nginx.rendered_redirects = self._render_redirects(j2_ctx)
         self.install_resource('nginx/global.conf', j2_ctx, _GLOBAL_CONF)
         systemd.unit_enable(self, j2_ctx)
-        self.append_root_bash('rsconf_service_restart_at_end nginx')
+        self.rsconf_service_restart_at_end()
 
     def _render_redirects(self, j2_ctx):
         res = ''
