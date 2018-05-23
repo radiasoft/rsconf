@@ -15,7 +15,6 @@ class T(component.T):
 
     def internal_build(self):
         from rsconf import systemd
-        from rsconf.component import db_bkp
         from rsconf.component import docker_registry
         from rsconf.component import logrotate
         from rsconf.component import nginx
