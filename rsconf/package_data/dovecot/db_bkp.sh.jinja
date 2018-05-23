@@ -1,0 +1,10 @@
+#!/bin/bash
+for d in /home/*/procmail; do
+    u=$(basename "$(dirname "$d")")
+    mkdir "$u"
+    for f in "$d"/*; do
+        x=$u/$(basename "$f")
+        mv "$f" "$x"
+        {{ rsconf_db.compress_cmd }} "$x"
+    done
+done
