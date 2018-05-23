@@ -300,6 +300,10 @@ host:
         components: [ rsconf, jupyterhub_proxy, bkp, btest, github_bkp, dovecot ]
     # This host never installed, just for testing build
     {{ all_host }}:
+      base_users:
+        add:
+          - joeblow
+          - marysmith
       docker:
         iptables: false
       jupyterhub:
@@ -345,7 +349,8 @@ host:
       rsconf_db:
         components:
           # order matters on startup, because not all dependencies
-          # are expressed in the require_component or imports
+          # are expressed in the require_component or imports,
+          # e.g. celery_sirepo must start before sirepo
           - nfs_client
           - nfs_server
           - rabbitmq
@@ -353,6 +358,7 @@ host:
           - sirepo
           - bop
           - btest
+          - dovecot
           - jupyterhub
           - jupyterhub_proxy
           - owncloud

@@ -24,6 +24,9 @@ _PASSWORD_VISIBILITY = 'host'
 class T(component.T):
 
     def internal_build(self):
+        from rsconf import systemd
+        from rsconf.component import db_bkp
+
         # dependency not strictly necessary but logical
         self.buildt.require_component('postfix')
         self.append_root_bash('rsconf_yum_install dovecot')
@@ -58,6 +61,15 @@ class T(component.T):
             'dovecot/users',
             j2_ctx,
             z.users_f,
+        )
+        self.install_access(mode='700', owner=j2_ctx.rsconf_db.root_u)
+        db_bkp_root_d = systemd.unit_run_d(j2_ctx, self.name)
+        self.install_directory(db_bkp_root_d)
+        db_bkp.install_script_and_subdir(
+            self,
+            j2_ctx,
+            run_d=db_bkp_root_d,
+            run_u=j2_ctx.rsconf_db.root_u,
         )
 
     def _setup_procmail(self, j2_ctx, z, i, is_alias=False):

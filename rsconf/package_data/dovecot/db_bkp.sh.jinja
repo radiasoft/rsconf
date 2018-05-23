@@ -1,4 +1,5 @@
 #!/bin/bash
+shopt -s nullglob
 for d in /home/*/procmail; do
     u=$(basename "$(dirname "$d")")
     mkdir "$u"
