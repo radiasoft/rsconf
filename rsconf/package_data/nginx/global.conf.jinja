@@ -114,6 +114,15 @@ http {
         server_name "";
         return 444;
     }
+    {% if "default_server_tls" in nginx %}
+    server {
+        listen 443 default_server;
+        server_name "";
+        ssl_certificate {{ nginx.default_server_tls.crt }};
+        ssl_certificate_key {{ nginx.default_server_tls.key }};
+        return 444;
+    }
+    {% endif %}
     {{ nginx.rendered_redirects | indent(4, indentfirst=False) }}
     include /etc/nginx/conf.d/*.conf;
 }
