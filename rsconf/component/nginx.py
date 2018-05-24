@@ -115,7 +115,6 @@ class T(component.T):
                 j2_ctx.rsconf_db.host,
                 CONF_D,
             )
-            z.default_server_tls.host = j2_ctx.rsconf_db.host
         self.install_resource('nginx/global.conf', j2_ctx, _GLOBAL_CONF)
         systemd.unit_enable(self, j2_ctx)
         self.rsconf_service_restart_at_end()
