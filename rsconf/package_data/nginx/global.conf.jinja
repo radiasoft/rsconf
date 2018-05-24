@@ -112,17 +112,13 @@ http {
     server {
         listen 80 default_server;
         server_name "";
+        {% if "default_server_tls" in nginx %}
+            listen {{ nginx.default_server_tls.host }}:443 ssl default_server;
+            ssl_certificate {{ nginx.default_server_tls.crt }};
+            ssl_certificate_key {{ nginx.default_server_tls.key }};
+        {% endif %}
         return 444;
     }
-    {% if "default_server_tls" in nginx %}
-    server {
-        listen 443 default_server;
-        server_name "";
-        ssl_certificate {{ nginx.default_server_tls.crt }};
-        ssl_certificate_key {{ nginx.default_server_tls.key }};
-        return 444;
-    }
-    {% endif %}
     {{ nginx.rendered_redirects | indent(4, indentfirst=False) }}
     include /etc/nginx/conf.d/*.conf;
 }
