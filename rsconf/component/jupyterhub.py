@@ -22,7 +22,7 @@ class T(component.T):
         from rsconf.component import docker
         from rsconf.component import docker_registry
 
-        self.buildt.require_component('docker', 'nginx')
+        self.buildt.require_component('docker')
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.jupyterhub
         z.vhost = j2_ctx.jupyterhub.vhosts[j2_ctx.rsconf_db.host]
@@ -66,4 +66,3 @@ class T(component.T):
             run_u=z.run_u,
             volumes=[docker.DOCKER_SOCK],
         )
-        #TODO(robnagler) vhost proxy installed on other host; sirepo could be too
