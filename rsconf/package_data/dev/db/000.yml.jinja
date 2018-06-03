@@ -271,12 +271,15 @@ host:
             server_names:
               - redirect3.{{ host }}
             want_www: true
+      jupyterhub:
+        vhosts:
+          {{ host }}: jupyter.{{ master }}
       nfs_server:
         exports:
           /srv/sirepo/db/users: [ 10.10.10.0/24 ]
       rsconf_db:
         # components: [ nfs_server, rabbitmq, celery_sirepo, sirepo, bop, owncloud ]
-        components: [ bop, bop_timer ]
+        components: [ jupyterhub ]
     {{ master }}:
       base_os:
         volume_groups: []
@@ -297,7 +300,8 @@ host:
             vagrant: vagrant
       rsconf_db:
         #TODO(robnagler) need to edit this to just rsconf to bootstrap
-        components: [ rsconf, jupyterhub_proxy, bkp, btest, github_bkp, dovecot ]
+        components: [ rsconf, jupyterhub_proxy ]
+        # bkp, btest, github_bkp, dovecot ]
     # This host never installed, just for testing build
     {{ all_host }}:
       base_users:
