@@ -46,7 +46,15 @@ primary_main() {
     primary_log "$(hostname -f ): end primary"
 }
 
+primary_simple_mirror() {
+    local host_src_d=$1
+    local tgt_d=$2
+    primary_log "$host_src_d: simple_mirror: $tgt_d"
+    primary_rsync "$host_src_d" "$tgt_d"
+}
+
 primary_rsync() {
+    local args=( "$@" )
     local cmd=(
         rsync
         --archive
@@ -68,7 +76,7 @@ primary_rsync() {
         # we don't use these:
         # --acls
         # --xattrs
-        "$@"
+        "${args[@]}"
     )
     local out try
     for try in $(seq 1 "$bkp_max_try"); do
@@ -78,7 +86,7 @@ primary_rsync() {
         # rsync error: some files/attrs were not transferred
         out=$(
             "${cmd[@]}" 2>&1 |
-            egrep -v -i "\"$src_d\".*no such file|some files.*not transfer" || \
+            egrep -v -i "${args[-2]}\".*no such file|some files.*not transfer" || \
                 true
         )
         if [[ ! $out ]]; then
@@ -87,7 +95,7 @@ primary_rsync() {
         if [[ ! $out =~ ssh_exchange_identification ]] ||
             (( $try >= $bkp_max_try ))
         then
-            primary_log "$out"
+            primary_log "${cmd[*]}: FAILED: $out"
             return
         fi
         # Probably due to an ssh rate limiter in iptables so
@@ -109,7 +117,6 @@ primary_secondary() {
 }
 
 primary_snapshot() {
-    local src_d
     local t=$(date +%Y%m%d%H%M%S)
     primary_log "$t: snapshot begin"
     cp -al "$bkp_mirror_d/current" "$bkp_mirror_d/$t"

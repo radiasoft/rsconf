@@ -49,6 +49,12 @@ class T(component.T):
             x += "    primary_host '{}'\n".format(h)
         for h in z.secondaries:
             x += "    primary_secondary '{}'\n".format(h)
+        for tgt in sorted(z.simple_mirrors.keys()):
+            for src in z.simple_mirrors[tgt]:
+                x += "    primary_simple_mirror '{}' '{}'\n".format(
+                    src,
+                    tgt,
+                )
         z.main_cmds = x
         te = run_d.join('primary')
         systemd.timer_enable(
