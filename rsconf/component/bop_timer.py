@@ -26,15 +26,18 @@ class T(component.T):
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.bop_timer
         for app_name in sorted(j2_ctx.bop.apps):
+            app_vars = bop.merge_app_vars(j2_ctx, app_name)
+            if pkconfig.channel_in_internal_test(channel=j2_ctx.rsconf_db.channel):
+                self._add_initdb_spec(j2_ctx, z, app_vars)
             if not app_name in z.spec:
                 continue
-            app_vars = bop.merge_app_vars(j2_ctx, app_name)
             z.run_u = app_vars.run_u
             z.bconf_f = app_vars.bconf_f
             timers = z.spec[app_name]
             for t in sorted(timers.keys()):
                 tv = timers[t]
                 z.bash_script = tv.bash_script
+                run_u = tv.get('run_u', z.run_u)
                 timer_name = '{}_{}'.format(app_name, t)
                 run_d = systemd.timer_prepare(
                     self,
@@ -44,6 +47,16 @@ class T(component.T):
                     service_name=timer_name,
                 )
                 run_f = run_d.join('run')
-                systemd.timer_enable(self, j2_ctx=j2_ctx, cmd=run_f, run_u=z.run_u)
-                self.install_access(mode='500', owner=z.run_u)
+                systemd.timer_enable(self, j2_ctx=j2_ctx, cmd=run_f, run_u=run_u)
+                self.install_access(mode='500', owner=run_u)
                 self.install_resource('bop_timer/run.sh', j2_ctx, run_f)
+
+    def _add_initdb_spec(self, j2_ctx, z, app_vars):
+        s = z.spec.setdefault(app_vars.app_name, pkcollections.Dict())
+        s['initdb_weekly'] = pkcollections.Dict(
+            # POSIT: btest is not running, and not much else either;
+            # user can always override
+            on_calendar=z.get('initdb_weekly_on_calendar', 'Sun *-*-* 07:00:00'),
+            bash_script='initdb_weekly=1 {}\n'.format(app_vars.initdb_cmd),
+            run_u=j2_ctx.rsconf_db.root_u
+        )

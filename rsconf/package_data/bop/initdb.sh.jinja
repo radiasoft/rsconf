@@ -1,10 +1,7 @@
 #!/bin/bash
+# usage: source $0
 
-{{ bop.app_name }}_initdb() {
-    # This is the sentinel that the db is created
-    if [[ -d {{ bop.db_d }}/RealmFile ]]; then
-        return
-    fi
+initdb_do() {
     sudo su - '{{ bop.run_u }}' <<'EOF'
     set -euo pipefail
     export BCONF='{{ bop.bconf_f }}'
@@ -13,5 +10,23 @@
     bivio sql -f create_test_db
 {% endif %}
 EOF
-    rsconf_service_trigger_restart '{{ bop.app_name }}'
+    if type rsconf_service_trigger_restart >& /dev/null; then
+        rsconf_service_trigger_restart '{{ bop.app_name }}'
+    fi
 }
+
+initdb_main() {
+    if [[ ! -d {{ bop.db_d }}/RealmFile ]]; then
+        # Have to stop the service so postgres doesn't hang
+        systemctl stop '{{ systemd.service_name }}' >& /dev/null || true
+        initdb_do
+    elif [[ ${initdb_weekly:-} ]]; then
+        echo "${BASH_SOURCE[0]}: recreating test db" 1>&2
+        # Have to stop the service so postgres doesn't hang
+        systemctl stop '{{ systemd.service_name }}'
+        initdb_do
+        systemctl start '{{ systemd.service_name }}'
+    fi
+}
+
+initdb_main

@@ -78,17 +78,14 @@ class T(component.T):
         self.install_access(mode='440')
         self.install_resource('bop/httpd.conf', j2_ctx, z.conf_f)
         self.install_resource('bop/bivio.bconf', j2_ctx, z.bconf_f)
+        self.install_resource('bop/initdb.sh', j2_ctx, z.initdb_f)
         self.install_symlink(
             pkio.py_path('/etc/httpd/modules'),
             z.run_d.join('modules'),
         )
         logrotate.install_conf(self, j2_ctx, resource_d='bop')
-        # After the unit files are installed
-        self.append_root_bash_with_resource(
-            'bop/initdb.sh',
-            j2_ctx,
-            z.app_name + '_initdb',
-        )
+        # Init db after the unit files are installed
+        self.append_root_bash(z.initdb_cmd)
         self.bopt.hdb.bop.aux_directives += j2_ctx.get('bop.nginx_aux_directives', '')
         self._install_vhosts(j2_ctx)
         db_bkp.install_script_and_subdir(
@@ -182,6 +179,8 @@ def merge_app_vars(j2_ctx, app_name):
     z.run_d = systemd.unit_run_d(j2_ctx, app_name)
     z.conf_f = z.run_d.join('httpd.conf')
     z.bconf_f = z.run_d.join('bivio.bconf')
+    z.initdb_f = z.run_d.join('initdb.sh')
+    z.initdb_cmd = 'source {}'.format(z.initdb_f)
     z.log_postrotate_f = z.run_d.join('reload')
     z.httpd_cmd = "/usr/sbin/httpd -d '{}' -f '{}'".format(z.run_d, z.conf_f)
     z.local_file_root_d = pkio.py_path('/var/www/facades')

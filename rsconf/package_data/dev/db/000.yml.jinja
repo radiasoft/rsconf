@@ -73,6 +73,8 @@ default:
           bash_script: |
             echo doing that thing
 
+
+
   btest:
     client_host: {{ master }}
     email_user: {{ user }}
@@ -264,6 +266,9 @@ channel:
 host:
   dev:
     {{ host }}:
+      jupyterhub:
+        vhosts:
+          {{ host }}: jupyter.{{ master }}
       nginx:
         redirects:
           - host_or_uri: www.google.com
@@ -274,15 +279,12 @@ host:
             server_names:
               - redirect3.{{ host }}
             want_www: true
-      jupyterhub:
-        vhosts:
-          {{ host }}: jupyter.{{ master }}
       nfs_server:
         exports:
           /srv/sirepo/db/users: [ 10.10.10.0/24 ]
       rsconf_db:
         # components: [ nfs_server, rabbitmq, celery_sirepo, sirepo, bop, owncloud ]
-        components: [ jupyterhub ]
+        components: [ bop, bop_timer ]
     {{ master }}:
       base_os:
         volume_groups: []
