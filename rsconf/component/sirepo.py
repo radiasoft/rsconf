@@ -30,10 +30,11 @@ def install_user_d(compt, j2_ctx):
 
 class T(component.T):
     def internal_build(self):
+        from rsconf.component import db_bkp
         from rsconf.component import nginx
         from rsconf.component import docker_registry
 
-        self.buildt.require_component('docker', 'nginx')
+        self.buildt.require_component('docker', 'nginx', 'db_bkp')
         j2_ctx = self.hdb.j2_ctx_copy()
         run_d = systemd.docker_unit_prepare(self, j2_ctx)
         db_d = run_d.join(_DB_SUBDIR)
@@ -83,6 +84,12 @@ class T(component.T):
             backend_host=j2_ctx.rsconf_db.host,
             backend_port=j2_ctx.sirepo.pkcli.service_port,
             j2_ctx=j2_ctx,
+        )
+        db_bkp.install_script_and_subdir(
+            self,
+            j2_ctx,
+            run_u=j2_ctx.rsconf_db.run_u,
+            run_d=run_d,
         )
 
     def _gen_beaker_secret(self, tgt):
