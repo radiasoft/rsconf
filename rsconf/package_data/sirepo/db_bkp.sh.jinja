@@ -39,8 +39,12 @@ expunge_main() {
         echo 'Must be run from user directory' 1>&2
         exit 1
     fi
+    local reg=' never-match '
+    if [[ -f '{{ sirepo.db_d }}/user.db' ]]; then
+        reg=" $(echo $(echo 'select uid from user_t;' | sqlite3 -batch '{{ sirepo.db_d }}/user.db') ) "
+    fi
     for u in *; do
-        if [[ $u =~ ^[a-zA-Z0-9]{8}$ ]]; then
+        if [[ $u =~ ^[a-zA-Z0-9]{8}$ && ! $reg =~ " $u " ]]; then
             expunge_one "$mmin" "$u"
         fi
     done
