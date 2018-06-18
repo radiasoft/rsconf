@@ -10,3 +10,40 @@ find '{{ sirepo.db_dir }}'/beaker/container_file \
 #    -type f -mtime +1 -name \*.cache -print0 \
 #    | xargs --null --max-args=1000 --no-run-if-empty grep --files-without-match uid
 #    | xargs --max-args=1000 --no-run-if-empty rm
+
+#
+
+cd '{{ sirepo.db_dir }}/user'
+
+#TODO(robnagler) copied from sirepo/misc/expunge.sh
+# changed default days to 30 and removed "$@" passed to expunge_main
+set -e -u -o pipefail
+DEFAULT_DAYS=30
+
+expunge_one() {
+    local mmin=$1
+    local u=$2
+    for f in $(find "$u"/*/*/* -prune -type d -mmin +"$mmin"); do
+        if [[ $f =~ /[a-zA-Z0-9]{8}/[^/]+$ ]]; then
+            rm -rf "$f"
+        fi
+    done
+}
+
+expunge_main() {
+    local days=${1:-$DEFAULT_DAYS}
+    # sanity check number
+    local mmin=$(( $days * 24 * 60 ))
+    local u
+    if [[ ! $PWD =~ /user$ ]]; then
+        echo 'Must be run from user directory' 1>&2
+        exit 1
+    fi
+    for u in *; do
+        if [[ $u =~ ^[a-zA-Z0-9]{8}$ ]]; then
+            expunge_one "$mmin" "$u"
+        fi
+    done
+}
+
+expunge_main
