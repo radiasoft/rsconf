@@ -36,10 +36,11 @@ class T(component.T):
 
         self.buildt.require_component('docker', 'nginx', 'db_bkp')
         j2_ctx = self.hdb.j2_ctx_copy()
+        z = j2_ctx.sirepo
         run_d = systemd.docker_unit_prepare(self, j2_ctx)
-        db_d = run_d.join(_DB_SUBDIR)
+        z.db_d = run_d.join(_DB_SUBDIR)
         #TODO(robnagler) from sirepo or flask(?)
-        beaker_secret_f = db_d.join('beaker_secret')
+        beaker_secret_f = z.db_d.join('beaker_secret')
         env = pkcollections.Dict(
             PYKERN_PKCONFIG_CHANNEL=j2_ctx.rsconf_db.channel,
             PYKERN_PKDEBUG_REDIRECT_LOGGING=1,
@@ -49,7 +50,7 @@ class T(component.T):
             SIREPO_PKCLI_SERVICE_RUN_DIR=run_d,
             SIREPO_SERVER_BEAKER_SESSION_KEY='sirepo_{}'.format(j2_ctx.rsconf_db.channel),
             SIREPO_SERVER_BEAKER_SESSION_SECRET=beaker_secret_f,
-            SIREPO_SERVER_DB_DIR=db_d,
+            SIREPO_SERVER_DB_DIR=z.db_d,
             SIREPO_SERVER_JOB_QUEUE='Celery',
         )
         for f in (
@@ -65,7 +66,7 @@ class T(component.T):
         systemd.docker_unit_enable(
             self,
             j2_ctx,
-            image=docker_registry.absolute_image(j2_ctx, j2_ctx.sirepo.docker_image),
+            image=docker_registry.absolute_image(j2_ctx, z.docker_image),
             env=env,
             cmd='sirepo service uwsgi',
             after=['celery_sirepo.service'],
@@ -80,9 +81,9 @@ class T(component.T):
         )
         nginx.install_vhost(
             self,
-            vhost=j2_ctx.sirepo.vhost,
+            vhost=z.vhost,
             backend_host=j2_ctx.rsconf_db.host,
-            backend_port=j2_ctx.sirepo.pkcli.service_port,
+            backend_port=z.pkcli.service_port,
             j2_ctx=j2_ctx,
         )
         db_bkp.install_script_and_subdir(

@@ -1,19 +1,19 @@
 #!/bin/bash
 # doesn't backup anything, just removes old and empty beaker cache files
 # 130c (chars) is a guess at the empty file
-find '{{ sirepo.db_dir }}'/beaker/container_file \
+find '{{ sirepo.db_d }}'/beaker/container_file \
     -type f -size -130c -mtime +1 -name \*.cache -print0 \
     | xargs --null --max-args=1000 --no-run-if-empty rm
 # There are container cache files without "uid" in them. The only variable is "ss"
 # Not sure what that's about, but this deletes them:
-#find '{{ sirepo.db_dir }}'/beaker/container_file \
+#find '{{ sirepo.db_d }}'/beaker/container_file \
 #    -type f -mtime +1 -name \*.cache -print0 \
 #    | xargs --null --max-args=1000 --no-run-if-empty grep --files-without-match uid
 #    | xargs --max-args=1000 --no-run-if-empty rm
 
 #
 
-cd '{{ sirepo.db_dir }}/user'
+cd '{{ sirepo.db_d }}/user'
 
 #TODO(robnagler) copied from sirepo/misc/expunge.sh
 # changed default days to 30 and removed "$@" passed to expunge_main
