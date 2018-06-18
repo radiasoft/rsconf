@@ -52,7 +52,6 @@ class T(component.T):
             SIREPO_SERVER_BEAKER_SESSION_SECRET=beaker_secret_f,
             SIREPO_SERVER_DB_DIR=z.db_d,
             SIREPO_SERVER_JOB_QUEUE='Celery',
-            RLIMIT_CORE=0,
         )
         for f in (
             'sirepo.celery_tasks.broker_url',

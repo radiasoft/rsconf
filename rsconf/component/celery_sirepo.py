@@ -24,7 +24,6 @@ class T(component.T):
             PYKERN_PKDEBUG_REDIRECT_LOGGING=1,
             PYKERN_PKDEBUG_WANT_PID_TIME=1,
             PYTHONUNBUFFERED=1,
-            RLIMIT_CORE=0,
         )
         for f in (
             'sirepo.celery_tasks.broker_url',
