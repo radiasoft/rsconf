@@ -228,9 +228,9 @@ channel:
       ip_forward: true
       #TODO(robnagler) create volume groups and
       volume_groups:
-        - name: docker
+        docker:
           logical_volumes:
-            - name: docker
+            docker:
               #POSIT: downloadx/installers/vagrant-dev:config.persistent_storage.size=102400
               gigabytes: 99
               mount_d: /srv/docker
@@ -287,7 +287,7 @@ host:
         components: [ sirepo ]
     {{ master }}:
       base_os:
-        volume_groups: []
+        volume_groups: {}
       base_users:
         add:
           - joeblow

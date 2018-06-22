@@ -35,10 +35,20 @@ class T(component.T):
         self.install_resource('base_os/motd', j2_ctx, '/etc/motd')
         vgs = j2_ctx.base_os.volume_groups
         cmds = ''
-        for vg in vgs:
-            for lv in vg.logical_volumes:
+        for vgn in sorted(vgs.keys()):
+            vg = vgs[vgn]
+            for lv in self._sorted_logical_volumes(vg):
                 cmds += "base_os_logical_volume '{}' '{}' '{}' '{}' '{}'\n".format(
-                    lv.name, lv.gigabytes, vg.name, lv.mount_d, lv.get('mode', 700),
+                    lv.name, lv.gigabytes, vgn, lv.mount_d, lv.get('mode', 700),
                 )
         j2_ctx.base_os.logical_volume_cmds = cmds
         self.append_root_bash_with_main(j2_ctx)
+
+
+    def _sorted_logical_volumes(self, vg):
+        res = []
+        for k, v in vg.logical_volumes.items():
+            v = pkcollections.Dict(v)
+            v.name = k
+            res.append(v)
+        return iter(sorted(res, key=lambda x: x.mount_d))
