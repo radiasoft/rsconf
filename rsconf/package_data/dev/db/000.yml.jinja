@@ -226,7 +226,6 @@ channel:
     base_os:
       # Needed for Docker with iptables (not using --network=host)
       ip_forward: true
-      #TODO(robnagler) create volume groups and
       volume_groups:
         docker:
           logical_volumes:
@@ -309,6 +308,13 @@ host:
         # jupyterhub_proxy, btest, github_bkp, dovecot ]
     # This host never installed, just for testing build
     {{ all_host }}:
+      base_os:
+        volume_groups:
+          docker:
+            logical_volumes:
+              docker:
+                # turn off logical volume
+                gigabytes: 0
       base_users:
         add:
           - joeblow

@@ -48,6 +48,8 @@ class T(component.T):
     def _sorted_logical_volumes(self, vg):
         res = []
         for k, v in vg.logical_volumes.items():
+            if v.gigabytes == 0:
+                continue
             v = pkcollections.Dict(v)
             v.name = k
             res.append(v)
