@@ -15,11 +15,6 @@ docker_main() {
         dnf config-manager \
             --add-repo \
             https://download.docker.com/linux/fedora/docker-ce.repo
-        # no release for 27 yet
-        # https://github.com/docker/for-linux/issues/164#issuecomment-348173547
-        install -m 700 -d /etc/dnf/vars
-        echo 26 | install -m 600 /dev/stdin /etc/dnf/vars/docker_releasever
-        perl -pi -e 's/\$releasever/\$docker_releasever/g' /etc/yum.repos.d/docker-ce.repo
     else
         yum-config-manager \
             --add-repo https://download.docker.com/linux/centos/docker-ce.repo
