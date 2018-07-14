@@ -78,7 +78,9 @@ default:
   btest:
     client_host: {{ master }}
     email_user: {{ user }}
-    apps: [ bivioorg, petshop ]
+# testing perl
+#    apps: [ bivioorg, petshop ]
+    apps: [ petshop ]
     on_calendar: "*-*-* 12:00:00"
   celery_sirepo:
     queues: "sequential,parallel"
@@ -234,7 +236,9 @@ channel:
               gigabytes: 99
               mount_d: /srv/docker
     bop:
-      apps: [ bivioorg, petshop ]
+# If developing perl, you'll want to test this
+#      apps: [ bivioorg, petshop ]
+      apps: [ petshop ]
     docker:
       iptables: true
     postgresql:
@@ -379,7 +383,8 @@ host:
           - owncloud
           - github_bkp
           - wordpress
-          - bivio_named
+# testing named is special
+#          - bivio_named
 
 #Local Variables:
 #mode:yaml
