@@ -19,13 +19,15 @@ _ROOT_CONFIG_JSON = pkio.py_path('/root/.docker/config.json')
 class T(component.T):
     def internal_build(self):
         from rsconf.component import docker_registry
+        from rsconf.component import db_bkp
         from rsconf import systemd
 
-        self.buildt.require_component('base_all')
+        self.buildt.require_component('base_all', 'db_bkp')
         j2_ctx = self.hdb.j2_ctx_copy()
         systemd.unit_prepare(self, j2_ctx, [_CONF_DIR])
+        run_d = systemd.unit_run_d(j2_ctx, 'docker')
         j2_ctx.docker.update(
-            data_d=systemd.unit_run_d(j2_ctx, 'docker'),
+            data_d=run_d,
         )
         docker_registry.update_j2_ctx(j2_ctx)
         self.install_access(mode='700', owner=j2_ctx.rsconf_db.root_u)
@@ -58,6 +60,12 @@ class T(component.T):
         )
         systemd.unit_enable(self, j2_ctx)
         self.rsconf_service_restart()
+        db_bkp.install_script_and_subdir(
+            self,
+            j2_ctx,
+            run_u=j2_ctx.rsconf_db.root_u,
+            run_d=run_d,
+        )
 
 
 def _dict(value):
