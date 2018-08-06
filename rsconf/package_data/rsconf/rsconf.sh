@@ -260,7 +260,7 @@ rsconf_install_perl_rpm() {
         if rpm --verify "$rpm_base"; then
             return
         fi
-        install_msg "$rpm_version: rpm is modified, reinstalling"
+        install_info "$rpm_version: rpm is modified, reinstalling"
         reinstall=1
     fi
     local tmp=$rpm_file
@@ -314,6 +314,7 @@ rsconf_main() {
         rsconf_setup_dev "$host"
     fi
     install_curl_flags+=( -n )
+    install_info "$host: rsconf begin"
     install_url host/$host
     # Dynamically scoped; must be inline here
     local -A rsconf_file_hash=()
