@@ -68,6 +68,9 @@ run_link_facade_files() {
 }
 
 run_main() {
+    if [[ $USER != '{{ btest.run_u }}' ]]; then
+        install_err "user=$USER: must be run as {{ btest.run_u }}"
+    fi
     if [[ $@ ]]; then
         run_with_args "$@"
         return $?
