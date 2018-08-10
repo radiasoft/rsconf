@@ -7,9 +7,11 @@ primary_archive_logs() {
     local mirror_d=$1
     local host=$(basename "$mirror_d")
     local src year dst
+    # so that \b works
+    local date_re='\b(20[0-9][0-9])[0-9]{4}'
     #POSIT: $bkp_log_dirs has globs so don't quote
     for src in $(shopt -s nullglob && cd "$mirror_d" && find ${bkp_log_dirs[@]} -type f -name '*20[0-9][0-9]*'); do
-        if [[ ! $src =~ (20[0-9][0-9])[0-9]{4} ]]; then
+        if [[ ! $src =~ $date_re ]]; then
             continue
         fi
         year=${BASH_REMATCH[1]}
