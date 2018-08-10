@@ -75,5 +75,8 @@ my($env_bool) = sub {
         email => join('@', 'errors', 'bivio.biz'),
         pager_email => join('@', 'critical-errors', 'bivio.biz'),
     },
+    'Bivio::Util::HTTPStats' => {
+        log_base => '{{ bop.log_d }}',
+    },
 {{ bop.bconf_aux }}
 });
