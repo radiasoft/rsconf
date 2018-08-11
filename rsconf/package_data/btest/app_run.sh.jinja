@@ -15,7 +15,7 @@ run_with_args() {
                 acceptance+=( "$t" )
                 ;;
             *.bunit|*.t)
-                unit=+=( "$t" )
+                unit+=( "$t" )
                 ;;
             *)
                 if [[ ! -d $t ]]; then
