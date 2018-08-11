@@ -19,7 +19,7 @@ run_with_args() {
                 ;;
             *)
                 if [[ ! -d $t ]]; then
-                    install_err "$t: unknown test type"
+                    run_err "$t: unknown test type"
                 fi
                 if [[ $(shopt -s nullglob && cd "$t" && echo *.btest) ]]; then
                     acceptance+=( "$t" )
@@ -53,6 +53,11 @@ run_db_create() {
     bivio sql -force create_test_db
 }
 
+run_err() {
+    echo "$1" 2>&1
+    exit 1
+}
+
 run_link_facade_files() {
     # link_facade_files should not create javascript
     bivio project link_facade_files \
@@ -69,7 +74,7 @@ run_link_facade_files() {
 
 run_main() {
     if [[ $USER != '{{ btest.run_u }}' ]]; then
-        install_err "user=$USER: must be run as {{ btest.run_u }}"
+        run_err "user=$USER: must be run as {{ btest.run_u }}"
     fi
     if [[ $@ ]]; then
         run_with_args "$@"
