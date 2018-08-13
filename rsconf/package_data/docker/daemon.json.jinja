@@ -5,6 +5,8 @@
     "log-driver": "journald",
     {% if docker_registry.http_host is defined %}
     "registry-mirrors": ["{{ docker_registry.http_host }}"],
+    {% elif docker_cache.http_host is defined %}
+    "registry-mirrors": ["{{ docker_cache.http_host }}"],
     {% endif %}
     "storage-driver": "overlay2",
     "storage-opts": [

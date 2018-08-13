@@ -1,0 +1,31 @@
+---
+# https://docs.docker.com/registry/configuration/
+version: 0.1
+log:
+  accesslog:
+    disabled: false
+  level: info
+  formatter: text
+  fields:
+    service: docker_cache
+    environment: {{ rsconf_db.channel }}
+storage:
+  filesystem:
+    rootdirectory: {{ docker_cache.db_d }}
+    maxthreads: 20
+  delete:
+    # required for proxy (pull through cache)
+    enabled: true
+http:
+  addr: {{ docker_cache.http_addr }}
+  host: {{ docker_cache.http_host }}
+  secret: {{ docker_cache.http_secret }}
+  tls:
+    certificate: {{ docker_cache.http_tls_certificate }}
+    key:  {{ docker_cache.http_tls_key }}
+  headers:
+    X-Content-Type-Options: [nosniff]
+proxy:
+  # https://docs.docker.com/registry/configuration/#proxy
+  # Only pull public images
+  remoteurl: https://registry-1.docker.io

@@ -19,20 +19,22 @@ _ROOT_CONFIG_JSON = pkio.py_path('/root/.docker/config.json')
 class T(component.T):
     def internal_build(self):
         from rsconf.component import docker_registry
+        from rsconf.component import docker_cache
         from rsconf.component import db_bkp
         from rsconf import systemd
 
         self.buildt.require_component('base_all', 'db_bkp')
         j2_ctx = self.hdb.j2_ctx_copy()
+        z = j2_ctx.docker
         systemd.unit_prepare(self, j2_ctx, [_CONF_DIR])
-        run_d = systemd.unit_run_d(j2_ctx, 'docker')
-        j2_ctx.docker.update(
-            data_d=run_d,
-        )
+        z.run_d = systemd.unit_run_d(j2_ctx, 'docker')
+        z.data_d = z.run_d
+        z.run_u = j2_ctx.rsconf_db.root_u
         docker_registry.update_j2_ctx(j2_ctx)
-        self.install_access(mode='700', owner=j2_ctx.rsconf_db.root_u)
+        docker_cache.update_j2_ctx(j2_ctx)
+        self.install_access(mode='700', owner=z.run_u)
         self.install_directory(_CONF_DIR)
-        self.install_access(mode='400', owner=j2_ctx.rsconf_db.root_u)
+        self.install_access(mode='400', owner=z.run_u)
         # live restore: https://docs.docker.com/engine/admin/live-restore
         # live-restore does interrupt network due to proxies, --net=host
         self.install_resource(
@@ -45,14 +47,15 @@ class T(component.T):
         j2_ctx.docker.auths
         # Must be after everything else related to daemon
         docker_registry.install_crt_and_login(self, j2_ctx)
+        docker_cache.install_crt(self, j2_ctx)
         j2_ctx.docker.config_login = dict(
             detachKeys='ctrl-],q',
         )
         if j2_ctx.docker.auths:
             j2_ctx.docker.config_login['auths'] = _dict(j2_ctx.docker.auths)
-        self.install_access(mode='700', owner=j2_ctx.rsconf_db.root_u)
+        self.install_access(mode='700', owner=z.run_u)
         self.install_directory(_ROOT_CONFIG_JSON.dirname)
-        self.install_access(mode='400', owner=j2_ctx.rsconf_db.root_u)
+        self.install_access(mode='400', owner=z.run_u)
         self.install_resource(
             'docker/root_config.json',
             j2_ctx,
@@ -63,8 +66,8 @@ class T(component.T):
         db_bkp.install_script_and_subdir(
             self,
             j2_ctx,
-            run_u=j2_ctx.rsconf_db.root_u,
-            run_d=run_d,
+            run_u=z.run_u,
+            run_d=z.run_d,
         )
 
 

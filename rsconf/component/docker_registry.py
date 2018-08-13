@@ -15,11 +15,13 @@ import base64
 import bcrypt
 
 
+_DOCKER_HUB_HOST = 'docker.io'
+REGISTRY_IMAGE = _DOCKER_HUB_HOST + '/library/registry:2'
+
 _DB_SUBDIR = 'db'
 _TLS_BASE = 'docker_registry'
 _CERTS_D = pkio.py_path('/etc/docker/certs.d')
 _GLOBAL_CONF = '/etc/docker/registry/config.yml'
-_DOCKER_HUB_HOST = 'docker.io'
 _PASSWD_SECRET_JSON_F = 'docker_registry_passwd.json'
 _PASSWD_SECRET_F = 'docker_registry_passwd'
 _HTTP_SECRET_F = 'docker_registry_http_secret'
@@ -120,7 +122,7 @@ class T(component.T):
             self,
             j2_ctx,
             # Specify pull from docker.io directly to avoid registry not yet running
-            image=_DOCKER_HUB_HOST + '/library/registry:2',
+            image=REGISTRY_IMAGE,
             cmd=None,
             after=['docker.service'],
             run_u=j2_ctx.docker_registry.run_u,
