@@ -22,8 +22,6 @@ _DB_SUBDIR = 'db'
 # doesn't work so well). Only when we open up iptables, will we need to share this
 # via some call.
 _PORT = 5000
-_HTTP_SECRET_F = 'docker_registry_http_secret'
-_HTTP_SECRET_VISIBILITY = 'global'
 _CERTS_D = pkio.py_path('/etc/docker/certs.d')
 
 def update_j2_ctx(j2_ctx):
@@ -71,7 +69,7 @@ class T(component.T):
         self.buildt.require_component('docker')
         j2_ctx = self.hdb.j2_ctx_copy()
         assert update_j2_ctx(j2_ctx), \
-            'no registry host'
+            'no docker_cache.host in hdb'
         z = j2_ctx.docker_cache
         z.run_d = systemd.docker_unit_prepare(self, j2_ctx)
         # Has to run as root, because 3rd party container
@@ -95,11 +93,6 @@ class T(component.T):
             http_tls_certificate=kc.crt,
             http_tls_key=kc.key,
         )
-        z.http_secret = self.secret_path_value(
-            _HTTP_SECRET_F,
-            lambda x: db.random_string(x, length=64),
-            visibility=_HTTP_SECRET_VISIBILITY,
-        )[0]
         self.install_access(mode='700', owner=z.run_u)
         self.install_directory(z.db_d)
         self.install_access(mode='400', owner=z.run_u)

@@ -19,7 +19,7 @@ storage:
 http:
   addr: {{ docker_cache.http_addr }}
   host: {{ docker_cache.http_host }}
-  secret: {{ docker_cache.http_secret }}
+  secret: unused but here to avoid a warning
   tls:
     certificate: {{ docker_cache.http_tls_certificate }}
     key:  {{ docker_cache.http_tls_key }}
@@ -27,5 +27,6 @@ http:
     X-Content-Type-Options: [nosniff]
 proxy:
   # https://docs.docker.com/registry/configuration/#proxy
-  # Only pull public images
+  # Configured to only pull public images:
+  # "Pushing to a registry configured as a pull-through cache is unsupported."
   remoteurl: https://registry-1.docker.io
