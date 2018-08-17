@@ -344,7 +344,7 @@ rsconf_mkdir() {
 rsconf_radia_run_as_user() {
     local user=$1
     shift
-    (cat <<EOF; curl -L -S -s http://radia.run) | su - "$user" -c "bash -s $*"
+    (cat <<EOF; curl -L -S -s http://depot.radiasoft.org/index.sh) | su - "$user" -c "bash -s $*"
 install_server=''
 install_channel=$install_channel
 install_debug=$install_debug
