@@ -155,6 +155,7 @@ default:
     port: 7012
   petshop:
     cookie_tag: PSD
+    filter_out_of_office: true
     http_host: petshop.{{ host }}
     listen_base: 8114
     mail_host: petshop.{{ host }}
@@ -289,7 +290,7 @@ host:
           /srv/sirepo/db/users: [ 10.10.10.0/24 ]
       rsconf_db:
         # components: [ nfs_server, rabbitmq, celery_sirepo, sirepo, bop, owncloud, bop_timer ]
-        components: [ sirepo ]
+        components: [ bop ]
     {{ master }}:
       base_os:
         volume_groups: {}

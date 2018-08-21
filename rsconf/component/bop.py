@@ -170,6 +170,7 @@ def merge_app_vars(j2_ctx, app_name):
     z.can_secure = True
     z.setdefault('bconf_aux', '')
     z.setdefault('client_max_body_size', _DEFAULT_CLIENT_MAX_BODY_SIZE)
+    z.setdefault('filter_spam', _DEFAULT_CLIENT_MAX_BODY_SIZE)
     z.source_code_d = SOURCE_CODE_D
     # Assumed by PetShop's crm-ticket-deletion.btest
     z.want_status_email = z.perl_root == PETSHOP_ROOT

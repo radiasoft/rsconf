@@ -25,6 +25,14 @@ my($env_bool) = sub {
     'Bivio::Biz::Model::CRMForm' => {
         want_status_email => {{ bop.want_status_email | int }},
     },
+    'Bivio::Biz::Model::MailReceiveDispatchForm' => {
+        {% if bop.filter_out_of_office is defined %}
+        filter_out_of_office => {{ bop.filter_out_of_office | int }},
+        {% endif %}
+        {% if bop.filter_spam is defined %}
+        filter_spam => {{ bop.filter_spam | int }},
+        {% endif %}
+    },
     'Bivio::Delegate::Cookie' => {
         tag => '{{ bop.cookie_tag }}',
     },
