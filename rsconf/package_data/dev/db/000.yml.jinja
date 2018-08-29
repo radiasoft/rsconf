@@ -290,7 +290,7 @@ host:
           /srv/sirepo/db/users: [ 10.10.10.0/24 ]
       rsconf_db:
         # components: [ nfs_server, rabbitmq, celery_sirepo, sirepo, bop, owncloud, bop_timer ]
-        components: [ bop ]
+        components: [ rabbitmq, celery_sirepo, sirepo ]
     {{ master }}:
       base_os:
         volume_groups: {}

@@ -46,6 +46,7 @@ class T(component.T):
             PYKERN_PKDEBUG_REDIRECT_LOGGING=1,
             PYKERN_PKDEBUG_WANT_PID_TIME=1,
             PYTHONUNBUFFERED=1,
+            SIREPO_APP_SESSION_COOKIE_NAME='sirepo_{}'.format(j2_ctx.rsconf_db.channel),
             SIREPO_PKCLI_SERVICE_IP='0.0.0.0',
             SIREPO_PKCLI_SERVICE_RUN_DIR=run_d,
             SIREPO_SERVER_BEAKER_SESSION_KEY='sirepo_{}'.format(j2_ctx.rsconf_db.channel),
@@ -54,12 +55,13 @@ class T(component.T):
             SIREPO_SERVER_JOB_QUEUE='Celery',
         )
         for f in (
+            'sirepo.app_secret_key',
             'sirepo.celery_tasks.broker_url',
+            'sirepo.oauth.github_key',
+            'sirepo.oauth.github_secret',
             'sirepo.pkcli.service_port',
             'sirepo.pkcli.service_processes',
             'sirepo.pkcli.service_threads',
-            'sirepo.oauth.github_key',
-            'sirepo.oauth.github_secret',
             'sirepo.server.oauth_login',
         ):
             env[f.upper().replace('.', '_')] = _env_value(j2_ctx.nested_get(f))
@@ -92,11 +94,6 @@ class T(component.T):
             run_u=j2_ctx.rsconf_db.run_u,
             run_d=run_d,
         )
-
-    def _gen_beaker_secret(self, tgt):
-        from rsconf.pkcli import sirepo
-
-        sirepo.gen_beaker_secret(tgt)
 
 
 #TODO(robnagler) pkconfig needs to handle False, True, etc.
