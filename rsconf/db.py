@@ -158,14 +158,10 @@ def merge_dict(base, new):
         base[k] = copy.deepcopy(new_v)
 
 
-def random_string(path=None, length=32, is_hex=False):
+def random_string(length=32, is_hex=False):
     chars = _HEX_CHARS if is_hex else _BASE62_CHARS
     r = random.SystemRandom()
-    res = ''.join(r.choice(chars) for _ in range(length))
-    if path:
-        with open(str(path), 'wb') as f:
-            f.write(res)
-    return res
+    return ''.join(r.choice(chars) for _ in range(length))
 
 
 def secret_path(hdb, filename, visibility=None):

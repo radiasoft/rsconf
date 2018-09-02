@@ -9,12 +9,15 @@ from pykern import pkcollections
 from rsconf import component
 from rsconf import db
 from rsconf import systemd
+import base64
+import os
 
 
 _DB_SUBDIR = 'db'
 #TODO(robnagler) import from sirepo directly
 _USER_SUBDIR = 'user'
 _BEAKER_SECRET_BASE = 'sirepo_beaker_secret'
+_COOKIE_SECRET = 'sirepo_cookie'
 
 
 def install_user_d(compt, j2_ctx):
@@ -41,30 +44,41 @@ class T(component.T):
         z.db_d = run_d.join(_DB_SUBDIR)
         #TODO(robnagler) from sirepo or flask(?)
         beaker_secret_f = z.db_d.join('beaker_secret')
+        cookie_name = 'sirepo_{}'.format(j2_ctx.rsconf_db.channel)
         env = pkcollections.Dict(
             PYKERN_PKCONFIG_CHANNEL=j2_ctx.rsconf_db.channel,
             PYKERN_PKDEBUG_REDIRECT_LOGGING=1,
             PYKERN_PKDEBUG_WANT_PID_TIME=1,
             PYTHONUNBUFFERED=1,
-            SIREPO_APP_SESSION_COOKIE_NAME='sirepo_{}'.format(j2_ctx.rsconf_db.channel),
             SIREPO_PKCLI_SERVICE_IP='0.0.0.0',
             SIREPO_PKCLI_SERVICE_RUN_DIR=run_d,
-            SIREPO_SERVER_BEAKER_SESSION_KEY='sirepo_{}'.format(j2_ctx.rsconf_db.channel),
-            SIREPO_SERVER_BEAKER_SESSION_SECRET=beaker_secret_f,
+            SIREPO_BEAKER_COMPAT_KEY=cookie_name,
+            SIREPO_BEAKER_COMPAT_SECRET=beaker_secret_f,
+            SIREPO_COOKIE_HTTP_NAME=cookie_name,
             SIREPO_SERVER_DB_DIR=z.db_d,
             SIREPO_SERVER_JOB_QUEUE='Celery',
         )
+        env.SIREPO_COOKIE_SECRET = self.secret_path_value(
+            _COOKIE_SECRET,
+            gen_secret=lambda: base64.urlsafe_b64encode(os.urandom(32)),
+            visibility='channel',
+        )[0]
         for f in (
-            'sirepo.app_secret_key',
             'sirepo.celery_tasks.broker_url',
             'sirepo.oauth.github_key',
             'sirepo.oauth.github_secret',
             'sirepo.pkcli.service_port',
             'sirepo.pkcli.service_processes',
             'sirepo.pkcli.service_threads',
-            'sirepo.server.oauth_login',
         ):
             env[f.upper().replace('.', '_')] = _env_value(j2_ctx.nested_get(f))
+        oauth = bool(env.SIREPO_OAUTH_GITHUB_SECRET)
+        if oauth:
+            env.SIREPO_FEATURE_CONFIG_API_MODULES = 'oauth'
+        #TODO(robnagler) remove once new cookies are on prod
+        env.SIREPO_SERVER_BEAKER_SESSION_KEY = env.SIREPO_BEAKER_COMPAT_KEY
+        env.SIREPO_SERVER_BEAKER_SESSION_SECRET = env.SIREPO_BEAKER_COMPAT_SECRET
+        env.SIREPO_SERVER_OAUTH_LOGIN = _env_value(oauth)
         systemd.docker_unit_enable(
             self,
             j2_ctx,
@@ -79,7 +93,7 @@ class T(component.T):
         self.install_secret_path(
             _BEAKER_SECRET_BASE,
             host_path=beaker_secret_f,
-            gen_secret=lambda p: db.random_string(path=p, length=64),
+            gen_secret=lambda: db.random_string(length=64),
         )
         nginx.install_vhost(
             self,

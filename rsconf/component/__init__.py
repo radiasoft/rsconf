@@ -171,13 +171,13 @@ class T(pkcollections.Dict):
         from rsconf import db
 
         src = db.secret_path(self.hdb, filename, visibility=visibility)
-        if not src.check():
-            assert gen_secret, \
-                '{}: unable to generate secret: {}'.format(src)
-            pkio.mkdir_parent_only(src)
-            gen_secret(src)
-        with open(str(src), 'rb') as f:
-            return f.read(), src
+        if src.check():
+            return src.read(mode='rb'), src
+        assert gen_secret, \
+            'unable to generate secret: path={}'.format(src)
+        res = gen_secret()
+        src.write(res, mode='wb', ensure=True)
+        return res, src
 
     def service_prepare(self, watch_files, name=None):
         if not name:

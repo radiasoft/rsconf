@@ -43,12 +43,12 @@ class T(component.T):
         self.install_access(mode='400', owner=z.run_u)
         z.cookie_secret_hex = self.secret_path_value(
             _COOKIE_SECRET,
-            gen_secret=lambda p: db.random_string(path=p, length=256, is_hex=True),
+            gen_secret=lambda: db.random_string(length=256, is_hex=True),
             visibility='channel',
         )[0]
         z.proxy_auth_token = self.secret_path_value(
             _PROXY_AUTH,
-            gen_secret=lambda p: db.random_string(path=p, length=64, is_hex=True),
+            gen_secret=lambda: db.random_string(length=64, is_hex=True),
             visibility='channel',
         )[0]
         z.admin_users_str = "'" + "','".join(z.admin_users) + "'"

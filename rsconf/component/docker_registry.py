@@ -139,7 +139,7 @@ class T(component.T):
         )
         j2_ctx.docker_registry.http_secret = self.secret_path_value(
             _HTTP_SECRET_F,
-            lambda x: db.random_string(x, length=64),
+            lambda: db.random_string(length=64),
             visibility=_HTTP_SECRET_VISIBILITY,
         )[0]
         self.install_secret_path(
