@@ -17,7 +17,7 @@ _DB_SUBDIR = 'db'
 #TODO(robnagler) import from sirepo directly
 _USER_SUBDIR = 'user'
 _BEAKER_SECRET_BASE = 'sirepo_beaker_secret'
-_COOKIE_PRIVATE_KEY = 'sirepo_private_key'
+_COOKIE_PRIVATE_KEY = 'sirepo_cookie_private_key'
 
 
 def install_user_d(compt, j2_ctx):
