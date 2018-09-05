@@ -17,7 +17,7 @@ _DB_SUBDIR = 'db'
 #TODO(robnagler) import from sirepo directly
 _USER_SUBDIR = 'user'
 _BEAKER_SECRET_BASE = 'sirepo_beaker_secret'
-_COOKIE_SECRET = 'sirepo_cookie'
+_COOKIE_PRIVATE_KEY = 'sirepo_private_key'
 
 
 def install_user_d(compt, j2_ctx):
@@ -58,8 +58,8 @@ class T(component.T):
             SIREPO_SERVER_DB_DIR=z.db_d,
             SIREPO_SERVER_JOB_QUEUE='Celery',
         )
-        env.SIREPO_COOKIE_SECRET = self.secret_path_value(
-            _COOKIE_SECRET,
+        env.SIREPO_COOKIE_PRIVATE_KEY = self.secret_path_value(
+            _COOKIE_PRIVATE_KEY,
             gen_secret=lambda: base64.urlsafe_b64encode(os.urandom(32)),
             visibility='channel',
         )[0]
