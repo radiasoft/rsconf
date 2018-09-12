@@ -1,64 +1,45 @@
-40  groupadd -g 524 lmcomsol
-41  useradd -g lmcomsol -u 524 lmcomsol
-42  groupadd -g 525 comsol-admin
-43  useradd -g 525 -u 525 comsol-admin
-44  yum install -y webkitgtk
-45  df
-46  df -h
-47  ls /tmp
-48  file /tmp/comsol3556433851984569318install
-49  ls -al /tmp/comsol3556433851984569318install
-50  less /tmp/comsol3556433851984569318install
-51  yum install xorg-x11-xauth
-yum install -y libXtst
+# -*- coding: utf-8 -*-
+u"""manage comsol
 
-License file does not support this version.
-Feature:       SERIAL
-Application version > License version: 5.3 > 5.21
-License path:  /tmp/cscomsol037168/comsol364349862096318446.dat:
-FlexNet Licensing error:-21,126
-For further information, refer to the FlexNet Licensing documentation,
-available at "www.flexerasoftware.com".
-yum install -y redhat-lsb-core
-yum install -y mesa-dri-drivers
+Installing::
 
-glxinfo
-name of display: localhost:10.0
-libGL error: No matching fbConfigs or visuals found
-libGL error: failed to load driver: swrast
-X Error of failed request:  GLXBadContext
-Major opcode of failed request:  150 (GLX)
-Minor opcode of failed request:  6 (X_GLXIsDirect)
-Serial number of failed request:  23
-Current serial number in output stream:  22
+    groupadd -g 524 lmcomsol
+
+    useradd -g lmcomsol -u 524 lmcomsol
+    groupadd -g 525 comsol-admin
+    useradd -g 525 -u 525 comsol-admin
+    yum install -y webkitgtk libXtst redhat-lsb-core canberra-gtk-module gnome-classic-session gnome-terminal
+    disable systemd listen on sunrpc all sockets
+    comsol listens on 0.0.0.0:tcp
+
+    On the mac, to get X11 working:
+    https://github.com/ControlSystemStudio/cs-studio/issues/1828
+    defaults write org.macosforge.xquartz.X11 enable_iglx -bool true
+
+:copyright: Copyright (c) 2018 Bivio Software, Inc.  All Rights Reserved.
+:license: http://www.apache.org/licenses/LICENSE-2.0.html
+"""
+from __future__ import absolute_import, division, print_function
+from pykern import pkcollections
+from rsconf import component
 
 
-https://github.com/ControlSystemStudio/cs-studio/issues/1828
-defaults write org.macosforge.xquartz.X11 enable_iglx -bool true
+class T(component.T):
+    def internal_build(self):
+        from rsconf.component import db_bkp
+        from rsconf import systemd
 
-+iglx
-
-canberra-gtk-module
-
-  243  yum install tigervnc-server -y
-    244  yum install gnome-classic-session gnome-terminal
-
-    didn't need
-      226  yum install -y mesa-dri-drivers
-      235  yum install -y glx-utils
-
-    yum install gnome-classic-session gnome-terminal
-
-    disable systemd lisetn on sunrpc all sockets
-    comsol listens on *:tcp
-
-
-    screen sharing
-
-
-    echo passwd | vncpasswd −f  > ~/.vnc/passwd
-    cat ~/.vnc/config
-    localhost
-    geometry=1600x900
-    # alwaysshared
-    nolisten=tcp
+        self.buildt.require_component('db_bkp')
+        j2_ctx = self.hdb.j2_ctx_copy()
+        z = j2_ctx.setdefault(self.name, pkcollections.Dict(
+            run_u='comsol',
+            run_d=systemd.unit_run_d(j2_ctx, 'comsol')
+        ))
+        self.install_access(mode='700', owner=z.run_u)
+        self.install_directory(z.run_d)
+        db_bkp.install_script_and_subdir(
+            self,
+            j2_ctx,
+            run_u=z.run_u,
+            run_d=z.run_d,
+        )

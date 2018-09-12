@@ -309,7 +309,7 @@ host:
             vagrant: vagrant
       rsconf_db:
         #TODO(robnagler) need to edit this to just rsconf to bootstrap
-        components: [ rsconf, bkp, docker_cache ]
+        components: [ rsconf, bkp, docker_cache, comsol ]
         # jupyterhub_proxy, btest, github_bkp, dovecot ]
     # This host never installed, just for testing build
     {{ all_host }}:
@@ -374,6 +374,7 @@ host:
           - nfs_client
           - nfs_server
           - rabbitmq
+          - comsol
           - celery_sirepo
           - sirepo
           - bop
