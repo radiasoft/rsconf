@@ -40,6 +40,7 @@ class T(component.T):
         db_bkp.install_script_and_subdir(
             self,
             j2_ctx,
-            run_u=z.run_u,
+            # db_bkp runs as root as comsol user doesn't have shell
+            run_u=j2_ctx.rsconf_db.root,
             run_d=z.run_d,
         )
