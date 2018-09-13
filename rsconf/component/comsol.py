@@ -41,6 +41,6 @@ class T(component.T):
             self,
             j2_ctx,
             # db_bkp runs as root as comsol user doesn't have shell
-            run_u=j2_ctx.rsconf_db.root,
+            run_u=j2_ctx.rsconf_db.root_u,
             run_d=z.run_d,
         )
