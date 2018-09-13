@@ -287,11 +287,12 @@ host:
         exports:
           /srv/sirepo/db/users: [ 10.10.10.0/24 ]
       rsconf_db:
-        # components: [ nfs_server, rabbitmq, celery_sirepo, sirepo, bop, owncloud, bop_timer ]
-        components: [ rabbitmq, celery_sirepo, sirepo ]
+        components: [ sirepo, nfs_server ]
     {{ master }}:
       base_os:
         volume_groups: {}
+      docker:
+        tls_host: {{ master }}
       base_users:
         add:
           - joeblow

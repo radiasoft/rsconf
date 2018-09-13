@@ -5,15 +5,24 @@ u"""SSL cert operations
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
-from pykern.pkdebug import pkdp
+from pykern.pkdebug import pkdp, pkdlog
 from pykern import pkio
 import subprocess
 import time
 
 
-KEY_EXT = '.key'
+_CRT = 'crt'
 
-CRT_EXT = '.crt'
+_CSR = 'csr'
+
+_KEY = 'key'
+
+KEY_EXT = '.' + _KEY
+
+CRT_EXT = '.' + _CRT
+
+CSR_EXT = '.' + _CSR
+
 
 def gen_csr_and_key(basename=None, *domains):
     """Generate a csr and key
@@ -27,7 +36,7 @@ def gen_csr_and_key(basename=None, *domains):
     Returns:
         dict: key, crt
     """
-    return _gen_req('csr', basename, domains)
+    return _gen_req(_CSR, basename, domains)
 
 
 def gen_self_signed_crt(basename=None, *domains):
@@ -42,7 +51,42 @@ def gen_self_signed_crt(basename=None, *domains):
     Returns:
         dict: key, crt
     """
-    return _gen_req(CRT_EXT[1:], basename, domains)
+    return _gen_req(_CRT, basename, domains)
+
+
+def gen_signed_crt(ca_basename, basename=None, *domains):
+    """Generate signed cert
+
+    Creates the files basename.{key,crt}
+
+    Args:
+        ca_basename (str or py.path): root of CA crt,key
+        basename (str or py.path): root of files [default: domains[0]]
+        domains (tuple): list of domains
+
+    Returns:
+        dict: key, crt
+
+    """
+    res = _gen_req(_CSR, basename, domains)
+    res[_CRT] = res[_KEY][0:-len(KEY_EXT)] + CRT_EXT
+    cmd = [
+        'openssl',
+        'x509',
+        '-req',
+        '-in',
+        res[_CSR],
+        '-CA',
+        ca_basename + CRT_EXT,
+        '-CAkey',
+        ca_basename + KEY_EXT,
+        '-extensions',
+        'v3_req',
+        '-out',
+        res[_CRT],
+    ] + _signing_args()
+    _run(cmd)
+    return res
 
 
 def is_self_signed_crt(filename):
@@ -58,10 +102,7 @@ def is_self_signed_crt(filename):
     """
     # error 18 at 0 depth lookup:self signed certificate
     # Root certs are self-signed
-    o = subprocess.check_output(
-        ['openssl', 'verify', str(filename)],
-        stderr=subprocess.STDOUT,
-    )
+    o = _run(['openssl', 'verify', str(filename)])
     return 'self signed' in o
 
 
@@ -74,9 +115,7 @@ def read_crt(filename):
     Returns:
         str: read certificate
     """
-    return subprocess.check_output(
-        ['openssl', 'x509', '-text', '-noout', '-in', str(filename)],
-    )
+    return _run(['openssl', 'x509', '-text', '-noout', '-in', str(filename)])
 
 
 def read_csr(filename):
@@ -88,9 +127,7 @@ def read_csr(filename):
     Returns:
         str: read certificate
     """
-    return subprocess.check_output(
-        ['openssl', 'req', '-text', '-noout', '-verify', '-in', str(filename)],
-    )
+    return _run(['openssl', 'req', '-text', '-noout', '-verify', '-in', str(filename)])
 
 
 def _gen_req(which, basename, domains):
@@ -132,17 +169,31 @@ CN = {}""".format(alt, first)
         '-config',
         str(cfg),
     ]
-    if which == 'crt':
-        cmd += [
-            '-x509',
-            '-days',
-            '9999',
-            '-set_serial',
-            str(int(time.time())),
-            '-sha256',
-        ]
-    subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+    if which == _CRT:
+        cmd += ['-x509'] + _signing_args()
+    _run(cmd)
     pkio.unchecked_remove(cfg)
     res = dict(key=key)
     res[which] = out
     return res
+
+
+def _run(cmd):
+    try:
+        return subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+    except Exception as e:
+        o = ''
+        if hasattr(e, 'output'):
+            o = e.output
+        pkdlog('command error: cmd={} error={} out={}', cmd, e, o)
+        raise
+
+
+def _signing_args():
+    return [
+        '-days',
+        '9999',
+        '-set_serial',
+        str(int(time.time())),
+        '-sha256',
+    ]

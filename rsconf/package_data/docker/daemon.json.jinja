@@ -8,6 +8,14 @@
     {% elif docker_cache.http_host is defined %}
     "registry-mirrors": ["{{ docker_cache.http_host }}"],
     {% endif %}
+    {% if docker.tls is defined %}
+    "hosts": ["tcp://{{ docker.tls.ip }}:2376", "unix:///run/docker.sock"],
+    "tls": true,
+    "tlsverify": true,
+    "tlscacert": "{{ docker.tls.crt }}",
+    "tlscert": "{{ docker.tls.crt }}",
+    "tlskey": "{{ docker.tls.key }}",
+    {% endif %}
     "storage-driver": "overlay2",
     "storage-opts": [
         "overlay2.override_kernel_check=true"
