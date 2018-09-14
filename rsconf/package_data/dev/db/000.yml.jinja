@@ -270,6 +270,8 @@ channel:
 host:
   dev:
     {{ host }}:
+      docker:
+        tls_host: {{ host }}
       jupyterhub:
         vhosts:
           {{ host }}: jupyter.{{ master }}
@@ -288,11 +290,11 @@ host:
           /srv/sirepo/db/users: [ 10.10.10.0/24 ]
       rsconf_db:
         components: [ sirepo, nfs_server ]
+      sirepo:
+        docker_hosts: [{{ host }}]
     {{ master }}:
       base_os:
         volume_groups: {}
-      docker:
-        tls_host: {{ master }}
       base_users:
         add:
           - joeblow
