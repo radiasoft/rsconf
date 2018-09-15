@@ -6,6 +6,7 @@ u"""create sirepo configuration
 """
 from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
+from pykern import pkconfig
 from rsconf import component
 from rsconf import db
 from rsconf import systemd
@@ -36,12 +37,14 @@ class T(component.T):
         from rsconf.component import db_bkp
         from rsconf.component import nginx
         from rsconf.component import docker_registry
+        from rsconf.component import docker
 
         self.buildt.require_component('docker', 'nginx', 'db_bkp')
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.sirepo
         run_d = systemd.docker_unit_prepare(self, j2_ctx)
         z.db_d = run_d.join(_DB_SUBDIR)
+        z.run_u = j2_ctx.rsconf_db.run_u
         beaker_secret_f = z.db_d.join('beaker_secret')
         cookie_name = 'sirepo_{}'.format(j2_ctx.rsconf_db.channel)
         docker_hosts = z.get('docker_hosts')
@@ -70,7 +73,12 @@ class T(component.T):
             'sirepo.pkcli.service_processes',
             'sirepo.pkcli.service_threads',
         ]
-        if not docker_hosts:
+        if docker_hosts:
+            docker_tls_d = run_d.join('docker_tls')
+            env.SIREPO_RUNNER_DOCKER_HOSTS = pkconfig.TUPLE_SEP.join(docker_hosts)
+            env.SIREPO_RUNNER_DOCKER_TLS_DIR = docker_tls_d
+            params.append('sirepo.mpi_cores')
+        else:
             params.append('sirepo.celery_tasks.broker_url')
         for f in params:
             env[f.upper().replace('.', '_')] = _env_value(j2_ctx.nested_get(f))
@@ -96,7 +104,7 @@ class T(component.T):
         self.install_access(mode='400')
         self.install_secret_path(
             _BEAKER_SECRET_BASE,
-r            host_path=beaker_secret_f,
+            host_path=beaker_secret_f,
             gen_secret=lambda: db.random_string(length=64),
         )
         nginx.install_vhost(
@@ -109,13 +117,18 @@ r            host_path=beaker_secret_f,
         db_bkp.install_script_and_subdir(
             self,
             j2_ctx,
-            run_u=j2_ctx.rsconf_db.run_u,
+            run_u=z.run_u,
             run_d=run_d,
         )
+        if docker_hosts:
+            docker.setup_cluster(
+                self,
+                docker_hosts,
+                docker_tls_d,
+                run_u=z.run_u,
+                j2_ctx=j2_ctx,
+            )
 
 
-#TODO(robnagler) pkconfig needs to handle False, True, etc.
 def _env_value(v):
-    if isinstance(v, bool):
-        return '1' if v else ''
     return str(v)

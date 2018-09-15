@@ -5,9 +5,11 @@ u"""create docker configuration
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
-from rsconf import component
 from pykern import pkcollections
+from pykern import pkcompat
 from pykern import pkio
+from pykern.pkdebug import pkdp
+from rsconf import component
 
 DOCKER_SOCK = '/var/run/docker.sock'
 
@@ -71,33 +73,55 @@ class T(component.T):
             run_d=z.run_d,
         )
 
-    def _self_signed_crt(self, j2_ctx):
-        from rsconf.pkcli import tls
-        from rsconf import db
-
-        b = db.secret_path(j2_ctx, _TLS_BASENAME, visibility='host')
-        res = pkcollections.Dict(
-            key=b + tls.KEY_EXT,
-            crt=b + tls.CRT_EXT,
-        )
-        if not res.crt.check():
-            pkio.mkdir_parent_only(res.crt)
-            tls.gen_self_signed_crt(str(b), j2_ctx.rsconf_db.host)
-        return res
-
-
     def _setup_tls_host(self, j2_ctx, z):
         import socket
+        import ipaddress
 
-        c = self._self_signed_crt(j2_ctx)
+        c = _self_signed_crt(j2_ctx, j2_ctx.rsconf_db.host)
         self.install_access(mode='700', owner=z.run_u)
         self.install_directory(_TLS_DIR)
         self.install_access(mode='400', owner=z.run_u)
         z.tls = pkcollections.Dict()
-        for k in 'crt', 'key':
-            z.tls[k] = _TLS_DIR.join(c[k].basename)
+        # just to match docker's documentation, not really important
+        for k, b in ('crt', 'cert'), ('key', 'key'):
+            z.tls[k] = _TLS_DIR.join(b + '.pem')
             self.install_abspath(c[k], z.tls[k])
         z.tls.ip = socket.gethostbyname(z.tls_host)
+        assert ipaddress.ip_address(pkcompat.locale_str(z.tls.ip)).is_private, \
+            'tls_host={} is on public ip={}'.format(z.tls_host, z.tls.ip)
+
+
+def setup_cluster(compt, hosts, tls_d, run_u, j2_ctx):
+    from rsconf import db
+
+    compt.install_access(mode='700', owner=run_u)
+    compt.install_directory(tls_d)
+    b = db.secret_path(j2_ctx, compt.name + '_' + _TLS_BASENAME, visibility='host')
+    pkio.mkdir_parent_only(b)
+    for h in hosts:
+        ca = _self_signed_crt(j2_ctx, h)
+        c = _signed_crt(j2_ctx, ca, b.join(h))
+        d = tls_d.join(h)
+        compt.install_access(mode='700')
+        compt.install_directory(d)
+        compt.install_access(mode='400')
+        # POSIT: sirepo.runner.docker uses {cacert,cert,key}.pem
+        compt.install_abspath(ca.crt, d.join('cacert.pem'))
+        compt.install_abspath(c.crt, d.join('cert.pem'))
+        compt.install_abspath(c.key, d.join('key.pem'))
+
+
+def _crt_create(basename, op):
+    from rsconf.pkcli import tls
+
+    res = pkcollections.Dict(
+        key=basename + tls.KEY_EXT,
+        crt=basename + tls.CRT_EXT,
+    )
+    if res.crt.check():
+        return res
+    pkio.mkdir_parent_only(res.crt)
+    return op()
 
 
 def _dict(value):
@@ -108,3 +132,28 @@ def _dict(value):
     for k, v in value.items():
         res[k] = _dict(v)
     return res
+
+
+def _self_signed_crt(j2_ctx, host):
+    from rsconf.pkcli import tls
+    from rsconf import db
+
+    b = db.secret_path(
+        j2_ctx,
+        _TLS_BASENAME,
+        visibility='host',
+        qualifier=host,
+    )
+    return _crt_create(
+        b,
+        lambda: tls.gen_self_signed_crt(str(b), host),
+    )
+
+def _signed_crt(j2_ctx, ca, basename):
+    from rsconf.pkcli import tls
+
+    #TODO(robnagler) if the ca changes, then need to recreate the crt
+    return _crt_create(
+        basename,
+        lambda: tls.gen_signed_crt(ca.key, basename, j2_ctx.rsconf_db.host),
+    )

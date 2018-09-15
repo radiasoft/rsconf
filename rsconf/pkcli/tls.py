@@ -5,23 +5,19 @@ u"""SSL cert operations
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
-from pykern.pkdebug import pkdp, pkdlog
+from pykern import pkcollections
 from pykern import pkio
+from pykern.pkdebug import pkdp, pkdlog
 import subprocess
 import time
 
 
 _CRT = 'crt'
-
 _CSR = 'csr'
-
 _KEY = 'key'
-
-KEY_EXT = '.' + _KEY
-
 CRT_EXT = '.' + _CRT
-
 CSR_EXT = '.' + _CSR
+KEY_EXT = '.' + _KEY
 
 
 def gen_csr_and_key(basename=None, *domains):
@@ -54,13 +50,13 @@ def gen_self_signed_crt(basename=None, *domains):
     return _gen_req(_CRT, basename, domains)
 
 
-def gen_signed_crt(ca_basename, basename=None, *domains):
+def gen_signed_crt(ca_key, basename=None, *domains):
     """Generate signed cert
 
     Creates the files basename.{key,crt}
 
     Args:
-        ca_basename (str or py.path): root of CA crt,key
+        ca_key (str or py.path): root of CA key, crt is assumed to end in 'crt'
         basename (str or py.path): root of files [default: domains[0]]
         domains (tuple): list of domains
 
@@ -68,22 +64,23 @@ def gen_signed_crt(ca_basename, basename=None, *domains):
         dict: key, crt
 
     """
+    ca_key = pkio.py_path(ca_key)
     res = _gen_req(_CSR, basename, domains)
-    res[_CRT] = res[_KEY][0:-len(KEY_EXT)] + CRT_EXT
+    res[_CRT] = res[_KEY].new(ext=CRT_EXT)
     cmd = [
         'openssl',
         'x509',
         '-req',
         '-in',
-        res[_CSR],
+        str(res[_CSR]),
         '-CA',
-        ca_basename + CRT_EXT,
+        str(ca_key.new(ext=CRT_EXT)),
         '-CAkey',
-        ca_basename + KEY_EXT,
+        str(ca_key),
         '-extensions',
         'v3_req',
         '-out',
-        res[_CRT],
+        str(res[_CRT]),
     ] + _signing_args()
     _run(cmd)
     return res
@@ -135,6 +132,7 @@ def _gen_req(which, basename, domains):
     if not basename:
         basename = first
     alt = ''
+    basename = pkio.py_path(basename)
     if len(domains) > 1:
         alt = """{}_extensions = v3_req
 [v3_req]
@@ -153,27 +151,29 @@ ST = Colorado
 L = Boulder
 CN = {}""".format(alt, first)
     cfg = basename + '.cfg'
-    pkio.write_text(cfg, c)
-    key = basename + KEY_EXT
-    out = basename + '.' + which
-    cmd = [
-        'openssl',
-        'req',
-        '-nodes',
-        '-newkey',
-        'rsa:2048',
-        '-keyout',
-        str(key),
-        '-out',
-        out,
-        '-config',
-        str(cfg),
-    ]
-    if which == _CRT:
-        cmd += ['-x509'] + _signing_args()
-    _run(cmd)
-    pkio.unchecked_remove(cfg)
-    res = dict(key=key)
+    try:
+        cfg.write(c)
+        key = basename + KEY_EXT
+        out = basename + '.' + which
+        cmd = [
+            'openssl',
+            'req',
+            '-nodes',
+            '-newkey',
+            'rsa:2048',
+            '-keyout',
+            str(key),
+            '-out',
+            str(out),
+            '-config',
+            str(cfg),
+        ]
+        if which == _CRT:
+            cmd += ['-x509'] + _signing_args()
+        _run(cmd)
+    finally:
+        pkio.unchecked_remove(cfg)
+    res = pkcollections.Dict(key=key)
     res[which] = out
     return res
 

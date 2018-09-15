@@ -11,10 +11,10 @@
     {% if docker.tls is defined %}
     "hosts": ["tcp://{{ docker.tls.ip }}:2376", "unix:///run/docker.sock"],
     "tls": true,
-    "tlsverify": true,
     "tlscacert": "{{ docker.tls.crt }}",
     "tlscert": "{{ docker.tls.crt }}",
     "tlskey": "{{ docker.tls.key }}",
+    "tlsverify": true,
     {% endif %}
     "storage-driver": "overlay2",
     "storage-opts": [

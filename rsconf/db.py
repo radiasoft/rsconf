@@ -164,7 +164,7 @@ def random_string(length=32, is_hex=False):
     return ''.join(r.choice(chars) for _ in range(length))
 
 
-def secret_path(hdb, filename, visibility=None):
+def secret_path(hdb, filename, visibility=None, qualifier=None):
     if visibility:
         assert visibility in VISIBILITY_LIST, \
             '{}: invalid visibility, must be {}'.format(
@@ -173,7 +173,7 @@ def secret_path(hdb, filename, visibility=None):
             )
     else:
         visibility = VISIBILITY_DEFAULT
-    p = [] if visibility == VISIBILITY_GLOBAL else [hdb['rsconf_db'][visibility]]
+    p = [] if visibility == VISIBILITY_GLOBAL else [qualifier or hdb.rsconf_db[visibility]]
     p.append(filename)
     res = hdb.rsconf_db.secret_d.join(*p)
     pkio.mkdir_parent_only(res)
