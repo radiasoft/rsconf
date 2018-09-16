@@ -180,6 +180,7 @@ CN = {}""".format(alt, first)
 
 def _run(cmd):
     try:
+        pkdc('{}', ' '.join(cmd))
         return subprocess.check_output(cmd, stderr=subprocess.STDOUT)
     except Exception as e:
         o = ''
