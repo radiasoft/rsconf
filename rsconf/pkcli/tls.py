@@ -7,7 +7,7 @@ u"""SSL cert operations
 from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
 from pykern import pkio
-from pykern.pkdebug import pkdp, pkdlog
+from pykern.pkdebug import pkdc, pkdp, pkdlog
 import subprocess
 import time
 

@@ -21,6 +21,7 @@ REGISTRY_IMAGE = _DOCKER_HUB_HOST + '/library/registry:2'
 _DB_SUBDIR = 'db'
 _TLS_BASE = 'docker_registry'
 _CERTS_D = pkio.py_path('/etc/docker/certs.d')
+_CA_TRUST_D = pkio.py_path('/etc/pki/ca-trust/source/anchors')
 _GLOBAL_CONF = '/etc/docker/registry/config.yml'
 _PASSWD_SECRET_JSON_F = 'docker_registry_passwd.json'
 _PASSWD_SECRET_F = 'docker_registry_passwd'
@@ -66,6 +67,8 @@ def host_init(hdb, host):
 
 
 def install_crt_and_login(compt, j2_ctx):
+    from rsconf.pkcli import tls
+
     if not update_j2_ctx(j2_ctx):
         return
     jf = db.secret_path(j2_ctx, _PASSWD_SECRET_JSON_F, visibility=_PASSWD_VISIBILITY)
@@ -79,15 +82,18 @@ def install_crt_and_login(compt, j2_ctx):
         auth=base64.b64encode(u + ':' + p),
     )
     compt.install_access(mode='700', owner=j2_ctx.docker_registry.run_u)
+    crt = component.tls_key_and_crt(j2_ctx, j2_ctx.docker_registry.host).crt
+    if not tls.is_self_signed_crt(crt):
+        return
     compt.install_directory(_CERTS_D)
     d = _CERTS_D.join(j2_ctx.docker_registry.http_addr)
     compt.install_directory(d)
-    crt = component.tls_key_and_crt(j2_ctx, j2_ctx.docker_registry.host).crt
     compt.install_access(mode='400', owner=j2_ctx.docker_registry.run_u)
     compt.install_abspath(crt, d.join('ca.crt'))
-    # Might be needed:
-    # cp certs/domain.crt /etc/pki/ca-trust/source/anchors/myregistrydomain.com.crt
-    # update-ca-trust
+    # need in /etc/pki as well (now)
+    # https://success.docker.com/article/i-get-x509-certificate-signed-by-unknown-authority-error-when-i-try-to-login-to-my-dtr-with-default-certificates
+    compt.install_abspath(crt, _CA_TRUST_D.join(j2_ctx.docker_registry.host + '.crt'))
+    compt.append_root_bash('update-ca-trust')
 
 
 def update_j2_ctx(j2_ctx):

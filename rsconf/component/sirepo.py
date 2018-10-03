@@ -59,6 +59,7 @@ class T(component.T):
             SIREPO_PKCLI_SERVICE_IP='0.0.0.0',
             SIREPO_PKCLI_SERVICE_RUN_DIR=run_d,
             SIREPO_RUNNER_JOB_CLASS='Docker' if docker_hosts else 'Celery',
+            SIREPO_RUNNER_DOCKER_IMAGE=docker_registry.absolute_image(j2_ctx, z.docker_image),
             SIREPO_SERVER_DB_DIR=z.db_d,
         )
         env.SIREPO_COOKIE_PRIVATE_KEY = self.secret_path_value(

@@ -45,21 +45,23 @@ def default_command():
         channel='dev',
     ))
     j2_ctx = pkcollections.Dict(
+        all_host='v9.radia.run',
+        group=grp.getgrgid(os.getgid())[0],
+        host='v4.radia.run',
+        master='v3.radia.run',
+        port=2916,
         srv_d=str(srv),
         uid=os.getuid(),
         user=pwd.getpwuid(os.getuid())[0],
-        group=grp.getgrgid(os.getgid())[0],
-        host='v4.radia.run',
-        all_host='v5.radia.run',
-        master='v3.radia.run',
-        port=2916,
+        worker_host='v5.radia.run',
     )
+    hosts = [h for h in j2_ctx.values() if str(h).endswith('.radia.run')]
     # bootstrap
     j2_ctx.update(boot_hdb)
     j2_ctx.rsconf_db.http_host = 'http://{}:{}'.format(j2_ctx.master, j2_ctx.port)
     j2_ctx.bkp = pkcollections.Dict(primary=j2_ctx.master)
     j2_ctx.passwd_f = rsconf.passwd_secret_f(j2_ctx)
-    for h in j2_ctx.host, j2_ctx.master, j2_ctx.all_host:
+    for h in hosts:
         _add_host(j2_ctx, srv, h)
     _sym('~/src/radiasoft/download/bin/install.sh', 'index.html')
     _sym(pkresource.filename('rsconf/rsconf.sh'), 'rsconf.sh')
@@ -79,8 +81,12 @@ def default_command():
     # dev only, really insecure, but makes consistent builds easy
     _sym('~/src/radiasoft')
     _sym('~/src/biviosoftware')
-    # Tests init_docker_registry, which should only be set for specific hosts
-    subprocess.check_call(['rsconf', 'host', 'init_docker_registry', j2_ctx.host])
+    for h in hosts:
+        # needed to be able to talk setup certs for registry so we can
+        # pull private images from all hosts. Only used in dev, because
+        # private registry doesn't protect against pushes from these hosts.
+        if h != j2_ctx.master:
+            subprocess.check_call(['rsconf', 'host', 'init_docker_registry', h])
 
 
 #TODO(robnagler) needs to moved

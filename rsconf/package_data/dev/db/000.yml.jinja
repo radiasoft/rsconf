@@ -2,6 +2,7 @@
 default:
   base_os:
     ip_forward: false
+    volume_groups: {}
   base_users:
     add:
       - {{ user }}
@@ -111,9 +112,9 @@ default:
   docker:
     iptables: false
   docker_cache:
-    host: {{ master }}
-  docker_registry:
     host: ''
+  docker_registry:
+    host: {{ master }}
   github_bkp:
     docker_image: docker.io/radiasoft/python2
     exclude_re: ''
@@ -212,7 +213,7 @@ default:
     ip: 127.0.0.1
     port: 7011
   sirepo:
-    docker_image: docker.io/radiasoft/sirepo
+    docker_image: radiasoft/sirepo
     oauth:
       github_key: ""
       github_secret: ""
@@ -229,13 +230,6 @@ channel:
     base_os:
       # Needed for Docker with iptables (not using --network=host)
       ip_forward: true
-      volume_groups:
-        docker:
-          logical_volumes:
-            docker:
-              #POSIT: downloadx/installers/vagrant-dev:config.persistent_storage.size=102400
-              gigabytes: 99
-              mount_d: /srv/docker
     bop:
 # If developing perl, you'll want to test this
 #      apps: [ bivioorg, petshop ]
@@ -248,7 +242,7 @@ channel:
       celery_tasks:
         celeryd_concurrency: 1
         broker_url: "amqp://guest@rabbitmq.{{ host }}//"
-      mpi_cores: 2
+      mpi_cores: 1
       vhost: sirepo.{{ host }}
     network:
       trusted:
@@ -269,6 +263,34 @@ channel:
 
 host:
   dev:
+    {{ master }}:
+      base_os:
+        volume_groups:
+          docker:
+            logical_volumes:
+              docker:
+                #POSIT: download/installers/vagrant-dev:config.persistent_storage.size=102400
+                gigabytes: 99
+                mount_d: /srv/docker
+      base_users:
+        add:
+          - joeblow
+          - marysmith
+        spec:
+          joeblow:
+            want_shell: true
+      postfix:
+        aliases:
+          RSCONF_DB_REPLACE:
+            # root and errors gets delivered locally so we replace
+            blackhole: /dev/null
+        virtual_aliases:
+          wp1.{{ master }}:
+            vagrant: vagrant
+      rsconf_db:
+        #TODO(robnagler) need to edit this to just rsconf to bootstrap
+        components: [ rsconf, bkp, docker_registry ]
+        # jupyterhub_proxy, btest, github_bkp, dovecot ]
     {{ host }}:
       docker:
         tls_host: {{ host }}
@@ -287,42 +309,22 @@ host:
             want_www: true
       nfs_server:
         exports:
-          /srv/sirepo/db/users: [ 10.10.10.0/24 ]
+          /srv/sirepo/db/user: [ 10.10.10.0/24 ]
       rsconf_db:
         components: [ sirepo, nfs_server ]
       sirepo:
-        docker_hosts: [{{ host }}]
-    {{ master }}:
-      base_os:
-        volume_groups: {}
-      base_users:
-        add:
-          - joeblow
-          - marysmith
-        spec:
-          joeblow:
-            want_shell: true
-      postfix:
-        aliases:
-          RSCONF_DB_REPLACE:
-            # root and errors gets delivered locally so we replace
-            blackhole: /dev/null
-        virtual_aliases:
-          wp1.{{ master }}:
-            vagrant: vagrant
+        docker_hosts: [ {{ host }}, {{ worker_host }} ]
+    {{ worker_host }}:
+      docker:
+        tls_host: {{ worker_host }}
+      nfs_client:
+        mounts:
+          {{ host }}:
+            - /srv/sirepo/db/user
       rsconf_db:
-        #TODO(robnagler) need to edit this to just rsconf to bootstrap
-        components: [ rsconf, bkp, docker_cache ]
-        # jupyterhub_proxy, btest, github_bkp, dovecot ]
+        components: [ nfs_client, docker ]
     # This host never installed, just for testing build
     {{ all_host }}:
-      base_os:
-        volume_groups:
-          docker:
-            logical_volumes:
-              docker:
-                # turn off logical volume
-                gigabytes: 0
       base_users:
         add:
           - joeblow
