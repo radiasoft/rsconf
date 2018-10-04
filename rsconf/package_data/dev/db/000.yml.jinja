@@ -248,6 +248,10 @@ channel:
       celery_tasks:
         celeryd_concurrency: 1
         broker_url: "amqp://guest@rabbitmq.{{ host }}//"
+      comsol_register:
+        mail_server: {{ master }}
+        mail_username: comsol@{{ master }}
+        mail_password: somepass
       mpi_cores: 2
       vhost: sirepo.{{ host }}
     network:

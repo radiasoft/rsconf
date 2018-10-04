@@ -6,6 +6,7 @@ u"""create sirepo configuration
 """
 from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
+from pykern.pkdebug import pkdp
 from rsconf import component
 from rsconf import db
 from rsconf import systemd
@@ -42,7 +43,6 @@ class T(component.T):
         z = j2_ctx.sirepo
         run_d = systemd.docker_unit_prepare(self, j2_ctx)
         z.db_d = run_d.join(_DB_SUBDIR)
-        #TODO(robnagler) from sirepo or flask(?)
         beaker_secret_f = z.db_d.join('beaker_secret')
         cookie_name = 'sirepo_{}'.format(j2_ctx.rsconf_db.channel)
         env = pkcollections.Dict(
@@ -63,22 +63,22 @@ class T(component.T):
             gen_secret=lambda: base64.urlsafe_b64encode(os.urandom(32)),
             visibility='channel',
         )[0]
-        for f in (
-            'sirepo.celery_tasks.broker_url',
-            'sirepo.oauth.github_key',
-            'sirepo.oauth.github_secret',
-            'sirepo.pkcli.service_port',
-            'sirepo.pkcli.service_processes',
-            'sirepo.pkcli.service_threads',
-        ):
-            env[f.upper().replace('.', '_')] = _env_value(j2_ctx.nested_get(f))
+        _env_convert(
+            env,
+            j2_ctx,
+            (
+                'sirepo.celery_tasks.broker_url',
+                'sirepo.oauth.github_key',
+                'sirepo.oauth.github_secret',
+                'sirepo.pkcli.service_port',
+                'sirepo.pkcli.service_processes',
+                'sirepo.pkcli.service_threads',
+            ),
+        )
         oauth = bool(env.SIREPO_OAUTH_GITHUB_SECRET)
         if oauth:
-            env.SIREPO_FEATURE_CONFIG_API_MODULES = 'oauth'
-        #TODO(robnagler) remove once new cookies are on prod
-        env.SIREPO_SERVER_BEAKER_SESSION_KEY = env.SIREPO_BEAKER_COMPAT_KEY
-        env.SIREPO_SERVER_BEAKER_SESSION_SECRET = env.SIREPO_BEAKER_COMPAT_SECRET
-        env.SIREPO_SERVER_OAUTH_LOGIN = _env_value(oauth)
+            _api_module(env, 'oauth')
+        _comsol(env, j2_ctx)
         systemd.docker_unit_enable(
             self,
             j2_ctx,
@@ -110,8 +110,29 @@ class T(component.T):
         )
 
 
-#TODO(robnagler) pkconfig needs to handle False, True, etc.
-def _env_value(v):
-    if isinstance(v, bool):
-        return '1' if v else ''
-    return str(v)
+def _api_module(env, module):
+    if env.setdefault('SIREPO_FEATURE_CONFIG_API_MODULES', ''):
+        env.SIREPO_FEATURE_CONFIG_API_MODULES += ':'
+    env.SIREPO_FEATURE_CONFIG_API_MODULES += module
+
+
+def _comsol(env, j2_ctx):
+    if not j2_ctx.sirepo.get('comsol_register'):
+        return
+    _env_convert(
+        env,
+        j2_ctx,
+        (
+            'sirepo.comsol_register.mail_password',
+            'sirepo.comsol_register.mail_server',
+            'sirepo.comsol_register.mail_username',
+        ),
+    )
+    env.SIREPO_COMSOL_REGISTER_MAIL_RECIPIENT_EMAIL = env.SIREPO_COMSOL_REGISTER_MAIL_USERNAME
+    env.SIREPO_COMSOL_REGISTER_MAIL_SUPPORT_EMAIL = env.SIREPO_COMSOL_REGISTER_MAIL_USERNAME
+    _api_module(env, 'comsol_register')
+
+
+def _env_convert(env, j2_ctx, names):
+    for n in names:
+        env[n.upper().replace('.', '_')] = str(j2_ctx.nested_get(n))
