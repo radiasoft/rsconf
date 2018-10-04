@@ -49,46 +49,61 @@ class T(component.T):
         beaker_secret_f = z.db_d.join('beaker_secret')
         cookie_name = 'sirepo_{}'.format(j2_ctx.rsconf_db.channel)
         docker_hosts = z.get('docker_hosts')
-        env = pkcollections.Dict(
-            PYKERN_PKCONFIG_CHANNEL=j2_ctx.rsconf_db.channel,
-            PYKERN_PKDEBUG_REDIRECT_LOGGING=1,
-            PYKERN_PKDEBUG_WANT_PID_TIME=1,
-            PYTHONUNBUFFERED=1,
-            SIREPO_BEAKER_COMPAT_KEY=cookie_name,
-            SIREPO_BEAKER_COMPAT_SECRET=beaker_secret_f,
-            SIREPO_COOKIE_HTTP_NAME=cookie_name,
-            SIREPO_PKCLI_SERVICE_IP='0.0.0.0',
-            SIREPO_PKCLI_SERVICE_RUN_DIR=run_d,
-            SIREPO_RUNNER_JOB_CLASS='Docker' if docker_hosts else 'Celery',
-            SIREPO_RUNNER_DOCKER_IMAGE=docker_registry.absolute_image(j2_ctx, z.docker_image),
-            SIREPO_SERVER_DB_DIR=z.db_d,
+        z.setdefault('feature_config', pkcollections.Dict())
+        # TODO(robnagler) write a yml file that gets read by pkconfig
+        params = pkcollections.Dict({
+            'pykern.pkconfig.channel': j2_ctx.rsconf_db.channel,
+            'pykern.pkdebug.redirect_logging': True,
+            'pykern.pkdebug.want_pid_time': True,
+            'sirepo.beaker_compat.key': cookie_name,
+            'sirepo.beaker_compat.secret': beaker_secret_f,
+            'sirepo.cookie.http_name': cookie_name,
+            'sirepo.cookie.private_key':  self.secret_path_value(
+                _COOKIE_PRIVATE_KEY,
+                gen_secret=lambda: base64.urlsafe_b64encode(os.urandom(32)),
+                visibility='channel',
+            )[0],
+            'sirepo.feature_config.api_modules': z.feature_config.get('api_modules', []),
+            'sirepo.pkcli.service.ip': '0.0.0.0',
+            'sirepo.pkcli.service.run_dir': run_d,
+            'sirepo.runner.docker.image': docker_registry.absolute_image(j2_ctx, z.docker_image),
+            'sirepo.runner.job_class': 'Docker' if docker_hosts else 'Celery',
+            'sirepo.server.db_dir': z.db_d,
+        })
+        _params_copy(
+            params,
+            j2_ctx,
+            (
+                'sirepo.pkcli.service_port',
+                'sirepo.pkcli.service_processes',
+                'sirepo.pkcli.service_threads',
+            ),
         )
-        env.SIREPO_COOKIE_PRIVATE_KEY = self.secret_path_value(
-            _COOKIE_PRIVATE_KEY,
-            gen_secret=lambda: base64.urlsafe_b64encode(os.urandom(32)),
-            visibility='channel',
-        )[0]
-        params = [
-            'sirepo.oauth.github_key',
-            'sirepo.oauth.github_secret',
-            'sirepo.pkcli.service_port',
-            'sirepo.pkcli.service_processes',
-            'sirepo.pkcli.service_threads',
-        ]
+        #TODO(robnagler) remove next line once on production
+        params['sirepo.server.job_queue'] = params['sirepo.runner.job_class']
         if docker_hosts:
             docker_tls_d = run_d.join('docker_tls')
-            env.SIREPO_RUNNER_DOCKER_HOSTS = pkconfig.TUPLE_SEP.join(docker_hosts)
-            env.SIREPO_RUNNER_DOCKER_TLS_DIR = docker_tls_d
-            params.append('sirepo.mpi_cores')
+            params['sirepo.runner.docker.hosts'] = docker_hosts
+            params['sirepo.runner.docker.tls_dir'] = docker_tls_d
+            _params_copy(params, j2_ctx, ('sirepo.mpi_cores',))
         else:
-            params.append('sirepo.celery_tasks.broker_url')
+            _params_copy(params, j2_ctx, ('sirepo.celery_tasks.broker_url',))
         _comsol(params, j2_ctx)
-        for f in params:
-            env[f.upper().replace('.', '_')] = str(j2_ctx.nested_get(f))
-        if env.SIREPO_OAUTH_GITHUB_SECRET:
-            _api_module(env, 'oauth')
-        #TODO(robnagler) remove next line once on production
-        env.SIREPO_SERVER_JOB_QUEUE = env.SIREPO_RUNNER_JOB_CLASS
+        if j2_ctx.nested_get('sirepo.oauth.github_secret'):
+            _params_copy(
+                params,
+                j2_ctx,
+                (
+                    'sirepo.oauth.github_key',
+                    'sirepo.oauth.github_secret',
+                ),
+            )
+            params['sirepo.feature_config.api_modules'].append('oauth')
+        env = {}
+        for k in sorted(params.keys()):
+            env[k.upper().replace('.', '_')] = _env_value(params[k])
+        # Only variable that is required to be in the enviroment
+        env['PYTHONUNBUFFERED'] = '1'
         systemd.docker_unit_enable(
             self,
             j2_ctx,
@@ -128,28 +143,31 @@ class T(component.T):
             )
 
 
-def _api_module(env, module):
-    if env.setdefault('SIREPO_FEATURE_CONFIG_API_MODULES', ''):
-        env.SIREPO_FEATURE_CONFIG_API_MODULES += ':'
-    env.SIREPO_FEATURE_CONFIG_API_MODULES += module
-
-
 def _comsol(params, j2_ctx):
     r = j2_ctx.sirepo.get('comsol_register')
     if not r:
         return
     e = r.get('mail_username')
-    r.update({
-        'mail_recipient_email': e,
-        'mail_support_email': e,
-    })
-    params.extend(
-        [
+    _params_copy(
+        params,
+        j2_ctx,
+        (
             'sirepo.comsol_register.mail_password',
-            'sirepo.comsol_register.mail_recipient_email',
             'sirepo.comsol_register.mail_server',
-            'sirepo.comsol_register.mail_support_email',
             'sirepo.comsol_register.mail_username',
-        ],
+        ),
     )
-    _api_module(env, 'comsol_register')
+    params['sirepo.comsol_register.mail_support_email'] = e
+    params['sirepo.comsol_register.mail_recipient_email'] = e
+    params['sirepo.feature_config.api_modules'].append('comsol_register')
+
+
+def _env_value(v):
+    if isinstance(v, (tuple, list)):
+        return pkconfig.TUPLE_SEP.join(v)
+    return str(v)
+
+
+def _params_copy(params, j2_ctx, keys):
+    for k in keys:
+        params[k] = j2_ctx.nested_get(k)
