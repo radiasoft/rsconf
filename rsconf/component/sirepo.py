@@ -7,6 +7,7 @@ u"""create sirepo configuration
 from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
 from pykern import pkconfig
+from pykern.pkdebug import pkdp
 from rsconf import component
 from rsconf import db
 from rsconf import systemd
@@ -81,16 +82,12 @@ class T(component.T):
             params.append('sirepo.mpi_cores')
         else:
             params.append('sirepo.celery_tasks.broker_url')
+        _comsol(params, j2_ctx)
         for f in params:
-            env[f.upper().replace('.', '_')] = _env_value(j2_ctx.nested_get(f))
-        oauth = bool(env.SIREPO_OAUTH_GITHUB_SECRET)
-        if oauth:
-            env.SIREPO_FEATURE_CONFIG_API_MODULES = 'oauth'
-        #TODO(robnagler) remove once new cookies are on prod
-        env.SIREPO_SERVER_BEAKER_SESSION_KEY = env.SIREPO_BEAKER_COMPAT_KEY
-        env.SIREPO_SERVER_BEAKER_SESSION_SECRET = env.SIREPO_BEAKER_COMPAT_SECRET
-        env.SIREPO_SERVER_OAUTH_LOGIN = _env_value(oauth)
-        #TODO(robnagler) removed when docker on prod
+            env[f.upper().replace('.', '_')] = str(j2_ctx.nested_get(f))
+        if env.SIREPO_OAUTH_GITHUB_SECRET:
+            _api_module(env, 'oauth')
+        #TODO(robnagler) remove next line once on production
         env.SIREPO_SERVER_JOB_QUEUE = env.SIREPO_RUNNER_JOB_CLASS
         systemd.docker_unit_enable(
             self,
@@ -131,5 +128,28 @@ class T(component.T):
             )
 
 
-def _env_value(v):
-    return str(v)
+def _api_module(env, module):
+    if env.setdefault('SIREPO_FEATURE_CONFIG_API_MODULES', ''):
+        env.SIREPO_FEATURE_CONFIG_API_MODULES += ':'
+    env.SIREPO_FEATURE_CONFIG_API_MODULES += module
+
+
+def _comsol(params, j2_ctx):
+    r = j2_ctx.sirepo.get('comsol_register')
+    if not r:
+        return
+    e = r.get('mail_username')
+    r.update({
+        'mail_recipient_email': e,
+        'mail_support_email': e,
+    })
+    params.extend(
+        [
+            'sirepo.comsol_register.mail_password',
+            'sirepo.comsol_register.mail_recipient_email',
+            'sirepo.comsol_register.mail_server',
+            'sirepo.comsol_register.mail_support_email',
+            'sirepo.comsol_register.mail_username',
+        ],
+    )
+    _api_module(env, 'comsol_register')
