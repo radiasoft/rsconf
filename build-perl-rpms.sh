@@ -1,11 +1,11 @@
 #!/bin/bash
 #
-# Build perl RPMs
+# Build perl RPMs: bivio-perl, Bivio, and BivioOrg
 #
 . ~/.bashrc
 set -euo pipefail
 
-build_perl_main() {
+build_perl_rpms_main() {
     cd ~/src/radiasoft/rsconf
     export install_server=http://$(hostname -f):2916 install_channel=dev
     if curl --connect-timeout 1 "$install_server" >& /dev/null; then
@@ -26,4 +26,4 @@ in another window' 1>&2
     radia_run biviosoftware/rpm-perl BivioOrg
 }
 
-build_perl_main "$@"
+build_perl_rpms_main "$@"
