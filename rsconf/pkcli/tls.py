@@ -97,10 +97,8 @@ def is_self_signed_crt(filename):
     Returns:
         bool: true or false
     """
-    # error 18 at 0 depth lookup:self signed certificate
-    # Root certs are self-signed
-    o = _run(['openssl', 'verify', str(filename)])
-    return 'self signed' in o
+    o = _run(['openssl', 'verify', '-CAfile', str(filename), str(filename)])
+    return ': ok' in o.lower()
 
 
 def read_crt(filename):
