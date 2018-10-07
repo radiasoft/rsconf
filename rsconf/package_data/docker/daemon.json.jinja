@@ -3,9 +3,7 @@
     "data-root": "{{ docker.data_d }}",
     "live-restore": true,
     "log-driver": "journald",
-    {% if docker_registry.http_host is defined %}
-    "registry-mirrors": ["{{ docker_registry.http_host }}"],
-    {% elif docker_cache.http_host is defined %}
+    {% if docker_cache.http_host is defined %}
     "registry-mirrors": ["{{ docker_cache.http_host }}"],
     {% endif %}
     {% if docker.tls is defined %}
