@@ -25,7 +25,7 @@ expunge_one() {
     local u=$2
     for f in $(find "$u"/*/*/* -prune -type d -mmin +"$mmin"); do
         if [[ $f =~ /[a-zA-Z0-9]{8}/[^/]+$ ]]; then
-            db_bkp_msg "removing report: $f"
+            echo "removing report: $f" 1>&2
             rm -rf "$f"
         fi
     done
