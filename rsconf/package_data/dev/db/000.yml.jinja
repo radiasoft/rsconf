@@ -283,6 +283,15 @@ host:
         spec:
           joeblow:
             want_shell: true
+      mpi_cluster:
+        docker_image: docker.io/radiasoft/beamsim-jupyter
+        guest_d: /home/vagrant/jupyter
+        jupyterhub_user_d: /srv/mpi_cluster/user
+        ssh_port: 8022
+        workers: [ {{ host }}, {{ worker_host }} ]
+      nfs_server:
+        exports:
+          /srv/mpi_cluster/user: [ 10.10.10.0/24 ]
       postfix:
         aliases:
           RSCONF_DB_REPLACE:
@@ -293,8 +302,9 @@ host:
             vagrant: vagrant
       rsconf_db:
         #TODO(robnagler) need to edit this to just rsconf to bootstrap
-        components: [ rsconf, bkp, docker_registry ]
+        #components: [ rsconf, bkp, docker_registry, mpi_cluster ]
         # jupyterhub_proxy, btest, github_bkp, dovecot ]
+        components: [ rsconf, nfs_server, mpi_cluster ]
     {{ host }}:
       docker:
         tls_host: {{ host }}
@@ -311,11 +321,16 @@ host:
             server_names:
               - redirect3.{{ host }}
             want_www: true
+      nfs_client:
+        mounts:
+          {{ master }}:
+            - /srv/mpi_cluster/user
       nfs_server:
         exports:
           /srv/sirepo/db/user: [ 10.10.10.0/24 ]
       rsconf_db:
-        components: [ sirepo, nfs_server ]
+        #components: [ sirepo, nfs_server ]
+        components: [ nfs_client, docker ]
       sirepo:
         docker_hosts: [ {{ host }}, {{ worker_host }} ]
     {{ worker_host }}:
@@ -325,6 +340,8 @@ host:
         mounts:
           {{ host }}:
             - /srv/sirepo/db/user
+          {{ master }}:
+            - /srv/mpi_cluster/user
       rsconf_db:
         components: [ nfs_client, docker ]
     # This host never installed, just for testing build
