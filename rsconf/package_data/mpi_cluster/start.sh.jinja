@@ -38,6 +38,8 @@ start_docker() {
         --tlskey="$tls_d"/key.pem
     )
     "${docker[@]}" rm -f "$start_cname" || true
+    # Always make sure image is up to date
+    "${docker[@]}" pull "$start_image"
     local docker_run=(
         "${docker[@]}"
         run
