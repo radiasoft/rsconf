@@ -111,6 +111,7 @@ EOF
 EOF
         chmod -R go-rwx .
         start_docker "$worker" "$host_d" /usr/sbin/sshd -D -f "$worker_guest_d/sshd_config"
+        sleep 1
         slots=$(
             ssh -F "$conf_d"/ssh_config \
             -o IdentityFile="$worker_d"/id_ed25519 \
