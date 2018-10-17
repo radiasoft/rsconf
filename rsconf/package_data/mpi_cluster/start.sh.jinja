@@ -1,0 +1,156 @@
+#!/bin/bash
+set -euo pipefail
+
+# v3
+# cat > /etc/exports.d/foo.exports <<'EOF'
+# /home/vagrant 10.10.10.0/24(ro,no_root_squash,no_subtree_check,async,secure)
+# EOF
+# systemctl start nfs-server
+# exportfs -a
+# cd /home/vagrant/tmp/sshd/v5.radia.run
+# ssh-keygen -t ed25519 -f ssh_host_ed25519_key -q -N ""
+# ssh-keygen -t ed25519 -f id_ed25519 -q -N ""
+# chmod -R og-rwx .
+
+# mpirun -n 2 -H 10.10.10.50:2 date
+
+# v5
+# mount -t nfs v3.radia.run:/home/vagrant/tmp/sshd/v5.radia.run /tmp/vagrant_sshd
+
+# mkdir /home/vagrant/tmp
+# mkdir /home/vagrant/tmp/user
+# chown -R vagrant: /home/vagrant/tmp
+# mount -t nfs v3.radia.run:/home/vagrant/tmp/user /home/vagrant/tmp/user
+
+mpi_cluster_ssh_port=8022
+
+mpi_cluster_tls_d=/srv/mpi_cluster/docker_tls
+mpi_cluster_tls_d=$PWD/docker_tls
+
+mpi_cluster_guest_d=/home/vagrant/jupyter
+
+mpi_cluster_conf_guest_d=$mpi_cluster_guest_d/.rsmpiexec
+
+mpi_cluster_image=radiasoft/beamsim-jupyter:latest
+
+mpi_cluster_cname=rsmpiexec
+
+mpi_cluster_workers='v4.radia.run v5.radia.run'
+
+mpi_cluster_jupyter_host_d=/srv/jupyterhub/user
+mpi_cluster_jupyter_host_d=/home/vagrant/tmp/user
+
+
+mpistart_docker() {
+    local host=$1
+    shift
+    local host_d=$1
+    shift
+    local tls_d=$mpi_cluster_tls_d/$host
+    local docker=(
+        docker
+        --host=tcp://"$host":2376
+        --tlsverify
+        # POSIT: component.mpi_cluster uses same names
+        --tlscacert="$tls_d"/cacert.pem
+        --tlscert="$tls_d"/cert.pem
+        --tlskey="$tls_d"/key.pem
+    )
+    "${docker[@]}" rm -f "$mpi_cluster_cname" || true
+    local docker_run=(
+        "${docker[@]}"
+        run
+        -d
+        --log-driver=json-file
+        --log-opt=max-size=1m
+        --name="$mpi_cluster_cname"
+        --network=host
+        --rm
+        --ulimit=core=0
+        --ulimit=nofile=1024
+        --user=vagrant
+        -v "$host_d:$mpi_cluster_guest_d"
+        "$mpi_cluster_image"
+    )
+    "${docker_run[@]}" "$@"
+}
+
+mpistart_main() {
+    local user=$1
+    local worker
+    local worker_d
+    local worker_guest_d
+# /home/vagrant/jupyter/.rsmpi
+    local prev_d=$PWD
+    local ip
+    local host_pub slots
+    local -i total_slots=0
+    local host_d=$mpi_cluster_jupyter_host_d/$user
+    local conf_d=$host_d/.rsmpiexec
+    # user part must exist
+    rm -rf "$conf_d"
+    mkdir -p "$conf_d"
+    for worker in $mpi_cluster_workers; do
+        worker_d=$conf_d/$worker
+        worker_guest_d=$mpi_cluster_conf_guest_d/$worker
+        mkdir -p "$worker_d"
+        cd "$worker_d"
+        ssh-keygen -t ed25519 -f ssh_host_ed25519_key -q -N '' -C "$worker"
+        ssh-keygen -t ed25519 -f id_ed25519 -q -N '' -C "$worker"
+        worker_pub=$(cat ssh_host_ed25519_key.pub)
+        cat > sshd_config <<EOF
+AuthorizedKeysFile $worker_guest_d/id_ed25519.pub
+HostKey $worker_guest_d/ssh_host_ed25519_key
+ListenAddress $worker:$mpi_cluster_ssh_port
+PasswordAuthentication no
+PermitTunnel no
+PermitUserEnvironment no
+PrintLastLog no
+PrintMotd no
+Protocol 2
+UseDNS no
+EOF
+        cd "$prev_d"
+        ip=$(dig +short "$worker")
+        cat >> "$conf_d"/ssh_config <<EOF
+Host $ip
+    Port $mpi_cluster_ssh_port
+    IdentityFile $worker_guest_d/id_ed25519
+EOF
+        cat >> "$conf_d"/known_hosts <<EOF
+[$ip]:$mpi_cluster_ssh_port $worker_pub
+EOF
+        chmod -R go-rwx .
+        mpistart_docker "$worker" "$host_d" /usr/sbin/sshd -D -f "$worker_guest_d/sshd_config"
+        slots=$(
+            ssh -F "$conf_d"/ssh_config \
+            -o IdentityFile="$worker_d"/id_ed25519 \
+            -o UserKnownHostsFile="$conf_d"/known_hosts \
+            "$ip" nproc
+        )
+        [[ $slots =~ ^[0-9]+$ ]]
+        # ASSUME: hyperthreading so divide by two
+        slots=$(( $slots / 2 ))
+        total_slots+=$slots
+        echo "$ip slots=$slots" >> "$conf_d"/mpi_hosts
+    done
+    install -m 550 /dev/stdin "$host_d"/rsmpiexec <<EOF
+#!/bin/bash
+set -euo pipefail
+
+rsmpiexec_main() {
+    if (( "\$#" < 3 )); then
+        echo "usage: rsmpiexec -n $total_slots command..." 1>&2
+        exit 1
+    fi
+    [[ -d ~/.ssh ]] || install -d -m 700 ~/.ssh
+    install -m 600 $mpi_cluster_conf_guest_d/ssh_config ~/.ssh/config
+    install -m 600 $mpi_cluster_conf_guest_d/known_hosts ~/.ssh/known_hosts
+    exec mpiexec --hostfile "$mpi_cluster_conf_guest_d/mpi_hosts" "\$@"
+}
+
+rsmpiexec_main "\$@"
+EOF
+}
+
+mpistart_main "$@"
