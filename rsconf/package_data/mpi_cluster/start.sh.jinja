@@ -1,47 +1,24 @@
 #!/bin/bash
 set -euo pipefail
 
-# v3
-# cat > /etc/exports.d/foo.exports <<'EOF'
-# /home/vagrant 10.10.10.0/24(ro,no_root_squash,no_subtree_check,async,secure)
-# EOF
-# systemctl start nfs-server
-# exportfs -a
-# cd /home/vagrant/tmp/sshd/v5.radia.run
-# ssh-keygen -t ed25519 -f ssh_host_ed25519_key -q -N ""
-# ssh-keygen -t ed25519 -f id_ed25519 -q -N ""
-# chmod -R og-rwx .
+# Easier to have these defined here when prototyping
+mpi_cluster_ssh_port='{{ mpi_cluster.ssh_port }}'
 
-# mpirun -n 2 -H 10.10.10.50:2 date
+mpi_cluster_tls_d='{{ mpi_cluster.docker_tls_d }}'
 
-# v5
-# mount -t nfs v3.radia.run:/home/vagrant/tmp/sshd/v5.radia.run /tmp/vagrant_sshd
-
-# mkdir /home/vagrant/tmp
-# mkdir /home/vagrant/tmp/user
-# chown -R vagrant: /home/vagrant/tmp
-# mount -t nfs v3.radia.run:/home/vagrant/tmp/user /home/vagrant/tmp/user
-
-mpi_cluster_ssh_port=8022
-
-mpi_cluster_tls_d=/srv/mpi_cluster/docker_tls
-mpi_cluster_tls_d=$PWD/docker_tls
-
-mpi_cluster_guest_d=/home/vagrant/jupyter
+mpi_cluster_guest_d='{{ mpi_cluster.guest_d }}'
 
 mpi_cluster_conf_guest_d=$mpi_cluster_guest_d/.rsmpiexec
 
-mpi_cluster_image=radiasoft/beamsim-jupyter:latest
+mpi_cluster_image='{{ mpi_cluster.docker_image }}'
 
 mpi_cluster_cname=rsmpiexec
 
-mpi_cluster_workers='v4.radia.run v5.radia.run'
+mpi_cluster_workers='{{ mpi_cluster.workers }}'
 
-mpi_cluster_jupyter_host_d=/srv/jupyterhub/user
-mpi_cluster_jupyter_host_d=/home/vagrant/tmp/user
+mpi_cluster_jupyter_host_d='{{ mpi_cluster.jupyter_host_d }}'
 
-
-mpistart_docker() {
+start_docker() {
     local host=$1
     shift
     local host_d=$1
@@ -75,7 +52,7 @@ mpistart_docker() {
     "${docker_run[@]}" "$@"
 }
 
-mpistart_main() {
+start_main() {
     local user=$1
     local worker
     local worker_d
@@ -121,7 +98,7 @@ EOF
 [$ip]:$mpi_cluster_ssh_port $worker_pub
 EOF
         chmod -R go-rwx .
-        mpistart_docker "$worker" "$host_d" /usr/sbin/sshd -D -f "$worker_guest_d/sshd_config"
+        start_docker "$worker" "$host_d" /usr/sbin/sshd -D -f "$worker_guest_d/sshd_config"
         slots=$(
             ssh -F "$conf_d"/ssh_config \
             -o IdentityFile="$worker_d"/id_ed25519 \
@@ -153,4 +130,4 @@ rsmpiexec_main "\$@"
 EOF
 }
 
-mpistart_main "$@"
+start_main "$@"
