@@ -58,8 +58,13 @@ start_docker() {
 
 start_main() {
     local user=${1:-}
-    if [[ ! $1 ]]; then
+    if [[ ! $user ]]; then
         echo 'usage: bash start.sh <github-user>' 1>&2
+        exit 1
+    fi
+    local run_u=$(stat -c %U "$start_jupyterhub_user_d")
+    if [[ $USER != $run_u ]]; then
+        echo "must be run as '$run_u'" 1>&2
         exit 1
     fi
     local worker
