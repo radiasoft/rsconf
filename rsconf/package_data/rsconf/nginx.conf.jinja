@@ -26,8 +26,6 @@ server {
         if ($remote_user != $1) {
             return 403;
         }
-        #TODO(robnagler) might be better to serve from rsconf/host
-        # would require a local rewrite of the url
         root {{ rsconf.srv_d }};
     }
 }
