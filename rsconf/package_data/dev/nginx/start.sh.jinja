@@ -3,6 +3,9 @@ set -euo pipefail
 if [[ ! -r {{ srv_d }}/index.sh ]]; then
     ln -s radiasoft/download/bin/index.sh '{{ srv_d }}'
 fi
+if [[ ! -r {{ srv_d }}/yum ]]; then
+    ln -s -r ~/src/yum '{{ srv_d }}'
+fi
 cd "$(dirname "${BASH_SOURCE[0]}")"
 if [[ -r nginx.pid ]]; then
     kill -QUIT "$(cat nginx.pid)" || true
