@@ -94,6 +94,7 @@ default:
         - bivio.org.{{ host }}
         - bivio.biz.{{ host }}
         - jupyter.{{ all_host }}
+        - jupyter.{{ host }}
         - jupyter.{{ master }}
         - m-petshop.{{ host }}
         - other.{{ host }}
@@ -123,14 +124,14 @@ default:
     test_mode: True
   jupyterhub:
     admin_users: [ '{{ user }}' ]
-    docker_image: docker.io/radiasoft/jupyterhub
-    jupyter_docker_image: docker.io/radiasoft/beamsim-jupyter
+    docker_image: radiasoft/jupyterhub
+    jupyter_docker_image: radiasoft/beamsim-jupyter
     # github:
     #  client_id: ""
     #  client_secret: ""
     port: 7913
     vhosts:
-      {{ host }}: jupyter.{{ master }}
+      {{ host }}: jupyter.{{ host }}
   logrotate:
     verbose: true
     # sometime before bkp.on_calendar
@@ -311,7 +312,7 @@ host:
         tls_host: {{ host }}
       jupyterhub:
         vhosts:
-          {{ host }}: jupyter.{{ master }}
+          {{ host }}: jupyter.{{ host }}
       nginx:
         redirects:
           - host_or_uri: www.google.com
@@ -330,7 +331,8 @@ host:
         exports:
           /srv/sirepo/db/user: [ 10.10.10.0/24 ]
       rsconf_db:
-        components: [ rabbitmq, celery_sirepo, sirepo, nfs_server ]
+        components: [ jupyterhub, jupyterhub_proxy ]
+#        components: [ rabbitmq, celery_sirepo, sirepo, nfs_server ]
 #        components: [ nfs_client, docker ]
 #      sirepo:
 #        docker_hosts: [ {{ host }}, {{ worker_host }} ]
