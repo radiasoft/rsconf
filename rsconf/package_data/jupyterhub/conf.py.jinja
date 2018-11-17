@@ -19,6 +19,9 @@ class _Spawner(dockerspawner.DockerSpawner):
         return binds
 
 c.Authenticator.admin_users = set([{{ jupyterhub.admin_users_str }}])
+{% if 'whitelist_users_str' in jupyterhub %}
+c.Authenticator.whitelist = set([{{ jupyterhub.whitelist_users_str }}])
+{% endif %}
 {% if 'github' in jupyterhub %}
 c.JupyterHub.authenticator_class = 'oauthenticator.GitHubOAuthenticator'
 c.GitHubOAuthenticator.client_id = '{{ jupyterhub.github.client_id }}'

@@ -51,7 +51,10 @@ class T(component.T):
             gen_secret=lambda: db.random_string(length=64, is_hex=True),
             visibility='channel',
         )[0]
-        z.admin_users_str = "'" + "','".join(z.admin_users) + "'"
+        z.admin_users_str = _list_to_str(z.admin_users)
+        if z.get('whitelist_users'):
+            # admin_users are implicitly part of whitelist
+            z.whitelist_users_str = _list_to_str(z.whitelist_users)
         conf_f = run_d.join(_CONF_F)
         self.install_resource('jupyterhub/{}'.format(_CONF_F), j2_ctx, conf_f)
         self.append_root_bash(
@@ -66,3 +69,7 @@ class T(component.T):
             run_u=z.run_u,
             volumes=[docker.DOCKER_SOCK],
         )
+
+
+def _list_to_str(v):
+    return "'" + "','".join(v) + "'"
