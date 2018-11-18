@@ -44,7 +44,7 @@ c.ConfigurableHTTPProxy.auth_token = '{{ jupyterhub.proxy_auth_token }}'
 
 c.JupyterHub.spawner_class = _Spawner
 c.DockerSpawner.http_timeout = 60
-c.DockerSpawner.container_image = '{{ jupyterhub.jupyter_docker_image }}'
+c.DockerSpawner.image = '{{ jupyterhub.jupyter_docker_image }}'
 c.DockerSpawner.remove_containers = True
 c.DockerSpawner.use_internal_ip = True
 c.DockerSpawner.volumes = {
