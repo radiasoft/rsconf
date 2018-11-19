@@ -44,6 +44,8 @@ c.ConfigurableHTTPProxy.auth_token = '{{ jupyterhub.proxy_auth_token }}'
 
 c.JupyterHub.spawner_class = _Spawner
 c.DockerSpawner.http_timeout = 60
+# https://github.com/radiasoft/rsconf/issues/54
+c.DockerSpawner.image_whitelist = []
 c.DockerSpawner.image = '{{ jupyterhub.jupyter_docker_image }}'
 c.DockerSpawner.remove_containers = True
 c.DockerSpawner.use_internal_ip = True
