@@ -17,6 +17,14 @@ dateext
 rotate 28
 uncompresscmd /usr/bin/unxz
 
+/var/log/audit/audit.log
+{
+    create 0600 root root
+    missingok
+    daily
+    notifempty
+}
+
 /var/log/boot.log
 {
     create 0600 root root

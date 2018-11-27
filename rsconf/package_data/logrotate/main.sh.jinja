@@ -19,4 +19,15 @@ logrotate_main() {
     if [[ ! -e /var/log/journal.export ]]; then
         install -m 600 -o root -g root /dev/null /var/log/journal.export
     fi
+    local i f x
+    local b=/var/log/audit/audit.log
+    for i in 1 2 3 4; do
+        f=$b.$i
+        x=$b-$(date +%Y%m%d -r "$f").xz
+        if [[ -r $f ]]; then
+            xz -c < "$f" > "$x"
+            touch -r "$f" "$x"
+            rm -f "$f"
+        fi
+    done
 }
