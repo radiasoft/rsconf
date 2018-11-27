@@ -23,8 +23,8 @@ logrotate_main() {
     local b=/var/log/audit/audit.log
     for i in 1 2 3 4; do
         f=$b.$i
-        x=$b-$(date +%Y%m%d -r "$f").xz
         if [[ -r $f ]]; then
+            x=$b-$(date +%Y%m%d -r "$f").xz
             xz -c < "$f" > "$x"
             touch -r "$f" "$x"
             rm -f "$f"
