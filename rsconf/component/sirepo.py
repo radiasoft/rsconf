@@ -47,7 +47,7 @@ class T(component.T):
         z.db_d = run_d.join(_DB_SUBDIR)
         z.run_u = j2_ctx.rsconf_db.run_u
         beaker_secret_f = z.db_d.join('beaker_secret')
-        cookie_name = 'sirepo_{}'.format(j2_ctx.rsconf_db.channel)
+        cookie_name = z.get('cookie_name', 'sirepo_{}'.format(j2_ctx.rsconf_db.channel))
         docker_hosts = z.get('docker_hosts')
         z.setdefault('feature_config', pkcollections.Dict())
         # TODO(robnagler) write a yml file that gets read by pkconfig
