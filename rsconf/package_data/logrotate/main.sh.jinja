@@ -19,6 +19,7 @@ logrotate_main() {
     if [[ ! -e /var/log/journal.export ]]; then
         install -m 600 -o root -g root /dev/null /var/log/journal.export
     fi
+    # Fix up audit.log.1,2,etc.
     local i f x
     local b=/var/log/audit/audit.log
     for i in 1 2 3 4; do
@@ -29,5 +30,14 @@ logrotate_main() {
             touch -r "$f" "$x"
             rm -f "$f"
         fi
+    done
+    # Files with gz or not compressed, need to be xz compressed
+    x='*-201[789][01][0-9][0-3][0-9]'
+    for f in $(find /var/log -name "$x.gz" -o -name "$x"); do
+        if [[ $f =~ gz$ ]]; then
+            gunzip "$f"
+            f=${f%.gz}
+        fi
+        xz "$f"
     done
 }
