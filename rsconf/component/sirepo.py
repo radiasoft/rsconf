@@ -79,8 +79,6 @@ class T(component.T):
                 'sirepo.pkcli.service_threads',
             ),
         )
-        #TODO(robnagler) remove next line once on production
-        params['sirepo.server.job_queue'] = params['sirepo.runner.job_class']
         if docker_hosts:
             docker_tls_d = run_d.join('docker_tls')
             params['sirepo.runner.docker.hosts'] = docker_hosts
