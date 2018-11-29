@@ -29,6 +29,7 @@ DEFAULT_ROOT_SUBDIR = 'run'
 DB_SUBDIR = 'db'
 RPM_SUBDIR = 'rpm'
 SECRET_SUBDIR = 'secret'
+TMP_SUBDIR = 'tmp'
 HOST_SUBDIR = 'host'
 LEVELS = ('default', 'channel', 'host')
 # Secrets are long so keep them simple
@@ -48,6 +49,7 @@ class T(pkcollections.Dict):
         self.root_d = pkio.py_path(cfg.root_d)
         self.db_d = self.root_d.join(DB_SUBDIR)
         self.rpm_source_d = self.root_d.join(RPM_SUBDIR)
+        self.tmp_d = self.root_d.join(TMP_SUBDIR)
         self.secret_d = self.db_d.join(SECRET_SUBDIR)
         self.srv_d = self.root_d.join(SRV_SUBDIR)
         self.srv_host_d = self.srv_d.join(HOST_SUBDIR)
@@ -94,21 +96,25 @@ class T(pkcollections.Dict):
                     if not v:
                         continue
             merge_dict(res, v)
+        host = host.lower()
         v = pkcollections.Dict(
             rsconf_db=pkcollections.Dict(
                 channel=channel,
                 db_d=self.db_d,
-                host=host.lower(),
+                host=host,
                 rpm_source_d=self.rpm_source_d,
                 secret_d=self.secret_d,
                 srv_d=self.srv_d,
                 srv_host_d=self.srv_host_d,
+                tmp_d=self.tmp_d.join(host),
                 # https://jnovy.fedorapeople.org/pxz/node1.html
                 # compression with 8 threads and max compression
                 # Useful (random) constants
                 compress_cmd='pxz -T8 -9',
             )
         )
+        pkio.unchecked_remove(v.rsconf_db.tmp_d)
+        pkio.mkdir_parent(v.rsconf_db.tmp_d)
         merge_dict(res, v)
         _update_paths(res)
         return res

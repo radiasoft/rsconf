@@ -40,7 +40,7 @@ postfix_main() {
         {% endif %}
         smtpd_recipient_restrictions='reject_unauth_pipelining,permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination,reject_non_fqdn_recipient,reject_unknown_recipient_domain,check_policy_service inet:127.0.0.1:{{ postgrey.port }}'
         smtpd_relay_restrictions=permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination
-        smtpd_sender_restrictions=reject_unauth_pipelining,permit_mynetworks,reject_non_fqdn_sender,reject_unknown_sender_domain
+        smtpd_sender_restrictions='reject_unauth_pipelining,permit_mynetworks,check_sender_access {{ postfix.check_sender_access_arg }},reject_non_fqdn_sender,reject_unknown_sender_domain'
         smtpd_tls_CAfile=/etc/pki/tls/certs/ca-bundle.crt
         smtpd_tls_cert_file='{{ postfix.tls_cert_file }}'
         smtpd_tls_key_file='{{ postfix.tls_key_file }}'
@@ -151,9 +151,10 @@ postfix_setup_virtual_aliases() {
     {#
      # DEBUG: postmap -s hash:/etc/postfix/virtual_alias
     #}
-    postconf -e virtual_alias_maps=hash:'{{ postfix.virtual_alias_f }}' \
+    postconf -e virtual_alias_maps=texthash:'{{ postfix.virtual_alias_f }}' \
         virtual_alias_domains='{{ postfix.virtual_alias_domains_f }}'
-    postmap -i -r hash:'{{ postfix.virtual_alias_f }}' < '{{ postfix.virtual_alias_f }}'
+    rm -f '{{ postfix.virtual_alias_f }}.db'
+    {#postmap -i -r hash:'{{ postfix.virtual_alias_f }}' < '{{ postfix.virtual_alias_f }}'#}
 }
 {% endif %}
 

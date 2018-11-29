@@ -176,7 +176,7 @@ class T(pkcollections.Dict):
         assert gen_secret, \
             'unable to generate secret: path={}'.format(src)
         res = gen_secret()
-        src.write(res, mode='wb', ensure=True)
+        res = self._write_binary(src, res)
         return res, src
 
     def service_prepare(self, watch_files, name=None):
@@ -187,6 +187,12 @@ class T(pkcollections.Dict):
                 "' '".join([name] + list(str(w) for w in watch_files)),
             ),
         )
+
+    def tmp_path(self):
+        from rsconf import db
+
+        return self.hdb.rsconf_db.tmp_d.join(db.random_string())
+
 
     def _bash_append(self, host_path, is_file=True, ensure_exists=False, md5=None):
         _assert_host_path(host_path)
@@ -219,10 +225,30 @@ class T(pkcollections.Dict):
                 '{}: do not pass both file_contents and file_src'.format(host_path)
             file_contents = file_src.read()
         if file_contents:
-            dst.write(file_contents)
+            file_contents = self._write_binary(dst, file_contents)
             md5 = _md5(file_contents)
         self._bash_append(host_path, md5=md5)
         return dst
+
+
+    def _write_binary(self, path, data):
+        """Write as binary to Linux file
+
+        This may be Python2 only compatible. It's certainly not "true" unicode compatible.
+        Any strings must be convertable to ascii. Since this is a configuration management
+        system, we have control over this.
+
+        Args:
+            path (py.path): will use write()
+            data (object): if not bytes, will encode with ascii
+
+        Returns:
+            bytes: data (possibly converted)
+        """
+        if not isinstance(data, bytes):
+            data = data.encode('ascii')
+        path.write(data, mode='wb', ensure=True)
+        return data
 
 
 def create_t(name, buildt):

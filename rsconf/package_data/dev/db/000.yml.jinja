@@ -187,6 +187,8 @@ default:
       root: root@{{ master }}
       errors: errors@{{ master }}
       critical-errors: critical-errors@{{ master }}
+    whitelist_senders:
+      - poorly-configured-mailer.com
   postgresql:
     # https://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server#effective_cache_size
     effective_cache_size: 244MB

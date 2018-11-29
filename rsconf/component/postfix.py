@@ -11,6 +11,7 @@ from pykern import pkio
 from rsconf import component
 import re
 import socket
+import subprocess
 
 # Fixing things and debugging
 # Display queue: postqueue -p
@@ -36,6 +37,7 @@ class T(component.T):
         self._setup_virtual_aliases(j2_ctx, z)
         self._setup_sasl(j2_ctx, z)
         self._setup_mynames(j2_ctx, z)
+        self._setup_check_sender_access(j2_ctx, z)
         z.local_host_names_f = '/etc/postfix/local-host-names'
         # New install access
         self.install_access(mode='400', owner=j2_ctx.rsconf_db.root_u)
@@ -56,6 +58,15 @@ class T(component.T):
         self.append_root_bash_with_main(j2_ctx)
         systemd.unit_enable(self, j2_ctx)
         self.rsconf_service_restart_at_end()
+
+    def _setup_check_sender_access(self, j2_ctx, z):
+        src = self.tmp_path()
+        x = ['{} OK\n'.format(x) for x in sorted(z.get('whitelist_senders', []))]
+        src.write(''.join(x))
+        x =  _CONF_D.join('sender-access')
+        z.check_sender_access_arg = 'texthash:' + str(x)
+        self.install_access(mode='440', owner=j2_ctx.rsconf_db.root_u, group='mail')
+        self.install_abspath(src, x)
 
     def _setup_mynames(self, j2_ctx, z):
         if 'myhostname' in z:
