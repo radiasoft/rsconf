@@ -148,13 +148,9 @@ postfix_setup_sasl() {
 
 {% if 'virtual_alias_f' in postfix %}
 postfix_setup_virtual_aliases() {
-    {#
-     # DEBUG: postmap -s hash:/etc/postfix/virtual_alias
-    #}
     postconf -e virtual_alias_maps=texthash:'{{ postfix.virtual_alias_f }}' \
         virtual_alias_domains='{{ postfix.virtual_alias_domains_f }}'
     rm -f '{{ postfix.virtual_alias_f }}.db'
-    {#postmap -i -r hash:'{{ postfix.virtual_alias_f }}' < '{{ postfix.virtual_alias_f }}'#}
 }
 {% endif %}
 

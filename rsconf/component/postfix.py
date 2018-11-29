@@ -63,7 +63,7 @@ class T(component.T):
         src = self.tmp_path()
         x = ['{} OK\n'.format(x) for x in sorted(z.get('whitelist_senders', []))]
         src.write(''.join(x))
-        x =  _CONF_D.join('sender-access')
+        x =  _CONF_D.join('sender_access')
         z.check_sender_access_arg = 'texthash:' + str(x)
         self.install_access(mode='440', owner=j2_ctx.rsconf_db.root_u, group='mail')
         self.install_abspath(src, x)
