@@ -1,10 +1,5 @@
 #!/bin/bash
 
-#TODO(robnagler) sshd
-# /etc/ssh/sshd_config
-# ClientAliveInterval 180
-# ClientAliveCountMax 3
-
 base_os_chrony() {
     if ! base_os_if_virtual_box; then
         # only needed for VirtualBox
@@ -79,42 +74,10 @@ base_os_main() {
         mkdir -p {{ rsconf_db.host_run_d }}
         chmod 755 {{ rsconf_db.host_run_d }}
     fi
-    local i
-    if [[ -e /proc/sys/net/ipv6/conf/all/disable_ipv6 ]]; then
-        i=$(sysctl -n net.ipv6.conf.all.disable_ipv6)
-        if [[ -z $i ]]; then
-            install_err 'sysctl net.ipv6.conf.all.disable_ipv6: failed'
-        fi
-    else
-        # Once disabled at the kernel init level, you can't query net.ipv6 at all
-        i=1
-    fi
     local reboot=
-    rsconf_install_access 400 root root
-    rsconf_install_file /etc/sysctl.d/60-rsconf-base.conf
-#TODO(robnagler) return result to test install?
-    sysctl -q -p --system
-    if (( $i == 0 )); then
-        # Need to disable ipv6 for rpcbind and Python 3's ssl library seems to want
-        # to try ipv6, and if it can't get it, it dies.
+    if base_os_ipv4; then
         reboot=1
-
-        # https://access.redhat.com/solutions/8709
-        # Must be done first time
-        install_info 'Rebuilding initrd to disable ipv6'
-        # Not bothering with backup, because this only happens once after fresh
-        # restart.
-        sysctl -w net.ipv6.conf.all.disable_ipv6=1 net.ipv6.conf.default.disable_ipv6=1
-        dracut -f
     fi
-    # https://access.redhat.com/solutions/8709
-    # breaks SSH Xforwarding unless AddressFamily inet is set in sshd_config
-    # idempotent so ok to repeat and the file might get updated with a new release.
-    rsconf_edit_no_change_res=0 rsconf_edit /etc/ssh/sshd_config ^AddressFamily.inet \
-        's{^#(AddressFamily) any}{$1 inet}'
-    rsconf_edit_no_change_res=0 rsconf_edit /etc/ssh/sshd_config ^PermitRootLogin.without \
-        's{^#?\s*(PermitRootLogin) .*}{$1 without-password}'
-    base_os_rpcbind_patch
 #TODO(robnagler) consider permissive on back end and enforcing on front end
     if rsconf_edit /etc/selinux/config ^SELINUX=disabled \
         's{(?<=^SELINUX=).*}{disabled}'; then
@@ -124,8 +87,48 @@ base_os_main() {
     base_os_journal_persist
     rsconf_edit_no_change_res=0 rsconf_append /etc/screenrc 'escape ^^^^'
     base_os_logical_volumes
-    if [[ -n $reboot ]]; then
+    if [[ $reboot ]]; then
         rsconf_reboot
+    fi
+}
+
+base_os_ipv4() {
+    local i= no_reboot=1
+    if [[ -e /proc/sys/net/ipv6/conf/all/disable_ipv6 ]]; then
+        i=$(sysctl -n net.ipv6.conf.all.disable_ipv6)
+        if [[ ! $i ]]; then
+            install_err 'sysctl net.ipv6.conf.all.disable_ipv6: failed'
+        fi
+    else
+        # Once disabled at the kernel init level, you can't query net.ipv6 at all
+        i=1
+    fi
+    rsconf_install_access 400 root root
+    rsconf_install_file /etc/sysctl.d/60-rsconf-base.conf
+#TODO(robnagler) return result to test install?
+    sysctl -q -p --system
+    if (( $i == 0 )); then
+        # Need to disable ipv6 for rpcbind and Python 3's ssl library seems to want
+        # to try ipv6, and if it can't get it, it dies.
+        no_reboot=0
+
+        # https://access.redhat.com/solutions/8709
+        # Must be done first time
+        install_info 'Rebuilding initrd to disable ipv6'
+        # Not bothering with backup, because this only happens once after fresh
+        # restart.
+        sysctl -w net.ipv6.conf.all.disable_ipv6=1 net.ipv6.conf.default.disable_ipv6=1
+        dracut -f
+    fi
+    base_os_sshd
+    base_os_postfix
+    base_os_rpcbind_patch
+    return $no_reboot
+}
+
+base_os_postfix() {
+    if type postconf >& /dev/null; then
+        postconf -e inet_protocols=ipv4
     fi
 }
 
@@ -144,4 +147,18 @@ base_os_rpcbind_patch() {
         systemctl daemon-reload
         rsconf_service_trigger_restart rpcbind.socket
     fi
+}
+
+base_os_sshd() {
+    #TODO(robnagler) is this necessary?
+    # ClientAliveInterval 180
+    # ClientAliveCountMax 3
+    #
+    # https://access.redhat.com/solutions/8709
+    # breaks SSH Xforwarding unless AddressFamily inet is set in sshd_config
+    # idempotent so ok to repeat and the file might get updated with a new release.
+    rsconf_edit_no_change_res=0 rsconf_edit /etc/ssh/sshd_config ^AddressFamily.inet \
+        's{^#(AddressFamily) any}{$1 inet}'
+    rsconf_edit_no_change_res=0 rsconf_edit /etc/ssh/sshd_config ^PermitRootLogin.without \
+        's{^#?\s*(PermitRootLogin) .*}{$1 without-password}'
 }
