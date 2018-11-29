@@ -150,7 +150,6 @@ postfix_setup_sasl() {
 postfix_setup_virtual_aliases() {
     postconf -e virtual_alias_maps=texthash:'{{ postfix.virtual_alias_f }}' \
         virtual_alias_domains='{{ postfix.virtual_alias_domains_f }}'
-    rm -f '{{ postfix.virtual_alias_f }}.db'
 }
 {% endif %}
 
