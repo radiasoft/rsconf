@@ -8,7 +8,7 @@ set -euo pipefail
 build_perl_rpms_main() {
     cd ~/src/radiasoft/rsconf
     export install_server=http://$(hostname -f):2916 install_channel=dev
-    if curl --connect-timeout 1 "$install_server" >& /dev/null; then
+    if ! curl --connect-timeout 1 "$install_server" >& /dev/null; then
         echo 'You need to:
     bash run/nginx/start.sh
 in another window' 1>&2
