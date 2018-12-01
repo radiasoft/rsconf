@@ -58,6 +58,11 @@ start_docker() {
     "${docker_run[@]}" "$@"
 }
 
+start_err() {
+    echo "$@" 1>2&
+    return 1
+}
+
 start_main() {
     local user=${1:-}
     if [[ ! $user ]]; then
@@ -78,9 +83,11 @@ start_main() {
     local -i total_slots=0
     local host_d=$start_jupyterhub_user_d/$user
     local conf_d=$host_d/.rsmpiexec
+    local x y
     # user part must exist
     rm -rf "$conf_d"
     mkdir -p "$conf_d"
+    local net=
     for worker in "${start_workers[@]}"; do
         worker_d=$conf_d/$worker
         worker_guest_d=$start_conf_guest_d/$worker
@@ -125,6 +132,7 @@ EOF
         slots=$(( $slots / 2 ))
         total_slots+=$slots
         echo "$ip slots=$slots" >> "$conf_d"/mpi_hosts
+        net=$(start_net "$ip" "$net")
     done
     install -m 550 /dev/stdin "$host_d"/rsmpiexec <<EOF
 #!/bin/bash
@@ -136,13 +144,35 @@ rsmpiexec_main() {
         exit 1
     fi
     [[ -d ~/.ssh ]] || install -d -m 700 ~/.ssh
-    install -m 600 $start_conf_guest_d/ssh_config ~/.ssh/config
-    install -m 600 $start_conf_guest_d/known_hosts ~/.ssh/known_hosts
-    exec mpiexec --hostfile "$start_conf_guest_d/mpi_hosts" "\$@"
+    install -m 600 '$start_conf_guest_d/ssh_config' ~/.ssh/config
+    install -m 600 '$start_conf_guest_d/known_hosts' ~/.ssh/known_hosts
+    exec mpiexec --mca oop_tcp_if_include '$net' --mca btl_tcp_if_include '$net' --hostfile '$start_conf_guest_d/mpi_hosts' "\$@"
 }
 
 rsmpiexec_main "\$@"
 EOF
+}
+
+start_net() {
+    local ip=$1
+    local net=$2
+    local re=' dev ([^ ]+)'
+    if [[ ! $(ip route get "$ip") =~ $re ]]; then
+        start_err "no route to IP address: $ip"
+    fi
+    local dev=${BASH_REMATCH[1]}
+    local re=' inet ([^ ]+)'
+    if [[ ! $(ip addr show "$dev") =~ $re ]]; then
+        start_err "cannot find device: $dev"
+    fi
+    local src=${BASH_REMATCH[1]}
+    local NETWORK PREFIX
+    eval $(ipcalc --prefix --network "$src")
+    local new=$NETWORK/$PREFIX
+    if [[ $net && $net != $new ]]; then
+        start_err "ip $ip does not route to $net"
+    fi
+    echo "$new"
 }
 
 start_main "$@"

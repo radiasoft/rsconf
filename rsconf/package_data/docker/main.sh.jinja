@@ -1,6 +1,28 @@
 #!/bin/bash
 
-docker_main() {
+docker_systemd_fixup() {
+    # https://github.com/radiasoft/rsconf/issues/57
+    local o=/usr/lib/systemd/system/docker.service
+    if ! grep -s -q 'unix://' "$o"; then
+        return
+    fi
+    local c=/etc/systemd/system/docker.service
+    local n=$c.new
+    perl -p -e 's{ -H unix://}{}' "$o" > "$n"
+    if cmp "$c" "$n" >& /dev/null; then
+        rm -f "$n"
+        return
+    fi
+    chmod 644 "$n"
+    mv "$n" "$c"
+    systemctl stop docker
+    systemctl disable docker
+    systemctl daemon-reload
+    systemctl start docker
+    systemctl enable docker
+}
+
+docker_install() {
     local dir={{ docker.data_d }}/volumes
     if [[ -e $dir && $(type -t docker) != '' ]]; then
 #TODO(robnagler) update docker rpm?
@@ -29,4 +51,9 @@ docker_main() {
         # Give vagrant user access in dev mode only
         usermod -aG docker vagrant
     {% endif %}
+}
+
+docker_main() {
+    docker_install
+    docker_systemd_fixup
 }
