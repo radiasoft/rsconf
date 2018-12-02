@@ -51,7 +51,7 @@ start_docker() {
         --rm
         --ulimit=core=0
         --ulimit=nofile=1024
-        --user=vagrant
+        --user='{{ mpi_cluster.run_u }}'
         -v "$host_d:$start_guest_d"
         "$start_image"
     )
@@ -120,7 +120,7 @@ EOF
 EOF
         chmod -R go-rwx .
         start_docker "$worker" "$host_d" /usr/sbin/sshd -D -f "$worker_guest_d/sshd_config"
-        sleep 1
+        sleep 2
         slots=$(
             ssh -F "$conf_d"/ssh_config \
             -o IdentityFile="$worker_d"/id_ed25519 \
