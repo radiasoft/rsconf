@@ -53,14 +53,16 @@ class T(component.T):
         z = jc.postfix
         self.install_access(mode='400', owner=jc.rsconf_db.root_u)
         kc = self.install_tls_key_and_crt(jc.rsconf_db.host, _CONF_D)
-        self.install_access(mode='644')
-        self.install_joined_lines(
-            sorted(z.local_host_names),
-            z.local_host_names_f,
-        )
         z.update(
             tls_cert_file=kc.crt,
             tls_key_file=kc.key,
+        )
+        self.install_access(mode='644')
+        self.install_resource('postfix/main.cf', jc, _CONF_D.join('main.cf'))
+        self.install_resource('postfix/master.cf', jc, _CONF_D.join('master.cf'))
+        self.install_joined_lines(
+            sorted(z.local_host_names),
+            z.local_host_names_f,
         )
         # see base_users.py which may clear email_aliases by setting to None
         z.aliases.update(jc.base_users.email_aliases)
