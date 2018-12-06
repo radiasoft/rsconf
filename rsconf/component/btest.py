@@ -34,6 +34,9 @@ class T(component.T):
         )
         z.source_code_d = bop.SOURCE_CODE_D
         z.app_run_u = j2_ctx.rsconf_db.run_u
+        self.buildt.get_component('postfix').extend_local_host_names(
+            [z.client_host],
+        )
         self.install_access(mode='700', owner=z.app_run_u)
         self.install_directory(z.apps_d)
         z.home_d = db.user_home_path(j2_ctx, z.app_run_u)
@@ -106,4 +109,3 @@ class T(component.T):
             j2_ctx,
             run_f,
         )
-        self.append_root_bash_with_main(j2_ctx)

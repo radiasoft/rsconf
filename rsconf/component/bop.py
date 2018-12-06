@@ -43,6 +43,7 @@ class T(component.T):
             j2_ctx = self.hdb.j2_ctx_copy()
             z = j2_ctx.bop
             z.mail_domain_keys = sorted(z.mail_domains.keys())
+            self.buildt.get_component('postfix').setup_bop(z.mail_domain_keys)
             z.setdefault('client_max_body_size', _DEFAULT_CLIENT_MAX_BODY_SIZE)
             nginx.update_j2_ctx_and_install_access(self, j2_ctx)
             self.install_resource(

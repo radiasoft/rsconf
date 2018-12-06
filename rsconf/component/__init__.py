@@ -47,12 +47,20 @@ class T(pkcollections.Dict):
         assert self.state == _DONE, \
             '{}: invalidate state for component.{}'.format(self.state, self.name)
 
-    def build(self):
+    def build_compile(self):
         self.state = _DONE
         self._install_access = pkcollections.Dict()
         self._root_bash = [self.name + _BASH_FUNC_SUFFIX + '() {']
         self._root_bash_aux = []
-        self.internal_build()
+        if hasattr(self, 'internal_build_compile'):
+            self.internal_build_compile()
+            self.buildt.append_write_queue(self)
+        else:
+            self.internal_build()
+            self.build_write()
+
+    def build_write(self):
+        self.internal_build_write()
         self.append_root_bash('}')
         self._root_bash.extend(self._root_bash_aux)
         self.buildt.write_root_bash(self.name, self._root_bash)
@@ -94,6 +102,17 @@ class T(pkcollections.Dict):
 
     def install_ensure_file_exists(self, host_path):
         self._bash_append(host_path, is_file=True, ensure_exists=True)
+
+    def install_joined_lines(self, lines, host_path):
+        """Write lines with newlines to host_path
+
+        Args:
+            lines (object): iterable
+            host_path (py.path): where to install
+        """
+        p = self.tmp_path()
+        p.write(''.join([x + '\n' for x in lines]))
+        self.install_abspath(p, host_path)
 
     def install_perl_rpm(self, j2_ctx, rpm_base, channel=None):
         rpm_file = '{}-{}.rpm'.format(
@@ -143,6 +162,10 @@ class T(pkcollections.Dict):
         self.install_abspath(kc.key, dst.key, ignore_exists=True)
         self.install_abspath(kc.crt, dst.crt, ignore_exists=True)
         return dst
+
+    def internal_build_write(self):
+        """Called after internal_build_compile"""
+        pass
 
     def rsconf_append(self, path, line_or_grep, line=None):
         l = "rsconf_edit_no_change_res=0 rsconf_append '{}' '{}'".format(path, line_or_grep)

@@ -24,6 +24,11 @@ class T(pkcollections.Dict):
             hdb=dbt.host_db(channel, host),
         )
 
+    def append_write_queue(self, compt):
+        assert compt not in self._write_queue, \
+            'duplicate insert: {}'.format(compt.name)
+        self._write_queue.append(compt)
+
     def build_component(self, compt_or_name):
         from rsconf import component
 
@@ -38,9 +43,9 @@ class T(pkcollections.Dict):
                 return
             compt = component.create_t(compt_or_name, self)
         self.components[compt.name] = compt
-        compt.build()
+        compt.build_compile()
         # Must be after, since write_root_bash happens from this list and
-        # dependencies in build() must come first
+        # dependencies in build_compile() must come first.
         self.components_required.append(compt.name)
 
     def create_host(self, dst_d):
@@ -49,7 +54,9 @@ class T(pkcollections.Dict):
             dst_d = dst_d.join(h)
             pkio.mkdir_parent(dst_d)
             self.hdb.build = pkcollections.Dict(dst_d=dst_d)
+            self._write_queue = []
             self.require_component(*self.hdb.rsconf_db.components)
+            self._do_write_queue()
             self.write_root_bash(
                 '000',
                 ['export install_channel={}'.format(self.hdb.rsconf_db.channel)] \
@@ -58,6 +65,12 @@ class T(pkcollections.Dict):
         except Exception:
             pkdlog('{}: host failed:', h)
             raise
+
+    def get_component(self, name):
+        for c in self._write_queue:
+            if c.name == name:
+                return c
+        raise AssertionError('component not in write_queue: {}'.format(name))
 
     def require_component(self, *components):
         from rsconf import component
@@ -75,6 +88,15 @@ class T(pkcollections.Dict):
             self.hdb.build.dst_d.join(basename + '.sh'),
             '\n'.join(['#!/bin/bash'] + lines) + '\n',
         )
+
+    def _do_write_queue(self):
+        while self._write_queue:
+            c = self._write_queue.pop(0)
+            try:
+                c.build_write()
+            except Exception:
+                pkdlog('{}: build_write failed:', c.name)
+                raise
 
 
 def default_command():

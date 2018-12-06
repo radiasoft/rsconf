@@ -1,108 +1,14 @@
 #!/bin/bash
 
-postfix_local_host_names={{ postfix.local_host_names_f }}
-postfix_main_cf=/etc/postfix/main.cf
-postfix_master_cf=/etc/postfix/master.cf
-
 postfix_main() {
-    rsconf_file_hash_save "$postfix_main_cf"
-    local x=(
-        {# https://help.ubuntu.com/community/PostfixGreylisting #}
-        biff=no
-        inet_interfaces=all
-        {# https://codinfox.github.io/dev/2015/04/08/postfix-cannot-start/ #}
-        inet_protocols=ipv4
-        local_recipient_maps=
-        mailbox_command='/usr/bin/procmail -t -Y -a "$EXTENSION" -d "$USER"'
-        mailbox_size_limit=0
-        message_size_limit=50000000
-        mydestination="\$myhostname,localhost,$postfix_local_host_names"
-        mydomain='{{ postfix.mydomain }}'
-        myhostname='{{ postfix.myhostname }}'
-        mynetworks=127.0.0.0/8
-        myorigin='{{ postfix.myorigin }}'
-        recipient_delimiter=+
-        smtp_tls_CAfile=/etc/pki/tls/certs/ca-bundle.crt
-        smtp_tls_cert_file='{{ postfix.tls_cert_file }}'
-        smtp_tls_key_file='{{ postfix.tls_key_file }}'
-        smtp_tls_security_level=may
-        smtpd_banner='$myhostname ESMTP'
-        {% if rsconf_db.channel != 'dev' %}
-        smtpd_client_restrictions='sleep 8'
-        {% endif %}
-        smtpd_data_restrictions=reject_unauth_pipelining
-        {#
-           avoid toggling smtpd_delay_reject (in postfix_setup_sasl) which
-           would cause an unnecessary restart
-        #}
-        {% if not 'sasl_users_flattened' in postfix %}
-            smtpd_delay_reject=no
-        {% endif %}
-        smtpd_recipient_restrictions='reject_unauth_pipelining,permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination,reject_non_fqdn_recipient,reject_unknown_recipient_domain,check_policy_service inet:127.0.0.1:{{ postgrey.port }}'
-        smtpd_relay_restrictions=permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination
-        smtpd_sender_restrictions='reject_unauth_pipelining,permit_mynetworks,check_sender_access {{ postfix.check_sender_access_arg }},reject_non_fqdn_sender,reject_unknown_sender_domain'
-        smtpd_tls_CAfile=/etc/pki/tls/certs/ca-bundle.crt
-        smtpd_tls_cert_file='{{ postfix.tls_cert_file }}'
-        smtpd_tls_key_file='{{ postfix.tls_key_file }}'
-        smtpd_tls_security_level=may
-    )
-    postconf -e "${x[@]}"
-    {#
-        Too restrictive
-        smtpd_helo_restrictions=reject_unknown_helo_hostname
-
-        TODO(robnagler) remove after hosts updated
-    #}
-    postconf -X smtpd_helo_restrictions lmtp_host_lookup smtp_host_lookup
-
-    local rsconf_edit_no_change_res=0
-    rsconf_edit "$postfix_master_cf" \
-        '^smtp.*inet.*200.*smtpd$' 's{^smtp\s+inet.*}{smtp       inet  n       -       n       -       200       smtpd}'
-    {% if 'sasl_users_flattened' in postfix %}
+    {% if postfix.have_sasl %}
         postfix_setup_sasl
-    {% endif %}
-    {% if 'virtual_alias_f' in postfix %}
-        postfix_setup_virtual_aliases
     {% endif %}
     # never hurts
     newaliases
-    rsconf_file_hash_check "$postfix_main_cf"
 }
 
-postfix_setup_bop() {
-    local mail_domains=( "$@" )
-    rsconf_file_hash_save "$postfix_main_cf"
-    # https://janikarhunen.fi/tackle-spam-with-spamassassin-on-centos7-and-postfix.html
-    # http://forums.sentora.org/showthread.php?tid=1118
-    postconf -e \
-        'mailbox_transport=bsendmailhttp:unix' \
-        'smtpd_timeout=${stress?12}${stress:300}' \
-        'smtpd_hard_error_limit=${stress?1}${stress:20}' \
-	'bsendmailhttp_destination_recipient_limit=1'
-    rsconf_file_hash_check "$postfix_main_cf"
-    local rsconf_edit_no_change_res=0
-    rsconf_edit "$postfix_master_cf" \
-        '^local.*8' 's{^local\s.*}{local     unix  -       n       n       -       8       local}'
-    #TODO(20180501) remove this
-    rsconf_edit "$postfix_master_cf" \
-        '! ^bsendmailhttp.*/usr/bin/b-sendmail-http' 's{^bsendmailhttp.*\n}{}'
-    rsconf_append "$postfix_master_cf" \
-        'bsendmailhttp unix  -       n       n       -       2       pipe flags=DRhu user=nobody:nobody argv=/usr/bin/b-spamc-http ${client_address} ${recipient} localhost.localdomain:80/_mail_receive/%s /bin/false unused-param'
-    local h
-    for h in "${mail_domains[@]}"; do
-        rsconf_append "$postfix_local_host_names" "$h"
-    done
-}
-
-postfix_setup_btest() {
-    local rsconf_edit_no_change_res=0
-    local mail_domains=( "$@" )
-    for h in "${mail_domains[@]}"; do
-        rsconf_append "$postfix_local_host_names" "$h"
-    done
-}
-
-{% if 'sasl_users_flattened' in postfix %}
+{% if postfix.have_sasl %}
 postfix_setup_sasl() {
     {# To debug:
     # 	postconf -e 'smtpd_tls_loglevel = 3' 'debug_peer_list = 127.0.0.1'
@@ -134,24 +40,16 @@ postfix_setup_sasl() {
     # db_dump -p /etc/sasldb2 | perl -n -e 's{ ([^\\]+)\\00([^\\]+).*user}{} && print "$1\@$2: "; m{ (\S{10,24})} && print "$1\n"'
     #}
     rsconf_yum_install cyrus-sasl cyrus-sasl-plain
-    postconf -e smtpd_sasl_path=smtpd-sasldb smtpd_delay_reject=yes
-    local rsconf_edit_no_change_res=0
-    rsconf_edit "$postfix_master_cf" \
-        '^submission' 's{^#submission.*}{submission inet n       -       n       -       -       smtpd -o smtpd_sasl_auth_enable=yes -o smtpd_tls_auth_only=yes -o smtpd_tls_security_level=encrypt -o smtpd_recipient_restrictions=permit_sasl_authenticated,reject -o smtpd_client_restrictions=permit_sasl_authenticated,reject}'
+    rm -f /etc/sasldb2.new
     {% for u in postfix.sasl_users_flattened %}
-        echo '{{ u.password }}' | saslpasswd2 -c -p -u '{{ u.domain }}' '{{ u.user }}'
+        echo '{{ u.password }}' | saslpasswd2 -f /etc/sasldb2.new -c -p -u '{{ u.domain }}' '{{ u.user }}'
     {% endfor %}
-    chown root:mail /etc/sasldb2
-    chmod 640 /etc/sasldb2
+    chown root:mail /etc/sasldb2.new
+    chmod 640 /etc/sasldb2.new
+    mv -f /etc/sasldb2.new /etc/sasldb2
 }
 {% endif %}
 
-{% if 'virtual_alias_f' in postfix %}
-postfix_setup_virtual_aliases() {
-    postconf -e virtual_alias_maps=texthash:'{{ postfix.virtual_alias_f }}' \
-        virtual_alias_domains='{{ postfix.virtual_alias_domains_f }}'
-}
-{% endif %}
 
 # Testing email
 true <<'EOF2'

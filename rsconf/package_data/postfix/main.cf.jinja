@@ -1,0 +1,91 @@
+{#
+    Default config: grep -v '^#' /etc/postfix/main.cf
+    Then remove config lines that are also in Custom Config (below)
+#}
+queue_directory = /var/spool/postfix
+command_directory = /usr/sbin
+daemon_directory = /usr/libexec/postfix
+data_directory = /var/lib/postfix
+mail_owner = postfix
+inet_interfaces = all
+unknown_local_recipient_reject_code = 550
+alias_maps = hash:/etc/aliases
+alias_database = hash:/etc/aliases
+debug_peer_level = 2
+debugger_command =
+         PATH=/bin:/usr/bin:/usr/local/bin:/usr/X11R6/bin
+         ddd $daemon_directory/$process_name $process_id & sleep 5
+sendmail_path = /usr/sbin/sendmail.postfix
+newaliases_path = /usr/bin/newaliases.postfix
+mailq_path = /usr/bin/mailq.postfix
+setgid_group = postdrop
+html_directory = no
+manpage_directory = /usr/share/man
+sample_directory = /usr/share/doc/postfix-2.10.1/samples
+readme_directory = /usr/share/doc/postfix-2.10.1/README_FILES
+{#
+    Custom config: alphabetical
+#}
+{# https://help.ubuntu.com/community/PostfixGreylisting #}
+biff = no
+{# https://codinfox.github.io/dev/2015/04/08/postfix-cannot-start/ #}
+inet_protocols = ipv4
+mailbox_command = /usr/bin/procmail -t -Y -a "$EXTENSION" -d "$USER"
+local_recipient_maps =
+mailbox_size_limit = 0
+message_size_limit = 50000000
+mydestination = {{ postfix.mydomain }},localhost,{{ postfix.local_host_names_f }}
+mydomain = {{ postfix.mydomain }}
+myhostname = {{ postfix.myhostname }}
+mynetworks = 127.0.0.0/8
+myorigin = {{ postfix.myorigin }}
+smtp_tls_CAfile = /etc/pki/tls/certs/ca-bundle.crt
+smtp_tls_cert_file = {{ postfix.tls_cert_file }}
+smtp_tls_key_file = {{ postfix.tls_key_file }}
+smtp_tls_security_level = may
+smtpd_banner = {{ postfix.mydomain }} ESMTP
+smtpd_data_restrictions = reject_unauth_pipelining
+smtpd_recipient_restrictions = reject_unauth_pipelining,
+    permit_mynetworks,
+    permit_sasl_authenticated,
+    reject_unauth_destination,
+    reject_non_fqdn_recipient,
+    reject_unknown_recipient_domain,
+    check_policy_service inet:127.0.0.1:{{ postgrey.port }}
+smtpd_relay_restrictions = permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination
+smtpd_tls_CAfile = /etc/pki/tls/certs/ca-bundle.crt
+smtpd_tls_cert_file = {{ postfix.tls_cert_file }}
+smtpd_tls_key_file = {{ postfix.tls_key_file }}
+smtpd_tls_security_level = may
+recipient_delimiter = +
+smtpd_sender_restrictions = reject_unauth_pipelining,
+    permit_mynetworks,
+    check_sender_access {{ postfix.check_sender_access_arg }},
+    reject_non_fqdn_sender,
+    reject_unknown_sender_domain
+{#
+    Too restrictive: host may not be valid
+    smtpd_helo_restrictions=reject_unknown_helo_hostname
+#}
+{#
+    Conditional Custom Config: alphabetical by conditional
+#}
+{% if postfix.have_bop %}
+mailbox_transport = bsendmailhttp:unix
+smtpd_timeout = ${stress?12}${stress:300}
+smtpd_hard_error_limit = ${stress?1}${stress:20}
+bsendmailhttp_destination_recipient_limit = 1
+{% endif %}
+{% if postfix.have_sasl %}
+smtpd_delay_reject = yes
+smtpd_sasl_path = smtpd-sasldb
+{% else %}
+smtpd_delay_reject = no
+{% endif %}
+{% if postfix.have_virtual_aliases %}
+virtual_alias_domains = {{ postfix.virtual_alias_domains_f }}
+virtual_alias_maps = {{ postfix.virtual_alias_maps }}
+{% endif %}
+{% if rsconf_db.channel != 'dev' %}
+smtpd_client_restrictions = sleep 8
+{% endif %}
