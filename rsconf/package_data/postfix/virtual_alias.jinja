@@ -1,5 +1,0 @@
-{% for d in postfix.virtual_aliases|sort %}
-    {% for i in postfix.virtual_aliases[d]|sort %}
-{{ i }}@{{ d }} {{ postfix.virtual_aliases[d][i] }}
-    {% endfor %}
-{% endfor %}

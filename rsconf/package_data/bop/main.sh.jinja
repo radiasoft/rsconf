@@ -27,5 +27,4 @@ bop_facade_setup() {
 
 bop_main() {
     {{ bop.facade_setup_cmds | indent(4, indentfirst=False) }}
-    postfix_setup_bop '{{ bop.mail_domain_keys | join("' '") }}'
 }
