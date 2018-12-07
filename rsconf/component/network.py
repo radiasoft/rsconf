@@ -29,22 +29,23 @@ def update_j2_ctx(j2_ctx):
 
 class T(component.T):
 
-    def internal_build(self):
+    def internal_build_compile(self):
         self.buildt.require_component('base_os')
         if not self.hdb.network.devices:
             # no devices, no network config
             self.append_root_bash(': nothing to do')
             return
         self.service_prepare((_SCRIPTS, _RESOLV_CONF))
-        j2_ctx = self.hdb.j2_ctx_copy()
-        update_j2_ctx(j2_ctx)
+        self.j2_ctx = self.hdb.j2_ctx_copy()
+        jc = self.j2_ctx
+        update_j2_ctx(jc)
         self.install_access(mode='444', owner=self.hdb.rsconf_db.root_u)
-        devs, defroute = self._devices(j2_ctx)
+        devs, defroute = self._devices(jc)
         if defroute:
             assert defroute.net.search and defroute.net.nameservers, \
                 '{}: defroute needs search and nameservers'.format(defroute.net)
-            self.install_resource('network/resolv.conf', j2_ctx, _RESOLV_CONF)
-        z = j2_ctx.network
+            self.install_resource('network/resolv.conf', jc, _RESOLV_CONF)
+        z = jc.network
         if z.get('iptables_enable', False) and len(devs) == 1:
             z.update(
                 inet_dev=defroute,
@@ -65,7 +66,31 @@ class T(component.T):
             self.service_prepare((_IPTABLES, _SCRIPTS), name='iptables')
         if z.inet_dev:
             self.hdb.network.primary_public_ip = z.inet_dev.ip
-        self._write_files(j2_ctx, devs)
+        self._devs = devs
+
+    def internal_build_write(self):
+        if not hasattr(self, 'j2_ctx'):
+            return
+        jc = self.j2_ctx
+        # Only for jupyterhub, explicitly set, and not on a machine
+        # with a public address
+        for d in self._devs:
+            for k, v in d.items():
+                if isinstance(v, bool):
+                    d[k] = 'yes' if v else 'no'
+            jc.network.dev = d
+            self.install_resource(
+                'network/ifcfg-en',
+                jc,
+                _SCRIPTS.join('ifcfg-' + d.name)
+            )
+        if jc.network.iptables_enable:
+            assert not jc.docker.iptables, \
+                '{}: docker.iptables not allowed on a public ip'.format(
+                    jc.network.defroute.ip,
+                )
+            self.install_resource('network/iptables', jc, _IPTABLES)
+        self.append_root_bash_with_main(jc)
 
     def _defroute(self, routes):
         defroute = None
@@ -83,20 +108,20 @@ class T(component.T):
                 defroute = r
         return defroute
 
-    def _devices(self, j2_ctx):
-        z = j2_ctx.network
-        self.__trusted_nets = self._nets(j2_ctx, z.trusted)
-        j2_ctx.network.setdefault(
+    def _devices(self, jc):
+        z = jc.network
+        self.__trusted_nets = self._nets(jc, z.trusted)
+        jc.network.setdefault(
             'trusted_public_nets',
             sorted([n.name for n in self.__trusted_nets.values() if n.name.is_global]),
         )
-        self.__untrusted_nets = self._nets(j2_ctx, z.untrusted)
+        self.__untrusted_nets = self._nets(jc, z.untrusted)
         devs = []
         routes = []
         defroute = None
-        j2_ctx.network.natted_dev = None
-        for dn in sorted(j2_ctx.network.devices):
-            d = copy.deepcopy(j2_ctx.network.devices[dn])
+        jc.network.natted_dev = None
+        for dn in sorted(jc.network.devices):
+            d = copy.deepcopy(jc.network.devices[dn])
             devs.append(d)
             d.name = dn
             d.vlan = '.' in dn
@@ -108,19 +133,19 @@ class T(component.T):
                     '{} & {}: both declared as default routes'.format(d, defroute)
                 defroute = d
             if d.setdefault('is_natted', False):
-                assert not j2_ctx.network.natted_dev, \
+                assert not jc.network.natted_dev, \
                     '{}: duplicate natted dev ({})'.format(
                         d.name,
-                        j2_ctx.network.natted_dev.name,
+                        jc.network.natted_dev.name,
                     )
-                j2_ctx.network.natted_dev = d
+                jc.network.natted_dev = d
         if not defroute:
             defroute = self._defroute(routes)
         defroute.defroute = True
-        j2_ctx.network.defroute = defroute
+        jc.network.defroute = defroute
         return devs, defroute
 
-    def _nets(self, j2_ctx, spec):
+    def _nets(self, jc, spec):
         nets = pkcollections.Dict()
         for n, v in spec.items():
             v = copy.deepcopy(v)
@@ -149,24 +174,3 @@ class T(component.T):
                 if nip.subnet_of(n):
                     return nets[n]
         raise AssertionError('{}: ip not found in network.trusted'.format(nip))
-
-    def _write_files(self, j2_ctx, devs):
-        # Only for jupyterhub, explicitly set, and not on a machine
-        # with a public address
-        for d in devs:
-            for k, v in d.items():
-                if isinstance(v, bool):
-                    d[k] = 'yes' if v else 'no'
-            j2_ctx.network.dev = d
-            self.install_resource(
-                'network/ifcfg-en',
-                j2_ctx,
-                _SCRIPTS.join('ifcfg-' + d.name)
-            )
-        if j2_ctx.network.iptables_enable:
-            assert not j2_ctx.docker.iptables, \
-                '{}: docker.iptables not allowed on a public ip'.format(
-                    j2_ctx.network.defroute.ip,
-                )
-            self.install_resource('network/iptables', j2_ctx, _IPTABLES)
-        self.append_root_bash_with_main(j2_ctx)
