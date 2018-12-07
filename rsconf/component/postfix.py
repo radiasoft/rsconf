@@ -32,7 +32,7 @@ class T(component.T):
     def internal_build_compile(self):
         from rsconf import systemd
 
-        self.buildt.require_component('postgrey', 'spamd')
+        self.buildt.require_component('network', 'postgrey', 'spamd')
         self.j2_ctx = self.hdb.j2_ctx_copy()
         jc = self.j2_ctx
         z = jc.setdefault('postfix', pkcollections.Dict())
@@ -104,6 +104,8 @@ class T(component.T):
         z.setdefault('mydomain', _HOSTNAME_RE.search(h).group(1))
         z.setdefault('myorigin', h)
         z.setdefault('myhostname', h)
+        if not z.get('mynetworks'):
+            z.mynetworks = self.buildt.get_component('network').trusted_networks_as_str(',')
 
     def _setup_sasl(self, jc, z):
         z.have_sasl = bool(z.get('sasl_users'))

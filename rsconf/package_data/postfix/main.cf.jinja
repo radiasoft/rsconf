@@ -37,13 +37,16 @@ message_size_limit = 50000000
 mydestination = {{ postfix.mydestination }}
 mydomain = {{ postfix.mydomain }}
 myhostname = {{ postfix.myhostname }}
-mynetworks =
+mynetworks = {{ postfix.mynetworks }}
 myorigin = {{ postfix.myorigin }}
 smtp_tls_CAfile = /etc/pki/tls/certs/ca-bundle.crt
 smtp_tls_cert_file = {{ postfix.tls_cert_file }}
 smtp_tls_key_file = {{ postfix.tls_key_file }}
 smtp_tls_security_level = may
 smtpd_banner = {{ postfix.myhostname }} ESMTP
+smtpd_client_restrictions =
+    permit_mynetworks,
+    sleep 8
 smtpd_data_restrictions = reject_unauth_pipelining
 smtpd_recipient_restrictions =
     reject_unauth_pipelining,
@@ -87,7 +90,4 @@ smtpd_delay_reject = no
 {% if postfix.have_virtual_aliases %}
 virtual_alias_domains = {{ postfix.virtual_alias_domains_f }}
 virtual_alias_maps = {{ postfix.virtual_alias_maps }}
-{% endif %}
-{% if rsconf_db.channel != 'dev' %}
-smtpd_client_restrictions = sleep 8
 {% endif %}

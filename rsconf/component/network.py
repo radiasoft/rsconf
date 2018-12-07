@@ -31,12 +31,12 @@ class T(component.T):
 
     def internal_build_compile(self):
         self.buildt.require_component('base_os')
+        self.j2_ctx = self.hdb.j2_ctx_copy()
         if not self.hdb.network.devices:
             # no devices, no network config
             self.append_root_bash(': nothing to do')
             return
         self.service_prepare((_SCRIPTS, _RESOLV_CONF))
-        self.j2_ctx = self.hdb.j2_ctx_copy()
         jc = self.j2_ctx
         update_j2_ctx(jc)
         self.install_access(mode='444', owner=self.hdb.rsconf_db.root_u)
@@ -69,7 +69,7 @@ class T(component.T):
         self._devs = devs
 
     def internal_build_write(self):
-        if not hasattr(self, 'j2_ctx'):
+        if not hasattr(self, '_devs'):
             return
         jc = self.j2_ctx
         # Only for jupyterhub, explicitly set, and not on a machine
@@ -91,6 +91,9 @@ class T(component.T):
                 )
             self.install_resource('network/iptables', jc, _IPTABLES)
         self.append_root_bash_with_main(jc)
+
+    def trusted_networks_as_str(self, separator):
+        return separator.join(sorted(self.j2_ctx.network.trusted.keys()))
 
     def _defroute(self, routes):
         defroute = None
