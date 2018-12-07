@@ -6,6 +6,8 @@ postfix_main() {
     {% endif %}
     # never hurts
     newaliases
+    #TODO(robnagler) remove when deployed everywhere
+    rm -f /etc/postfix/local-host-names
 }
 
 {% if postfix.have_sasl %}

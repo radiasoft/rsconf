@@ -44,13 +44,13 @@ class T(component.T):
         self._setup_mynames(jc, z)
         self._setup_check_sender_access(jc, z)
         z.local_host_names = []
-        z.local_host_names_f = '/etc/postfix/local-host-names'
 
     def internal_build_write(self):
         from rsconf import systemd
 
         jc = self.j2_ctx
         z = jc.postfix
+        z.mydestination = ','.join([z.myhostname, 'localhost'] + sorted(z.local_host_names))
         self.install_access(mode='400', owner=jc.rsconf_db.root_u)
         kc = self.install_tls_key_and_crt(jc.rsconf_db.host, _CONF_D)
         z.update(
@@ -60,10 +60,6 @@ class T(component.T):
         self.install_access(mode='644')
         self.install_resource('postfix/main.cf', jc, _CONF_D.join('main.cf'))
         self.install_resource('postfix/master.cf', jc, _CONF_D.join('master.cf'))
-        self.install_joined_lines(
-            sorted(z.local_host_names),
-            z.local_host_names_f,
-        )
         # see base_users.py which may clear email_aliases by setting to None
         z.aliases.update(jc.base_users.email_aliases)
         self.install_resource(
