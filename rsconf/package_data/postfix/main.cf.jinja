@@ -34,7 +34,7 @@ mailbox_command = /usr/bin/procmail -t -Y -a "$EXTENSION" -d "$USER"
 local_recipient_maps =
 mailbox_size_limit = 0
 message_size_limit = 50000000
-mydestination = {{ postfix.mydomain }},localhost,{{ postfix.local_host_names_f }}
+mydestination = {{ postfix.myhostname }},localhost,{{ postfix.local_host_names_f }}
 mydomain = {{ postfix.mydomain }}
 myhostname = {{ postfix.myhostname }}
 mynetworks = 127.0.0.0/8
@@ -43,7 +43,7 @@ smtp_tls_CAfile = /etc/pki/tls/certs/ca-bundle.crt
 smtp_tls_cert_file = {{ postfix.tls_cert_file }}
 smtp_tls_key_file = {{ postfix.tls_key_file }}
 smtp_tls_security_level = may
-smtpd_banner = {{ postfix.mydomain }} ESMTP
+smtpd_banner = {{ postfix.myhostname }} ESMTP
 smtpd_data_restrictions = reject_unauth_pipelining
 smtpd_recipient_restrictions = reject_unauth_pipelining,
     permit_mynetworks,
