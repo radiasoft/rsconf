@@ -37,7 +37,7 @@ message_size_limit = 50000000
 mydestination = {{ postfix.myhostname }},localhost,{{ postfix.local_host_names_f }}
 mydomain = {{ postfix.mydomain }}
 myhostname = {{ postfix.myhostname }}
-mynetworks = 127.0.0.0/8
+mynetworks =
 myorigin = {{ postfix.myorigin }}
 smtp_tls_CAfile = /etc/pki/tls/certs/ca-bundle.crt
 smtp_tls_cert_file = {{ postfix.tls_cert_file }}
@@ -45,21 +45,23 @@ smtp_tls_key_file = {{ postfix.tls_key_file }}
 smtp_tls_security_level = may
 smtpd_banner = {{ postfix.myhostname }} ESMTP
 smtpd_data_restrictions = reject_unauth_pipelining
-smtpd_recipient_restrictions = reject_unauth_pipelining,
-    permit_mynetworks,
+smtpd_recipient_restrictions =
+    reject_unauth_pipelining,
     permit_sasl_authenticated,
     reject_unauth_destination,
     reject_non_fqdn_recipient,
     reject_unknown_recipient_domain,
     check_policy_service inet:127.0.0.1:{{ postgrey.port }}
-smtpd_relay_restrictions = permit_mynetworks,permit_sasl_authenticated,reject_unauth_destination
+smtpd_relay_restrictions =
+    permit_sasl_authenticated,
+    reject_unauth_destination
 smtpd_tls_CAfile = /etc/pki/tls/certs/ca-bundle.crt
 smtpd_tls_cert_file = {{ postfix.tls_cert_file }}
 smtpd_tls_key_file = {{ postfix.tls_key_file }}
 smtpd_tls_security_level = may
 recipient_delimiter = +
-smtpd_sender_restrictions = reject_unauth_pipelining,
-    permit_mynetworks,
+smtpd_sender_restrictions =
+    reject_unauth_pipelining,
     check_sender_access {{ postfix.check_sender_access_arg }},
     reject_non_fqdn_sender,
     reject_unknown_sender_domain
