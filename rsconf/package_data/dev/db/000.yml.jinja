@@ -187,6 +187,7 @@ default:
       root: root@{{ master }}
       errors: errors@{{ master }}
       critical-errors: critical-errors@{{ master }}
+    smart_host: {{ master }}
     whitelist_senders:
       - poorly-configured-mailer.com
   postgresql:

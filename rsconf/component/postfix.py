@@ -8,6 +8,7 @@ from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
 from pykern.pkdebug import pkdp
 from pykern import pkio
+from pykern import pkjson
 from rsconf import component
 import re
 import socket
@@ -18,11 +19,14 @@ import subprocess
 # Delete all the deferred messages: postsuper -d ALL deferred
 #
 
-
 _CONF_D = pkio.py_path('/etc/postfix')
 
 # We require three part host name
 _HOSTNAME_RE = re.compile(r'^[^\.]+\.([^\.]+\.[^\.]+)$');
+
+_SASL_PASSWORD_JSON_F = 'postfix_host_sasl_password.json'
+
+_SASL_PASSWORD_PREFIX = 'postfix@'
 
 class T(component.T):
 
@@ -43,6 +47,7 @@ class T(component.T):
         self._setup_sasl(jc, z)
         self._setup_mynames(jc, z)
         self._setup_check_sender_access(jc, z)
+        self._setup_sasl_password(jc, z)
         z.local_host_names = []
 
     def internal_build_write(self):
@@ -110,24 +115,53 @@ class T(component.T):
         z.have_sasl = bool(z.get('sasl_users'))
         if not z.have_sasl:
             return
+        assert z.smart_host == jc.rsconf_db.host, \
+            'only one host can be sasl host'
         self.install_access(mode='400', owner=jc.rsconf_db.root_u)
-        z.sasl_users_flattened = []
+        r = []
         for domain, u in z.sasl_users.items():
             for user, password in u.items():
-                z.sasl_users_flattened.append(
+                r.append(
                     pkcollections.Dict(
                         domain=domain,
                         user=user,
                         password=password,
                     ),
                 )
+        jf = _sasl_password_path(jc)
+        if jf.check():
+            with jf.open() as f:
+                y = pkjson.load_any(f)
+            for u, p in y.items():
+                x = u.split('@')
+                r.append(
+                    pkcollections.Dict(
+                        domain=x[1],
+                        user=x[0],
+                        password=p,
+                    ),
+                )
+        z.sasl_users_flattened = sorted(r, key=lambda x: x.user + x.domain)
         self.install_resource(
             'postfix/smtpd-sasldb.conf',
             jc,
             '/etc/sasl2/smtpd-sasldb.conf',
         )
-        assert jc.postfix.sasl_users_flattened
-        self.hdb.postfix.sasl_users_flattened = jc.postfix.sasl_users_flattened
+
+    def _setup_sasl_password(self, jc, z):
+        rh = z.get('smart_host')
+        z.have_sasl_password = bool(rh) and not (
+            z.have_bop or z.have_sasl or z.have_virtual_aliases
+        )
+        if not z.have_sasl_password:
+            return
+        z.relayhost = '[{}]:submission'.format(rh.lower())
+        u, p = host_init(jc, jc.rsconf_db.host)
+        fn = _CONF_D.join('sasl_password')
+        l = '{} {}:{}'.format(z.relayhost, u, p)
+        self.install_joined_lines([l], fn)
+        z.sasl_password_maps = 'texthash:' + str(fn)
+
 
     def _setup_virtual_aliases(self, jc, z):
         z.have_virtual_aliases = bool(z.get('virtual_aliases'))
@@ -146,3 +180,24 @@ class T(component.T):
                     for x in sorted(z.virtual_aliases[d].keys())
             ])
         self.install_joined_lines(a, z.virtual_alias_f)
+
+
+def host_init(j2_ctx, host):
+    from rsconf import db
+
+    jf = _sasl_password_path(j2_ctx)
+    if jf.check():
+        with jf.open() as f:
+            y = pkjson.load_any(f)
+    else:
+        y = pkcollections.Dict()
+    u = _SASL_PASSWORD_PREFIX + host
+    if not u in y:
+        y[u] = db.random_string()
+        pkjson.dump_pretty(y, filename=jf)
+    return u, y[u]
+
+
+def _sasl_password_path(j2_ctx):
+    from rsconf import db
+    return db.secret_path(j2_ctx, _SASL_PASSWORD_JSON_F, visibility=db.VISIBILITY_GLOBAL)

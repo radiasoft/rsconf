@@ -61,7 +61,6 @@ smtpd_relay_restrictions =
 smtpd_tls_CAfile = /etc/pki/tls/certs/ca-bundle.crt
 smtpd_tls_cert_file = {{ postfix.tls_cert_file }}
 smtpd_tls_key_file = {{ postfix.tls_key_file }}
-smtpd_tls_security_level = may
 recipient_delimiter = +
 smtpd_sender_restrictions =
     reject_unauth_pipelining,
@@ -75,6 +74,14 @@ smtpd_sender_restrictions =
 {#
     Conditional Custom Config: alphabetical by conditional
 #}
+{% if postfix.have_sasl_password %}
+relayhost = {{ postfix.relayhost }}
+smtp_sasl_auth_enable = yes
+smtp_sasl_password_maps = {{ postfix.sasl_password_maps }}
+smtp_sasl_security_options = noanonymous
+smtp_tls_security_level = encrypt
+{% else %}
+smtpd_tls_security_level = may
 {% if postfix.have_bop %}
 mailbox_transport = bsendmailhttp:unix
 smtpd_timeout = ${stress?12}${stress:300}
@@ -90,4 +97,5 @@ smtpd_delay_reject = no
 {% if postfix.have_virtual_aliases %}
 virtual_alias_domains = {{ postfix.virtual_alias_domains_f }}
 virtual_alias_maps = {{ postfix.virtual_alias_maps }}
+{% endif %}
 {% endif %}
