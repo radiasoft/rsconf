@@ -50,7 +50,9 @@ class T(component.T):
 
         jc = self.j2_ctx
         z = jc.postfix
-        z.mydestination = ','.join([z.myhostname, 'localhost'] + sorted(z.local_host_names))
+        z.mydestination = ','.join(
+            [z.myhostname, 'localhost'] + sorted(z.local_host_names),
+        )
         self.install_access(mode='400', owner=jc.rsconf_db.root_u)
         kc = self.install_tls_key_and_crt(jc.rsconf_db.host, _CONF_D)
         z.update(
@@ -58,9 +60,10 @@ class T(component.T):
             tls_key_file=kc.key,
         )
         self.install_access(mode='644')
-        self.install_resource('postfix/main.cf', jc, _CONF_D.join('main.cf'))
-        self.install_resource('postfix/master.cf', jc, _CONF_D.join('master.cf'))
-        # see base_users.py which may clear email_aliases by setting to None
+        for f in 'main.cf', 'master.cf':
+            self.install_resource('postfix/' + f, jc, _CONF_D.join(f))
+        # see base_users.py which may clear email_aliases
+        # by setting to None
         z.aliases.update(jc.base_users.email_aliases)
         self.install_resource(
             'postfix/aliases',
@@ -85,27 +88,23 @@ class T(component.T):
         self.install_abspath(src, x)
 
     def _setup_mynames(self, jc, z):
-        if 'myhostname' in z:
-            h = z.myhostname
-        elif 'primary_public_ip' in jc.network:
-            h = socket.gethostbyaddr(jc.network.primary_public_ip)[0]
-            assert _HOSTNAME_RE.search(h).group(1).lower() \
-                == _HOSTNAME_RE.search(jc.rsconf_db.host).group(1).lower(), \
-                '{}: reverse dns for {} does not match SLD of {}'.format(
-                    h,
-                    jc.network.primary_public_ip,
-                    jc.rsconf_db.host,
-                )
-        else:
-            h = jc.rsconf_db.host
-        # just in case
-        h = h.lower()
+        jc = self.j2_ctx
+        nc = self.buildt.get_component('network')
         # allow overrides, but also assert "h"
+        h = z.get('myhostname')
+        rh = jc.rsconf_db.host.lower()
+        if not h:
+            ip = nc.unchecked_public_ip()
+            h = socket.gethostbyaddr(ip)[0] if ip else rh
+        h = h.lower()
+        assert _HOSTNAME_RE.search(h).group(1) \
+            == _HOSTNAME_RE.search(rh).group(1), \
+            'primary does not match SLD of {}'.format(h, rh)
         z.setdefault('mydomain', _HOSTNAME_RE.search(h).group(1))
         z.setdefault('myorigin', h)
         z.setdefault('myhostname', h)
         if not z.get('mynetworks'):
-            z.mynetworks = self.buildt.get_component('network').trusted_networks_as_str(',')
+            z.mynetworks = nc.trusted_networks_as_str(',')
 
     def _setup_sasl(self, jc, z):
         z.have_sasl = bool(z.get('sasl_users'))

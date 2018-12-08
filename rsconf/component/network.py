@@ -92,6 +92,12 @@ class T(component.T):
             self.install_resource('network/iptables', jc, _IPTABLES)
         self.append_root_bash_with_main(jc)
 
+    def unchecked_public_ip(self):
+        jc = self.j2_ctx
+        if jc.network.get('inet_dev'):
+            return jc.network.primary_public_ip
+        return None
+
     def trusted_networks_as_str(self, separator):
         return separator.join(sorted(self.j2_ctx.network.trusted.keys()))
 
