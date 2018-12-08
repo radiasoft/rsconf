@@ -115,7 +115,7 @@ class T(component.T):
         z.have_sasl = bool(z.get('sasl_users'))
         if not z.have_sasl:
             return
-        assert z.smart_host == jc.rsconf_db.host, \
+        assert not z.smart_host or z.smart_host == jc.rsconf_db.host, \
             'only one host can be sasl host'
         self.install_access(mode='400', owner=jc.rsconf_db.root_u)
         r = []
