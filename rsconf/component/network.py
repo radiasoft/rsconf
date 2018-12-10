@@ -65,6 +65,8 @@ class T(component.T):
             # Only restart iptables service if we have iptables
             self.service_prepare((_IPTABLES, _SCRIPTS), name='iptables')
         if z.inet_dev:
+            #TODO(robnagler) update other uses and remove self.hdb mod
+            z.primary_public_ip = z.inet_dev.ip
             self.hdb.network.primary_public_ip = z.inet_dev.ip
         self._devs = devs
 
