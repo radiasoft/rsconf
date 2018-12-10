@@ -115,7 +115,8 @@ class T(component.T):
         z.have_sasl = bool(z.get('sasl_users'))
         if not z.have_sasl:
             return
-        assert not z.smart_host or z.smart_host == jc.rsconf_db.host, \
+        sh = z.get('smart_host')
+        assert not sh or sh == jc.rsconf_db.host, \
             'only one host can be sasl host'
         self.install_access(mode='400', owner=jc.rsconf_db.root_u)
         r = []
@@ -149,13 +150,13 @@ class T(component.T):
         )
 
     def _setup_sasl_password(self, jc, z):
-        rh = z.get('smart_host')
-        z.have_sasl_password = bool(rh) and not (
+        sh = z.get('smart_host')
+        z.have_sasl_password = bool(sh) and not (
             z.have_bop or z.have_sasl or z.have_virtual_aliases
         )
         if not z.have_sasl_password:
             return
-        z.relayhost = '[{}]:submission'.format(rh.lower())
+        z.relayhost = '[{}]:submission'.format(sh.lower())
         u, p = host_init(jc, jc.rsconf_db.host)
         fn = _CONF_D.join('sasl_password')
         l = '{} {}:{}'.format(z.relayhost, u, p)
