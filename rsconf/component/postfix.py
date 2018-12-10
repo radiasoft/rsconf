@@ -43,12 +43,10 @@ class T(component.T):
         z.have_bop = False
         self.append_root_bash('rsconf_yum_install postfix procmail')
         systemd.unit_prepare(self, jc, [_CONF_D])
-        self._setup_virtual_aliases(jc, z)
-        self._setup_sasl(jc, z)
-        self._setup_mynames(jc, z)
-        self._setup_check_sender_access(jc, z)
-        self._setup_sasl_password(jc, z)
+        z.have_virtual_aliases = bool(z.get('virtual_aliases'))
+        z.have_sasl = bool(z.get('sasl_users'))
         z.local_host_names = []
+        self._setup_mynames(jc, z)
 
     def internal_build_write(self):
         from rsconf import systemd
@@ -58,6 +56,10 @@ class T(component.T):
         z.mydestination = ','.join(
             [z.myhostname, 'localhost'] + sorted(z.local_host_names),
         )
+        self._write_check_sender_access(jc, z)
+        self._write_sasl_password(jc, z)
+        self._write_sasl(jc, z)
+        self._write_virtual_aliases(jc, z)
         self.install_access(mode='400', owner=jc.rsconf_db.root_u)
         kc = self.install_tls_key_and_crt(jc.rsconf_db.host, _CONF_D)
         z.update(
@@ -83,15 +85,6 @@ class T(component.T):
         self.j2_ctx.postfix.have_bop = True
         self.extend_local_host_names(mail_domains)
 
-    def _setup_check_sender_access(self, jc, z):
-        src = self.tmp_path()
-        x = ['{} OK\n'.format(x) for x in sorted(z.get('whitelist_senders', []))]
-        src.write(''.join(x))
-        x =  _CONF_D.join('sender_access')
-        z.check_sender_access_arg = 'texthash:' + str(x)
-        self.install_access(mode='440', owner=jc.rsconf_db.root_u, group='mail')
-        self.install_abspath(src, x)
-
     def _setup_mynames(self, jc, z):
         jc = self.j2_ctx
         nc = self.buildt.get_component('network')
@@ -111,8 +104,16 @@ class T(component.T):
         if not z.get('mynetworks'):
             z.mynetworks = nc.trusted_networks_as_str(',')
 
-    def _setup_sasl(self, jc, z):
-        z.have_sasl = bool(z.get('sasl_users'))
+    def _write_check_sender_access(self, jc, z):
+        src = self.tmp_path()
+        x = ['{} OK\n'.format(x) for x in sorted(z.get('whitelist_senders', []))]
+        src.write(''.join(x))
+        x =  _CONF_D.join('sender_access')
+        z.check_sender_access_arg = 'texthash:' + str(x)
+        self.install_access(mode='440', owner=jc.rsconf_db.root_u, group='mail')
+        self.install_abspath(src, x)
+
+    def _write_sasl(self, jc, z):
         if not z.have_sasl:
             return
         self.install_access(mode='400', owner=jc.rsconf_db.root_u)
@@ -146,7 +147,7 @@ class T(component.T):
             '/etc/sasl2/smtpd-sasldb.conf',
         )
 
-    def _setup_sasl_password(self, jc, z):
+    def _write_sasl_password(self, jc, z):
         sh = z.get('smart_host')
         z.have_sasl_password = bool(sh) and not (
             z.have_bop or z.have_sasl or z.have_virtual_aliases
@@ -160,9 +161,7 @@ class T(component.T):
         self.install_joined_lines([l], fn)
         z.sasl_password_maps = 'texthash:' + str(fn)
 
-
-    def _setup_virtual_aliases(self, jc, z):
-        z.have_virtual_aliases = bool(z.get('virtual_aliases'))
+    def _write_virtual_aliases(self, jc, z):
         if not z.have_virtual_aliases:
             return
         self.install_access(mode='440', owner=jc.rsconf_db.root_u, group='mail')
