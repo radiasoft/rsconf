@@ -53,8 +53,10 @@ smtpd_recipient_restrictions =
     permit_sasl_authenticated,
     reject_unauth_destination,
     reject_non_fqdn_recipient,
-    reject_unknown_recipient_domain,
-    check_policy_service inet:127.0.0.1:{{ postgrey.port }}
+    reject_unknown_recipient_domain
+{% if postfix.have_public_smtp %}
+    , check_policy_service inet:127.0.0.1:{{ postgrey.port }}
+{% endif %}
 smtpd_relay_restrictions =
     permit_sasl_authenticated,
     reject_unauth_destination

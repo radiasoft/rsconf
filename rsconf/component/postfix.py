@@ -36,10 +36,16 @@ class T(component.T):
     def internal_build_compile(self):
         from rsconf import systemd
 
-        self.buildt.require_component('network', 'postgrey', 'spamd')
+        self.buildt.require_component('network')
         self.j2_ctx = self.hdb.j2_ctx_copy()
         jc = self.j2_ctx
         z = jc.setdefault('postfix', pkcollections.Dict())
+        z.have_public_smtp = not z.get('smart_host')
+        if z.have_public_smtp:
+            nc.add_public_tcp_ports(['smtp', 'submission'])
+            self.buildt.require_component('postgrey', 'spamd')
+        else:
+            nc.add_trusted_tcp_ports(['smtp', 'submission'])
         z.have_bop = False
         self.append_root_bash('rsconf_yum_install postfix procmail')
         systemd.unit_prepare(self, jc, [_CONF_D])
@@ -82,7 +88,10 @@ class T(component.T):
         self.rsconf_service_restart_at_end()
 
     def setup_bop(self, mail_domains):
-        self.j2_ctx.postfix.have_bop = True
+        z = self.j2_ctx.postfix
+        z.have_bop = True
+        assert z.have_public_smtp, \
+            'if bop is installed, must have_public_smtp (smart_host must not be set)'
         self.extend_local_host_names(mail_domains)
 
     def _setup_mynames(self, jc, z):

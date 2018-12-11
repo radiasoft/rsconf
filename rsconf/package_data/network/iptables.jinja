@@ -11,9 +11,17 @@
 {% for d in network.private_devs %}
     -A INPUT -i {{ d }} -j ACCEPT
 {% endfor %}
-# All these services protect themselves or are not running on most servers
--A INPUT -i {{ network.inet_dev.name }} -p tcp -m state --state NEW -m tcp --match multiport --dports http,https,smtp,submission,pop3s,domain -j ACCEPT
--A INPUT -i {{ network.inet_dev.name }} -p udp --match multiport --dports domain -j ACCEPT
+{% if network.public_tcp_ports %}
+    -A INPUT -i {{ network.inet_dev.name }} -p tcp -m state --state NEW -m tcp --match multiport --dports {{ network.public_tcp_ports | join(',') }} -j ACCEPT
+{% endif %}
+{% if network.trusted_tcp_ports %}
+    {% for n in network.trusted_public_nets %}
+        -A INPUT -i {{ network.inet_dev.name }} -s {{ n }} -p tcp -m tcp --dport {{ network.trusted_tcp_ports }} -j ACCEPT
+    {% endfor %}
+{% endif %}
+{% if network.public_udp_ports %}
+    -A INPUT -i {{ network.inet_dev.name }} -p udp --match multiport --dports {{ network.public_udp_ports | join (',') }} -j ACCEPT
+{% endif %}
 -A INPUT -i {{ network.inet_dev.name }} -m state --state RELATED,ESTABLISHED -j ACCEPT
 -A INPUT -i {{ network.inet_dev.name }} -m state --state INVALID -j REJECT --reject-with icmp-port-unreachable
 -A INPUT -i {{ network.inet_dev.name }} -p tcp -m tcp --tcp-flags SYN,RST,ACK ACK -m state --state NEW -j REJECT --reject-with tcp-reset

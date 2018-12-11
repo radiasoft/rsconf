@@ -29,6 +29,15 @@ def update_j2_ctx(j2_ctx):
 
 class T(component.T):
 
+    def add_public_tcp_ports(self, ports):
+        _add_ports(self, 'public_tcp_ports', ports)
+
+    def add_public_udp_ports(self, ports):
+        _add_ports(self, 'public_udp_ports', ports)
+
+    def add_trusted_tcp_ports(self, ports):
+        _add_ports(self, 'trusted_tcp_ports', ports)
+
     def internal_build_compile(self):
         self.buildt.require_component('base_os')
         self.j2_ctx = self.hdb.j2_ctx_copy()
@@ -68,12 +77,26 @@ class T(component.T):
             #TODO(robnagler) update other uses and remove self.hdb mod
             z.primary_public_ip = z.inet_dev.ip
             self.hdb.network.primary_public_ip = z.inet_dev.ip
+        z.public_tcp_ports = []
+        z.trusted_tcp_ports = []
+        z.public_udp_ports = []
         self._devs = devs
 
     def internal_build_write(self):
         if not hasattr(self, '_devs'):
             return
+
+        """
+        add the ports in array (if not already added)
+        public ports for nginx(?)
+
+        nginx ? http,https,
+        domain
+        """
         jc = self.j2_ctx
+        z = jc.network
+        for w in 'public_tcp_ports', 'public_udp_ports', 'trusted_tcp_ports':
+            z[w] = sorted(z[w])
         # Only for jupyterhub, explicitly set, and not on a machine
         # with a public address
         for d in self._devs:
@@ -94,14 +117,24 @@ class T(component.T):
             self.install_resource('network/iptables', jc, _IPTABLES)
         self.append_root_bash_with_main(jc)
 
+    def trusted_networks_as_str(self, separator):
+        return separator.join(sorted(self.j2_ctx.network.trusted.keys()))
+
     def unchecked_public_ip(self):
         jc = self.j2_ctx
         if jc.network.get('inet_dev'):
             return jc.network.primary_public_ip
         return None
 
-    def trusted_networks_as_str(self, separator):
-        return separator.join(sorted(self.j2_ctx.network.trusted.keys()))
+    def _add_ports(self, which, ports):
+        z = self.j2_ctx.network
+        check = ('trusted_tcp_ports', 'public_tcp_ports') if 'tcp' in which \
+            else ('public_udp_ports',)
+        for p in ports:
+            for w in check:
+                assert not p in z[w], \
+                    'port {} already in {}'.format(p, w)
+            z[which].append(p)
 
     def _defroute(self, routes):
         defroute = None

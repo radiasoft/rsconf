@@ -114,19 +114,21 @@ http {
           "listen 443 default server" is not the default server
           for explicit IPs in vhosts. Therefore, we have to list out
           all the explicit IPs. We do not have that but we do have the
-          primary_public_ip and can use that along with the global default
-          listen directive. Ideally, we would know the IP of all
-          the hosts installed in conf.d, but we do not.
+          public_ip and can use that along with the global default
+          listen directive.
+          TODO(robnagler) add the IP of all the hosts installed in
+              conf.d so we can list them here. install_vhost should
+              do more work.
         #}
         listen 80 default_server;
-        {% if "primary_public_ip" in network %}
-            listen {{ network.primary_public_ip }}:80 default_server;
+        {% if nginx.public_ip %}
+            listen {{ nginx.public_ip }}:80 default_server;
         {% endif %}
         server_name "";
         {% if "default_server_tls" in nginx %}
             listen 443 ssl default_server;
-            {% if "primary_public_ip" in network %}
-                listen {{ network.primary_public_ip }}:443 ssl default_server;
+            {% if nginx.public_ip %}
+                listen {{ nginx.public_ip }}:443 ssl default_server;
             {% endif %}
             ssl_certificate {{ nginx.default_server_tls.crt }};
             ssl_certificate_key {{ nginx.default_server_tls.key }};

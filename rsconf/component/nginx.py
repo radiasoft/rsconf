@@ -100,31 +100,45 @@ def update_j2_ctx_and_install_access(compt, j2_ctx):
 
 class T(component.T):
 
-    def internal_build(self):
+    def internal_build_compile(self):
         from rsconf import systemd
 
         self.buildt.require_component('base_all')
         self.append_root_bash('rsconf_yum_install nginx')
-        j2_ctx = self.hdb.j2_ctx_copy()
-        z = j2_ctx.nginx
-        systemd.unit_prepare(self, j2_ctx, [_CONF_ROOT_D])
+        self.j2_ctx = self.hdb.j2_ctx_copy()
+        jc = self.j2_ctx
+        z = jc.nginx
+        z.rendered_redirects = self._render_redirects(jc)
+        nc = self.buildt.get_component('network')
+        z.public_ip = nc.unchecked_public_ip()
+        if z.public_ip:
+            add_public_tcp_ports(
+                'http',
+                'https',
+            )
+        systemd.unit_prepare(self, jc, [_CONF_ROOT_D])
+
+    def internal_build_write(self):
+        from rsconf import systemd
+
+        jc = self.j2_ctx
+        z = jc.nginx
         self.install_access(mode='400', owner=self.hdb.rsconf_db.root_u)
-        z.rendered_redirects = self._render_redirects(j2_ctx)
-        if self.has_tls(j2_ctx, j2_ctx.rsconf_db.host):
+        if self.has_tls(jc, jc.rsconf_db.host):
             z.default_server_tls = self.install_tls_key_and_crt(
-                j2_ctx.rsconf_db.host,
+                jc.rsconf_db.host,
                 CONF_D,
             )
-        self.install_resource('nginx/global.conf', j2_ctx, _GLOBAL_CONF)
-        systemd.unit_enable(self, j2_ctx)
+        self.install_resource('nginx/global.conf', jc, _GLOBAL_CONF)
+        systemd.unit_enable(self, jc)
         self.rsconf_service_restart_at_end()
 
-    def _render_redirects(self, j2_ctx):
+    def _render_redirects(self, jc):
         res = ''
-        redirects = j2_ctx.nginx.setdefault('redirects', [])
+        redirects = jc.nginx.setdefault('redirects', [])
         for r in redirects:
             names = r.server_names
             if r.setdefault('want_www', False):
                 names = sum([[s, 'www.' + s] for s in names], [])
-            res += render_redirects(self, j2_ctx, names, r.host_or_uri)
+            res += render_redirects(self, jc, names, r.host_or_uri)
         return res

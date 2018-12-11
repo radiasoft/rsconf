@@ -32,6 +32,7 @@ class T(component.T):
         self.append_root_bash('rsconf_yum_install dovecot')
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.dovecot
+        nc = self.buildt.get_component('network').add_public_tcp_ports(['pop3s'])
         z.passdb_scheme = 'SHA512-CRYPT'
         z.user_mail_d = 'Maildir'
         # Needs to happen first to get read for install
