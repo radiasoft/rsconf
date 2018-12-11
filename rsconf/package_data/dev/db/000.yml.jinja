@@ -187,7 +187,6 @@ default:
       root: root@{{ master }}
       errors: errors@{{ master }}
       critical-errors: critical-errors@{{ master }}
-    smart_host: {{ master }}
     whitelist_senders:
       - poorly-configured-mailer.com
   postgresql:
@@ -350,6 +349,8 @@ host:
             - /srv/sirepo/db/user
           {{ master }}:
             - /srv/mpi_cluster/user
+      postfix:
+        smart_host: {{ master }}
       rsconf_db:
         components: [ nfs_client, docker ]
     # This host never installed, just for testing build

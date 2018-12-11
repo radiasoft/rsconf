@@ -112,10 +112,7 @@ class T(component.T):
         nc = self.buildt.get_component('network')
         z.public_ip = nc.unchecked_public_ip()
         if z.public_ip:
-            add_public_tcp_ports(
-                'http',
-                'https',
-            )
+            nc.add_public_tcp_ports(('http', 'https'))
         systemd.unit_prepare(self, jc, [_CONF_ROOT_D])
 
     def internal_build_write(self):

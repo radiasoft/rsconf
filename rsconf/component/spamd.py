@@ -21,7 +21,8 @@ class T(component.T):
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.spamd
         conf_d = pkio.py_path('/etc/mail/spamassassin')
-        network.update_j2_ctx(j2_ctx)
+        nc = self.buildt.get_component('network')
+        z.trusted_networks = ' '.join(nc.trusted_nets())
         watch = bop.install_perl_rpms(self, j2_ctx) + [conf_d]
         systemd.custom_unit_prepare(self, j2_ctx, watch)
         socket_d = pkio.py_path('/run/spamd')

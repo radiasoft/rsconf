@@ -10,6 +10,7 @@ from pykern import pkcollections
 
 
 class T(component.T):
+
     def internal_build(self):
         from rsconf import systemd
         from rsconf.component import network
@@ -17,10 +18,12 @@ class T(component.T):
 
         self.buildt.require_component('base_all')
         j2_ctx = self.hdb.j2_ctx_copy()
-        network.update_j2_ctx(j2_ctx)
+        z = j2_ctx.setdefault('postgrey', pkcollections.Dict())
+        nc = self.buildt.get_component('network')
+        z.whitelist_clients = '\n'.join(nc.trusted_nets())
         watch = bop.install_perl_rpms(self, j2_ctx)
         run_d = systemd.custom_unit_prepare(self, j2_ctx, watch)
-        j2_ctx.setdefault('postgrey', pkcollections.Dict()).update(
+        z.update(
             dbdir=run_d.join('db'),
             etc=run_d.join('etc'),
         )

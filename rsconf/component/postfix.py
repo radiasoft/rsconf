@@ -40,6 +40,7 @@ class T(component.T):
         self.j2_ctx = self.hdb.j2_ctx_copy()
         jc = self.j2_ctx
         z = jc.setdefault('postfix', pkcollections.Dict())
+        nc = self.buildt.get_component('network')
         z.have_public_smtp = not z.get('smart_host')
         if z.have_public_smtp:
             nc.add_public_tcp_ports(['smtp', 'submission'])
@@ -111,7 +112,7 @@ class T(component.T):
         z.setdefault('myorigin', h)
         z.setdefault('myhostname', h)
         if not z.get('mynetworks'):
-            z.mynetworks = nc.trusted_networks_as_str(',')
+            z.mynetworks = ','.join(nc.trusted_nets())
 
     def _write_check_sender_access(self, jc, z):
         src = self.tmp_path()
@@ -157,13 +158,9 @@ class T(component.T):
         )
 
     def _write_sasl_password(self, jc, z):
-        sh = z.get('smart_host')
-        z.have_sasl_password = bool(sh) and not (
-            z.have_bop or z.have_sasl or z.have_virtual_aliases
-        )
-        if not z.have_sasl_password:
+        if z.have_public_smtp:
             return
-        z.relayhost = '[{}]:submission'.format(sh.lower())
+        z.relayhost = '[{}]:submission'.format(z.get('smart_host').lower())
         u, p = host_init(jc, jc.rsconf_db.host)
         fn = _CONF_D.join('sasl_password')
         l = '{} {}:{}'.format(z.relayhost, u, p)

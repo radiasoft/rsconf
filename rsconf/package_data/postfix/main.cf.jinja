@@ -76,7 +76,7 @@ smtpd_sender_restrictions =
 {#
     Conditional Custom Config: alphabetical by conditional
 #}
-{% if postfix.have_sasl_password %}
+{% if not postfix.have_public_smtp %}
 relayhost = {{ postfix.relayhost }}
 smtp_sasl_auth_enable = yes
 smtp_sasl_password_maps = {{ postfix.sasl_password_maps }}

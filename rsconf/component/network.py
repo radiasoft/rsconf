@@ -23,50 +23,47 @@ _RESOLV_CONF = pkio.py_path('/etc/resolv.conf')
 _IPTABLES = pkio.py_path('/etc/sysconfig/iptables')
 
 
-def update_j2_ctx(j2_ctx):
-    j2_ctx.network.trusted_nets = sorted(j2_ctx.network.trusted.keys())
-
-
 class T(component.T):
 
     def add_public_tcp_ports(self, ports):
-        _add_ports(self, 'public_tcp_ports', ports)
+        self._add_ports('public_tcp_ports', ports)
 
     def add_public_udp_ports(self, ports):
-        _add_ports(self, 'public_udp_ports', ports)
+        self._add_ports('public_udp_ports', ports)
 
     def add_trusted_tcp_ports(self, ports):
-        _add_ports(self, 'trusted_tcp_ports', ports)
+        self._add_ports('trusted_tcp_ports', ports)
 
     def internal_build_compile(self):
         self.buildt.require_component('base_os')
         self.j2_ctx = self.hdb.j2_ctx_copy()
+        jc = self.j2_ctx
+        z = jc.network
+        z.trusted_nets = tuple(sorted(z.trusted.keys()))
+        z.public_tcp_ports = []
+        z.trusted_tcp_ports = []
+        z.public_udp_ports = []
         if not self.hdb.network.devices:
             # no devices, no network config
             self.append_root_bash(': nothing to do')
             return
         self.service_prepare((_SCRIPTS, _RESOLV_CONF))
-        jc = self.j2_ctx
-        update_j2_ctx(jc)
-        self.install_access(mode='444', owner=self.hdb.rsconf_db.root_u)
-        devs, defroute = self._devices(jc)
-        if defroute:
-            assert defroute.net.search and defroute.net.nameservers, \
-                '{}: defroute needs search and nameservers'.format(defroute.net)
-            self.install_resource('network/resolv.conf', jc, _RESOLV_CONF)
-        z = jc.network
-        if z.get('iptables_enable', False) and len(devs) == 1:
+        self._devices(jc)
+        if z.defroute:
+            assert z.defroute.net.search and z.defroute.net.nameservers, \
+                '{}: defroute needs search and nameservers'.format(z.defroute.net)
+        if z.get('iptables_enable', False) and len(z._devs) == 1:
             z.update(
-                inet_dev=defroute,
+                inet_dev=z.defroute,
                 private_devs=['lo'],
             )
         else:
             z.update(
-                inet_dev=defroute if defroute.net.name.is_global else None,
+                inet_dev=z.defroute if z.defroute.net.name.is_global else None,
             )
             z.setdefault(
                 'private_devs',
-                ['lo'] + [d.name for d in devs if d.net.name.is_private],
+                ['lo'] + [d.name for d in z._devs if d.net.name.is_private],
             )
             # No public addresses, no iptables
             z.setdefault('iptables_enable', bool(z.inet_dev))
@@ -77,29 +74,20 @@ class T(component.T):
             #TODO(robnagler) update other uses and remove self.hdb mod
             z.primary_public_ip = z.inet_dev.ip
             self.hdb.network.primary_public_ip = z.inet_dev.ip
-        z.public_tcp_ports = []
-        z.trusted_tcp_ports = []
-        z.public_udp_ports = []
-        self._devs = devs
 
     def internal_build_write(self):
-        if not hasattr(self, '_devs'):
-            return
-
-        """
-        add the ports in array (if not already added)
-        public ports for nginx(?)
-
-        nginx ? http,https,
-        domain
-        """
         jc = self.j2_ctx
         z = jc.network
+        if not '_devs' in z:
+            return
         for w in 'public_tcp_ports', 'public_udp_ports', 'trusted_tcp_ports':
             z[w] = sorted(z[w])
         # Only for jupyterhub, explicitly set, and not on a machine
         # with a public address
-        for d in self._devs:
+        self.install_access(mode='444', owner=self.hdb.rsconf_db.root_u)
+        if z.defroute:
+            self.install_resource('network/resolv.conf', jc, _RESOLV_CONF)
+        for d in z._devs:
             for k, v in d.items():
                 if isinstance(v, bool):
                     d[k] = 'yes' if v else 'no'
@@ -117,8 +105,8 @@ class T(component.T):
             self.install_resource('network/iptables', jc, _IPTABLES)
         self.append_root_bash_with_main(jc)
 
-    def trusted_networks_as_str(self, separator):
-        return separator.join(sorted(self.j2_ctx.network.trusted.keys()))
+    def trusted_nets(self):
+        return self.j2_ctx.network.trusted_nets
 
     def unchecked_public_ip(self):
         jc = self.j2_ctx
@@ -160,22 +148,22 @@ class T(component.T):
             sorted([n.name for n in self.__trusted_nets.values() if n.name.is_global]),
         )
         self.__untrusted_nets = self._nets(jc, z.untrusted)
-        devs = []
+        z._devs = []
         routes = []
-        defroute = None
+        z.defroute = None
         jc.network.natted_dev = None
         for dn in sorted(jc.network.devices):
             d = copy.deepcopy(jc.network.devices[dn])
-            devs.append(d)
+            z._devs.append(d)
             d.name = dn
             d.vlan = '.' in dn
             d.net = self._net_check(d.ip)
             if d.net.gateway:
                 routes.append(d)
             if d.setdefault('defroute', False):
-                assert not defroute, \
-                    '{} & {}: both declared as default routes'.format(d, defroute)
-                defroute = d
+                assert not z.defroute, \
+                    '{} & {}: both declared as default routes'.format(d, z.defroute)
+                z.defroute = d
             if d.setdefault('is_natted', False):
                 assert not jc.network.natted_dev, \
                     '{}: duplicate natted dev ({})'.format(
@@ -183,11 +171,9 @@ class T(component.T):
                         jc.network.natted_dev.name,
                     )
                 jc.network.natted_dev = d
-        if not defroute:
-            defroute = self._defroute(routes)
-        defroute.defroute = True
-        jc.network.defroute = defroute
-        return devs, defroute
+        if not z.defroute:
+            z.defroute = self._defroute(routes)
+        z.defroute.defroute = True
 
     def _nets(self, jc, spec):
         nets = pkcollections.Dict()
