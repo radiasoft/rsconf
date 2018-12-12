@@ -115,6 +115,8 @@ class T(component.T):
         return None
 
     def _add_ports(self, which, ports):
+        assert len(ports[0]) > 2, \
+            'invalid ports: {}'.format(ports)
         z = self.j2_ctx.network
         check = ('trusted_tcp_ports', 'public_tcp_ports') if 'tcp' in which \
             else ('public_udp_ports',)

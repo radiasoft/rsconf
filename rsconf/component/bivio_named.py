@@ -28,8 +28,8 @@ class T(component.T):
         z = jc.bivio_named
         z.listen_on = '127.0.0.1;'
         nc = self.buildt.get_component('network')
-        nc.add_public_tcp_ports('domain')
-        nc.add_public_udp_ports('domain')
+        nc.add_public_tcp_ports(['domain'])
+        nc.add_public_udp_ports(['domain'])
         ip = nc.unchecked_public_ip()
         if ip:
             z.listen_on += ' ' + ip + ';'
