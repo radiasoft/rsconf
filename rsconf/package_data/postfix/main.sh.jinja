@@ -39,7 +39,6 @@ postfix_setup_sasl() {
     # regenerate sasl_users:
     # db_dump -p /etc/sasldb2 | perl -n -e 's{ ([^\\]+)\\00([^\\]+).*user}{} && print "$1\@$2: "; m{ (\S{10,24})} && print "$1\n"'
     #}
-    rsconf_yum_install cyrus-sasl cyrus-sasl-plain
     rm -f /etc/sasldb2.new
     {% for u in postfix.sasl_users_flattened %}
         echo '{{ u.password }}' | saslpasswd2 -f /etc/sasldb2.new -c -p -u '{{ u.domain }}' '{{ u.user }}'

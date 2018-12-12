@@ -48,7 +48,7 @@ class T(component.T):
         else:
             nc.add_trusted_tcp_ports(['smtp', 'submission'])
         z.have_bop = False
-        self.append_root_bash('rsconf_yum_install postfix procmail')
+        self.append_root_bash('rsconf_yum_install postfix procmail cyrus-sasl cyrus-sasl-plain')
         systemd.unit_prepare(self, jc, [_CONF_D])
         z.have_virtual_aliases = bool(z.get('virtual_aliases'))
         z.have_sasl = bool(z.get('sasl_users'))
