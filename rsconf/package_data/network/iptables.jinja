@@ -16,7 +16,7 @@
 {% endif %}
 {% if network.trusted_tcp_ports %}
     {% for n in network.trusted_public_nets %}
-        -A INPUT -i {{ network.inet_dev.name }} -s {{ n }} -p tcp -m tcp --dport {{ network.trusted_tcp_ports }} -j ACCEPT
+        -A INPUT -i {{ network.inet_dev.name }} -s {{ n }} -p tcp -m tcp --dport {{ network.trusted_tcp_ports | join(',') }} -j ACCEPT
     {% endfor %}
 {% endif %}
 {% if network.public_udp_ports %}
