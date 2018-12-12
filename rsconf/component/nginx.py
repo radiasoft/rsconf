@@ -108,6 +108,8 @@ class T(component.T):
         self.j2_ctx = self.hdb.j2_ctx_copy()
         jc = self.j2_ctx
         z = jc.nginx
+        # render_redirects installs tls certs
+        self.install_access(mode='400', owner=self.hdb.rsconf_db.root_u)
         z.rendered_redirects = self._render_redirects(jc)
         nc = self.buildt.get_component('network')
         z.public_ip = nc.unchecked_public_ip()
