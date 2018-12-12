@@ -24,6 +24,7 @@ in another window' 1>&2
     radia_run biviosoftware/rpm-perl bivio-perl
     radia_run biviosoftware/rpm-perl Bivio
     radia_run biviosoftware/rpm-perl BivioOrg
+    (cd run/etc && radia_run biviosoftware/rpm-perl bivio-named)
 }
 
 build_perl_rpms_main "$@"

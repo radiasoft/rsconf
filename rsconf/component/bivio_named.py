@@ -47,11 +47,11 @@ class T(component.T):
         # POSIT: same file in rpm-perl/radiasoft-download.sh
         z.zones_f = z.db_d.join('zones.conf')
         z.conf_f = run_d.join('named.conf')
-        z.stats_f = jc.systemd.runtime_d.join('bind.stats')
-        z.session_key_f = jc.systemd.runtime_d.join('session.key')
         z.run_u = jc.rsconf_db.root_u
 
     def internal_build_write(self):
+        from rsconf import systemd
+
         jc = self.j2_ctx
         z = jc.bivio_named
         systemd.custom_unit_enable(
@@ -61,6 +61,9 @@ class T(component.T):
             run_group=z.run_group,
             run_d_mode='710',
         )
+        # runtime_d (/run) set by custom_unit_enable
+        z.stats_f = jc.systemd.runtime_d.join('bind.stats')
+        z.session_key_f = jc.systemd.runtime_d.join('session.key')
         self.install_access(mode='750', owner=z.run_u, group=z.run_group)
         self.install_directory(z.db_d)
         self.install_access(mode='440')

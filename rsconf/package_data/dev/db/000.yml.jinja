@@ -105,6 +105,7 @@ default:
         - viarob.com.{{ host }}
         - {{ all_host }}
         - {{ host }}
+        - {{ worker_host }}
       dev_master:
         - {{ master }}
   db_bkp:
@@ -420,7 +421,7 @@ host:
           - owncloud
           - github_bkp
           - wordpress
-# testing named is special
+# testing named needs build-perl-rpms.sh
 #          - bivio_named
 
 #Local Variables:
