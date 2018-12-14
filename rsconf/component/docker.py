@@ -16,6 +16,7 @@ DOCKER_SOCK = '/var/run/docker.sock'
 _CONF_DIR = pkio.py_path('/etc/docker')
 _TLS_DIR = _CONF_DIR.join('tls')
 _DAEMON_JSON = _CONF_DIR.join('daemon.json')
+_DAEMON_PORT = 2376
 _ROOT_CONFIG_JSON = pkio.py_path('/root/.docker/config.json')
 _TLS_BASENAME = 'docker_tls'
 
@@ -30,12 +31,13 @@ class T(component.T):
         self.buildt.require_component('base_all', 'db_bkp')
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.docker
-        systemd.unit_prepare(self, j2_ctx, [_CONF_DIR])
+        systemd.unit_prepare(self, j2_ctx, [_CONF_DIR, ])
         z.run_d = systemd.unit_run_d(j2_ctx, 'docker')
         z.data_d = z.run_d
         z.run_u = j2_ctx.rsconf_db.root_u
         docker_registry.update_j2_ctx(j2_ctx)
         docker_cache.update_j2_ctx(j2_ctx)
+        z.daemon_hosts = ["unix://"]
         self.install_access(mode='700', owner=z.run_u)
         self.install_directory(_CONF_DIR)
         if 'tls_host' in z:
@@ -64,6 +66,7 @@ class T(component.T):
             j2_ctx,
             _ROOT_CONFIG_JSON,
         )
+        systemd.install_unit_override(self, j2_ctx)
         systemd.unit_enable(self, j2_ctx)
         self.rsconf_service_restart()
         db_bkp.install_script_and_subdir(
@@ -89,6 +92,7 @@ class T(component.T):
         z.tls.ip = socket.gethostbyname(z.tls_host)
         assert ipaddress.ip_address(pkcompat.locale_str(z.tls.ip)).is_private, \
             'tls_host={} is on public ip={}'.format(z.tls_host, z.tls.ip)
+        z.daemon_hosts.append('tcp://{}:{}'.format(z.tls.ip, _DAEMON_PORT))
 
 
 def setup_cluster(compt, hosts, tls_d, run_u, j2_ctx):

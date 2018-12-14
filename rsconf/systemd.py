@@ -135,6 +135,19 @@ def docker_unit_prepare(compt, j2_ctx, watch_files=()):
     return custom_unit_prepare(compt, j2_ctx, watch_files)
 
 
+def install_unit_override(compt, j2_ctx):
+    d = j2_ctx.systemd.unit_override_d
+    # systemd requires files be publicly writable
+    compt.install_access(mode='755', owner=j2_ctx.rsconf_db.root_u)
+    compt.install_directory(d)
+    compt.install_access(mode='444')
+    compt.install_resource(
+        compt.name + '/unit_override.conf',
+        j2_ctx,
+        d.join('99-rsconf.conf'),
+    )
+
+
 def timer_enable(compt, j2_ctx, cmd, run_u=None):
     z = j2_ctx.systemd
     z.run_u = run_u or j2_ctx.rsconf_db.run_u
@@ -164,6 +177,7 @@ def timer_enable(compt, j2_ctx, cmd, run_u=None):
 
 def timer_prepare(compt, j2_ctx, on_calendar, watch_files=(), service_name=None):
     """Must be first call"""
+    #TODO(robnagler) need to merge with unit_prepare
     n = service_name or compt.name
     tn = n + '.timer'
     run_d = unit_run_d(j2_ctx, n)
@@ -192,11 +206,14 @@ def unit_enable(compt, j2_ctx):
 
 def unit_prepare(compt, j2_ctx, watch_files=()):
     """Must be first call"""
+    f = _SYSTEMD_DIR.join('{}.service'.format(compt.name))
+    d = pkio.py_path(str(f) + '.d')
     j2_ctx.systemd = pkcollections.Dict(
         service_name=compt.name,
-        service_f=_SYSTEMD_DIR.join('{}.service'.format(compt.name)),
+        service_f=f,
+        unit_override_d=d,
     )
-    compt.service_prepare([j2_ctx.systemd.service_f] + list(watch_files))
+    compt.service_prepare([f, d] + list(watch_files))
 
 
 def unit_run_d(j2_ctx, unit_name):

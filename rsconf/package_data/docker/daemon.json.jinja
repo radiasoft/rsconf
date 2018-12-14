@@ -1,19 +1,20 @@
 {
-    "iptables": {{ docker.iptables | tojson }},
+    "hosts": {{ docker.daemon_hosts | tojson }},
     "data-root": "{{ docker.data_d }}",
+    "iptables": {{ docker.iptables | tojson }},
     "live-restore": true,
     "log-driver": "journald",
     {% if docker_cache.http_host is defined %}
-    "registry-mirrors": ["{{ docker_cache.http_host }}"],
+        "registry-mirrors": ["{{ docker_cache.http_host }}"],
     {% endif %}
     {% if docker.tls is defined %}
-    "hosts": ["tcp://{{ docker.tls.ip }}:2376", "unix:///run/docker.sock"],
-    "tls": true,
-    "tlscacert": "{{ docker.tls.crt }}",
-    "tlscert": "{{ docker.tls.crt }}",
-    "tlskey": "{{ docker.tls.key }}",
-    "tlsverify": true,
+        "tls": true,
+        "tlscacert": "{{ docker.tls.crt }}",
+        "tlscert": "{{ docker.tls.crt }}",
+        "tlskey": "{{ docker.tls.key }}",
+        "tlsverify": true,
     {% endif %}
+    {# something needs to be last, because can't have a trailing comma #}
     "storage-driver": "overlay2",
     "storage-opts": [
         "overlay2.override_kernel_check=true"
