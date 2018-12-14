@@ -60,8 +60,8 @@ class T(component.T):
 
         jc = self.j2_ctx
         z = jc.postfix
-        assert (z.have_bop or z.have_sasl) == z.have_public_smtp, \
-            'either SASL host or have_bop, or need a smarthost'
+        assert bool(z.have_sasl or z.local_host_names) == z.have_public_smtp, \
+            'either sasl_users, btest, or bop, or need a smarthost'
         z.mydestination = ','.join(
             [z.myhostname, 'localhost'] + sorted(z.local_host_names),
         )

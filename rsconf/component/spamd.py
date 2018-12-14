@@ -22,6 +22,7 @@ class T(component.T):
         z = j2_ctx.spamd
         conf_d = pkio.py_path('/etc/mail/spamassassin')
         nc = self.buildt.get_component('network')
+        z.sa_update_keys_d = conf_d.join('sa-update-keys')
         z.trusted_networks = ' '.join(nc.trusted_nets())
         watch = bop.install_perl_rpms(self, j2_ctx) + [conf_d]
         systemd.custom_unit_prepare(self, j2_ctx, watch)
@@ -36,4 +37,5 @@ class T(component.T):
             j2_ctx,
             conf_d.join('spamc.conf'),
         )
+        self.append_root_bash_with_main(j2_ctx)
         systemd.custom_unit_enable(self, j2_ctx)

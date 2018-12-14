@@ -1,0 +1,6 @@
+#!/bin/bash
+
+spamd_main() {
+    find {{ spamd.sa_update_keys_d }} ! -user root \
+        | xargs chown root:root
+}
