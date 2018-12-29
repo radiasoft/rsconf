@@ -21,13 +21,37 @@ def append_authorized_key(compt, j2_ctx):
 
 
 class T(component.T):
+
     def internal_build(self):
         self.buildt.require_component('base_all')
 
-        j2_ctx = self.hdb.j2_ctx_copy()
-        z = j2_ctx.bkp
-        z.run_u = j2_ctx.rsconf_db.root_u
-        run_d = systemd.timer_prepare(self, j2_ctx, on_calendar=z.on_calendar)
+        jc = self.hdb.j2_ctx_copy()
+        z = jc.bkp
+        z.run_u = jc.rsconf_db.root_u
+        z.run_d = systemd.timer_prepare(self, jc, on_calendar=z.on_calendar)
+        secondary_setup = None
+        if jc.rsconf_db.host == z.primary:
+            self._primary(jc, z)
+            n = 'primary'
+        else:
+            secondary_setup = self._secondary(jc, z)
+            n = 'secondary'
+        te = z.run_d.join(n)
+        systemd.timer_enable(
+            self,
+            j2_ctx=jc,
+            cmd=te,
+            run_u=z.run_u,
+        )
+        self.install_access(mode='500', owner=z.run_u)
+        self.install_resource('bkp/{}.sh'.format(n), jc, te)
+        if secondary_setup:
+            self.install_abspath(
+                secondary_setup,
+                z.run_d.join(secondary_setup.purebasename),
+            )
+
+    def _primary(self, jc, z):
         gv = 'bkp_exclude=(\n'
         for d in z.exclude:
             gv += "'--exclude={}'\n".format(d)
@@ -56,16 +80,8 @@ class T(component.T):
                     tgt,
                 )
         z.main_cmds = x
-        te = run_d.join('primary')
-        systemd.timer_enable(
-            self,
-            j2_ctx=j2_ctx,
-            cmd=te,
-            run_u=z.run_u,
-        )
-        self.install_access(mode='500', owner=z.run_u)
-        assert j2_ctx.rsconf_db.host == z.primary, \
-            '{}: host must be in primary or secondaries'.format(
-                j2_ctx.rsconf_db.host,
-            )
-        self.install_resource('bkp/primary.sh', j2_ctx, te)
+
+
+    def _secondary(self, jc, z):
+        z.setdefault('secondary_copy_unmount_cmds', '')
+        return z.setdefault('secondary_setup_f', None)

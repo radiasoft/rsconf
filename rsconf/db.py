@@ -231,8 +231,13 @@ def _cfg_srv_group(value):
 
 
 def _update_paths(base):
+    """If a path ends with ``_f`` or ``_d``, make it a py.path
+
+    Args:
+        base (dict): may contain paths
+    """
     for k in list(base.keys()):
-        if k.endswith('_d'):
+        if k.endswith(('_d', '_f')):
             base[k] = pkio.py_path(base[k])
         elif isinstance(base[k], dict):
             _update_paths(base[k])

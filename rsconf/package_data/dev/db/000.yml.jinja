@@ -37,7 +37,7 @@ default:
     # Times are in UTC. We may need to change the local time zone.
     on_calendar: "*-*-* 08:00:00"
     primary: {{ master }}
-    secondaries: []
+    secondaries: [ {{ all_host }} ]
     simple_mirrors:
       /srv/bkp/simple_mirror:
         - "{{ host }}:/etc/profile.d"
@@ -360,6 +360,10 @@ host:
         add:
           - joeblow
           - marysmith
+      bkp:
+        on_calendar: "*-*-1 18:00:00"
+        secondary_copy_d: /bkp_copy
+        secondary_setup_f: {{ root_d }}/etc/secondary_setup.sh
       docker:
         iptables: false
       jupyterhub:
@@ -410,6 +414,7 @@ host:
           - nfs_client
           - nfs_server
           - rabbitmq
+          - bkp
           - comsol
           - celery_sirepo
           - sirepo

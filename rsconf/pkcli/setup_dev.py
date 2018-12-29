@@ -50,6 +50,7 @@ def default_command():
         host='v4.radia.run',
         master='v3.radia.run',
         port=2916,
+        root_d=root_d,
         srv_d=str(srv),
         uid=os.getuid(),
         user=pwd.getpwuid(os.getuid())[0],

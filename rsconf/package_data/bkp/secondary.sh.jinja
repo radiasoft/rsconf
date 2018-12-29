@@ -1,63 +1,37 @@
 #!/bin/bash
 set -euo pipefail
-dev1=/dev/sde
-dev2=/dev/sdf
-mdadm --create --verbose --metadata 1.2 /dev/md/monthly --level=1 --raid-devices=2 "$dev1" "$dev2"
-echo 'Waiting to resync'
-while mdadm --detail /dev/md/monthly | grep -i resyncing >& /dev/null; do
-    # takes a very long time (hours) so don't poll too frequently
-    sleep 300
-done
 
-umask 077
-# For testing, may want to restrict further
-rm -rf /bkp/mirror/monthly
-cp -al /bkp/mirror/current /bkp/mirror/monthly
-
-key_f={{ bkp.monthly_key_f }}
-#https://wiki.archlinux.org/index.php/Dm-crypt/Encrypting_an_entire_system
-cryptsetup luksFormat --batch-mode --type luks2 /dev/md/monthly "$key_f"
-cryptsetup --key-file "$key_f" open /dev/md/monthly monthly
-mkfs -t xfs -n ftype=1 /dev/mapper/monthly
-mkdir -p /bkp/monthly
-# Just in case
-umount /bkp/monthly >& /dev/null || true
-mount /dev/mapper/monthly /bkp/monthly
-chmod 700 /bkp/monthly
-(
-    # */* matches host.com/{var,etc,...} since these are
-    # the first level to write
-    cd /bkp/mirror/monthly && find */* -type d -print0
-) | while IFS= read -r -d $'\0' src_d; do
-    dst_d=/bkp/monthly/"$src_d"
-    mkdir -p "$dst_d"
-    if [[ ! $(find "/bkp/mirror/monthly/$src_d" -maxdepth 1 ! -type d) ]]; then
-        continue
-    fi
+secondary_main() {
+    umask 077
+    local snap='{{ bkp.mirror_d }}/secondary_snap'
+    local copy='{{ bkp.secondary_copy_d }}'
+    rm -rf "$snap"
+    cp -al '{{ bkp.mirror_d }}/current' "$snap"
     (
-        # Just dump the file in to the dir since we aren't prefixing with the dir name
-        cd "/bkp/mirror/monthly/$src_d"
-        find . -maxdepth 1 ! -type d -print0 \
-            | tar --create --null --files-from=- --file=-
-    ) | pxz -T8 -9 > "$dst_d"/0.txz
-done
-chmod -R a-w /bkp/monthly
-umount /bkp/monthly
-cryptsetup close monthly
-mdadm --stop /dev/md/monthly
+        # */* matches host.com/{var,etc,...} since these are
+        # the first level to write
+        cd "$snap" && find */* -type d -print0
+    ) | while IFS= read -r -d $'\0' src_d; do
+        dst_d="$copy/src_d"
+        mkdir -p "$dst_d"
+        if [[ ! $(find "$snap/$src_d" -maxdepth 1 ! -type d) ]]; then
+            continue
+        fi
+        (
+            # Just dump the file in to the dir since we aren't prefixing with the dir name
+            # Ignore files with \ in them, because
+            # tar: ./C:\Users
+            # gold\Desktop\sweep1_a_1.mph: Cannot stat: No such file or directory
+            # --text needed: since there are binary names to avoid:
+            # Binary file (standard input) matches\n: Cannot stat: No such file or directory
+            cd "$snap/$src_d"
+            find . -maxdepth 1 ! -type d -print0 \
+                | grep --text --null --null-data -v --perl-regexp '\\' \
+                | tar --create --null --files-from=- --file=-
+        ) | pxz -T8 -9 > "$dst_d"/0.txz
+    done
+    chmod -R a-w "$copy"
+    {{ bkp.secondary_copy_unmount_cmds }}
+}
 
-# recovery
-mdadm --assemble --scan --readonly
-
-# if you see: mdadm: No arrays found in config file or automatically
-# then
-cat /proc/mdstat
-mdadm --stop /dev/md127
-mdadm --assemble --force --readonly /dev/md127 /dev/sdb
-
-cryptsetup open --readonly /dev/md/*:monthly monthly
-mount -o ro /dev/mapper/monthly /mnt
-do stuff
-umount /mnt
-cryptsetup close monthly
-mdadm --stop /dev/md/*:monthly
+secondary_main "$@"
