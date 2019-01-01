@@ -12,7 +12,7 @@ secondary_main() {
         # the first level to write
         cd "$snap" && find */* -type d -print0
     ) | while IFS= read -r -d $'\0' src_d; do
-        dst_d="$copy/src_d"
+        dst_d="$copy/$src_d"
         mkdir -p "$dst_d"
         if [[ ! $(find "$snap/$src_d" -maxdepth 1 ! -type d) ]]; then
             continue
