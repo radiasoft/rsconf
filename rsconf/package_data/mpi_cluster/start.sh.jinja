@@ -161,6 +161,12 @@ start_net() {
         start_err "no route to IP address: $ip"
     fi
     local dev=${BASH_REMATCH[1]}
+    if [[ $dev == lo ]]; then
+        if [[ ! $(ip route | fgrep "src $ip") =~ $re ]]; then
+            start_err "no route to (non-local) IP address: $ip"
+        fi
+        dev=${BASH_REMATCH[1]}
+    fi
     local re=' inet ([^ ]+)'
     if [[ ! $(ip addr show "$dev") =~ $re ]]; then
         start_err "cannot find device: $dev"
