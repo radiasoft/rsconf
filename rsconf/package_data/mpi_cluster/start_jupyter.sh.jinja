@@ -5,8 +5,6 @@ if [[ ! $user ]]; then
     echo 'usage: bash start-jupyter.sh <user>' 1>&2
     exit 1
 fi
-# To trigger pyenv activate in ~/.post_bivio_bashrc
-export JUPYTERHUB_USER=$user
 if [[ ${EUID:-} != 0 ]]; then
     echo 'must be run as "root"' 1>&2
     exit 1
@@ -19,12 +17,14 @@ fi
 name=jupyter-$user
 docker pull '{{ mpi_cluster.docker_image }}' | cat
 docker rm -f "$name" >& /dev/null || true
-docker run -u '{{ mpi_cluster.run_u }}' -d \
+docker run -u '{{ mpi_cluster.run_u }}' -i \
     --init --rm --name="$name" --network=host \
     -v "$user_d:{{ mpi_cluster.guest_d }}" \
-    '{{ mpi_cluster.docker_image }}' bash <<'EOF'
+    '{{ mpi_cluster.docker_image }}' bash <<EOF
 . ~/.bashrc
 pyenv activate jupyter
 cd ~/jupyter
-exec jupyter lab --notebook-dir='\$PWD' --ip=0.0.0.0 --port='{{ mpi_cluster.jupyter_port }}'
+{# To trigger pyenv activate in ~/.post_bivio_bashrc #}
+export JUPYTERHUB_USER=$user
+exec jupyter lab --notebook-dir="\$PWD" --ip=0.0.0.0 --port='{{ mpi_cluster.jupyter_port }}'
 EOF
