@@ -118,7 +118,7 @@ EOF
         cat >> "$conf_d"/known_hosts <<EOF
 [$ip]:$start_ssh_port $worker_pub
 EOF
-        chmod -R go-rwx .
+        chmod -R go-rwx "$conf_d"
         start_docker "$worker" "$host_d" /usr/sbin/sshd -D -f "$worker_guest_d/sshd_config"
         sleep 2
         slots=$(
