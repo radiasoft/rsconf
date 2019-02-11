@@ -94,7 +94,7 @@ PerlModule Bivio::Agent::HTTP::Dispatcher
     PerlResponseHandler Bivio::Agent::HTTP::Dispatcher
 </Location>
 
-<Location {{ bop.server_status_location }} >
+<Location {{ bop.server_status_location }}>
     Require ip 127.0.0.1
     SetHandler server-status
     PerlResponseHandler Apache2::Status
