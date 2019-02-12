@@ -1,6 +1,6 @@
 # RSConf
 
-RSConf is an policy-rich configuration management system. It is used
+RSConf is a policy-rich configuration management system. It is used
 to configure our CentOS 7 systems at RadiaSoft and Bivio. It can be
 deployed on any Unix with Bash and Curl.
 
