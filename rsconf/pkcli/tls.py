@@ -129,14 +129,18 @@ def _gen_req(which, basename, domains):
     first = domains[0]
     if not basename:
         basename = first
-    alt = ''
     basename = pkio.py_path(basename)
-    if len(domains) > 1:
-        alt = """{}_extensions = v3_req
+    # Must always provide subjectAltName
+    # see https://github.com/urllib3/urllib3/issues/497
+    # which points to RFC 2818:
+    # Although the use of the Common Name is existing practice, it is deprecated and
+    # Certification Authorities are encouraged to use the dNSName instead.
+    alt = """{}_extensions = v3_req
 [v3_req]
 subjectAltName = {}""".format(
-    'req' if which == 'csr' else 'x509',
-    ', '.join(['DNS:' + x for x in domains[1:]]))
+        'req' if which == 'csr' else 'x509',
+        ', '.join(['DNS:' + x for x in domains]),
+    )
     c = """
 [req]
 distinguished_name = subj
