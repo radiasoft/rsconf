@@ -309,8 +309,8 @@ host:
         #TODO(robnagler) need to edit this to just rsconf to bootstrap
         #components: [ rsconf, bkp, docker_registry, mpi_cluster ]
         # jupyterhub_proxy, btest, github_bkp, dovecot ]
-        # components: [ rsconf, nfs_server, mpi_cluster ]
-        components: [ rsconf, docker_registry, btest ]
+        components: [ rsconf, nfs_server, mpi_cluster ]
+        # components: [ rsconf, docker_registry, btest ]
     {{ host }}:
       docker:
         tls_host: {{ host }}
@@ -335,10 +335,10 @@ host:
         exports:
           /srv/sirepo/db/user: [ 10.10.10.0/24 ]
       rsconf_db:
-        components: [ bop ]
+#        components: [ bop ]
 #        components: [ jupyterhub, jupyterhub_proxy ]
 #        components: [ rabbitmq, celery_sirepo, sirepo, nfs_server ]
-#        components: [ nfs_client, docker ]
+        components: [ nfs_client, docker ]
 #      sirepo:
 #        docker_hosts: [ {{ host }}, {{ worker_host }} ]
     {{ worker_host }}:

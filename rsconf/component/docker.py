@@ -19,6 +19,7 @@ _DAEMON_JSON = _CONF_DIR.join('daemon.json')
 _DAEMON_PORT = 2376
 _ROOT_CONFIG_JSON = pkio.py_path('/root/.docker/config.json')
 _TLS_BASENAME = 'docker_tls'
+_TLS_CA_BASENAME = _TLS_BASENAME + '_ca'
 
 
 class T(component.T):
@@ -80,7 +81,7 @@ class T(component.T):
         import socket
         import ipaddress
 
-        c = _self_signed_crt(j2_ctx, j2_ctx.rsconf_db.host)
+        c, ca = _self_signed_crt(j2_ctx, j2_ctx.rsconf_db.host)
         self.install_access(mode='700', owner=z.run_u)
         self.install_directory(_TLS_DIR)
         self.install_access(mode='400', owner=z.run_u)
@@ -89,6 +90,8 @@ class T(component.T):
         for k, b in ('crt', 'cert'), ('key', 'key'):
             z.tls[k] = _TLS_DIR.join(b + '.pem')
             self.install_abspath(c[k], z.tls[k])
+        z.tls.ca_crt = _TLS_DIR.join('cacert.pem')
+        self.install_abspath(ca['crt'], z.tls.ca_crt)
         z.tls.ip = socket.gethostbyname(z.tls_host)
         assert ipaddress.ip_address(pkcompat.locale_str(z.tls.ip)).is_private, \
             'tls_host={} is on public ip={}'.format(z.tls_host, z.tls.ip)
@@ -103,7 +106,7 @@ def setup_cluster(compt, hosts, tls_d, run_u, j2_ctx):
     b = db.secret_path(j2_ctx, compt.name + '_' + _TLS_BASENAME, visibility='host')
     pkio.mkdir_parent_only(b)
     for h in hosts:
-        ca = _self_signed_crt(j2_ctx, h)
+        c, ca = _self_signed_crt(j2_ctx, h)
         c = _signed_crt(j2_ctx, ca, b.join(h))
         d = tls_d.join(h)
         compt.install_access(mode='700')
@@ -144,14 +147,26 @@ def _self_signed_crt(j2_ctx, host):
 
     b = db.secret_path(
         j2_ctx,
+        _TLS_CA_BASENAME,
+        visibility='host',
+        qualifier=host,
+    )
+    ca = _crt_create(
+        b,
+        lambda: tls.gen_ca_crt(host, basename=str(b)),
+    )
+    b = db.secret_path(
+        j2_ctx,
         _TLS_BASENAME,
         visibility='host',
         qualifier=host,
     )
-    return _crt_create(
+    c = _crt_create(
         b,
-        lambda: tls.gen_self_signed_crt(str(b), host),
+        lambda: tls.gen_signed_crt(ca.key, str(b), host),
     )
+    return c, ca
+
 
 def _signed_crt(j2_ctx, ca, basename):
     from rsconf.pkcli import tls
