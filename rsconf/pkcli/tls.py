@@ -20,6 +20,21 @@ CSR_EXT = '.' + _CSR
 KEY_EXT = '.' + _KEY
 
 
+def gen_ca_crt(common_name, basename=None):
+    """Generate a self-signed certificate authority cert and key
+
+    Creates the files basename.{key,crt}
+
+    Args:
+        basename (str or py.path): root of files [default: domains[0]]
+        domain (str): only one domain
+
+    Returns:
+        dict: key, crt
+    """
+    return _gen_req(_CRT, basename, (common_name,), is_ca=True)
+
+
 def gen_csr_and_key(basename=None, *domains):
     """Generate a csr and key
 
@@ -66,23 +81,31 @@ def gen_signed_crt(ca_key, basename=None, *domains):
     """
     ca_key = pkio.py_path(ca_key)
     res = _gen_req(_CSR, basename, domains)
+
     res[_CRT] = res[_KEY].new(ext=CRT_EXT)
-    cmd = [
-        'openssl',
-        'x509',
-        '-req',
-        '-in',
-        str(res[_CSR]),
-        '-CA',
-        str(ca_key.new(ext=CRT_EXT)),
-        '-CAkey',
-        str(ca_key),
-        '-extensions',
-        'v3_req',
-        '-out',
-        str(res[_CRT]),
-    ] + _signing_args()
-    _run(cmd)
+    cfg = res[_KEY].new(ext='.cfg')
+    try:
+        cfg.write('[v3_req]\n{}'.format(_alt_names(domains)))
+        cmd = [
+            'openssl',
+            'x509',
+            '-req',
+            '-in',
+            str(res[_CSR]),
+            '-CA',
+            str(ca_key.new(ext=CRT_EXT)),
+            '-CAkey',
+            str(ca_key),
+            '-extensions',
+            'v3_req',
+            '-extfile',
+            str(cfg),
+            '-out',
+            str(res[_CRT]),
+        ] + _signing_args()
+        _run(cmd)
+    finally:
+        pkio.unchecked_remove(cfg)
     return res
 
 
@@ -125,23 +148,33 @@ def read_csr(filename):
     return _run(['openssl', 'req', '-text', '-noout', '-verify', '-in', str(filename)])
 
 
-def _gen_req(which, basename, domains):
+def _alt_names(domains):
+    return 'subjectAltName = {}'.format(
+        ', '.join(['DNS:' + x for x in domains]),
+    )
+
+def _gen_req(which, basename, domains, is_ca=False):
     first = domains[0]
     if not basename:
         basename = first
     basename = pkio.py_path(basename)
-    # Must always provide subjectAltName
-    # see https://github.com/urllib3/urllib3/issues/497
-    # which points to RFC 2818:
-    # Although the use of the Common Name is existing practice, it is deprecated and
-    # Certification Authorities are encouraged to use the dNSName instead.
-    alt = """{}_extensions = v3_req
-[v3_req]
-subjectAltName = {}""".format(
-        'req' if which == 'csr' else 'x509',
-        ', '.join(['DNS:' + x for x in domains]),
-    )
-    c = """
+    if is_ca:
+        # pathlen:0 means can only be used for signing certs, not for
+        # signing intermediate certs.
+        alt = '''x509_extensions = x509_req
+[x509_req]
+basicConstraints=critical,CA:true,pathlen:0'''
+    else:
+        # Must always provide subjectAltName except for is_ca
+        # see https://github.com/urllib3/urllib3/issues/497
+        # which points to RFC 2818:
+        # Although the use of the Common Name is existing practice, it is deprecated and
+        # Certification Authorities are encouraged to use the dNSName instead.
+        alt = '{}_extensions = v3_req\n[v3_req]\n{}'.format(
+            'req' if which == 'csr' else 'x509',
+            _alt_names(domains),
+        )
+    c = '''
 [req]
 distinguished_name = subj
 prompt = no
@@ -151,7 +184,7 @@ prompt = no
 C = US
 ST = Colorado
 L = Boulder
-CN = {}""".format(alt, first)
+CN = {}'''.format(alt, first)
     cfg = basename + '.cfg'
     try:
         cfg.write(c)
