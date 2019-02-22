@@ -153,7 +153,8 @@ def _self_signed_crt(j2_ctx, host):
     )
     ca = _crt_create(
         b,
-        lambda: tls.gen_ca_crt(host, basename=str(b)),
+        # certificate cannot match host so we just create an arbitrary name
+        lambda: tls.gen_ca_crt('root-ca.' + host, basename=str(b)),
     )
     b = db.secret_path(
         j2_ctx,

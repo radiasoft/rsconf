@@ -10,6 +10,7 @@ from pykern import pkio
 from pykern.pkdebug import pkdc, pkdp, pkdlog
 import subprocess
 import time
+import random
 
 
 _CRT = 'crt'
@@ -230,6 +231,9 @@ def _signing_args():
         '-days',
         '9999',
         '-set_serial',
-        str(int(time.time())),
+        # must be distinct number for all certificates
+        # people recommend 128, but that results in an empty serial in openssl
+        # so 64 bits seems enough
+        str(random.SystemRandom().getrandbits(64)),
         '-sha256',
     ]
