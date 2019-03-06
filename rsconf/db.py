@@ -9,6 +9,7 @@ from pykern import pkcollections
 from pykern import pkconfig
 from pykern import pkio
 from pykern import pkjinja
+from pykern import pkresource
 from pykern import pkyaml
 from pykern.pkdebug import pkdc, pkdp, pkdpretty
 import copy
@@ -29,6 +30,7 @@ DEFAULT_ROOT_SUBDIR = 'run'
 DB_SUBDIR = 'db'
 RPM_SUBDIR = 'rpm'
 SECRET_SUBDIR = 'secret'
+RESOURCE_SUBDIR = 'resource'
 TMP_SUBDIR = 'tmp'
 HOST_SUBDIR = 'host'
 LEVELS = ('default', 'channel', 'host')
@@ -113,6 +115,7 @@ class T(pkcollections.Dict):
                 compress_cmd='pxz -T8 -9',
             )
         )
+        v.rsconf_db.resource_paths = _init_resource_paths(v)
         pkio.unchecked_remove(v.rsconf_db.tmp_d)
         pkio.mkdir_parent(v.rsconf_db.tmp_d)
         merge_dict(res, v)
@@ -168,6 +171,14 @@ def random_string(length=32, is_hex=False):
     chars = _HEX_CHARS if is_hex else _BASE62_CHARS
     r = random.SystemRandom()
     return ''.join(r.choice(chars) for _ in range(length))
+
+
+def resource_path(hdb, filename):
+    for p in hdb.rsconf_db.resource_paths:
+        res = p.join(filename)
+        if res.check():
+            return res
+    return pkresource.filename(filename)
 
 
 def secret_path(hdb, filename, visibility=None, qualifier=None):
@@ -228,6 +239,13 @@ def _cfg_srv_group(value):
         'must be configured except in DEV'
     return grp.getgrgid(os.getgid()).gr_name
 
+
+def _init_resource_paths(values):
+    v = values.rsconf_db
+    res = [v.db_d.join(RESOURCE_SUBDIR)]
+    for i in values.rsconf_db.channel, values.rsconf_db.host:
+        res.insert(0, res[0].join(i))
+    return res
 
 
 def _update_paths(base):

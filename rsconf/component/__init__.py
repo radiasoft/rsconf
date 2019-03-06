@@ -255,10 +255,10 @@ class T(pkcollections.Dict):
 
     def _render_resource(self, name, j2_ctx):
         from pykern import pkjinja
-        from pykern import pkresource
+        from rsconf import db
         try:
             return pkjinja.render_file(
-                pkresource.filename(name + pkjinja.RESOURCE_SUFFIX),
+                db.resource_path(j2_ctx, name + pkjinja.RESOURCE_SUFFIX),
                 j2_ctx,
                 strict_undefined=True,
             )

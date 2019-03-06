@@ -68,7 +68,6 @@ def default_command():
     _sym(pkresource.filename('rsconf/rsconf.sh'), 'rsconf.sh')
     dev_d = pkio.py_path(pkresource.filename('dev'))
     for f in pkio.walk_tree(dev_d):
-        # TODO(robnagler) ignore backup files
         if str(f).endswith('~') or str(f).startswith('#'):
             continue
         x = f.relto(dev_d)
