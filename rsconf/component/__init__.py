@@ -39,7 +39,7 @@ class T(pkcollections.Dict):
         )
 
     def append_root_bash_with_resource(self, script, j2_ctx, bash_func):
-        v = _render_resource(script, j2_ctx)
+        v = self._render_resource(script, j2_ctx)
         self._root_bash_aux.append(v)
         self.append_root_bash(bash_func)
 
@@ -138,7 +138,7 @@ class T(pkcollections.Dict):
     def install_resource(self, name, j2_ctx, host_path):
         self._bash_append_and_dst(
             host_path,
-            file_contents=_render_resource(name, j2_ctx),
+            file_contents=self._render_resource(name, j2_ctx),
         )
 
     def install_secret_path(self, filename, host_path, gen_secret=None, visibility=None):
@@ -253,6 +253,18 @@ class T(pkcollections.Dict):
         self._bash_append(host_path, md5=md5)
         return dst
 
+    def _render_resource(self, name, j2_ctx):
+        from pykern import pkjinja
+        from pykern import pkresource
+        try:
+            return pkjinja.render_file(
+                pkresource.filename(name + pkjinja.RESOURCE_SUFFIX),
+                j2_ctx,
+                strict_undefined=True,
+            )
+        except Exception as e:
+            pkdlog('{}: {}', name, e)
+            raise
 
     def _write_binary(self, path, data):
         """Write as binary to Linux file
@@ -323,12 +335,3 @@ def _md5(data):
     m = hashlib.md5()
     m.update(data)
     return m.hexdigest()
-
-
-def _render_resource(name, j2_ctx):
-    from pykern import pkjinja
-    try:
-        return pkjinja.render_resource(name, j2_ctx, strict_undefined=True)
-    except Exception as e:
-        pkdlog('{}: {}', name, e)
-        raise
