@@ -23,7 +23,6 @@ in another window' 1>&2
     export rpm_perl_install_dir=$PWD/rpm
     radia_run biviosoftware/rpm-perl bivio-perl
     radia_run biviosoftware/rpm-perl Bivio
-    radia_run biviosoftware/rpm-perl BivioOrg
     (cd run/etc && radia_run biviosoftware/rpm-perl bivio-named)
 }
 
