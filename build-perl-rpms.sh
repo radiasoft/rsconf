@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Build perl RPMs: bivio-perl, Bivio, and BivioOrg
+# Build perl RPMs: bivio-perl and Bivio
 #
 . ~/.bashrc
 set -euo pipefail

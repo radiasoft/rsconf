@@ -41,17 +41,6 @@ default:
     simple_mirrors:
       /srv/bkp/simple_mirror:
         - "{{ host }}:/etc/profile.d"
-  bivioorg:
-    cookie_tag: BOD
-    listen_base: 8138
-    perl_root: BivioOrg
-    short_prefix: bo
-    vhosts:
-      # first vhost is default mail_host
-      - facade: bivio.org
-        receive_mail: true
-      - facade: viarob.com
-        receive_mail: true
   bop:
     num_servers: 2
     secret:
@@ -79,8 +68,6 @@ default:
   btest:
     client_host: {{ master }}
     email_user: {{ user }}
-# testing perl
-#    apps: [ bivioorg, petshop ]
     apps: [ petshop ]
     on_calendar: "*-*-* 12:00:00"
   celery_sirepo:
@@ -235,8 +222,6 @@ channel:
       # Needed for Docker with iptables (not using --network=host)
       ip_forward: true
     bop:
-# If developing perl, you'll want to test this
-#      apps: [ bivioorg, petshop ]
       apps: [ petshop ]
     docker:
       iptables: true
