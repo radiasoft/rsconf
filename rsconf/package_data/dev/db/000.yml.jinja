@@ -92,7 +92,8 @@ default:
         - viarob.com.{{ host }}
         - {{ all_host }}
         - {{ host }}
-        - {{ worker_host }}
+        - {{ worker5_host }}
+        - {{ worker2_host }}
       dev_master:
         - {{ master }}
   db_bkp:
@@ -256,6 +257,11 @@ channel:
 
 host:
   dev:
+    {{ worker2_host }}:
+      docker:
+        tls_host: {{ worker2_host }}
+      rsconf_db:
+        components: [ docker ]
     {{ master }}:
       base_os:
         volume_groups:
@@ -272,13 +278,29 @@ host:
         spec:
           joeblow:
             want_shell: true
+      docker:
+        tls_host: {{ master }}
+      jupyterhub:
+        pools:
+          default:
+            users: [ ]
+            servers_per_host: 4
+            mem_limit: "1G"
+            cpu_limit: 0.1
+            hosts: [ {{ master }} ]
+          private:
+            users: [ vagrant ]
+            servers_per_host: 1
+            hosts: [ {{ worker2_host }}, {{ worker5_host }} ]
+        vhosts:
+          {{ master }}: jupyter.{{ master }}
       mpi_cluster:
         docker_image: docker.io/radiasoft/beamsim-jupyter
         guest_d: /home/vagrant/jupyter
         jupyter_port: 7913
         jupyterhub_user_d: /srv/mpi_cluster/user
         ssh_port: 8022
-        workers: [ {{ host }}, {{ worker_host }} ]
+        workers: [ {{ host }}, {{ worker5_host }} ]
       nfs_server:
         exports:
           /srv/mpi_cluster/user: [ 10.10.10.0/24 ]
@@ -294,7 +316,7 @@ host:
         #TODO(robnagler) need to edit this to just rsconf to bootstrap
         #components: [ rsconf, bkp, docker_registry, mpi_cluster ]
         # jupyterhub_proxy, btest, github_bkp, dovecot ]
-        components: [ rsconf, nfs_server, mpi_cluster ]
+        components: [ rsconf, nfs_server, jupyterhub, jupyterhub_proxy ]
         # components: [ rsconf, docker_registry, btest ]
     {{ host }}:
       docker:
@@ -325,10 +347,10 @@ host:
 #        components: [ rabbitmq, celery_sirepo, sirepo, nfs_server ]
         components: [ nfs_client, docker ]
 #      sirepo:
-#        docker_hosts: [ {{ host }}, {{ worker_host }} ]
-    {{ worker_host }}:
+#        docker_hosts: [ {{ host }}, {{ worker5_host }} ]
+    {{ worker5_host }}:
       docker:
-        tls_host: {{ worker_host }}
+        tls_host: {{ worker5_host }}
       nfs_client:
         mounts:
           {{ host }}:

@@ -58,7 +58,7 @@ def host_init(hdb, host):
     else:
         y = pkcollections.Dict()
     assert not host in y, \
-        '{}: host already exists'
+        '{}: host already exists'.format(host)
     y[host] = db.random_string()
     pkjson.dump_pretty(y, filename=jf)
     pf = db.secret_path(hdb, _PASSWD_SECRET_F, visibility=_PASSWD_VISIBILITY)

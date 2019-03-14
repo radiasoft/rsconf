@@ -78,9 +78,12 @@ class T(component.T):
         )
 
     def _rsdockerspawner(self, j2_ctx, z):
+        from rsconf.component import docker
+
+        tls_d = z.run_d.join(_DOCKER_TLS_SUBDIR)
         c = pkcollections.Dict(
             port_base=z.setdefault('port_base', _DEFAULT_PORT_BASE),
-            tls_dir=z.run_dir(_DOCKER_TLS_SUBDIR),
+            tls_dir=str(tls_d),
         )
         seen = pkcollections.Dict(
             hosts=pkcollections.Dict(),
@@ -106,7 +109,7 @@ class T(component.T):
         docker.setup_cluster(
             self,
             hosts=seen.hosts.keys(),
-            tls_d=z.docker_tls_d,
+            tls_d=tls_d,
             run_u=z.run_u,
             j2_ctx=j2_ctx,
         )

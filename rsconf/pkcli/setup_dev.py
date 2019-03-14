@@ -54,7 +54,8 @@ def default_command():
         srv_d=str(srv),
         uid=os.getuid(),
         user=pwd.getpwuid(os.getuid())[0],
-        worker_host='v5.radia.run',
+        worker5_host='v5.radia.run',
+        worker2_host='v2.radia.run',
     )
     hosts = [h for h in j2_ctx.values() if str(h).endswith('.radia.run')]
     # bootstrap
