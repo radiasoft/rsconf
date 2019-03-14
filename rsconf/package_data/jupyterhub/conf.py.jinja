@@ -50,17 +50,6 @@ c.DockerSpawner.volumes = {
 c.JupyterHub.cleanup_servers = False
 c.DockerSpawner.network_name = 'host'
 c.RSDockerSpawner.cfg = '''{{ rsdockerspawner_cfg }}'''
-#c.RSDockerSpawner.cfg = {
-#    "pools": {
-#        "base_port": 9999,
-#        "allowed_users": ["a", "b"],
-#        "hosts": ["c", "d" ],
-#        "servers_per_host": 4,
-#        "mem_limit": "10G",
-#        "cpu_limit": 4.0,
-#    },
-#    "tls_dir": "whatever",
-#}
 
 import rsdockerspawner
 class _Spawner(rsdockerspawner.RSDockerSpawner):
