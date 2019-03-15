@@ -51,10 +51,10 @@ c.JupyterHub.cleanup_servers = False
 c.DockerSpawner.network_name = 'host'
 c.RSDockerSpawner.cfg = '''{{ jupyterhub.rsdockerspawner_cfg }}'''
 
-import rsdockerspawner
+from rsdockerspawner import rsdockerspawner
 class _Spawner(rsdockerspawner.RSDockerSpawner):
 {% else %}
-import dockerspawner
+from dockerspawner import dockerspawner
 class _Spawner(dockerspawner.DockerSpawner):
 {% endif %}
     def _volumes_to_binds(self, *args, **kwargs):

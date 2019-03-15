@@ -72,7 +72,7 @@ class T(component.T):
             j2_ctx,
             cmd='jupyterhub -f {}'.format(conf_f),
             image=docker_registry.absolute_image(j2_ctx, z.docker_image),
-            ports=[int(z.port)],
+#            ports=[int(z.port)],
             run_u=z.run_u,
             volumes=[docker.DOCKER_SOCK],
         )
@@ -93,7 +93,7 @@ class T(component.T):
             p.setdefault('users', [])
             assert p.users or n == _DEFAULT_POOL_NAME, \
                 'no users in pool={}'.format(n)
-            assert p.setdefault('servers_per_host', 0) > 1, \
+            assert p.setdefault('servers_per_host', 0) >= 1, \
                 'invalid servers_per_host={} in pool={}'.format(
                     p.servers_per_host,
                     n,
