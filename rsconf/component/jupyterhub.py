@@ -72,7 +72,6 @@ class T(component.T):
             j2_ctx,
             cmd='jupyterhub -f {}'.format(conf_f),
             image=docker_registry.absolute_image(j2_ctx, z.docker_image),
-#            ports=[int(z.port)],
             run_u=z.run_u,
             volumes=[docker.DOCKER_SOCK],
         )
