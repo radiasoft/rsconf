@@ -15,9 +15,10 @@ _COOKIE_SECRET = 'jupyterhub_cookie_secret'
 _PROXY_AUTH = 'jupyterhub_proxy_auth'
 _USER_SUBDIR = 'user'
 _DOCKER_TLS_SUBDIR = 'docker_tls'
-_DEFAULT_PORT_BASE = 8800
+_DEFAULT_PORT_BASE = 8100
 # POSIT: rsdockerspawner._DEFAULT_POOL_NAME
 _DEFAULT_POOL_NAME = 'default'
+_DEFAULT_MOCK_PASSWORD = 'testpass'
 
 
 class T(component.T):
@@ -62,6 +63,8 @@ class T(component.T):
             z.whitelist_users_str = _list_to_str(z.whitelist_users)
         if z.get('pools'):
             self._rsdockerspawner(j2_ctx, z)
+        if j2_ctx.rsconf_db.channel == 'dev':
+            z.setdefault('mock_password', _DEFAULT_MOCK_PASSWORD)
         conf_f = z.run_d.join(_CONF_F)
         self.install_resource('jupyterhub/{}'.format(_CONF_F), j2_ctx, conf_f)
         self.append_root_bash(
@@ -104,6 +107,7 @@ class T(component.T):
                     seen[x][y] = n
             p.setdefault('mem_limit', None)
             p.setdefault('cpu_limit', None)
+            p.setdefault('min_activity_hours', None)
         c.pools = z.pools
         docker.setup_cluster(
             self,
