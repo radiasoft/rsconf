@@ -38,7 +38,7 @@ class T(component.T):
             jupyter_docker_image=docker_registry.absolute_image(
                 j2_ctx, z.jupyter_docker_image,
             ),
-            run_u=j2_ctx.rsconf_db.root_u,
+            run_u=j2_ctx.rsconf_db.run_u,
             jupyter_run_u=j2_ctx.rsconf_db.run_u,
         )
         z.home_d = db.user_home_path(j2_ctx, z.jupyter_run_u)
