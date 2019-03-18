@@ -49,13 +49,12 @@ c.DockerSpawner.volumes = {
 {% if 'rsdockerspawner_cfg' in jupyterhub %}
 # Allow JupyterHub to restart without killing containers
 c.JupyterHub.cleanup_servers = False
+c.DockerSpawner.remove = True
 c.DockerSpawner.network_name = 'host'
 c.RSDockerSpawner.cfg = '''{{ jupyterhub.rsdockerspawner_cfg }}'''
-c.DockerSpawner.remove = False
 from rsdockerspawner import rsdockerspawner
 class _Spawner(rsdockerspawner.RSDockerSpawner):
 {% else %}
-c.DockerSpawner.remove = True
 from dockerspawner import dockerspawner
 class _Spawner(dockerspawner.DockerSpawner):
 {% endif %}
