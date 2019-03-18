@@ -27,6 +27,7 @@ class _Auth(jupyterhub.auth.Authenticator):
         return None
 c.JupyterHub.authenticator_class = _Auth
 {% endif %}
+c.JupyterHub.cleanup_servers = False
 c.JupyterHub.confirm_no_ssl = True
 c.JupyterHub.cookie_secret = binascii.a2b_hex('{{ jupyterhub.cookie_secret_hex }}')
 c.JupyterHub.hub_ip = jupyter_client.localinterfaces.public_ips()[0]
@@ -49,7 +50,6 @@ c.DockerSpawner.volumes = {
 }
 {% if 'rsdockerspawner_cfg' in jupyterhub %}
 # Allow JupyterHub to restart without killing containers
-c.JupyterHub.cleanup_servers = False
 c.DockerSpawner.network_name = 'host'
 c.RSDockerSpawner.cfg = '''{{ jupyterhub.rsdockerspawner_cfg }}'''
 from rsdockerspawner import rsdockerspawner
