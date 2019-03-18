@@ -71,13 +71,17 @@ class T(component.T):
         self.append_root_bash(
             "rsconf_service_docker_pull '{}'".format(z.jupyter_docker_image),
         )
+        kw = pkcollections.Dict()
+        if not rsd:
+            kw.ports=[int(z.port)]
+            volumes=[docker.DOCKER_SOCK]
         systemd.docker_unit_enable(
             self,
             j2_ctx,
             cmd='jupyterhub -f {}'.format(conf_f),
             image=docker_registry.absolute_image(j2_ctx, z.docker_image),
             run_u=z.run_u,
-            volumes=[] if rsd else [docker.DOCKER_SOCK],
+            **kw
         )
 
     def _rsdockerspawner(self, j2_ctx, z):
