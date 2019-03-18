@@ -31,6 +31,7 @@ class T(component.T):
         self.buildt.require_component('docker')
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.jupyterhub
+        rsd = bool(z.get('pools'))
         z.vhost = j2_ctx.jupyterhub.vhosts[j2_ctx.rsconf_db.host]
         z.run_d = systemd.docker_unit_prepare(self, j2_ctx)
         z.update(
@@ -38,7 +39,7 @@ class T(component.T):
             jupyter_docker_image=docker_registry.absolute_image(
                 j2_ctx, z.jupyter_docker_image,
             ),
-            run_u=j2_ctx.rsconf_db.run_u,
+            run_u=j2_ctx.rsconf_db.get('run_u' if rsd else 'root_u'),
             jupyter_run_u=j2_ctx.rsconf_db.run_u,
         )
         z.home_d = db.user_home_path(j2_ctx, z.jupyter_run_u)
@@ -61,7 +62,7 @@ class T(component.T):
         if z.get('whitelist_users'):
             # admin_users are implicitly part of whitelist
             z.whitelist_users_str = _list_to_str(z.whitelist_users)
-        if z.get('pools'):
+        if rsd:
             self._rsdockerspawner(j2_ctx, z)
         if j2_ctx.rsconf_db.channel == 'dev':
             z.setdefault('mock_password', _DEFAULT_MOCK_PASSWORD)
@@ -76,7 +77,7 @@ class T(component.T):
             cmd='jupyterhub -f {}'.format(conf_f),
             image=docker_registry.absolute_image(j2_ctx, z.docker_image),
             run_u=z.run_u,
-            volumes=[docker.DOCKER_SOCK],
+            volumes=[] if rsd else [docker.DOCKER_SOCK],
         )
 
     def _rsdockerspawner(self, j2_ctx, z):
