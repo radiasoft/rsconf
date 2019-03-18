@@ -37,6 +37,7 @@ c.DockerSpawner.http_timeout = 60
 # https://github.com/radiasoft/rsconf/issues/54
 c.DockerSpawner.image_whitelist = []
 c.DockerSpawner.image = '{{ jupyterhub.jupyter_docker_image }}'
+c.DockerSpawner.remove = True
 c.DockerSpawner.use_internal_ip = True
 c.DockerSpawner.volumes = {
     '{{ jupyterhub.user_d }}/{username}': {
@@ -49,7 +50,6 @@ c.DockerSpawner.volumes = {
 {% if 'rsdockerspawner_cfg' in jupyterhub %}
 # Allow JupyterHub to restart without killing containers
 c.JupyterHub.cleanup_servers = False
-c.DockerSpawner.remove = True
 c.DockerSpawner.network_name = 'host'
 c.RSDockerSpawner.cfg = '''{{ jupyterhub.rsdockerspawner_cfg }}'''
 from rsdockerspawner import rsdockerspawner
