@@ -73,8 +73,8 @@ class T(component.T):
         )
         kw = pkcollections.Dict()
         if not rsd:
-            kw.ports=[int(z.port)]
-            volumes=[docker.DOCKER_SOCK]
+            kw.ports = [int(z.port)]
+            kw.volumes = [docker.DOCKER_SOCK]
         systemd.docker_unit_enable(
             self,
             j2_ctx,
