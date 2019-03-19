@@ -66,6 +66,10 @@ class T(component.T):
             self._rsdockerspawner(j2_ctx, z)
         if j2_ctx.rsconf_db.channel == 'dev':
             z.setdefault('mock_password', _DEFAULT_MOCK_PASSWORD)
+        else:
+            g = z.get('github')
+            assert g and g.get('client_id') and g.get('client_secret'), \
+                'jupyter.github={} client_id/secret not set'.format(g)
         conf_f = z.run_d.join(_CONF_F)
         self.install_resource('jupyterhub/{}'.format(_CONF_F), j2_ctx, conf_f)
         self.append_root_bash(
