@@ -8,7 +8,7 @@ start_tls_d='{{ mpi_cluster.docker_tls_d }}'
 
 start_guest_d='{{ mpi_cluster.guest_d }}'
 
-start_conf_guest_d=$start_guest_d/.rsmpiexec
+start_conf_guest_d=$start_guest_d/.rsmpi
 
 start_image='{{ mpi_cluster.docker_image }}'
 
@@ -20,7 +20,7 @@ start_workers=(
 {% endfor %}
 )
 
-start_jupyterhub_user_d='{{ mpi_cluster.jupyterhub_user_d }}'
+start_jupyterhub_root_d='{{ mpi_cluster.jupyterhub_root_d }}'
 
 start_docker() {
     local host=$1
@@ -69,7 +69,7 @@ start_main() {
         echo 'usage: bash start.sh <github-user>' 1>&2
         exit 1
     fi
-    local run_u=$(stat -c %U "$start_jupyterhub_user_d")
+    local run_u=$(stat -c %U "$start_jupyterhub_root_d")
     if [[ $USER != $run_u ]]; then
         echo "must be run as '$run_u'" 1>&2
         exit 1
@@ -81,13 +81,14 @@ start_main() {
     local ip
     local host_pub slots
     local -i total_slots=0
-    local host_d=$start_jupyterhub_user_d/$user
-    local conf_d=$host_d/.rsmpiexec
+    local host_d=$start_jupyterhub_root_d/$user
+    local conf_d=$host_d/.rsmpi
     local x y
     # user part must exist
     rm -rf "$conf_d"
     mkdir -p "$conf_d"
     local net=
+    local ip_slots=
     for worker in "${start_workers[@]}"; do
         worker_d=$conf_d/$worker
         worker_guest_d=$start_conf_guest_d/$worker
@@ -131,26 +132,75 @@ EOF
         # ASSUME: hyperthreading so divide by two
         slots=$(( $slots / 2 ))
         total_slots+=$slots
-        echo "$ip slots=$slots" >> "$conf_d"/mpi_hosts
+        ip_slots+="'$ip slots=$slots'"$'\n'
         net=$(start_net "$ip" "$net")
     done
-    install -m 550 /dev/stdin "$host_d"/rsmpiexec <<EOF
+    local all_hosts=$(seq --separator=, ${#start_workers[0]}}
+    (cat <<EOF1; cat <<EOF2) | install -m 550 /dev/stdin "$host_d"/bin/rsmpi
 #!/bin/bash
 set -euo pipefail
 
-rsmpiexec_main() {
-    if (( "\$#" < 3 )); then
-        echo "usage: rsmpiexec -n $total_slots command..." 1>&2
-        exit 1
-    fi
-    [[ -d ~/.ssh ]] || install -d -m 700 ~/.ssh
-    install -m 600 '$start_conf_guest_d/ssh_config' ~/.ssh/config
-    install -m 600 '$start_conf_guest_d/known_hosts' ~/.ssh/known_hosts
-    exec mpiexec --mca oop_tcp_if_include '$net' --mca btl_tcp_if_include '$net' --hostfile '$start_conf_guest_d/mpi_hosts' "\$@"
+_rsmpi_slots=(
+$ip_slots
+)
+
+_rsmpi_hosts='$all_hosts'
+
+_rsmpi_net='$net'
+
+EOF1
+rsmpi_hosts_write() {
+    local IFS=,
+    echo "$ip =$slots" >> "$conf_d"/mpi_hosts
 }
 
-rsmpiexec_main "\$@"
+rsmpi_main() {
+    local op=${1:-help}
+    shift
+    case "$op" in
+        exec|help|status)
+            "rsmpi_op_$op" "$@"
+            ;;
+        *)
+            rsmpi_op_help
+            ;;
+    esac
+}
+
+rsmpi_op_exec() {
+    local n=${1:-}
+    shift
+    local h=$_rsmpi_hosts
+    if [[ ${1:-} =~ ^[0-9] ]]; then
+        shift
+    fi
+    if (( $# < 2 )); then
+        rsmpi_op_help
+    fi
+    if [[ ! -d ~/.ssh ]]; then
+        install -d -m 700 ~/.ssh
+    fi
+    install -m 600 '$start_conf_guest_d/ssh_config' ~/.ssh/config
+    install -m 600 '$start_conf_guest_d/known_hosts' ~/.ssh/known_hosts
+    local f=/tmp/rsmpihosts$$
+    rsmpi_hosts_write | install -m 600 /dev/stdin "$f"
+    exec mpiexec --mca oop_tcp_if_include '$_rsmpi_net' --mca btl_tcp_if_include '$net' --hostfile "$f" "$@"
+}
+
+rsmpi_op_help() {
+    cat <<EOF
+usage: rsmpi exec|status|help ...
+
+commands:
+exec <processes> [<hosts>] your-mpi-program args...
+    processes is the number of cores, which can be from 1 to $total_slots.
+    hosts are identified by a list of numbers, which can be 1 up to $.
+    Leave <hosts> out to give mpi all hosts.
 EOF
+}
+
+rsmpi_main "\$@"
+EOF2
 }
 
 start_net() {
