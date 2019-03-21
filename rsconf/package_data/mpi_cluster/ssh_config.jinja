@@ -1,5 +1,0 @@
-{% for h in mpi_cluster.ssh.hosts %}
-Host {{ h.Host }}
-    Port {{ h.Port }}
-    IdentityFile {{ h.IdentityFile }}
-{% endfor %}

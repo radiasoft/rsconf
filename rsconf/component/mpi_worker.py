@@ -12,56 +12,143 @@ class T(component.T):
         from rsconf import systemd
 
         self.buildt.require_component('docker')
-        j2_ctx = self.hdb.j2_ctx_copy()
-        z = j2_ctx.mpi_worker
-        z.run_d = systemd.docker_unit_prepare(self, j2_ctx)
-        z.run_u = j2_ctx.rsconf_db.run_u
-        self._prepare_hosts()
-        nc = self.buildt.get_component('network')
-        for h in myhosts:
-            ip, net = nc.ip_and_net_for_host(j2_ctx)
-            z.mpi_slots consistent for cluster
+        jc = self.hdb.j2_ctx_copy()
+        z = jc.mpi_worker
+        self._find_rank(jc, z)
+        z.host_d = z.host_root_d.join(z.user)
+        z.secrets = self._gen_keys(jc, z, jc.rsconf_db.host)
+        for x in 'guest', 'host':
+            z[x] = self._gen_paths(jc, z, z.get(where + '_d'))
+        z.run_u = jc.rsconf_db.run_u
+        z.run_d = systemd.docker_unit_prepare(self, jc, watch_files=[z.host_d])
+        self._prepare_hosts(jc, z)
 
     def internal_build_write(self):
         from rsconf import systemd
         from rsconf.component import docker_registry
 
-        jc = self.j2_ctx
+        jc = self.jc
         z = jc.mpi_worker
-        nc = self.buildt.get_component('network')
-        systemd.custom_unit_enable(
-            self,
+        self.install_access(mode='700', owner=z.run_u)
+        for d in z.host_d, z.host.conf_d, z.host.ssh_d:
+            self.install_directory(z.host_bin_d)
+        self.install_access(mode='400')
+        self.install_resource(
+            self.name + '/' + z.host.sshd_config.basename,
             jc,
-            run_u=z.run_u,
-            run_group=z.run_group,
-            run_d_mode='710',
+            z.host.sshd_config,
         )
-        # runtime_d (/run) set by custom_unit_enable
-        z.stats_f = jc.systemd.runtime_d.join('bind.stats')
-        z.session_key_f = jc.systemd.runtime_d.join('session.key')
-        self.install_access(mode='750', owner=z.run_u, group=z.run_group)
-        self.install_directory(z.db_d)
-        self.install_access(mode='440')
-        self.install_resource('bivio_named/named.conf', jc, z.conf_f)
+        if z.is_first:
+            self.install_resource(
+                self.name + '/' + z.host.sshd_config.basename,
+                jc,
+                z.host.ssh_config,
+            )
+            self.install_resource(
+                self.name + '/' + z.host.known_hosts.basename,
+                jc,
+                z.host.known_hosts,
+            )
+            self.install_directory(z.host.bin_d)
+            self.install_access(mode='500')
+            self.install_resource(
+                self.name + '/rsmpi.sh',
+                jc,
+                z.host.bin_d.join('rsmpi'),
+            )
 
         volumes =[
             $host_d $start_guest_d
         ]
         systemd.docker_unit_enable(
             self,
-            j2_ctx,
-            image=docker_registry.absolute_image(j2_ctx, z.docker_image),
+            jc,
+            image=docker_registry.absolute_image(jc, z.docker_image),
             env=env,
             volumes=volumes,
             cmd=/usr/sbin/sshd -D -f "$worker_guest_d/sshd_config"
         )
+        install files
 
-     ssh_file
-        cat >> "$conf_d"/ssh_config <<EOF
-Host $ip
-    Port $start_ssh_port
-    IdentityFile $worker_guest_d/id_ed25519
-EOF
-        cat >> "$conf_d"/known_hosts <<EOF
-[$ip]:$start_ssh_port $worker_pub
-EOF
+    def _find_rank(self, jc, z):
+        h = jc.rsconf_db.host
+        for u, v in z.mpi_worker.users.items():
+            if h in v:
+                assert 'user' not in z, \
+                    'host={} appears twice in users: {} and {}'.format(
+                        h,
+                        u,
+                        z.my.user,
+                    )
+                z.update(
+                    user=u,
+                    hosts=v,
+                    is_first=v[0] == h,
+                )
+        assert 'my' in my,
+            'host={} not found in users'.format(h)
+
+    def _gen_keys(self, jc, z, host):
+        res = pkcollections.Dict()
+        b = db.secret_path(
+            jc,
+            self.name + '_' + z.user,
+            visibility='host',
+            qualifier=host,
+        )
+        pkio.mkdir_parent_only(b)
+        res.host_key_f = b.join('host_key')
+        res.host_key_pub_f = res.host_key_f + '.pub'
+        res.identity_f = b.join('identity')
+        res.identity_pub_f = b.join('identity') + '.pub'
+        for f in res.host_key_f, res.identity_f:
+            if f.exists():
+                continue
+            subprocess.check_output(
+                cmd,
+                ['ssh-keygen', '-t', 'ed25519', '-q', '-N', '', host, '-f', f],
+                stderr=subprocess.STDOUT,
+            )
+        return res
+
+    def _gen_paths(self, jc, z, d):
+        res = pkcollections.Dict()
+        res.bin_d = d.join('bin')
+        d = d.join('.rsmpi')
+        res.conf_d = d
+        res.known_hosts = d.join('known_hosts')
+        res.ssh_config = d.join('ssh_config')
+        d = d.join(jc.rsconf_db.host)
+        res.ssh_d = d
+        res['sshd_config'] = d.join('sshd_config')
+        for k, v in z.secrets.items():
+            res[k] = d.join(v.basename)
+
+    def _prepare_hosts(self, jc, z):
+        if not z.is_first:
+            return
+        res = []
+        z.identities = pkcollections.Dict()
+        z.net = None
+        nc = self.buildt.get_component('network')
+        for h in z.hosts:
+            ip, net = nc.ip_and_net_for_host(h)
+            if 'net' in z:
+                assert net == z.net, \
+                    'net={} for host={} not on same net={}'.format(
+                        net,
+                        h,
+                        z.net,
+                    )
+            else:
+                z.net = net
+            s = self._gen_keys(jc, z, h)
+            res.append(
+                pkcollections.Dict(
+                    host=h,
+                    ip=ip,
+                    host_key_pub=s.host_key_pub_f.read().rstrip(),
+                    guest_identity_f=z.guest.identity_f.replace(jc.rsconf_db.host, h),
+                ),
+            )
+        z.hosts_sorted = sorted(res, key=lambda x: x.h)
