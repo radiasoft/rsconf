@@ -135,7 +135,12 @@ class T(pkcollections.Dict):
         ))
         return rpm_file
 
-    def install_resource(self, name, j2_ctx, host_path):
+    def install_resource(self, name, j2_ctx, host_path=None):
+        if not host_path:
+            host_path = name
+            if host_path.ext == '.sh':
+                host_path = host_path.new(ext='')
+            name = self.name + '/' + name.basename
         self._bash_append_and_dst(
             host_path,
             file_contents=self._render_resource(name, j2_ctx),

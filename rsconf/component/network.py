@@ -16,6 +16,7 @@ from pykern import pkio
 from pykern import pkcompat
 import copy
 import ipaddress
+import socket
 
 
 _SCRIPTS = pkio.py_path('/etc/sysconfig/network-scripts')
@@ -47,6 +48,12 @@ class T(component.T):
         z.public_tcp_ports = []
         z.trusted_tcp_ports = []
         z.public_udp_ports = []
+        self.__trusted_nets = self._nets(jc, z.trusted)
+        jc.network.setdefault(
+            'trusted_public_nets',
+            sorted([n.name for n in self.__trusted_nets.values() if n.name.is_global]),
+        )
+        self.__untrusted_nets = self._nets(jc, z.untrusted)
         if not self.hdb.network.devices:
             # no devices, no network config
             self.append_root_bash(': nothing to do')
@@ -148,12 +155,6 @@ class T(component.T):
 
     def _devices(self, jc):
         z = jc.network
-        self.__trusted_nets = self._nets(jc, z.trusted)
-        jc.network.setdefault(
-            'trusted_public_nets',
-            sorted([n.name for n in self.__trusted_nets.values() if n.name.is_global]),
-        )
-        self.__untrusted_nets = self._nets(jc, z.untrusted)
         z._devs = []
         routes = []
         z.defroute = None
@@ -202,7 +203,7 @@ class T(component.T):
 
     #TODO(robnagler) sanity check nets don't overlap?
     def _net_check(self, ip):
-        nip = ipaddress.ip_network(ip + '/32')
+        nip = ipaddress.ip_network(pkcompat.locale_str(ip + '/32'))
         #TODO(robnagler) untrusted networks are supernets of potentially trusted_nets
         # the only reason to add them is to find them for devices
         for nets in self.__untrusted_nets, self.__trusted_nets:

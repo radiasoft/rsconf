@@ -130,7 +130,7 @@ default:
     guest_d: /home/vagrant/jupyter
     host_root_d: /srv/mpi_cluster/user
     ssh_port: 8022
-    num_slots: 2
+    slots_per_host: 2
   network:
     devices: {}
     trusted: {}
@@ -240,8 +240,7 @@ channel:
       mpi_cores: 4
       vhost: sirepo.{{ host }}
     mpi_worker:
-      users:
-        # first host in the list writes common files
+      clusters:
         vagrant: [ {{ host }}, {{ worker5_host }}, {{ worker2_host }} ]
     network:
       trusted:
@@ -253,6 +252,7 @@ channel:
           gateway: 216.17.132.62
           search: radia.run
           nameservers: [ 162.159.27.72, 162.159.24.39 ]
+      untrusted: {}
     wordpress:
       vhosts:
         wp1.{{ host }}:
@@ -265,6 +265,10 @@ host:
     {{ worker2_host }}:
       docker:
         tls_host: {{ worker2_host }}
+      nfs_client:
+        mounts:
+          {{ master }}:
+            - /srv/mpi_worker/user
       rsconf_db:
         components: [ mpi_worker ]
     {{ master }}:
@@ -301,7 +305,7 @@ host:
           {{ master }}: jupyter.{{ master }}
       nfs_server:
         exports:
-          /srv/mpi_cluster/user: [ 10.10.10.0/24 ]
+          /srv/mpi_worker/user: [ 10.10.10.0/24 ]
       postfix:
         aliases:
           RSCONF_DB_REPLACE:
@@ -335,7 +339,7 @@ host:
       nfs_client:
         mounts:
           {{ master }}:
-            - /srv/mpi_cluster/user
+            - /srv/mpi_worker/user
       nfs_server:
         exports:
           /srv/sirepo/db/user: [ 10.10.10.0/24 ]
@@ -343,7 +347,7 @@ host:
 #        components: [ bop ]
 #        components: [ jupyterhub, jupyterhub_proxy ]
 #        components: [ rabbitmq, celery_sirepo, sirepo, nfs_server ]
-        components: [ nfs_client, nfs_server, docker ]
+        components: [ nfs_client, nfs_server, mpi_worker ]
 #      sirepo:
 #        docker_hosts: [ {{ host }}, {{ worker5_host }} ]
     {{ worker5_host }}:
@@ -354,11 +358,11 @@ host:
           {{ host }}:
             - /srv/sirepo/db/user
           {{ master }}:
-            - /srv/mpi_cluster/user
+            - /srv/mpi_worker/user
       postfix:
         smart_host: {{ master }}
       rsconf_db:
-        components: [ nfs_client, docker ]
+        components: [ mpi_worker ]
     # This host never installed, just for testing build
     {{ all_host }}:
       base_users:
