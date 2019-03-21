@@ -34,6 +34,10 @@ class T(component.T):
     def add_trusted_tcp_ports(self, ports):
         self._add_ports('trusted_tcp_ports', ports)
 
+    def ip_and_net_for_host(self, host):
+        ip = socket.gethostbyname(host)
+        return ip, self._net_check(ip)
+
     def internal_build_compile(self):
         self.buildt.require_component('base_os')
         self.j2_ctx = self.hdb.j2_ctx_copy()

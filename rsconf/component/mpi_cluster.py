@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 u"""mpi_cluster
 
-:copyright: Copyright (c) 2018 Bivio Software, Inc.  All Rights Reserved.
+:copyright: Copyright (c) 2018-2019 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
@@ -22,12 +22,6 @@ class T(component.T):
         z.docker_image = docker_registry.absolute_image(j2_ctx, z.docker_image)
         self.install_access(mode='700', owner=z.run_u)
         self.install_directory(z.run_d)
-        self.install_access(mode='500', owner=j2_ctx.rsconf_db.root_u)
-        self.install_resource(
-            'mpi_cluster/start_jupyter.sh',
-            j2_ctx,
-            z.run_d.join('start_jupyter'),
-        )
         self.install_access(mode='500', owner=z.run_u)
         self.install_resource(
             'mpi_cluster/start.sh',

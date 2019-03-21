@@ -1,0 +1,72 @@
+#!/bin/bash
+rsmpi_hosts_write() {
+    local IFS=,
+    echo "$ip =$slots" >> "$conf_d"/mpi_hosts
+}
+
+rsmpi_main() {
+    local op=${1:-help}
+    shift
+    local o OPTARG OPTIND=1 OPTERR h slots
+    local -a hosts
+    while getopts "h:n:" o; do
+        case $o in
+            h)
+                if [[ ! $OPTARG =~ ^[0-9,]+$ ]]; then
+                    rsmpi_help "invalid host spec: $OPTARG"
+                fi
+                IFS=, read -ra hosts <<<$OPTARG
+                for h in "${hosts[@]}"; do
+                    if (( h < 1 || h > _rsmpi_num_hosts )); then
+                        rsmpi_help "invalid host number: $1"
+                    fi
+                done
+                ;;
+            n)
+                if [[ ! $slots =~ ^[0-9]+$ ]]; then
+                    rsmpi_help "process count must be a number: $OPTARG"
+                fi
+                slots=$OPTARG
+                if (( slots < 1 || slots > _rsmpi_max_slots )); then
+                    rsmpi_help "invalid process count: $slots"
+                fi
+                ;;
+            *)
+                rsmpi_help
+                ;;
+        esac
+    done
+    shift $((OPTIND -1))
+    if (( $# <= 0 )); then
+        rsmpi_help 'missing command argument'
+    fi
+}
+
+rsmpi_op_exec() {
+    local n=${1:-}
+    shift
+    local h=$_rsmpi_hosts
+    if [[ ${1:-} =~ ^[0-9] ]]; then
+        shift
+    fi
+    if (( $# < 2 )); then
+        rsmpi_op_help
+    fi
+    if [[ ! -d ~/.ssh ]]; then
+        install -d -m 700 ~/.ssh
+    fi
+    install -m 600 '$start_conf_guest_d/ssh_config' ~/.ssh/config
+    install -m 600 '$start_conf_guest_d/known_hosts' ~/.ssh/known_hosts
+    local f=/tmp/rsmpihosts$$
+    rsmpi_hosts_write | install -m 600 /dev/stdin "$f"
+    exec mpiexec --mca oop_tcp_if_include '$_rsmpi_net' --mca btl_tcp_if_include '$net' --hostfile "$f" "$@"
+}
+
+rsmpi_op_help() {
+    cat <<EOF
+usage: rsmpi exec|status|help ...
+
+EOF
+}
+
+rspmi_main "$@"

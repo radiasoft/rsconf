@@ -94,6 +94,7 @@ start_main() {
         worker_guest_d=$start_conf_guest_d/$worker
         mkdir -p "$worker_d"
         cd "$worker_d"
+# generate secrets permanently per user/worker
         ssh-keygen -t ed25519 -f ssh_host_ed25519_key -q -N '' -C "$worker"
         ssh-keygen -t ed25519 -f id_ed25519 -q -N '' -C "$worker"
         worker_pub=$(cat ssh_host_ed25519_key.pub)
@@ -120,6 +121,7 @@ EOF
 [$ip]:$start_ssh_port $worker_pub
 EOF
         chmod -R go-rwx "$conf_d"
+# /srv/jupyter/<user>/whatever is part of the watch
         start_docker "$worker" "$host_d" /usr/sbin/sshd -D -f "$worker_guest_d/sshd_config"
         sleep 2
         slots=$(
@@ -140,6 +142,13 @@ EOF
 #!/bin/bash
 set -euo pipefail
 
+        for f in $(compgen -A function build_) $(compgen -A function install_); do
+            declare -f "$f"
+        done
+        for f in $(compgen -A variable build_) $(compgen -A variable install_) $build_passenv; do
+            declare -p "$f"
+        done
+
 _rsmpi_slots=(
 $ip_slots
 )
@@ -148,7 +157,38 @@ _rsmpi_hosts='$all_hosts'
 
 _rsmpi_net='$net'
 
-EOF1
+rsmpi_main "$@"
+EOF2
+}
+
+start_net() {
+    local ip=$1
+    local net=$2
+    local re=' dev ([^ ]+)'
+    if [[ ! $(ip route get "$ip") =~ $re ]]; then
+        start_err "no route to IP address: $ip"
+    fi
+    local dev=${BASH_REMATCH[1]}
+    if [[ $dev == lo ]]; then
+        if [[ ! $(ip route | fgrep "src $ip") =~ $re ]]; then
+            start_err "no route to (non-local) IP address: $ip"
+        fi
+        dev=${BASH_REMATCH[1]}
+    fi
+    local re=' inet ([^ ]+)'
+    if [[ ! $(ip addr show "$dev") =~ $re ]]; then
+        start_err "cannot find device: $dev"
+    fi
+    local src=${BASH_REMATCH[1]}
+    local NETWORK PREFIX
+    eval $(ipcalc --prefix --network "$src")
+    local new=$NETWORK/$PREFIX
+    if [[ $net && $net != $new ]]; then
+        start_err "ip $ip does not route to $net"
+    fi
+    echo "$new"
+}
+
 rsmpi_hosts_write() {
     local IFS=,
     echo "$ip =$slots" >> "$conf_d"/mpi_hosts
@@ -197,38 +237,6 @@ exec <processes> [<hosts>] your-mpi-program args...
     hosts are identified by a list of numbers, which can be 1 up to $.
     Leave <hosts> out to give mpi all hosts.
 EOF
-}
-
-rsmpi_main "\$@"
-EOF2
-}
-
-start_net() {
-    local ip=$1
-    local net=$2
-    local re=' dev ([^ ]+)'
-    if [[ ! $(ip route get "$ip") =~ $re ]]; then
-        start_err "no route to IP address: $ip"
-    fi
-    local dev=${BASH_REMATCH[1]}
-    if [[ $dev == lo ]]; then
-        if [[ ! $(ip route | fgrep "src $ip") =~ $re ]]; then
-            start_err "no route to (non-local) IP address: $ip"
-        fi
-        dev=${BASH_REMATCH[1]}
-    fi
-    local re=' inet ([^ ]+)'
-    if [[ ! $(ip addr show "$dev") =~ $re ]]; then
-        start_err "cannot find device: $dev"
-    fi
-    local src=${BASH_REMATCH[1]}
-    local NETWORK PREFIX
-    eval $(ipcalc --prefix --network "$src")
-    local new=$NETWORK/$PREFIX
-    if [[ $net && $net != $new ]]; then
-        start_err "ip $ip does not route to $net"
-    fi
-    echo "$new"
 }
 
 start_main "$@"

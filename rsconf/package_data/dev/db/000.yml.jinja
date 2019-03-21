@@ -125,6 +125,12 @@ default:
     verbose: true
     # sometime before bkp.on_calendar
     on_calendar: "*-*-* 07:30:00"
+  mpi_worker:
+    docker_image: docker.io/radiasoft/beamsim-jupyter
+    guest_user_d: /home/vagrant/jupyter
+    host_root_d: /srv/mpi_cluster/user
+    ssh_port: 8022
+    num_slots: 2
   network:
     devices: {}
     trusted: {}
@@ -233,6 +239,10 @@ channel:
         mail_password: somepass
       mpi_cores: 4
       vhost: sirepo.{{ host }}
+    mpi_worker:
+      users:
+        # first host in the list writes common files
+        vagrant: [ {{ host }}, {{ worker5_host }}, {{ worker2_host }} ]
     network:
       trusted:
         # v*.radia.run private network
@@ -256,7 +266,7 @@ host:
       docker:
         tls_host: {{ worker2_host }}
       rsconf_db:
-        components: [ docker ]
+        components: [ mpi_worker ]
     {{ master }}:
       base_os:
         volume_groups:
@@ -289,13 +299,6 @@ host:
             hosts: [ {{ worker2_host }}, {{ worker5_host }} ]
         vhosts:
           {{ master }}: jupyter.{{ master }}
-      mpi_cluster:
-        docker_image: docker.io/radiasoft/beamsim-jupyter
-        guest_d: /home/vagrant/jupyter
-        jupyter_port: 7913
-        jupyterhub_user_d: /srv/mpi_cluster/user
-        ssh_port: 8022
-        workers: [ {{ host }}, {{ worker5_host }} ]
       nfs_server:
         exports:
           /srv/mpi_cluster/user: [ 10.10.10.0/24 ]
