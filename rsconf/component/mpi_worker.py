@@ -27,8 +27,8 @@ class T(component.T):
         for x in 'guest', 'host':
             z[x] = self._gen_paths(jc, z, z.get(x + '_d'))
         z.run_u = jc.rsconf_db.run_u
-        z.run_d = systemd.docker_unit_prepare(self, jc, watch_files=[z.host_d])
-        z.hosts_sorted = self._prepare_hosts(jc, z)
+        z.run_d = systemd.docker_unit_prepare(self, jc, watch_files=[z.host.conf_d])
+        self._prepare_hosts(jc, z)
 
     def internal_build_write(self):
         from rsconf import systemd
@@ -51,7 +51,11 @@ class T(component.T):
             self.install_directory(z.host.bin_d)
             self.install_access(mode='500')
             self.install_resource(z.host.bin_d.join('rsmpi.sh'), jc)
-        volumes = [[z.host_d, z.guest_d]]
+        volumes = [
+            [z.host_d, z.guest_d],
+            # SECURITY: no modifications to run_d
+            [z.run_d, z.run_d, 'ro'],
+        ]
         systemd.docker_unit_enable(
             self,
             jc,
@@ -84,9 +88,8 @@ class T(component.T):
         res = pkcollections.Dict()
         b = db.secret_path(
             jc,
-            self.name + '_' + z.user,
-            visibility='host',
-            qualifier=host,
+            self.name + '/' + z.user,
+            visibility='channel',
         )
         pkio.mkdir_parent(b)
         res.host_key_f = b.join('host_key')
@@ -158,5 +161,7 @@ class T(component.T):
                     )
                 ),
             )
+        # Convert to CIDR
+        z.net = str(z.net.name)
         z.max_slots = z.slots_per_host * len(res)
-        return sorted(res, key=lambda x: x.ip)
+        z.hosts_sorted = sorted(res, key=lambda x: x.ip)

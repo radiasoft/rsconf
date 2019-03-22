@@ -19,7 +19,7 @@ declare -i _rsmpi_num_hosts=${#_rsmpi_hosts[@]}
 rsmpi_exec() {
     local slots=$1
     shift
-    local hosts_f=$1
+    local hostfile=$1
     shift
     local d=$HOME/.ssh
     if [[ ! -d $d ]]; then
@@ -27,7 +27,7 @@ rsmpi_exec() {
     fi
     install -m 600 '{{ mpi_worker.guest.ssh_config }}' "$d/config"
     install -m 600 '{{ mpi_worker.guest.known_hosts }}' "$d/known_hosts"
-    exec mpiexec -n "$slots" --mca oop_tcp_if_include '{{ mpi_worker.net }}' --mca btl_tcp_if_include '{{ mpi_worker.net }}' --hostfile "$host_f" "$@"
+    exec mpiexec -n "$slots" --mca oop_tcp_if_include '{{ mpi_worker.net }}' --mca btl_tcp_if_include '{{ mpi_worker.net }}' --hostfile "$hostfile" "$@"
 }
 
 rsmpi_help() {
