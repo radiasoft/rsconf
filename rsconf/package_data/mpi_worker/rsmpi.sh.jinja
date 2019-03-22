@@ -3,31 +3,39 @@
 # Starts mpiexec
 #
 set -euo pipefail
-
 declare -a _rsmpi_hosts=(
 {% for h in mpi_worker.hosts_sorted %}
     '{{ h.ip }}'
 {% endfor %}
 )
-
 declare -i _rsmpi_max_slots={{ mpi_worker.max_slots }}
+declare -i _rsmpi_max_slots={{ mpi_worker.max_slots }}
+declare -i _rsmpi_slots_per_host={{ mpi_worker.slots_per_host }}
+_rsmpi_ssh_config='{{ mpi_worker.guest.ssh_config }}'
+_rsmpi_known_hosts='{{ mpi_worker.guest.known_hosts }}'
+_rsmpi_net='{{ mpi_worker.net }}'
 
 {% raw %}
 declare -i _rsmpi_num_hosts=${#_rsmpi_hosts[@]}
-{% endraw %}
 
 rsmpi_exec() {
     local slots=$1
     shift
+    local num_hosts=$1
+    shift
     local hostfile=$1
     shift
+    if [[ ! $slots ]]; then
+        slots=$(( num_hosts * _rsmpi_slots_per_host ))
+    fi
     local d=$HOME/.ssh
     if [[ ! -d $d ]]; then
         install -d -m 700 "$d"
     fi
-    install -m 600 '{{ mpi_worker.guest.ssh_config }}' "$d/config"
-    install -m 600 '{{ mpi_worker.guest.known_hosts }}' "$d/known_hosts"
-    exec mpiexec -n "$slots" --mca oop_tcp_if_include '{{ mpi_worker.net }}' --mca btl_tcp_if_include '{{ mpi_worker.net }}' --hostfile "$hostfile" "$@"
+    install -m 600 "$_rsmpi_ssh_config" "$d/config"
+    install -m 600 "$_rsmpi_known_hosts" "$d/known_hosts"
+    exec mpiexec -n "$slots" --mca oop_tcp_if_include "$_rsmpi_net" \
+        --mca btl_tcp_if_include "$_rsmpi_net" --hostfile "$hostfile" "$@"
 }
 
 rsmpi_help() {
@@ -42,7 +50,7 @@ usage: rsmpi [-n processes] [-h hosts] <mpi-command args...>
 Starts mpiexec <mpi-command args...> with specified processes and hosts.
 
 Options:
-    processes: integer between 1 and {{ mpi_worker.max_slots }} [default]
+    processes: integer between 1 and $_rsmpi_max_slots [default]
     hosts: indices of hosts to use, all hosts is $h [default]
 EOF
     }
@@ -59,15 +67,15 @@ rsmpi_hosts() {
     local i
     t+=$RANDOM$RANDOM
     for i in "${hosts[@]}"; do
-        echo "${_rsmpi_hosts[i-1]} slots={{ mpi_worker.slots_per_host }}"
+        echo "${_rsmpi_hosts[i-1]} slots=$_rsmpi_slots_per_host"
     done | install -m 400 /dev/stdin "$t"
     echo "$t"
 }
 
 rsmpi_main() {
     local o OPTARG OPTIND=1 OPTERR h
-    local slots
-    local -a hosts
+    local slots=
+    local -a hosts=()
     while getopts "h:n:" o; do
         case $o in
             h)
@@ -75,7 +83,7 @@ rsmpi_main() {
                     rsmpi_help "invalid host spec: $OPTARG"
                 fi
                 IFS=, read -ra hosts <<<$OPTARG
-                local -A seen
+                local -A seen=()
                 for h in "${hosts[@]}"; do
                     if (( h < 1 || h > _rsmpi_num_hosts )); then
                         rsmpi_help "invalid host number: $h"
@@ -85,6 +93,9 @@ rsmpi_main() {
                     fi
                     seen[$h]=1
                 done
+                if (( ${#hosts[@]} <= 0 )); then
+                    rsmpi_help "no hosts in: ${hosts[*]}"
+                fi
                 ;;
             n)
                 if [[ ! $OPTARG =~ ^[0-9]+$ ]]; then
@@ -104,7 +115,9 @@ rsmpi_main() {
     if (( $# <= 0 )); then
         rsmpi_help 'missing command argument'
     fi
-    rsmpi_exec "${slots:-$_rsmpi_max_slots}" "$(rsmpi_hosts ${hosts[@]+"${hosts[@]}"})" "$@"
+    rsmpi_exec "${slots:-}" "${#hosts[@]}" \
+        "$(rsmpi_hosts ${hosts[@]+"${hosts[@]}"})" "$@"
 }
 
 rsmpi_main "$@"
+{% endraw %}
