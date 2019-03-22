@@ -21,7 +21,7 @@ class T(component.T):
         self.jc = self.hdb.j2_ctx_copy()
         jc = self.jc
         z = jc.mpi_worker
-        self._find_rank(jc, z)
+        self._find_cluster(jc, z)
         z.host_d = z.host_root_d.join(z.user)
         z.secrets = self._gen_keys(jc, z, jc.rsconf_db.host)
         for x in 'guest', 'host':
@@ -42,6 +42,8 @@ class T(component.T):
             self.install_directory(d)
         self.install_access(mode='400')
         self.install_resource(z.host.sshd_config, jc)
+        for k, v in z.secrets.items():
+            self.install_abspath(v, z.host[k])
         if z.is_first:
             for f in 'ssh_config', 'known_hosts':
                 self.install_resource(z.host[f], jc)
@@ -58,7 +60,7 @@ class T(component.T):
             cmd="/usr/sbin/sshd -D -f '{}'".format(z.guest.sshd_config),
         )
 
-    def _find_rank(self, jc, z):
+    def _find_cluster(self, jc, z):
         h = jc.rsconf_db.host
         for u, hosts in z.clusters.items():
             if h in hosts:
@@ -95,7 +97,18 @@ class T(component.T):
             if f.exists():
                 continue
             subprocess.check_call(
-                ['ssh-keygen', '-q', '-t', 'ed25519', '-N', '', '-f', str(f)],
+                [
+                    'ssh-keygen',
+                    '-q',
+                    '-t',
+                    'ed25519',
+                    '-N',
+                    '',
+                    '-C',
+                    jc.rsconf_db.host,
+                    '-f',
+                    str(f),
+                ],
                 stderr=subprocess.STDOUT,
                 shell=False,
             )
