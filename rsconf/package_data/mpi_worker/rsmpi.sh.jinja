@@ -3,20 +3,25 @@
 # Starts mpiexec
 #
 set -euo pipefail
-declare -a _rsmpi_hosts=(
+declare -a _rsmpi_ips=(
 {% for h in mpi_worker.hosts_sorted %}
     '{{ h.ip }}'
 {% endfor %}
 )
-declare -i _rsmpi_max_slots={{ mpi_worker.max_slots }}
+declare -a _rsmpi_hosts=(
+{% for h in mpi_worker.hosts_sorted %}
+    '{{ h.host }}'
+{% endfor %}
+)
 declare -i _rsmpi_max_slots={{ mpi_worker.max_slots }}
 declare -i _rsmpi_slots_per_host={{ mpi_worker.slots_per_host }}
-_rsmpi_ssh_config='{{ mpi_worker.guest.ssh_config }}'
+_rsmpi_conf_d='{{ mpi_worker.guest.conf_d }}'
 _rsmpi_known_hosts='{{ mpi_worker.guest.known_hosts }}'
 _rsmpi_net='{{ mpi_worker.net }}'
+_rsmpi_ssh_config='{{ mpi_worker.guest.ssh_config }}'
 
 {% raw %}
-declare -i _rsmpi_num_hosts=${#_rsmpi_hosts[@]}
+declare -i _rsmpi_num_hosts=${#_rsmpi_ips[@]}
 
 rsmpi_exec() {
     local slots=$1
@@ -67,7 +72,7 @@ rsmpi_hosts() {
     local i
     t+=$RANDOM$RANDOM
     for i in "${hosts[@]}"; do
-        echo "${_rsmpi_hosts[i-1]} slots=$_rsmpi_slots_per_host"
+        echo "${_rsmpi_ips[i-1]} slots=$_rsmpi_slots_per_host"
     done | install -m 400 /dev/stdin "$t"
     echo "$t"
 }
@@ -115,8 +120,37 @@ rsmpi_main() {
     if (( $# <= 0 )); then
         rsmpi_help 'missing command argument'
     fi
+    rsmpi_ping
     rsmpi_exec "${slots:-}" "${#hosts[@]}" \
         "$(rsmpi_hosts ${hosts[@]+"${hosts[@]}"})" "$@"
+}
+
+rsmpi_ping() {
+    local h x
+    local -i i=0 ok=0
+    for h in "${_rsmpi_hosts[@]}"; do
+        i+=1
+        x=$(ssh -F "$_rsmpi_ssh_config" \
+            -o BatchMode=yes \
+            -o ConnectTimeout=2 \
+            -o GlobalKnownHostsFile=/dev/null \
+            -o IdentityFile="$_rsmpi_conf_d/$h"/identity \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            "$h" hostname 2>/dev/null || true)
+        if [[ $x == $h ]]; then
+            ok+=1
+        else
+            echo "host $i ($h) is unavailable" 1>&2
+        fi
+
+    done
+    if (( ok != i )); then
+        echo '
+Your cluster has been reassigned or some nodes are down.
+Please contact support for help with this issue.' 1>&2
+        return 1
+    fi
 }
 
 rsmpi_main "$@"
