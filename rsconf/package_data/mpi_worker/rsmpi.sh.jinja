@@ -39,8 +39,17 @@ rsmpi_exec() {
     fi
     install -m 600 "$_rsmpi_ssh_config" "$d/config"
     install -m 600 "$_rsmpi_known_hosts" "$d/known_hosts"
-    exec mpiexec -n "$slots" --mca oop_tcp_if_include "$_rsmpi_net" \
-        --mca btl_tcp_if_include "$_rsmpi_net" --hostfile "$hostfile" "$@"
+    local -a a=(
+        -n "$slots"
+        --mca oop_tcp_if_include "$_rsmpi_net"
+        --mca btl_tcp_if_include "$_rsmpi_net"
+        --hostfile "$hostfile"
+    )
+    local x
+    for x in $(compgen -A variable|egrep '(SYNERGIA|PYENV|PYTHON|VIRTUAL|PATH|MODULE)'); do
+        a+=( -x $x )
+    done
+    exec mpiexec "${a[@]}" "$@"
 }
 
 rsmpi_help() {
