@@ -20,7 +20,9 @@ import subprocess
 NGINX_SUBDIR = 'nginx'
 
 def default_command():
-    from rsconf.component import rsconf
+    import rsconf.component
+    import rsconf.component.rsconf
+    import rsconf.pkcli.tls
 
     root_d = db.cfg.root_d
     if root_d.check():
@@ -62,7 +64,7 @@ def default_command():
     j2_ctx.update(boot_hdb)
     j2_ctx.rsconf_db.http_host = 'http://{}:{}'.format(j2_ctx.master, j2_ctx.port)
     j2_ctx.bkp = pkcollections.Dict(primary=j2_ctx.master)
-    j2_ctx.passwd_f = rsconf.passwd_secret_f(j2_ctx)
+    j2_ctx.passwd_f = rsconf.component.rsconf.passwd_secret_f(j2_ctx)
     for h in hosts:
         _add_host(j2_ctx, srv, h)
     _sym('~/src/radiasoft/download/bin/install.sh', 'index.html')
@@ -88,6 +90,20 @@ def default_command():
         # private registry doesn't protect against pushes from these hosts.
         if h != j2_ctx.master:
             subprocess.check_call(['rsconf', 'host', 'init_docker_registry', h])
+    tls_d = secret_d.join(rsconf.component.TLS_SECRET_SUBDIR)
+    tls_d.ensure(dir=True)
+    for h in (
+        'jupyter.' + j2_ctx.all_host,
+        'jupyter.' + j2_ctx.master,
+        j2_ctx.all_host,
+        j2_ctx.master,
+        j2_ctx.worker2_host,
+        j2_ctx.worker5_host,
+    ):
+        rsconf.pkcli.tls.gen_self_signed_crt(
+            tls_d.join(h.replace('.', '_')),
+            h,
+        )
 
 
 #TODO(robnagler) needs to moved

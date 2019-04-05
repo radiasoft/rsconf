@@ -78,24 +78,15 @@ default:
       dev_host:
         - alpha2.sirepo.com
         - beforeother.{{ host }}
-        - bivio.org.{{ host }}
         - bivio.biz.{{ host }}
-        - jupyter.{{ all_host }}
         - jupyter.{{ host }}
-        - jupyter.{{ master }}
         - m-petshop.{{ host }}
         - other.{{ host }}
         - owncloud.{{ host }}
         - petshop.{{ host }}
         - requiresecure.{{ host }}
         - sirepo.{{ host }}
-        - viarob.com.{{ host }}
-        - {{ all_host }}
         - {{ host }}
-        - {{ worker5_host }}
-        - {{ worker2_host }}
-      dev_master:
-        - {{ master }}
   db_bkp:
     max_copies: 2
     on_calendar: "*-*-* 06:30:00"
