@@ -86,17 +86,8 @@ class T(component.T):
             _params_copy(params, j2_ctx, ('sirepo.mpi_cores',))
         else:
             _params_copy(params, j2_ctx, ('sirepo.celery_tasks.broker_url',))
-        _comsol(params, j2_ctx)
-        if j2_ctx.nested_get('sirepo.oauth.github_secret'):
-            _params_copy(
-                params,
-                j2_ctx,
-                (
-                    'sirepo.oauth.github_key',
-                    'sirepo.oauth.github_secret',
-                ),
-            )
-            params['sirepo.feature_config.api_modules'].append('oauth')
+        self._comsol(params, j2_ctx)
+        self._auth(params, j2_ctx)
         env = {}
         for k in sorted(params.keys()):
             env[k.upper().replace('.', '_')] = _env_value(params[k])
@@ -141,23 +132,71 @@ class T(component.T):
             )
 
 
-def _comsol(params, j2_ctx):
-    r = j2_ctx.sirepo.get('comsol_register')
-    if not r:
-        return
-    e = r.get('mail_username')
-    _params_copy(
-        params,
-        j2_ctx,
-        (
-            'sirepo.comsol_register.mail_password',
-            'sirepo.comsol_register.mail_server',
-            'sirepo.comsol_register.mail_username',
-        ),
-    )
-    params['sirepo.comsol_register.mail_support_email'] = e
-    params['sirepo.comsol_register.mail_recipient_email'] = e
-    params['sirepo.feature_config.api_modules'].append('comsol_register')
+    def _auth(self, params, j2_ctx):
+        methods = j2_ctx.nested_get('sirepo.auth.methods')
+        if not methods:
+            # deprecated mode
+            if j2_ctx.nested_get('sirepo.oauth.github_secret'):
+                _params_copy(
+                    params,
+                    j2_ctx,
+                    (
+                        'sirepo.oauth.github_key',
+                        'sirepo.oauth.github_secret',
+                    ),
+                )
+                params['sirepo.feature_config.api_modules'].append('oauth')
+            return
+        x = j2_ctx.nested_get('sirepo.auth.deprecated_methods')
+        if x:
+            # new value
+            methods = methods + x
+        decl = {
+            'basic': [
+                'password',
+                'uid',
+            ],
+            'email': [
+                'from_email',
+                'from_name',
+                'smtp_password',
+                'smtp_server',
+                'smtp_user',
+            ],
+            'github': [
+#TODO(robnagler) remove after in prod 5/31/2019
+                'callback_uri',
+                'key',
+                'secret',
+            ],
+        }
+        for m, names in decl.items():
+            if m not in methods:
+                continue
+            _params_copy(
+                params,
+                j2_ctx,
+                ['sirepo.auth.{}.{}'.format(m, n) for n in names],
+                validate=True,
+            )
+
+    def _comsol(self, params, j2_ctx):
+        r = j2_ctx.sirepo.get('comsol_register')
+        if not r:
+            return
+        e = r.get('mail_username')
+        _params_copy(
+            params,
+            j2_ctx,
+            (
+                'sirepo.comsol_register.mail_password',
+                'sirepo.comsol_register.mail_server',
+                'sirepo.comsol_register.mail_username',
+            ),
+        )
+        params['sirepo.comsol_register.mail_support_email'] = e
+        params['sirepo.comsol_register.mail_recipient_email'] = e
+        params['sirepo.feature_config.api_modules'].append('comsol_register')
 
 
 def _env_value(v):
@@ -166,6 +205,9 @@ def _env_value(v):
     return str(v)
 
 
-def _params_copy(params, j2_ctx, keys):
+def _params_copy(params, j2_ctx, keys, validate=False):
     for k in keys:
         params[k] = j2_ctx.nested_get(k)
+        if validate:
+            assert params[k], \
+                'key={} has no value'.format(k)
