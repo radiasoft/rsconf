@@ -422,6 +422,21 @@ host:
           - owncloud
           - github_bkp
           - wordpress
+      sirepo:
+        auth:
+          email:
+            from_email: support@radisoft.net
+            from_name: support
+            smtp_password: password
+            smtp_server: mta.bivio.biz
+            smtp_user: this-is-ignored
+          github:
+            callback_uri: https://{{ all_host }}oauth-authorized/github
+            key: n/a
+            secret: ignored
+          methods: [ email, guest ]
+          deprecated_methods: [ github ]
+
 # testing named needs build-perl-rpms.sh
 #          - bivio_named
 

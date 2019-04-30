@@ -133,8 +133,8 @@ class T(component.T):
 
 
     def _auth(self, params, j2_ctx):
-        methods = j2_ctx.nested_get('sirepo.auth.methods')
-        if not methods:
+        a = j2_ctx.get('sirepo').get('auth')
+        if not a:
             # deprecated mode
             if j2_ctx.nested_get('sirepo.oauth.github_secret'):
                 _params_copy(
@@ -147,10 +147,7 @@ class T(component.T):
                 )
                 params['sirepo.feature_config.api_modules'].append('oauth')
             return
-        x = j2_ctx.nested_get('sirepo.auth.deprecated_methods')
-        if x:
-            # new value
-            methods = methods + x
+        methods = a.methods + a.deprecated_methods
         decl = {
             'basic': [
                 'password',
@@ -179,6 +176,14 @@ class T(component.T):
                 ['sirepo.auth.{}.{}'.format(m, n) for n in names],
                 validate=True,
             )
+        _params_copy(
+            params,
+            j2_ctx,
+            (
+                'sirepo.auth.methods',
+                'sirepo.auth.deprecated_methods',
+            ),
+        )
 
     def _comsol(self, params, j2_ctx):
         r = j2_ctx.sirepo.get('comsol_register')
