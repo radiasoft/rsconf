@@ -1,3 +1,4 @@
 {% for h in mpi_worker.hosts_sorted %}
 [{{ h.ip }}]:{{ mpi_worker.ssh_port }} {{ h.host_key_pub }}
+[{{ h.host }}]:{{ mpi_worker.ssh_port }} {{ h.host_key_pub }}
 {% endfor %}

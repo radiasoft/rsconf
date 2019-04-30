@@ -78,24 +78,15 @@ default:
       dev_host:
         - alpha2.sirepo.com
         - beforeother.{{ host }}
-        - bivio.org.{{ host }}
         - bivio.biz.{{ host }}
-        - jupyter.{{ all_host }}
         - jupyter.{{ host }}
-        - jupyter.{{ master }}
         - m-petshop.{{ host }}
         - other.{{ host }}
         - owncloud.{{ host }}
         - petshop.{{ host }}
         - requiresecure.{{ host }}
         - sirepo.{{ host }}
-        - viarob.com.{{ host }}
-        - {{ all_host }}
         - {{ host }}
-        - {{ worker5_host }}
-        - {{ worker2_host }}
-      dev_master:
-        - {{ master }}
   db_bkp:
     max_copies: 2
     on_calendar: "*-*-* 06:30:00"
@@ -227,18 +218,6 @@ channel:
   dev:
     bop:
       apps: [ petshop ]
-    postgresql:
-      auth_local_method: trust
-    sirepo:
-      celery_tasks:
-        celeryd_concurrency: 1
-        broker_url: "amqp://guest@rabbitmq.{{ host }}//"
-      comsol_register:
-        mail_server: {{ master }}
-        mail_username: comsol@{{ master }}
-        mail_password: somepass
-      mpi_cores: 4
-      vhost: sirepo.{{ host }}
     mpi_worker:
       clusters:
         vagrant: [ {{ host }}, {{ worker5_host }}, {{ worker2_host }} ]
@@ -253,6 +232,18 @@ channel:
           search: radia.run
           nameservers: [ 162.159.27.72, 162.159.24.39 ]
       untrusted: {}
+    postgresql:
+      auth_local_method: trust
+    sirepo:
+      celery_tasks:
+        celeryd_concurrency: 1
+        broker_url: "amqp://guest@rabbitmq.{{ host }}//"
+      comsol_register:
+        mail_server: {{ master }}
+        mail_username: comsol@{{ master }}
+        mail_password: somepass
+      mpi_cores: 4
+      vhost: sirepo.{{ host }}
     wordpress:
       vhosts:
         wp1.{{ host }}:

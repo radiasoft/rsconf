@@ -27,7 +27,10 @@ class T(component.T):
         for x in 'guest', 'host':
             z[x] = self._gen_paths(jc, z, z.get(x + '_d'))
         z.run_u = jc.rsconf_db.run_u
-        z.run_d = systemd.docker_unit_prepare(self, jc, watch_files=[z.host.conf_d])
+        # Only additional config for the server is the sshd config.
+        # ssh_config and known_hosts are not read by sshd so don't
+        # trigger a restart.
+        z.run_d = systemd.docker_unit_prepare(self, jc, watch_files=[z.host.ssh_d])
         self._prepare_hosts(jc, z)
 
     def internal_build_write(self):

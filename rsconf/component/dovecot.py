@@ -104,12 +104,16 @@ class T(component.T):
         else:
             pw_db = pkcollections.Dict()
         res = []
-        for u, pw in z.pop_users.items():
-            if not u in pw_db:
+        for u, v in z.pop_users.items():
+            if not isinstance(v, dict):
+                v = pkcollections.Dict(password=v, username=u)
+            if not v.username in pw_db:
                 pw_modified = True
-                pw_db[u] = '{' + z.passdb_scheme + '}' + _sha512_crypt(pw)
+                pw_db[v.username] \
+                    = '{' + z.passdb_scheme + '}' + _sha512_crypt(v.password)
             i = base_users.hdb_info(j2_ctx, u)
-            i.pw_hash = pw_db[u]
+            i.pw_hash = pw_db[v.username]
+            i.username = v.username
             i.home_d = db.user_home_path(j2_ctx, u)
             res.append(i)
             self._setup_procmail(j2_ctx, z, i)
@@ -117,7 +121,7 @@ class T(component.T):
             self.install_directory(i.home_d.join(z.user_mail_d))
         if pw_modified:
             pkjson.dump_pretty(pw_db, filename=pw_f)
-        return sorted(res, key=lambda x: x.name)
+        return sorted(res, key=lambda x: x.username)
 
     def _alias_users(self, j2_ctx, z):
         from rsconf.component import base_users
