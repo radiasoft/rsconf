@@ -119,6 +119,7 @@ class T(pkcollections.Dict):
         pkio.unchecked_remove(v.rsconf_db.tmp_d)
         pkio.mkdir_parent(v.rsconf_db.tmp_d)
         merge_dict(res, v)
+        _assert_no_rsconf_db_values(res)
         _update_paths(res)
         return res
 
@@ -199,6 +200,26 @@ def secret_path(hdb, filename, visibility=None, qualifier=None):
 
 def user_home_path(hdb, user):
     return USER_HOME_ROOT_D.join(user)
+
+
+def _assert_no_rsconf_db_values(value, path=''):
+    """If any value begins with RSCONF_DB_, should fail.
+
+    Args:
+        value (object): should not contain RSCONF_DB_.
+    """
+    if isinstance(value, dict):
+        for k, v in value.items():
+            _assert_no_rsconf_db_values(k)
+            _assert_no_rsconf_db_values(v)
+    elif isinstance(value, list):
+        for v in value:
+            _assert_no_rsconf_db_values(v)
+    elif isinstance(value, pkconfig.STRING_TYPES):
+        if value.startswith('RSCONF_DB_'):
+            raise AssertionError(
+                'value={} must not begin with RSCONF_DB_'.format(value),
+            )
 
 
 @pkconfig.parse_none
