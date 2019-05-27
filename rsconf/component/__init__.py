@@ -17,6 +17,7 @@ _DONE = 'done'
 _START = 'start'
 _MODE_RE = re.compile(r'^\d{3,4}$')
 _BASH_FUNC_SUFFIX = '_rsconf_component'
+TLS_SECRET_SUBDIR = 'tls'
 
 class T(pkcollections.Dict):
 
@@ -66,10 +67,11 @@ class T(pkcollections.Dict):
         self.buildt.write_root_bash(self.name, self._root_bash)
 
     def has_tls(self, j2_ctx, domain):
-        for domains in j2_ctx.component.tls_crt.values():
-            if domain in domains:
-                return True
-        return False
+        try:
+            _find_tls_crt(j2_ctx, domain)
+            return True
+        except AssertionError:
+            return False
 
     def install_abspath(self, abs_path, host_path, ignore_exists=False):
         self._bash_append_and_dst(
@@ -135,7 +137,12 @@ class T(pkcollections.Dict):
         ))
         return rpm_file
 
-    def install_resource(self, name, j2_ctx, host_path):
+    def install_resource(self, name, j2_ctx, host_path=None):
+        if not host_path:
+            host_path = name
+            if host_path.ext == '.sh':
+                host_path = host_path.new(ext='')
+            name = self.name + '/' + name.basename
         self._bash_append_and_dst(
             host_path,
             file_contents=self._render_resource(name, j2_ctx),
@@ -299,16 +306,15 @@ def create_t(name, buildt):
     return importlib.import_module('.' + name, __name__).T(name, buildt)
 
 
-def tls_key_and_crt(hdb, domain):
+def tls_key_and_crt(j2_ctx, domain):
     from rsconf.pkcli import tls
     from rsconf import db
 
-    base, domains = _find_tls_crt(hdb, domain)
-    src = db.secret_path(hdb, base, visibility='global')
+    src, domains = _find_tls_crt(j2_ctx, domain)
     src_key = src + tls.KEY_EXT
     src_crt = src + tls.CRT_EXT
     if not src_crt.check():
-        assert hdb.component.tls_crt_create, \
+        assert j2_ctx.component.tls_crt_create, \
             '{}: missing crt for: {}'.format(src_crt, domain)
         pkio.mkdir_parent_only(src_crt)
         # https://stackoverflow.com/a/42730929
@@ -324,10 +330,17 @@ def _assert_host_path(host_path):
         "{}: host_path contains single quote (')".format(host_path)
 
 
-def _find_tls_crt(hdb, domain):
-    for crt, domains in hdb.component.tls_crt.items():
+def _find_tls_crt(j2_ctx, domain):
+    from rsconf.pkcli import tls
+    from rsconf import db
+
+    d = db.secret_path(j2_ctx, TLS_SECRET_SUBDIR, visibility='global')
+    for crt, domains in j2_ctx.component.tls_crt.items():
         if domain in domains:
-            return crt, domains
+            return d.join(crt), domains
+    src = d.join(domain.replace('.', '_'))
+    if src.new(ext=tls.KEY_EXT).check():
+        return src, domain
     raise AssertionError('{}: tls crt for domain not found'.format(domain))
 
 

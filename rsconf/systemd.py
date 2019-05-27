@@ -90,12 +90,15 @@ def docker_unit_enable(compt, j2_ctx, image, cmd, env=None, volumes=None, after=
         image=image,
         run_u=run_u or j2_ctx.rsconf_db.run_u,
     )
-    z.volumes = ' '.join(
-        ["-v '{}'".format(_colon_arg(x)) for x in [z.run_d] + (volumes or [])],
-    )
-    z.network = ' '.join(
-        ["-p '{}'".format(_colon_arg(x)) for x in (ports or [])],
-    )
+    volumes = _tuple_arg(volumes)
+    run_d_in_volumes = False
+    for v in volumes:
+        if v[0] == z.run_d:
+            run_d_in_volumes = True
+    if not run_d_in_volumes:
+        volumes.insert(0, (str(z.run_d), str(z.run_d)))
+    z.volumes = _colon_format('-v', volumes)
+    z.network = _colon_format('-p', _tuple_arg(ports))
     if not z.network:
         z.network = '--network=host'
     scripts = ('cmd', 'env', 'remove', 'start', 'stop')
@@ -220,7 +223,18 @@ def unit_run_d(j2_ctx, unit_name):
     return j2_ctx.rsconf_db.host_run_d.join(unit_name)
 
 
-def _colon_arg(v):
-    if not isinstance(v, (tuple, list)):
-        v = (v, v)
-    return '{}:{}'.format(*v)
+def _colon_format(flag, values):
+    return ' '.join(
+        ["{} '{}'".format(flag, ':'.join(x)) for x in values],
+    )
+
+
+def _tuple_arg(values):
+    if not values:
+        return []
+    res = []
+    for v in values:
+        if not isinstance(v, (tuple, list)):
+            v = (v, v)
+        res.append([str(x) for x in v])
+    return res

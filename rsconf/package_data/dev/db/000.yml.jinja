@@ -78,23 +78,15 @@ default:
       dev_host:
         - alpha2.sirepo.com
         - beforeother.{{ host }}
-        - bivio.org.{{ host }}
         - bivio.biz.{{ host }}
-        - jupyter.{{ all_host }}
         - jupyter.{{ host }}
-        - jupyter.{{ master }}
         - m-petshop.{{ host }}
         - other.{{ host }}
         - owncloud.{{ host }}
         - petshop.{{ host }}
         - requiresecure.{{ host }}
         - sirepo.{{ host }}
-        - viarob.com.{{ host }}
-        - {{ all_host }}
         - {{ host }}
-        - {{ worker_host }}
-      dev_master:
-        - {{ master }}
   db_bkp:
     max_copies: 2
     on_calendar: "*-*-* 06:30:00"
@@ -112,8 +104,8 @@ default:
     test_mode: True
   jupyterhub:
     admin_users: [ '{{ user }}' ]
-    docker_image: radiasoft/jupyterhub
-    jupyter_docker_image: radiasoft/beamsim-jupyter
+    docker_image: docker.io/radiasoft/jupyterhub
+    jupyter_docker_image: docker.io/radiasoft/beamsim-jupyter
     # github:
     #  client_id: ""
     #  client_secret: ""
@@ -124,6 +116,12 @@ default:
     verbose: true
     # sometime before bkp.on_calendar
     on_calendar: "*-*-* 07:30:00"
+  mpi_worker:
+    docker_image: docker.io/radiasoft/beamsim-jupyter
+    guest_d: /home/vagrant/jupyter
+    host_root_d: /srv/mpi_worker/user
+    ssh_port: 8022
+    slots_per_host: 2
   network:
     devices: {}
     trusted: {}
@@ -204,7 +202,7 @@ default:
     ip: 127.0.0.1
     port: 7011
   sirepo:
-    docker_image: radiasoft/sirepo
+    docker_image: docker.io/radiasoft/sirepo
     oauth:
       github_key: ""
       github_secret: ""
@@ -218,13 +216,22 @@ default:
 
 channel:
   dev:
-    base_os:
-      # Needed for Docker with iptables (not using --network=host)
-      ip_forward: true
     bop:
       apps: [ petshop ]
-    docker:
-      iptables: true
+    mpi_worker:
+      clusters:
+        vagrant: [ {{ host }}, {{ worker5_host }}, {{ worker2_host }} ]
+    network:
+      trusted:
+        # v*.radia.run private network
+        10.10.10.0/24:
+          gateway: 10.10.10.1
+        # random network to test
+        216.17.132.32/27:
+          gateway: 216.17.132.62
+          search: radia.run
+          nameservers: [ 162.159.27.72, 162.159.24.39 ]
+      untrusted: {}
     postgresql:
       auth_local_method: trust
     sirepo:
@@ -237,16 +244,6 @@ channel:
         mail_password: somepass
       mpi_cores: 4
       vhost: sirepo.{{ host }}
-    network:
-      trusted:
-        # v*.radia.run private network
-        10.10.10.0/24:
-          gateway: 10.10.10.1
-        # random network to test
-        216.17.132.32/27:
-          gateway: 216.17.132.62
-          search: radia.run
-          nameservers: [ 162.159.27.72, 162.159.24.39 ]
     wordpress:
       vhosts:
         wp1.{{ host }}:
@@ -256,6 +253,15 @@ channel:
 
 host:
   dev:
+    {{ worker2_host }}:
+      docker:
+        tls_host: {{ worker2_host }}
+      nfs_client:
+        mounts:
+          {{ master }}:
+            - /srv/mpi_worker/user
+      rsconf_db:
+        components: [ mpi_worker ]
     {{ master }}:
       base_os:
         volume_groups:
@@ -272,16 +278,25 @@ host:
         spec:
           joeblow:
             want_shell: true
-      mpi_cluster:
-        docker_image: docker.io/radiasoft/beamsim-jupyter
-        guest_d: /home/vagrant/jupyter
-        jupyter_port: 7913
-        jupyterhub_user_d: /srv/mpi_cluster/user
-        ssh_port: 8022
-        workers: [ {{ host }}, {{ worker_host }} ]
+      docker:
+        tls_host: {{ master }}
+      jupyterhub:
+        pools:
+          default:
+            users: [ ]
+            servers_per_host: 2
+            mem_limit: "1G"
+            cpu_limit: 0.5
+            hosts: [ {{ master }} ]
+          private:
+            users: [ vagrant ]
+            servers_per_host: 1
+            hosts: [ {{ worker2_host }}, {{ worker5_host }} ]
+        vhosts:
+          {{ master }}: jupyter.{{ master }}
       nfs_server:
         exports:
-          /srv/mpi_cluster/user: [ 10.10.10.0/24 ]
+          /srv/mpi_worker/user: [ 10.10.10.0/24 ]
       postfix:
         aliases:
           RSCONF_DB_REPLACE:
@@ -292,9 +307,9 @@ host:
             vagrant: vagrant
       rsconf_db:
         #TODO(robnagler) need to edit this to just rsconf to bootstrap
-        #components: [ rsconf, bkp, docker_registry, mpi_cluster ]
+        #components: [ rsconf, bkp, docker_registry ]
         # jupyterhub_proxy, btest, github_bkp, dovecot ]
-        components: [ rsconf, nfs_server, mpi_cluster ]
+        components: [ rsconf, docker_registry, nfs_server, jupyterhub, jupyterhub_proxy ]
         # components: [ rsconf, docker_registry, btest ]
     {{ host }}:
       docker:
@@ -315,7 +330,7 @@ host:
       nfs_client:
         mounts:
           {{ master }}:
-            - /srv/mpi_cluster/user
+            - /srv/mpi_worker/user
       nfs_server:
         exports:
           /srv/sirepo/db/user: [ 10.10.10.0/24 ]
@@ -323,22 +338,20 @@ host:
 #        components: [ bop ]
 #        components: [ jupyterhub, jupyterhub_proxy ]
 #        components: [ rabbitmq, celery_sirepo, sirepo, nfs_server ]
-        components: [ nfs_client, docker ]
+        components: [ nfs_client, nfs_server, mpi_worker ]
 #      sirepo:
-#        docker_hosts: [ {{ host }}, {{ worker_host }} ]
-    {{ worker_host }}:
+#        docker_hosts: [ {{ host }}, {{ worker5_host }} ]
+    {{ worker5_host }}:
       docker:
-        tls_host: {{ worker_host }}
+        tls_host: {{ worker5_host }}
       nfs_client:
         mounts:
-          {{ host }}:
-            - /srv/sirepo/db/user
           {{ master }}:
-            - /srv/mpi_cluster/user
+            - /srv/mpi_worker/user
       postfix:
         smart_host: {{ master }}
       rsconf_db:
-        components: [ nfs_client, docker ]
+        components: [ mpi_worker ]
     # This host never installed, just for testing build
     {{ all_host }}:
       base_users:
@@ -349,8 +362,6 @@ host:
         on_calendar: "*-*-1 18:00:00"
         secondary_copy_d: /bkp_copy
         secondary_setup_f: {{ root_d }}/etc/secondary_setup.sh
-      docker:
-        iptables: false
       jupyterhub:
         github:
           client_id: xyzzy
@@ -411,6 +422,21 @@ host:
           - owncloud
           - github_bkp
           - wordpress
+      sirepo:
+        auth:
+          email:
+            from_email: support@radisoft.net
+            from_name: support
+            smtp_password: password
+            smtp_server: mta.bivio.biz
+            smtp_user: this-is-ignored
+          github:
+            callback_uri: https://{{ all_host }}oauth-authorized/github
+            key: n/a
+            secret: ignored
+          methods: [ email, guest ]
+          deprecated_methods: [ github ]
+
 # testing named needs build-perl-rpms.sh
 #          - bivio_named
 

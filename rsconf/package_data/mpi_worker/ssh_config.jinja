@@ -1,0 +1,5 @@
+{% for h in mpi_worker.hosts_sorted %}
+Host {{ h.ip }} {{ h.host }}
+    Port {{ mpi_worker.ssh_port }}
+    IdentityFile {{ h.identity_f }}
+{% endfor %}

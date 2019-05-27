@@ -6,6 +6,7 @@ u"""create sirepo configuration
 """
 from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
+from pykern import pkjson
 from rsconf import component
 
 
@@ -13,6 +14,11 @@ _CONF_F = 'conf.py'
 _COOKIE_SECRET = 'jupyterhub_cookie_secret'
 _PROXY_AUTH = 'jupyterhub_proxy_auth'
 _USER_SUBDIR = 'user'
+_DOCKER_TLS_SUBDIR = 'docker_tls'
+_DEFAULT_PORT_BASE = 8100
+# POSIT: rsdockerspawner._DEFAULT_POOL_NAME
+_DEFAULT_POOL_NAME = 'default'
+_DEFAULT_MOCK_PASSWORD = 'testpass'
 
 
 class T(component.T):
@@ -25,19 +31,20 @@ class T(component.T):
         self.buildt.require_component('docker')
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.jupyterhub
+        rsd = bool(z.get('pools'))
         z.vhost = j2_ctx.jupyterhub.vhosts[j2_ctx.rsconf_db.host]
-        run_d = systemd.docker_unit_prepare(self, j2_ctx)
+        z.run_d = systemd.docker_unit_prepare(self, j2_ctx)
         z.update(
-            user_d=run_d.join(_USER_SUBDIR),
+            user_d=z.run_d.join(_USER_SUBDIR),
             jupyter_docker_image=docker_registry.absolute_image(
                 j2_ctx, z.jupyter_docker_image,
             ),
-            run_u=j2_ctx.rsconf_db.root_u,
+            run_u=j2_ctx.rsconf_db.get('run_u' if rsd else 'root_u'),
             jupyter_run_u=j2_ctx.rsconf_db.run_u,
         )
         z.home_d = db.user_home_path(j2_ctx, z.jupyter_run_u)
         self.install_access(mode='711', owner=z.run_u)
-        self.install_directory(run_d)
+        self.install_directory(z.run_d)
         self.install_access(mode='700', owner=z.jupyter_run_u)
         self.install_directory(z.user_d)
         self.install_access(mode='400', owner=z.run_u)
@@ -55,20 +62,70 @@ class T(component.T):
         if z.get('whitelist_users'):
             # admin_users are implicitly part of whitelist
             z.whitelist_users_str = _list_to_str(z.whitelist_users)
-        conf_f = run_d.join(_CONF_F)
+        if rsd:
+            self._rsdockerspawner(j2_ctx, z)
+        if j2_ctx.rsconf_db.channel == 'dev':
+            z.setdefault('mock_password', _DEFAULT_MOCK_PASSWORD)
+        else:
+            g = z.get('github')
+            assert g and g.get('client_id') and g.get('client_secret'), \
+                'jupyter.github={} client_id/secret not set'.format(g)
+        conf_f = z.run_d.join(_CONF_F)
         self.install_resource('jupyterhub/{}'.format(_CONF_F), j2_ctx, conf_f)
         self.append_root_bash(
             "rsconf_service_docker_pull '{}'".format(z.jupyter_docker_image),
         )
+        kw = pkcollections.Dict()
+        if not rsd:
+            kw.ports = [int(z.port)]
+            kw.volumes = [docker.DOCKER_SOCK]
         systemd.docker_unit_enable(
             self,
             j2_ctx,
             cmd='jupyterhub -f {}'.format(conf_f),
             image=docker_registry.absolute_image(j2_ctx, z.docker_image),
-            ports=[int(z.port)],
             run_u=z.run_u,
-            volumes=[docker.DOCKER_SOCK],
+            **kw
         )
+
+    def _rsdockerspawner(self, j2_ctx, z):
+        from rsconf.component import docker
+
+        tls_d = z.run_d.join(_DOCKER_TLS_SUBDIR)
+        c = pkcollections.Dict(
+            port_base=z.setdefault('port_base', _DEFAULT_PORT_BASE),
+            tls_dir=str(tls_d),
+        )
+        seen = pkcollections.Dict(
+            hosts=pkcollections.Dict(),
+            users=pkcollections.Dict(),
+        )
+        for n, p in z.pools.items():
+            p.setdefault('users', [])
+            assert p.users or n == _DEFAULT_POOL_NAME, \
+                'no users in pool={}'.format(n)
+            assert p.setdefault('servers_per_host', 0) >= 1, \
+                'invalid servers_per_host={} in pool={}'.format(
+                    p.servers_per_host,
+                    n,
+                )
+            for x in 'hosts', 'users':
+                for y in p[x]:
+                    assert y not in seen[x], \
+                        'duplicate value={} in {} pool={}'.format(y, x, n)
+                    seen[x][y] = n
+            p.setdefault('mem_limit', None)
+            p.setdefault('cpu_limit', None)
+            p.setdefault('min_activity_hours', None)
+        c.pools = z.pools
+        docker.setup_cluster(
+            self,
+            hosts=seen.hosts.keys(),
+            tls_d=tls_d,
+            run_u=z.run_u,
+            j2_ctx=j2_ctx,
+        )
+        z.rsdockerspawner_cfg = pkjson.dump_pretty(c)
 
 
 def _list_to_str(v):

@@ -1,3 +1,3 @@
 {% for u in dovecot.pop_users_flattened %}
-{{ u.name }}:{{ u.pw_hash }}:{{ u.uid }}:{{ u.gid }}::{{ u.home_d }}
+{{ u.username }}:{{ u.pw_hash }}:{{ u.uid }}:{{ u.gid }}::{{ u.home_d }}
 {% endfor %}

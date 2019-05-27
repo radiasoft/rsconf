@@ -1,0 +1,166 @@
+#!/bin/bash
+#
+# Starts mpiexec
+#
+set -euo pipefail
+declare -a _rsmpi_ips=(
+{% for h in mpi_worker.hosts_sorted %}
+    '{{ h.ip }}'
+{% endfor %}
+)
+declare -a _rsmpi_hosts=(
+{% for h in mpi_worker.hosts_sorted %}
+    '{{ h.host }}'
+{% endfor %}
+)
+declare -i _rsmpi_max_slots={{ mpi_worker.max_slots }}
+declare -i _rsmpi_slots_per_host={{ mpi_worker.slots_per_host }}
+_rsmpi_conf_d='{{ mpi_worker.guest.conf_d }}'
+_rsmpi_known_hosts='{{ mpi_worker.guest.known_hosts }}'
+_rsmpi_net='{{ mpi_worker.net }}'
+_rsmpi_ssh_config='{{ mpi_worker.guest.ssh_config }}'
+
+{% raw %}
+declare -i _rsmpi_num_hosts=${#_rsmpi_ips[@]}
+
+rsmpi_exec() {
+    local slots=$1
+    shift
+    local num_hosts=$1
+    shift
+    local hostfile=$1
+    shift
+    if [[ ! $slots ]]; then
+        slots=$(( num_hosts * _rsmpi_slots_per_host ))
+    fi
+    local d=$HOME/.ssh
+    if [[ ! -d $d ]]; then
+        install -d -m 700 "$d"
+    fi
+    install -m 600 "$_rsmpi_ssh_config" "$d/config"
+    install -m 600 "$_rsmpi_known_hosts" "$d/known_hosts"
+    local -a a=(
+        -n "$slots"
+        --mca oop_tcp_if_include "$_rsmpi_net"
+        --mca btl_tcp_if_include "$_rsmpi_net"
+        --hostfile "$hostfile"
+    )
+    local x
+    for x in $(compgen -A variable|egrep '(SYNERGIA|PYENV|PYTHON|VIRTUAL|PATH|MODULE)'); do
+        a+=( -x $x )
+    done
+    exec mpiexec "${a[@]}" "$@"
+}
+
+rsmpi_help() {
+    {
+        if (( $# > 0 )); then
+            echo "error: $@"
+        fi
+        local h=$(seq --separator=, 1 "$_rsmpi_num_hosts")
+        cat <<EOF
+usage: rsmpi [-n processes] [-h hosts] <mpi-command args...>
+
+Starts mpiexec <mpi-command args...> with specified processes and hosts.
+
+Options:
+    processes: integer between 1 and $_rsmpi_max_slots [default]
+    hosts: indices of hosts to use, all hosts is $h [default]
+EOF
+    }
+    return 1
+}
+
+rsmpi_hosts() {
+    local hosts=( "$@" )
+    if (( $# <= 0 )); then
+        hosts=( $(seq 1 $_rsmpi_num_hosts) )
+    fi
+    local t=/tmp/rsmpi_hosts-
+    rm -f "$t"*
+    local i
+    t+=$RANDOM$RANDOM
+    for i in "${hosts[@]}"; do
+        echo "${_rsmpi_ips[i-1]} slots=$_rsmpi_slots_per_host"
+    done | install -m 400 /dev/stdin "$t"
+    echo "$t"
+}
+
+rsmpi_main() {
+    local o OPTARG OPTIND=1 OPTERR h
+    local slots=
+    local -a hosts=()
+    while getopts "h:n:" o; do
+        case $o in
+            h)
+                if [[ ! $OPTARG =~ ^[0-9,]+$ ]]; then
+                    rsmpi_help "invalid host spec: $OPTARG"
+                fi
+                IFS=, read -ra hosts <<<$OPTARG
+                local -A seen=()
+                for h in "${hosts[@]}"; do
+                    if (( h < 1 || h > _rsmpi_num_hosts )); then
+                        rsmpi_help "invalid host number: $h"
+                    fi
+                    if [[ ${seen[h]+1} ]]; then
+                        rsmpi_help "duplicate host number: $h"
+                    fi
+                    seen[$h]=1
+                done
+                if (( ${#hosts[@]} <= 0 )); then
+                    rsmpi_help "no hosts in: ${hosts[*]}"
+                fi
+                ;;
+            n)
+                if [[ ! $OPTARG =~ ^[0-9]+$ ]]; then
+                    rsmpi_help "process count must be a number: $OPTARG"
+                fi
+                slots=$OPTARG
+                if (( slots < 1 || slots > _rsmpi_max_slots )); then
+                    rsmpi_help "invalid process count: $slots"
+                fi
+                ;;
+            *)
+                rsmpi_help
+                ;;
+        esac
+    done
+    shift $((OPTIND -1))
+    if (( $# <= 0 )); then
+        rsmpi_help 'missing command argument'
+    fi
+    rsmpi_ping
+    rsmpi_exec "${slots:-}" "${#hosts[@]}" \
+        "$(rsmpi_hosts ${hosts[@]+"${hosts[@]}"})" "$@"
+}
+
+rsmpi_ping() {
+    local h x
+    local -i i=0 ok=0
+    for h in "${_rsmpi_hosts[@]}"; do
+        i+=1
+        x=$(ssh -F "$_rsmpi_ssh_config" \
+            -o BatchMode=yes \
+            -o ConnectTimeout=2 \
+            -o GlobalKnownHostsFile=/dev/null \
+            -o IdentityFile="$_rsmpi_conf_d/$h"/identity \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            "$h" hostname 2>/dev/null || true)
+        if [[ $x == $h ]]; then
+            ok+=1
+        else
+            echo "host $i ($h) is unavailable" 1>&2
+        fi
+
+    done
+    if (( ok != i )); then
+        echo '
+Your cluster has been reassigned or some nodes are down.
+Please contact support for help with this issue.' 1>&2
+        return 1
+    fi
+}
+
+rsmpi_main "$@"
+{% endraw %}
