@@ -30,6 +30,7 @@ class T(component.T):
         from rsconf.component import nginx
 
         if self.name == 'bop':
+            self.append_root_bash('rsconf_yum_install php php-dom')
             self.hdb.bop.update(pkcollections.Dict(
                 aux_directives='',
                 facade_setup_cmds='',
@@ -45,6 +46,12 @@ class T(component.T):
             z.mail_domain_keys = sorted(z.mail_domains.keys())
             self.buildt.get_component('postfix').setup_bop(z.mail_domain_keys)
             z.setdefault('client_max_body_size', _DEFAULT_CLIENT_MAX_BODY_SIZE)
+            self.install_access(mode='444', owner=j2_ctx.rsconf_db.root_u)
+            self.install_resource(
+                'bop/php.ini',
+                j2_ctx,
+                '/etc/php.d/bivio.ini',
+            )
             nginx.update_j2_ctx_and_install_access(self, j2_ctx)
             self.install_resource(
                 'bop/nginx_common.conf',
