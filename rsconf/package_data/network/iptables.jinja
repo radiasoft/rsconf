@@ -38,7 +38,10 @@
 
 {# ssh: Accept our networks always #}
 {% for n in network.trusted_public_nets %}
-    -A INPUT -i {{ network.inet_dev.name }} -s {{ n }} -p tcp -m tcp --dport ssh -j ACCEPT
+    -A INPUT -i {{ network.inet_dev.name }} -s {{ n }} -p tcp -m tcp {% if network.public_ssh_port -%}
+        --match multiport --dports ssh,{{ network.public_ssh_port }}
+        {%- else -%}--dport ssh
+        {%- endif %} -j ACCEPT
 {% endfor %}
 {% if network.public_ssh_port %}
     {# uses a /24 mask, because we don't want many connections. Limit to 1 attempt in 60 seconds #}
