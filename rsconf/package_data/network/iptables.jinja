@@ -44,7 +44,7 @@
     {# uses a /24 mask, because we don't want many connections. Limit to 1 attempt in 60 seconds #}
     -A INPUT -i {{ network.inet_dev.name }} -p tcp -m tcp --dport {{ network.public_ssh_port }} -m state --state NEW -m recent --set --name SSHPROBES --mask 255.255.255.0 --rsource
     -A INPUT -i {{ network.inet_dev.name }} -p tcp -m tcp --dport {{ network.public_ssh_port }} -m state --state NEW -m recent --update --seconds 60 --hitcount 1 --name SSHPROBES --mask 255.255.255.0 --rsource -j DROP
-    -A INPUT -i {{ network.inet_dev.name }} -p tcp -m state --state NEW -m tcp --dport ssh -j ACCEPT
+    -A INPUT -i {{ network.inet_dev.name }} -p tcp -m state --state NEW -m tcp --dport {{ network.public_ssh_port }} -j ACCEPT
 {% endif %}
 -A INPUT -j REJECT --reject-with icmp-host-prohibited
 
