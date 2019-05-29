@@ -161,4 +161,7 @@ base_os_sshd() {
         's{^#(AddressFamily) any}{$1 inet}'
     rsconf_edit_no_change_res=0 rsconf_edit /etc/ssh/sshd_config ^PermitRootLogin.without \
         's{^#?\s*(PermitRootLogin) .*}{$1 without-password}'
+    # Uncoment Port 22. Needed for network.public_ssh_port to work right
+    rsconf_edit_no_change_res=0 rsconf_edit /etc/ssh/sshd_config ^Port.22 \
+        's{^#\s*(Port) .*}{$1 22}'
 }

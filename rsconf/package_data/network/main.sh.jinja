@@ -25,6 +25,8 @@ network_main() {
     network_iptables
     {% endif %}
     {% if network.public_ssh_port %}
-    rsconf_edit_no_change_res=0 rsconf_append /etc/ssh/sshd_config 'Port {{ network.public_ssh_port }}'
+    if rsconf_append /etc/ssh/sshd_config 'Port {{ network.public_ssh_port }}'; then
+        systemctl restart sshd
+    fi
     {% endif %}
 }
