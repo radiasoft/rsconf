@@ -125,7 +125,6 @@ default:
   network:
     devices: {}
     trusted: {}
-    public_ssh: False
   nfs_server:
     num_servers: 16
   nginx:
@@ -369,7 +368,7 @@ host:
         vhosts:
           {{ all_host }}: jupyter.{{ all_host }}
       network:
-        public_ssh: true
+        public_ssh_port: 5555
         natted_nets: [ 10.10.10.0/24 ]
         devices:
           em1:

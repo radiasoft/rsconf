@@ -63,6 +63,7 @@ class T(component.T):
         if z.defroute:
             assert z.defroute.net.search and z.defroute.net.nameservers, \
                 '{}: defroute needs search and nameservers'.format(z.defroute.net)
+        z.setdefault('public_ssh_port', None)
         if z.get('iptables_enable', False) and len(z._devs) == 1:
             z.update(
                 inet_dev=z.defroute,
