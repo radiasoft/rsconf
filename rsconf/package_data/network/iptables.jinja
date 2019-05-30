@@ -55,6 +55,8 @@
     -A FORWARD -i {{ network.nat_output_dev.name }} -m state --state INVALID -j REJECT --reject-with icmp-port-unreachable
     -A FORWARD -i {{ network.nat_output_dev.name }} -o {{ network.nat_input_dev.name }} -m state --state RELATED,ESTABLISHED -j ACCEPT
     -A FORWARD -i {{ network.nat_output_dev.name }} -j REJECT --reject-with icmp-host-prohibited
+    -A FORWARD -i {{ network.nat_input_dev.name }} -o {{ network.nat_output_dev.name }} -j ACCEPT
+    -A FORWARD -j REJECT --reject-with icmp-host-prohibited
 {# COMMIT can't begin with whitespace #}
 COMMIT
 *nat
