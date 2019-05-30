@@ -369,13 +369,13 @@ host:
           {{ all_host }}: jupyter.{{ all_host }}
       network:
         public_ssh_port: 5555
-        natted_nets: [ 10.10.10.0/24 ]
         devices:
           em1:
             ip: 10.10.10.5
-            is_natted: True
+            is_nat_input: True
           em2:
             ip: 216.17.132.33
+            is_nat_output: True
 #          eth0:
 #            ip: 104.237.137.251
         trusted:

@@ -49,7 +49,7 @@ class T(component.T):
         z.trusted_tcp_ports = []
         z.public_udp_ports = []
         self.__trusted_nets = self._nets(jc, z.trusted)
-        jc.network.setdefault(
+        z.setdefault(
             'trusted_public_nets',
             sorted([n.name for n in self.__trusted_nets.values() if n.name.is_global]),
         )
@@ -86,6 +86,9 @@ class T(component.T):
             #TODO(robnagler) update other uses and remove self.hdb mod
             z.primary_public_ip = z.inet_dev.ip
             self.hdb.network.primary_public_ip = z.inet_dev.ip
+            if z.nat_input_dev:
+                assert z.get('nat_output_dev'), \
+                    'nat_input_dev and nat_output_dev both have to be defined'
 
     def internal_build_write(self):
         jc = self.j2_ctx
@@ -103,16 +106,16 @@ class T(component.T):
             for k, v in d.items():
                 if isinstance(v, bool):
                     d[k] = 'yes' if v else 'no'
-            jc.network.dev = d
+            z.dev = d
             self.install_resource(
                 'network/ifcfg-en',
                 jc,
                 _SCRIPTS.join('ifcfg-' + d.name)
             )
-        if jc.network.iptables_enable:
+        if z.iptables_enable:
             assert not jc.docker.iptables, \
                 '{}: docker.iptables not allowed on a public ip'.format(
-                    jc.network.defroute.ip,
+                    z.defroute.ip,
                 )
             self.install_resource('network/iptables', jc, _IPTABLES)
         self.append_root_bash_with_main(jc)
@@ -159,9 +162,9 @@ class T(component.T):
         z._devs = []
         routes = []
         z.defroute = None
-        jc.network.natted_dev = None
-        for dn in sorted(jc.network.devices):
-            d = copy.deepcopy(jc.network.devices[dn])
+        z.nat_input_dev = None
+        for dn in sorted(z.devices):
+            d = copy.deepcopy(z.devices[dn])
             z._devs.append(d)
             d.name = dn
             d.vlan = '.' in dn
@@ -172,13 +175,12 @@ class T(component.T):
                 assert not z.defroute, \
                     '{} & {}: both declared as default routes'.format(d, z.defroute)
                 z.defroute = d
-            if d.setdefault('is_natted', False):
-                assert not jc.network.natted_dev, \
-                    '{}: duplicate natted dev ({})'.format(
-                        d.name,
-                        jc.network.natted_dev.name,
-                    )
-                jc.network.natted_dev = d
+            for x in 'input', 'output':
+                if d.setdefault('is_nat_' + x, False):
+                    ad = 'nat_{}_dev'.format(x)
+                    assert not z.get(ad), \
+                        '{}: duplicate {} ({})'.format(ad, d.name, z.get('ad').name)
+                    z[ad] = d
         if not z.defroute:
             z.defroute = self._defroute(routes)
         z.defroute.defroute = True
