@@ -63,7 +63,7 @@ COMMIT
 :OUTPUT ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
     {# limit source addresses https://serverfault.com/a/511590 #}
-    -A POSTROUTING -s {{ network.nat_input_dev.name }} -o {{ network.nat_output_dev.name }} -j MASQUERADE
+    -A POSTROUTING -s {{ network.nat_input_dev.net.name }} -o {{ network.nat_output_dev.name }} -j MASQUERADE
 {% else %}
     -A FORWARD -j REJECT --reject-with icmp-host-prohibited
 {% endif %}
