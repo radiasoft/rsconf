@@ -6,8 +6,7 @@ network_iptables() {
         systemctl enable iptables
         return
     fi
-    # https://stackoverflow.com/a/24827438/3075806
-    yum install -y iptables-services >& /dev/null || true
+    rsconf_yum_install iptables-services
     systemctl enable iptables
     systemctl start iptables
 }
@@ -21,6 +20,7 @@ network_main() {
         systemctl stop firewalld
     fi
     systemctl disable firewalld >& /dev/null || true
+    systemctl mask firewalld >& /dev/null || true
     {% if network.iptables_enable %}
     network_iptables
     {% endif %}
