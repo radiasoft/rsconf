@@ -12,7 +12,7 @@ from rsconf import component
 
 _EXPORTS_D = pkio.py_path('/etc/exports.d')
 _SYSCONFIG_NFS = pkio.py_path('/etc/sysconfig/nfs')
-_OPTIONS = 'rw,root_squash,no_subtree_check,async,secure'
+_OPTIONS = 'rw,no_root_squash,no_subtree_check,async,secure'
 
 class T(component.T):
 
