@@ -224,7 +224,7 @@ channel:
       trusted:
         # v*.radia.run private network
         10.10.10.0/24:
-          gateway: 10.10.10.1
+          gateway: 10.10.10.2
         # random network to test
         216.17.132.32/27:
           gateway: 216.17.132.62
@@ -316,6 +316,26 @@ host:
       jupyterhub:
         vhosts:
           {{ host }}: jupyter.{{ host }}
+{# to test ip tables NAT
+      base_os:
+        ip_forward: true
+      network:
+        trusted:
+          10.0.2.0/24:
+            search: radiasoft.net
+            is_global: true
+            nameservers: [ 8.8.8.8 ]
+        iptables_enable: true
+        devices:
+          eth0:
+            ip: 10.0.2.15
+            gateway: 10.2.2
+            defroute: true
+            is_nat_output: true
+          eth1:
+            ip: 10.10.10.40
+            is_nat_input: true
+#}
       nginx:
         redirects:
           - host_or_uri: www.google.com
@@ -343,6 +363,19 @@ host:
     {{ worker5_host }}:
       docker:
         tls_host: {{ worker5_host }}
+{# test iptables NAT
+      network:
+        trusted:
+          # v*.radia.run private (hostonly) network
+          10.10.10.0/24:
+            gateway: 10.10.10.40
+            search: radiasoft.net
+            nameservers: [ 8.8.8.8 ]
+        devices:
+          eth1:
+            ip: 10.10.10.50
+            defroute: true
+#}
       nfs_client:
         mounts:
           {{ master }}:
