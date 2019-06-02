@@ -88,20 +88,6 @@ class T(component.T):
             _params_copy(params, j2_ctx, ('sirepo.celery_tasks.broker_url',))
         self._comsol(params, j2_ctx)
         self._auth(params, j2_ctx)
-        env = {}
-        for k in sorted(params.keys()):
-            env[k.upper().replace('.', '_')] = _env_value(params[k])
-        # Only variable that is required to be in the enviroment
-        env['PYTHONUNBUFFERED'] = '1'
-        systemd.docker_unit_enable(
-            self,
-            j2_ctx,
-            image=docker_registry.absolute_image(j2_ctx, z.docker_image),
-            env=env,
-            cmd='sirepo service uwsgi',
-            after=[] if docker_hosts else ['celery_sirepo.service'],
-            #TODO(robnagler) wanted by nginx
-        )
         install_user_d(self, j2_ctx)
         self.install_access(mode='400')
         self.install_secret_path(
@@ -130,6 +116,20 @@ class T(component.T):
                 run_u=z.run_u,
                 j2_ctx=j2_ctx,
             )
+        env = {}
+        for k in sorted(params.keys()):
+            env[k.upper().replace('.', '_')] = _env_value(params[k])
+        # Only variable that is required to be in the environment
+        env['PYTHONUNBUFFERED'] = '1'
+        systemd.docker_unit_enable(
+            self,
+            j2_ctx,
+            image=docker_registry.absolute_image(j2_ctx, z.docker_image),
+            env=env,
+            cmd='sirepo service uwsgi',
+            after=[] if docker_hosts else ['celery_sirepo.service'],
+            #TODO(robnagler) wanted by nginx
+        )
 
 
     def _auth(self, params, j2_ctx):
