@@ -55,8 +55,6 @@ class T(component.T):
         )
         self.__untrusted_nets = self._nets(jc, z.untrusted)
         if not self.hdb.network.devices:
-            # no devices, no network config
-            self.append_root_bash(': nothing to do')
             return
         self.service_prepare((_SCRIPTS, _RESOLV_CONF))
         self._devices(jc)
@@ -94,6 +92,8 @@ class T(component.T):
         jc = self.j2_ctx
         z = jc.network
         if not '_devs' in z:
+            # no devices, no network config
+            self.append_root_bash(': nothing to do')
             return
         for w in 'public_tcp_ports', 'public_udp_ports', 'trusted_tcp_ports':
             z[w] = sorted(z[w])
