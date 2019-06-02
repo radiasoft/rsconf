@@ -35,9 +35,6 @@ def custom_unit_enable(compt, j2_ctx, start='start', reload=None, stop=None, aft
     # pid_file has to be in a public directory that is writeable by run_u
     # "PID file /srv/petshop/petshop.pid not readable (yet?) after start."
     compt.install_access(mode='755')
-    z.runtime_d = pkio.py_path('/run').join(z.service_name)
-    # systemd creates RuntimeDirectory in /run see custom_unit.servicea
-    z.pid_file = z.runtime_d.join(z.service_name + '.pid')
     compt.install_access(mode='500')
     for s in scripts:
         if z[s]:
@@ -63,8 +60,12 @@ def custom_unit_prepare(compt, j2_ctx, watch_files=()):
     """Must be first call"""
     run_d = unit_run_d(j2_ctx, compt.name)
     unit_prepare(compt, j2_ctx, [run_d] + list(watch_files))
-    j2_ctx.systemd.run_d = run_d
-    j2_ctx.systemd.is_timer = False
+    z = j2_ctx.systemd
+    z.run_d = run_d
+    z.is_timer = False
+    z.runtime_d = pkio.py_path('/run').join(z.service_name)
+    # systemd creates RuntimeDirectory in /run see custom_unit.servicea
+    z.pid_file = z.runtime_d.join(z.service_name + '.pid')
     return run_d
 
 
