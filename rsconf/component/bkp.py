@@ -37,12 +37,6 @@ class T(component.T):
             secondary_setup = self._secondary(jc, z)
             n = 'secondary'
         te = z.run_d.join(n)
-        systemd.timer_enable(
-            self,
-            j2_ctx=jc,
-            cmd=te,
-            run_u=z.run_u,
-        )
         self.install_access(mode='500', owner=z.run_u)
         self.install_resource('bkp/{}.sh'.format(n), jc, te)
         if secondary_setup:
@@ -50,6 +44,7 @@ class T(component.T):
                 secondary_setup,
                 z.run_d.join(secondary_setup.purebasename),
             )
+        systemd.timer_enable(self, j2_ctx=jc, cmd=te, run_u=z.run_u)
 
     def _primary(self, jc, z):
         gv = 'bkp_exclude=(\n'
