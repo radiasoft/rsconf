@@ -54,6 +54,13 @@ class T(component.T):
 
         jc = self.j2_ctx
         z = jc.bivio_named
+        # runtime_d (/run) set by custom_unit_prepare
+        z.stats_f = jc.systemd.runtime_d.join('bind.stats')
+        z.session_key_f = jc.systemd.runtime_d.join('session.key')
+        self.install_access(mode='750', owner=z.run_u, group=z.run_group)
+        self.install_directory(z.db_d)
+        self.install_access(mode='440')
+        self.install_resource('bivio_named/named.conf', jc, z.conf_f)
         systemd.custom_unit_enable(
             self,
             jc,
@@ -61,10 +68,3 @@ class T(component.T):
             run_group=z.run_group,
             run_d_mode='710',
         )
-        # runtime_d (/run) set by custom_unit_enable
-        z.stats_f = jc.systemd.runtime_d.join('bind.stats')
-        z.session_key_f = jc.systemd.runtime_d.join('session.key')
-        self.install_access(mode='750', owner=z.run_u, group=z.run_group)
-        self.install_directory(z.db_d)
-        self.install_access(mode='440')
-        self.install_resource('bivio_named/named.conf', jc, z.conf_f)
