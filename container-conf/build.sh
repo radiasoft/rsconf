@@ -1,5 +1,6 @@
 #!/bin/bash
 build_image_base=centos:7
+build_want_yum_update=1
 
 build_as_run_user() {
     cd
