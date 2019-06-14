@@ -33,6 +33,7 @@ c.JupyterHub.cookie_secret = binascii.a2b_hex('{{ jupyterhub.cookie_secret_hex }
 c.JupyterHub.hub_ip = jupyter_client.localinterfaces.public_ips()[0]
 c.JupyterHub.ip = '0.0.0.0'
 c.JupyterHub.port = {{ jupyterhub.port }}
+c.JupyterHub.upgrade_db = True
 c.ConfigurableHTTPProxy.auth_token = '{{ jupyterhub.proxy_auth_token }}'
 c.DockerSpawner.http_timeout = 60
 # https://github.com/radiasoft/rsconf/issues/54
