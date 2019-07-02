@@ -63,18 +63,19 @@ class T(component.T):
             gv += "    '{}'\n".format(str(d).lstrip('/'))
         gv += ')\n'
         z.global_vars = gv
-        x = ''
-        for h in z.hosts:
-            x += "    primary_host '{}'\n".format(h)
-        for h in z.secondaries:
-            x += "    primary_secondary '{}'\n".format(h)
+        z.host_cmds = ''.join(
+            ["    primary_host '{}'\n".format(h) for h in z.hosts],
+        )
+        z.secondary_cmds = ''.join(
+            ["    primary_secondary '{}'\n".format(h) for h in z.secondaries],
+        )
+        z.simple_mirror_cmds = ''
         for tgt in sorted(z.simple_mirrors.keys()):
             for src in z.simple_mirrors[tgt]:
-                x += "    primary_simple_mirror '{}' '{}'\n".format(
+                z.simple_mirror_cmds += "    primary_simple_mirror '{}' '{}'\n".format(
                     src,
                     tgt,
                 )
-        z.main_cmds = x
 
 
     def _secondary(self, jc, z):
