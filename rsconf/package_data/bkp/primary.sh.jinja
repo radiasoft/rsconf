@@ -27,11 +27,16 @@ primary_archive_logs() {
 primary_host() {
     local host=$1
     local out src_d try cmd
-    local tgt_d=$bkp_mirror_d/current/$host
+    local tgt_d=$bkp_mirror_d/$primary_curr/$host
     mkdir -m 700 -p "$tgt_d"
     primary_log "$host: primary copy"
+    local cmd=( primary_rsync )
+    local d=$bkp_mirror_d/$primary_prev/$host
+    if [[ $primary_prev && -d $d ]]; then
+        cmd+=( --link-dest="$d" )
+    fi
     for src_d in "${bkp_include[@]}"; do
-        primary_rsync "${bkp_exclude[@]}" "$host:$src_d" "$tgt_d"
+        "${cmd[@]}" "${bkp_exclude[@]}" "$host:$src_d" "$tgt_d"
     done
     primary_archive_logs "$tgt_d"
 }
@@ -43,8 +48,14 @@ primary_log() {
 
 primary_main() {
     primary_log "$(hostname -f ): begin primary"
-{{ bkp.main_cmds }}
-    primary_snapshot
+    local primary_curr=$(date +%Y%m%d%H%M%S)
+    # Only accept a completed backup, that is, "current" must
+    # have been written by primary_set_current after backup was complete
+    local primary_prev=$(readlink "$bkp_mirror_d"/current || true)
+{{ bkp.host_cmds }}
+    primary_set_current
+{{ bkp.secondary_cmds }}
+{{ bkp.simple_mirror_cmds }}
     primary_log "$(hostname -f ): end primary"
 }
 
@@ -112,7 +123,7 @@ primary_secondary() {
     local secondary=$1
     local src_d
     primary_log "$secondary: secondary begin"
-    for src_d in "$bkp_mirror_d/current"/*.*; do
+    for src_d in "$bkp_mirror_d/$current"/*.*; do
         primary_log "$(basename $src_d): secondary copy"
         # Over the WAN so run compression at rsync level
         primary_rsync --compress "$src_d" "$secondary:/"
@@ -120,11 +131,10 @@ primary_secondary() {
     primary_log "$secondary: secondary end"
 }
 
-primary_snapshot() {
-    local t=$(date +%Y%m%d%H%M%S)
-    primary_log "$t: snapshot begin"
-    cp -al "$bkp_mirror_d/current" "$bkp_mirror_d/$t"
-    primary_log "$t: snapshot end"
+primary_set_current() {
+    primary_log "$t: current $bkp_mirror_d/current -> $primary_curr"
+    rm -f "$bkp_mirror_d/current"
+    ln -s "$primary_curr" "$bkp_mirror_d/current"
 }
 
 primary_main "$@"
