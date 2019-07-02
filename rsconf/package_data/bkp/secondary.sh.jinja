@@ -23,7 +23,7 @@ secondary_main() {
         # the first level to write
         cd "$snap" && find */* -type d -print0
     ) | while IFS= read -r -d $'\0' base_d; do
-        if [[ ! $base_d =~ / ]]; then
+        if [[ ! $base_d =~ /.*/ ]]; then
             secondary_msg "Starting $base_d"
         fi
         snap_d=$snap/$base_d
