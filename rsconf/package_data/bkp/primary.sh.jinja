@@ -123,7 +123,7 @@ primary_secondary() {
     local secondary=$1
     local src_d
     primary_log "$secondary: secondary begin"
-    for src_d in "$bkp_mirror_d/$current"/*.*; do
+    for src_d in "$bkp_mirror_d"/current/*.*; do
         primary_log "$(basename $src_d): secondary copy"
         # Over the WAN so run compression at rsync level
         primary_rsync --compress "$src_d" "$secondary:/"
@@ -132,7 +132,7 @@ primary_secondary() {
 }
 
 primary_set_current() {
-    primary_log "$t: current $bkp_mirror_d/current -> $primary_curr"
+    primary_log "$bkp_mirror_d/$primary_curr: set_current"
     rm -f "$bkp_mirror_d/current"
     ln -s "$primary_curr" "$bkp_mirror_d/current"
 }
