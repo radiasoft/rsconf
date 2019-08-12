@@ -17,6 +17,7 @@ declare -i _rsmpi_max_slots={{ mpi_worker.max_slots }}
 declare -i _rsmpi_slots_per_host={{ mpi_worker.slots_per_host }}
 _rsmpi_conf_d='{{ mpi_worker.guest.conf_d }}'
 _rsmpi_known_hosts='{{ mpi_worker.guest.known_hosts }}'
+_rsmpi_net='{{ mpi_worker.net }}'
 _rsmpi_ssh_config='{{ mpi_worker.guest.ssh_config }}'
 
 {% raw %}
@@ -36,7 +37,11 @@ rsmpi_exec() {
     for x in $(compgen -A variable|egrep '(SYNERGIA|PYENV|PYTHON|VIRTUAL|PATH|MODULE)'); do
         a+=$x,
     done
-    exec mpiexec -f "$hostfile" -envlist "${a[@]:0:-1}" "$@"
+    local i=$(rsmpi_local_ip)
+    if [[ ! $i ]]; then
+        echo "cannot determine local ip address for network=$_rsmpi_net" 1>&2
+    fi
+    exec mpiexec -f "$hostfile" -localhost "$i" -envlist "${a[@]:0:-1}" "$@"
 }
 
 rsmpi_help() {
@@ -85,6 +90,20 @@ rsmpi_hosts() {
         fi
     done | install -m 400 /dev/stdin "$t"
     echo "$t"
+}
+
+rsmpi_local_ip() {
+    #TODO(robnagler) only works for class C
+    local n=${_rsmpi_net%0/*}
+    n=^${n//./\\.}
+    local i
+    for i in $(hostname -i); do
+        if [[ $i =~ $n ]]; then
+            echo $i
+            return
+        fi
+    done
+    return 1
 }
 
 rsmpi_main() {
