@@ -17,39 +17,26 @@ declare -i _rsmpi_max_slots={{ mpi_worker.max_slots }}
 declare -i _rsmpi_slots_per_host={{ mpi_worker.slots_per_host }}
 _rsmpi_conf_d='{{ mpi_worker.guest.conf_d }}'
 _rsmpi_known_hosts='{{ mpi_worker.guest.known_hosts }}'
-_rsmpi_net='{{ mpi_worker.net }}'
 _rsmpi_ssh_config='{{ mpi_worker.guest.ssh_config }}'
 
 {% raw %}
 declare -i _rsmpi_num_hosts=${#_rsmpi_ips[@]}
 
 rsmpi_exec() {
-    local slots=$1
-    shift
-    local num_hosts=$1
     shift
     local hostfile=$1
-    shift
-    if [[ ! $slots ]]; then
-        slots=$(( num_hosts * _rsmpi_slots_per_host ))
-    fi
     local d=$HOME/.ssh
     if [[ ! -d $d ]]; then
         install -d -m 700 "$d"
     fi
     install -m 600 "$_rsmpi_ssh_config" "$d/config"
     install -m 600 "$_rsmpi_known_hosts" "$d/known_hosts"
-    local -a a=(
-        -n "$slots"
-        --mca oop_tcp_if_include "$_rsmpi_net"
-        --mca btl_tcp_if_include "$_rsmpi_net"
-        --hostfile "$hostfile"
-    )
+    local a=
     local x
     for x in $(compgen -A variable|egrep '(SYNERGIA|PYENV|PYTHON|VIRTUAL|PATH|MODULE)'); do
-        a+=( -x $x )
+        a+=$x,
     done
-    exec mpiexec "${a[@]}" "$@"
+    exec mpiexec -file "$hostfile" -envlist "${a[@]:0:-1}" "$@"
 }
 
 rsmpi_help() {
@@ -72,6 +59,8 @@ EOF
 }
 
 rsmpi_hosts() {
+    local -i slots=${1:-0}
+    shift
     local hosts=( "$@" )
     if (( $# <= 0 )); then
         hosts=( $(seq 1 $_rsmpi_num_hosts) )
@@ -80,9 +69,23 @@ rsmpi_hosts() {
     rm -f "$t"*
     local i
     t+=$RANDOM$RANDOM
+    if (( $slots <= 0 )); then
+        slots=$(( ${#hosts[@]} * _rsmpi_slots_per_host ))
+    fi
+    local s
+    set -x
     for i in "${hosts[@]}"; do
-        echo "${_rsmpi_ips[i-1]} slots=$_rsmpi_slots_per_host"
+        slots=$(( slots - _rsmpi_slots_per_host ))
+        s=$_rsmpi_slots_per_host
+        if (( $slots < 0 )); then
+            s=$(( s + slots ))
+        fi
+        echo "${_rsmpi_ips[i-1]}:$s"
+        if (( $slots < 0 )); then
+            break
+        fi
     done | install -m 400 /dev/stdin "$t"
+    set +x
     echo "$t"
 }
 
@@ -130,8 +133,7 @@ rsmpi_main() {
         rsmpi_help 'missing command argument'
     fi
     rsmpi_ping
-    rsmpi_exec "${slots:-}" "${#hosts[@]}" \
-        "$(rsmpi_hosts ${hosts[@]+"${hosts[@]}"})" "$@"
+    rsmpi_exec "$(rsmpi_hosts "$slots" ${hosts[@]+"${hosts[@]}"})" "$@"
 }
 
 rsmpi_ping() {
