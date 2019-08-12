@@ -36,7 +36,7 @@ rsmpi_exec() {
     for x in $(compgen -A variable|egrep '(SYNERGIA|PYENV|PYTHON|VIRTUAL|PATH|MODULE)'); do
         a+=$x,
     done
-    exec mpiexec -file "$hostfile" -envlist "${a[@]:0:-1}" "$@"
+    exec mpiexec -f "$hostfile" -envlist "${a[@]:0:-1}" "$@"
 }
 
 rsmpi_help() {
