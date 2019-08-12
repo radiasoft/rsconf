@@ -23,8 +23,8 @@ _rsmpi_ssh_config='{{ mpi_worker.guest.ssh_config }}'
 declare -i _rsmpi_num_hosts=${#_rsmpi_ips[@]}
 
 rsmpi_exec() {
-    shift
     local hostfile=$1
+    shift
     local d=$HOME/.ssh
     if [[ ! -d $d ]]; then
         install -d -m 700 "$d"
