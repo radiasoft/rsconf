@@ -73,7 +73,6 @@ rsmpi_hosts() {
         slots=$(( ${#hosts[@]} * _rsmpi_slots_per_host ))
     fi
     local s
-    set -x
     for i in "${hosts[@]}"; do
         slots=$(( slots - _rsmpi_slots_per_host ))
         s=$_rsmpi_slots_per_host
@@ -85,7 +84,6 @@ rsmpi_hosts() {
             break
         fi
     done | install -m 400 /dev/stdin "$t"
-    set +x
     echo "$t"
 }
 
