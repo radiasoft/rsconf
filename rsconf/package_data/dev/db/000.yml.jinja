@@ -281,16 +281,26 @@ host:
         tls_host: {{ master }}
       jupyterhub:
         pools:
-          default:
-            users: [ ]
+          everybody:
             servers_per_host: 2
             mem_limit: "1G"
             cpu_limit: 0.5
             hosts: [ {{ master }} ]
           private:
-            users: [ vagrant ]
+            user_groups: [ private ]
             servers_per_host: 1
             hosts: [ {{ worker2_host }}, {{ worker5_host }} ]
+        user_groups:
+          private: [ vagrant ]
+          instructors: [ teach1 ]
+        volumes:
+          /srv/jupyterhub/user/Workshop:
+            bind: /home/vagrant/jupyter/Workshop
+            mode: ro
+          /srv/jupyterhub/user/Workshop/{username}:
+            bind: /home/vagrant/jupyter/Workshop/{username}
+            mode:
+              rw: [ instructors ]
         vhosts:
           {{ master }}: jupyter.{{ master }}
       nfs_server:
@@ -466,6 +476,8 @@ host:
             callback_uri: https://{{ all_host }}oauth-authorized/github
             key: n/a
             secret: ignored
+          guest:
+            expiry_days: 1
           methods: [ email, guest ]
           deprecated_methods: [ github ]
 

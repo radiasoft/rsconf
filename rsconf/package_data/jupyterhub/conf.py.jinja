@@ -41,16 +41,7 @@ c.DockerSpawner.image_whitelist = []
 c.DockerSpawner.image = '{{ jupyterhub.jupyter_docker_image }}'
 c.DockerSpawner.remove = True
 c.DockerSpawner.use_internal_ip = True
-c.DockerSpawner.volumes = {
-    '{{ jupyterhub.user_d }}/{username}': {
-        # POSIT: notebook_dir in
-        # radiasoft/container-beamsim-jupyter/container-conf/build.sh
-        # parameterize anyway, because matches above
-        'bind': '{{ jupyterhub.home_d }}/jupyter',
-    },
-}
 {% if 'rsdockerspawner_cfg' in jupyterhub %}
-# Allow JupyterHub to restart without killing containers
 c.DockerSpawner.network_name = 'host'
 c.RSDockerSpawner.cfg = '''{{ jupyterhub.rsdockerspawner_cfg }}'''
 from rsdockerspawner import rsdockerspawner
@@ -69,6 +60,14 @@ class _Spawner(dockerspawner.DockerSpawner):
                 v = os.path.dirname(v)
         return binds
 c.JupyterHub.spawner_class = _Spawner
+c.DockerSpawner.volumes = {
+    '{{ jupyterhub.user_d }}/{username}': {
+        # POSIT: notebook_dir in
+        # radiasoft/container-beamsim-jupyter/container-conf/build.sh
+        # parameterize anyway, because matches above
+        'bind': '{{ jupyterhub.home_d }}/jupyter',
+    },
+}
 {% endif %}
 #c.Application.log_level = 'DEBUG'
 # Might not want this, but for now it's useful to see everything
