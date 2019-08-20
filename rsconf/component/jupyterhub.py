@@ -104,10 +104,17 @@ class T(component.T):
             hosts=pkcollections.Dict(),
             users=pkcollections.Dict(),
         )
+        # POSIT: notebook_dir in
+        # radiasoft/container-beamsim-jupyter/container-conf/build.sh
+        # parameterize anyway, because matches above
+        z.setdefault('volumes', pkcollections.Dict())
+        z.volumes.setdefault(
+            str(z.user_d.join('{username}')),
+            pkcollections.Dict(bind=str(z.home_d.join('jupyter'))),
+        )
         if z.get('user_groups'):
             self._rsdockerspawner_v3(j2_ctx, z, seen)
             c.user_groups = z.user_groups
-            c.volumes = z.volumes
         else:
             self._rsdockerspawner_v2_deprecated(j2_ctx, z, seen)
         docker.setup_cluster(
@@ -117,13 +124,17 @@ class T(component.T):
             run_u=z.run_u,
             j2_ctx=j2_ctx,
         )
+        c.volumes = z.volumes
         c.pools = z.pools
         z.rsdockerspawner_cfg = pkjson.dump_pretty(c)
 
     def _rsdockerspawner_v2_deprecated(self, j2_ctx, z, seen):
         for n, p in z.pools.items():
-            assert p.users or n == _DEFAULT_POOL_V2, \
-                'no users in pool={}'.format(n)
+            if n == _DEFAULT_POOL_V2:
+                p.setdefault('users', [])
+            else:
+                assert p.users, \
+                    'no users in pool={}'.format(n)
             assert p.setdefault('servers_per_host', 0) >= 1, \
                 'invalid servers_per_host={} in pool={}'.format(
                     p.servers_per_host,
@@ -150,13 +161,6 @@ class T(component.T):
                 res.union(u)
             return sorted(res)
 
-        # POSIT: notebook_dir in
-        # radiasoft/container-beamsim-jupyter/container-conf/build.sh
-        # parameterize anyway, because matches above
-        z.volumes.setdefault(
-            str(z.user_d.join('{username}')),
-            pkcollections.Dict(bind=str(z.home_d.join('jupyter'))),
-        )
         for n, v in z.volumes.items():
             m = v.get('mode')
             if not isinstance(m, dict):
