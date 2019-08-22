@@ -11,7 +11,7 @@ from pykern import pkio
 from pykern import pkjinja
 from pykern import pkresource
 from pykern import pkyaml
-from pykern.pkdebug import pkdc, pkdp, pkdpretty
+from pykern.pkdebug import pkdc, pkdlog, pkdp, pkdpretty
 import copy
 import random
 import string
@@ -56,16 +56,21 @@ class T(pkcollections.Dict):
         self.srv_d = self.root_d.join(SRV_SUBDIR)
         self.srv_host_d = self.srv_d.join(HOST_SUBDIR)
         self.base = pkcollections.Dict()
-        for d in self.db_d, self.secret_d:
-            for f in pkio.sorted_glob(d.join(ZERO_YML)):
-                v = pkyaml.load_str(
-                    pkjinja.render_file(
-                        f,
-                        self.base,
-                        strict_undefined=True,
-                    ),
-                )
-                merge_dict(self.base, v)
+        f = None
+        try:
+            for d in self.db_d, self.secret_d:
+                for f in pkio.sorted_glob(d.join(ZERO_YML)):
+                    v = pkyaml.load_str(
+                        pkjinja.render_file(
+                            f,
+                            self.base,
+                            strict_undefined=True,
+                        ),
+                    )
+                    merge_dict(self.base, v)
+        except Exception:
+            pkdlog('error rendering db={}', f)
+            raise
 
     def channel_hosts(self):
         res = pkcollections.OrderedMapping()
