@@ -35,7 +35,7 @@ c.JupyterHub.ip = '0.0.0.0'
 c.JupyterHub.port = {{ jupyterhub.port }}
 c.JupyterHub.upgrade_db = True
 c.ConfigurableHTTPProxy.auth_token = '{{ jupyterhub.proxy_auth_token }}'
-c.DockerSpawner.http_timeout = 60
+c.DockerSpawner.http_timeout = 30
 # https://github.com/radiasoft/rsconf/issues/54
 c.DockerSpawner.image_whitelist = []
 c.DockerSpawner.image = '{{ jupyterhub.jupyter_docker_image }}'
