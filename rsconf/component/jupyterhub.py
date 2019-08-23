@@ -36,6 +36,7 @@ class T(component.T):
         z = j2_ctx.jupyterhub
         rsd = bool(z.get('pools'))
         z.vhost = j2_ctx.jupyterhub.vhosts[j2_ctx.rsconf_db.host]
+        z.setdefault('http_timeout', 30);
         z.run_d = systemd.docker_unit_prepare(self, j2_ctx)
         z.update(
             user_d=z.run_d.join(_USER_SUBDIR),
