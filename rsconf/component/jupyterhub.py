@@ -12,6 +12,7 @@ from rsconf import component
 
 
 _CONF_F = 'conf.py'
+_TEMPLATE_D = 'template'
 _COOKIE_SECRET = 'jupyterhub_cookie_secret'
 _PROXY_AUTH = 'jupyterhub_proxy_auth'
 _USER_SUBDIR = 'user'
@@ -36,7 +37,6 @@ class T(component.T):
         z = j2_ctx.jupyterhub
         rsd = bool(z.get('pools'))
         z.vhost = j2_ctx.jupyterhub.vhosts[j2_ctx.rsconf_db.host]
-        z.setdefault('http_timeout', 30);
         z.run_d = systemd.docker_unit_prepare(self, j2_ctx)
         z.update(
             user_d=z.run_d.join(_USER_SUBDIR),
@@ -46,11 +46,15 @@ class T(component.T):
             run_u=j2_ctx.rsconf_db.get('run_u' if rsd else 'root_u'),
             jupyter_run_u=j2_ctx.rsconf_db.run_u,
         )
+        z.setdefault('http_timeout', 30);
+        z.setdefault('template_vars', {});
+        z.template_d = z.run_d.join(_TEMPLATE_D)
         z.home_d = db.user_home_path(j2_ctx, z.jupyter_run_u)
         self.install_access(mode='711', owner=z.run_u)
         self.install_directory(z.run_d)
         self.install_access(mode='700', owner=z.jupyter_run_u)
         self.install_directory(z.user_d)
+        self.install_directory(z.template_d)
         self.install_access(mode='400', owner=z.run_u)
         z.cookie_secret_hex = self.secret_path_value(
             _COOKIE_SECRET,
