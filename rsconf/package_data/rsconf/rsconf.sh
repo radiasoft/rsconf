@@ -396,9 +396,10 @@ rsconf_service_file_changed() {
 
 rsconf_service_file_changed_check() {
     local service=$1
-    for watch in ${rsconf_service_watch[$service]}; do
-        for changed in "${!rsconf_service_file_changed[@]}"; do
-            if [[ $changed == $watch || $changed =~ ^$watch/ ]]; then
+    local w c
+    for w in ${rsconf_service_watch[$service]}; do
+        for c in "${!rsconf_service_file_changed[@]}"; do
+            if [[ $c == $w || $c =~ ^$w/ ]]; then
                 rsconf_service_trigger_restart "$service"
                 return
             fi
