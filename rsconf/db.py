@@ -185,7 +185,7 @@ def merge_dict(base, new):
                 base[k] = copy.deepcopy(new_v) + base_v
                 # strings, numbers, etc. are hashable, but dicts and lists are not.
                 # this test ensures we don't have dup entries in lists.
-                y = [x for x in base[k] if isinstance(collections.Hashable)]
+                y = [x for x in base[k] if isinstance(x, collections.Hashable)]
                 assert len(set(y)) == len(y), \
                     'duplicates in key={} list values={}'.format(k, base[k])
                 continue
