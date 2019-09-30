@@ -13,6 +13,7 @@ from pykern import pkjson
 from pykern import pkresource
 from pykern import pkyaml
 from pykern.pkdebug import pkdc, pkdlog, pkdp, pkdpretty
+import collections
 import copy
 import random
 import string
@@ -182,7 +183,10 @@ def merge_dict(base, new):
             elif isinstance(new_v, list) and isinstance(base_v, list):
                 # prepend the new values
                 base[k] = copy.deepcopy(new_v) + base_v
-                assert len(set(base[k])) == len(base[k]), \
+                # strings, numbers, etc. are hashable, but dicts and lists are not.
+                # this test ensures we don't have dup entries in lists.
+                y = [x for x in base[k] if isinstance(collections.Hashable)]
+                assert len(set(y)) == len(y), \
                     'duplicates in key={} list values={}'.format(k, base[k])
                 continue
             else:
