@@ -9,6 +9,7 @@ from pykern import pkcollections
 from pykern import pkconfig
 from pykern import pkio
 from pykern import pkjinja
+from pykern import pkjson
 from pykern import pkresource
 from pykern import pkyaml
 from pykern.pkdebug import pkdc, pkdlog, pkdp, pkdpretty
@@ -43,6 +44,26 @@ _HEX_CHARS = '0123456789abcdef'
 class Host(pkcollections.Dict):
     def j2_ctx_copy(self):
         return copy.deepcopy(self)
+
+    def __repr__(self):
+        """Writes tmp_d/db.json and returns filename
+
+        This is a hack to support pkdc below.
+        """
+        f = self.rsconf_db.tmp_d.join('db.json')
+        if self.rsconf_db.tmp_d:
+            pkjson.dump_pretty(self.__str(self), filename=f)
+        return str(f)
+
+    def __str(self, v):
+       if isinstance(v, dict):
+            res = {}
+            for k, v in v.items():
+                res[str(k)] = self.__str(v)
+            return res
+       if isinstance(v, (list, tuple)):
+            return [self.__str(x) for x in v]
+       return str(v)
 
 
 class T(pkcollections.Dict):
@@ -128,6 +149,7 @@ class T(pkcollections.Dict):
         merge_dict(res, v)
         _assert_no_rsconf_db_values(res)
         _update_paths(res)
+        pkdc('{}', res)
         return res
 
 
@@ -140,31 +162,33 @@ def merge_dict(base, new):
         base_v = base[k]
         if isinstance(new_v, dict) and len(new_v) == 1 and \
            'RSCONF_DB_REPLACE' in new_v:
+            # replacement is the value of key "RSCONF_DB_REPLACE"
             new_v = new_v.RSCONF_DB_REPLACE
         elif isinstance(new_v, dict) or isinstance(base_v, dict):
             if new_v is None or base_v is None:
                 # Just replace, because new_v overrides type in case of None
-                base[k] = copy.deepcopy(new_v)
+                pass
             elif isinstance(new_v, dict) and isinstance(base_v, dict):
                 merge_dict(base_v, new_v)
+                continue
             else:
                 raise AssertionError(
                     '{}: type mismatch between new value ({}) and base ({})'.format(
                         k, new_v, base_v))
-            continue
         elif isinstance(new_v, list) or isinstance(base_v, list):
             if new_v is None or base_v is None:
                 # Just replace, because new_v overrides type in case of None
                 pass
             elif isinstance(new_v, list) and isinstance(base_v, list):
                 # prepend the new values
-                new_v.extend(copy.deepcopy(base_v))
+                base[k] = copy.deepcopy(new_v) + base_v
+                assert len(set(base[k])) == len(base[k]), \
+                    'duplicates in key={} list values={}'.format(k, base[k])
+                continue
             else:
                 raise AssertionError(
                     '{}: type mismatch between new value ({}) and base ({})'.format(
                         k, new_v, base_v))
-            base[k] = copy.deepcopy(new_v)
-            continue
         elif type(new_v) != type(base_v) and not (
             isinstance(new_v, pkconfig.STRING_TYPES) and isinstance(base_v, pkconfig.STRING_TYPES)
             or new_v is None or base_v is None

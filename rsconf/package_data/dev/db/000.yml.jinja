@@ -202,9 +202,11 @@ default:
     port: 7011
   sirepo:
     docker_image: docker.io/radiasoft/sirepo
-    oauth:
-      github_key: ""
-      github_secret: ""
+    auth:
+      methods:
+        - guest
+      guest:
+        expiry_days: 1
     pkcli:
       service_processes: 1
       service_threads: 20
@@ -488,7 +490,8 @@ host:
             secret: ignored
           guest:
             expiry_days: 1
-          methods: [ email, guest ]
+          methods:
+            - email
           deprecated_methods: [ github ]
 
 # testing named needs build-perl-rpms.sh
