@@ -14,26 +14,11 @@ _JOURNAL_CONF_D = pkio.py_path('/etc/systemd/journald.conf.d')
 
 class T(component.T):
 
-    def internal_build(self):
-        self.service_prepare([_JOURNAL_CONF_D], name='systemd-journald')
-        self.install_access(mode='700', owner=self.hdb.rsconf_db.root_u)
-        self.install_directory(_JOURNAL_CONF_D)
-        j2_ctx = self.hdb.j2_ctx_copy()
-        self.install_access(mode='400')
-        self.install_resource(
-            'base_os/journald.conf',
-            j2_ctx,
-            _JOURNAL_CONF_D.join('99-rsconf.conf'),
-        )
-        self.install_resource(
-            'base_os/60-rsconf-base.conf',
-            j2_ctx,
-            '/etc/sysctl.d/60-rsconf-base.conf',
-        )
-        self.install_access(mode='444')
-        self.install_resource('base_os/hostname', j2_ctx, '/etc/hostname')
-        self.install_resource('base_os/motd', j2_ctx, '/etc/motd')
-        vgs = j2_ctx.base_os.volume_groups
+    def internal_build_compile(self):
+        self.j2_ctx = self.hdb.j2_ctx_copy()
+        jc = self.j2_ctx
+        z = jc.base_os
+        vgs = z.volume_groups
         cmds = ''
         for vgn in sorted(vgs.keys()):
             vg = vgs[vgn]
@@ -41,9 +26,41 @@ class T(component.T):
                 cmds += "base_os_logical_volume '{}' '{}' '{}' '{}' '{}'\n".format(
                     lv.name, lv.gigabytes, vgn, lv.mount_d, lv.get('mode', 700),
                 )
-        j2_ctx.base_os.logical_volume_cmds = cmds
-        self.append_root_bash_with_main(j2_ctx)
+        z.logical_volume_cmds = cmds
+        self.service_prepare([_JOURNAL_CONF_D], name='systemd-journald')
 
+    def internal_build_write(self):
+        jc = self.j2_ctx
+        self._install_local_files(jc.rsconf_db.local_files)
+        self.install_access(mode='700', owner=jc.rsconf_db.root_u)
+        self.install_directory(_JOURNAL_CONF_D)
+        self.install_access(mode='400')
+        self.install_resource(
+            'base_os/journald.conf',
+            jc,
+            _JOURNAL_CONF_D.join('99-rsconf.conf'),
+        )
+        self.install_resource(
+            'base_os/60-rsconf-base.conf',
+            jc,
+            '/etc/sysctl.d/60-rsconf-base.conf',
+        )
+        self.install_access(mode='444')
+        self.install_resource('base_os/hostname', jc, '/etc/hostname')
+        self.install_resource('base_os/motd', jc, '/etc/motd')
+        self.append_root_bash_with_main(jc)
+
+    def _install_local_files(self, values):
+        #TODO(robnagler) do we have to create directories and/or trigger on
+        #  directory creation? For example, nginx rpm installs conf.d, which
+        #  we will want to have local files for.
+        for t in sorted(values.keys()):
+            s = values[t]
+            x = s.stat()
+            self.install_access(mode=oct(x.mode & 0777), owner=x.owner, group=x.group)
+            # Local files overwrite existing (distro) files but if a component tries
+            # to overwrite a local file, and error will occur.
+            self.install_abspath(s, t, ignore_exists=True)
 
     def _sorted_logical_volumes(self, vg):
         res = []

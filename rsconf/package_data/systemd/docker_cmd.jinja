@@ -1,10 +1,10 @@
 #!/bin/bash
 if [[ -r ~/.bashrc ]]; then
-    . ~/.bashrc
+    source ~/.bashrc
 fi
 set -euo pipefail
 cd '{{ systemd.run_d }}'
-. ./env
+source ./env
 if [[ $@ ]]; then
     exec "$@"
 fi

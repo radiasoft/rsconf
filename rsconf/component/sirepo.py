@@ -152,10 +152,12 @@ class T(component.T):
                 'smtp_user',
             ],
             'github': [
-#TODO(robnagler) remove after in prod 5/31/2019
                 'callback_uri',
                 'key',
                 'secret',
+            ],
+            'guest': [
+                'expiry_days',
             ],
         }
         for m, names in decl.items():

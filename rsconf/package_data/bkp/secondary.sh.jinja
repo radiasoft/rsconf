@@ -1,37 +1,80 @@
 #!/bin/bash
 set -euo pipefail
 
+secondary_mirror_d='{{ bkp.mirror_d }}'
+secondary_copy_d='{{ bkp.secondary_copy_d }}'
+
 secondary_main() {
     umask 077
-    local snap='{{ bkp.mirror_d }}/secondary_snap'
-    local copy='{{ bkp.secondary_copy_d }}'
-    rm -rf "$snap"
-    cp -al '{{ bkp.mirror_d }}/current' "$snap"
+    local snap=$secondary_mirror_d/secondary_snap
+    local dst_d snap_d base_d copy_txz
+    local -i retries
+    local is_restart=
+    if [[ -e $snap/RESTART ]]; then
+        is_restart=1
+        rm "$snap"/RESTART
+        secondary_msg "Reusing snapshot $snap"
+    else
+        rm -rf "$snap"
+        cp -al '/bkp/mirror/current' "$snap"
+    fi
     (
         # */* matches host.com/{var,etc,...} since these are
         # the first level to write
         cd "$snap" && find */* -type d -print0
-    ) | while IFS= read -r -d $'\0' src_d; do
-        dst_d="$copy/$src_d"
-        mkdir -p "$dst_d"
-        if [[ ! $(find "$snap/$src_d" -maxdepth 1 ! -type d) ]]; then
+    ) | while IFS= read -r -d $'\0' base_d; do
+        if [[ ! $base_d =~ /.*/ ]]; then
+            secondary_msg "Starting $base_d"
+        fi
+        snap_d=$snap/$base_d
+        copy_d=$secondary_copy_d/$base_d
+        copy_txz=$copy_d/0.txz
+        if [[ $base_d =~ srv/github_bkp/db/.+$ ]]; then
+            # github_bkp is already compressed so just
+            secondary_msg "Simple copy: $base_d"
+            cp -a "$snap_d" "$copy_d"
             continue
         fi
-        (
-            # Just dump the file in to the dir since we aren't prefixing with the dir name
-            # Ignore files with \ in them, because
-            # tar: ./C:\Users
-            # gold\Desktop\sweep1_a_1.mph: Cannot stat: No such file or directory
-            # --text needed: since there are binary names to avoid:
-            # Binary file (standard input) matches\n: Cannot stat: No such file or directory
-            cd "$snap/$src_d"
-            find . -maxdepth 1 ! -type d -print0 \
-                | grep --text --null --null-data -v --perl-regexp '\\' \
-                | tar --create --null --files-from=- --file=-
-        ) | pxz -T8 -9 > "$dst_d"/0.txz
+        mkdir -p "$copy_d"
+        if [[ ! $(find "$snap_d" -maxdepth 1 ! -type d) ]]; then
+            # empty directory
+            continue
+        fi
+        if [[ $is_restart && -s $copy_txz ]]; then
+            # Reusing $copy_txz if it is non-zero size
+            continue
+        fi
+        i=3
+        while true; do
+            if (
+                # Just dump the file in to the dir since we aren't prefixing with the dir name
+                # Ignore files with \ in them, because
+                # tar: ./C:\Users
+                # gold\Desktop\sweep1_a_1.mph: Cannot stat: No such file or directory
+                # --text needed: since there are binary names to avoid:
+                # Binary file (standard input) matches\n: Cannot stat: No such file or directory
+                cd "$snap_d"
+                find . -maxdepth 1 ! -type d -print0 \
+                    | grep --text --null --null-data -v --perl-regexp '\\' \
+                    | tar --create --null --files-from=- --file=-
+            ) | pxz -T8 -9 > "$copy_txz"; then
+                break
+            fi
+            i+=-1
+            if (( i < 0 )); then
+                secondary_msg "FAILED COPY $copy_d, continuing"
+                break
+            fi
+            sleep 60
+            secondary_msg "Retrying $copy_d"
+        done
     done
-    chmod -R a-w "$copy"
+    chmod -R a-w "$secondary_copy_d"
     {{ bkp.secondary_copy_unmount_cmds }}
+}
+
+secondary_msg() {
+    echo "$@" 1>&2
 }
 
 secondary_main "$@"

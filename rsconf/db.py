@@ -11,7 +11,7 @@ from pykern import pkio
 from pykern import pkjinja
 from pykern import pkresource
 from pykern import pkyaml
-from pykern.pkdebug import pkdc, pkdp, pkdpretty
+from pykern.pkdebug import pkdc, pkdlog, pkdp, pkdpretty
 import copy
 import random
 import string
@@ -28,6 +28,7 @@ USER_HOME_ROOT_D = pkio.py_path('/home')
 SRV_SUBDIR = 'srv'
 DEFAULT_ROOT_SUBDIR = 'run'
 DB_SUBDIR = 'db'
+LOCAL_SUBDIR = 'local'
 RPM_SUBDIR = 'rpm'
 SECRET_SUBDIR = 'secret'
 RESOURCE_SUBDIR = 'resource'
@@ -56,16 +57,21 @@ class T(pkcollections.Dict):
         self.srv_d = self.root_d.join(SRV_SUBDIR)
         self.srv_host_d = self.srv_d.join(HOST_SUBDIR)
         self.base = pkcollections.Dict()
-        for d in self.db_d, self.secret_d:
-            for f in pkio.sorted_glob(d.join(ZERO_YML)):
-                v = pkyaml.load_str(
-                    pkjinja.render_file(
-                        f,
-                        self.base,
-                        strict_undefined=True,
-                    ),
-                )
-                merge_dict(self.base, v)
+        f = None
+        try:
+            for d in self.db_d, self.secret_d:
+                for f in pkio.sorted_glob(d.join(ZERO_YML)):
+                    v = pkyaml.load_str(
+                        pkjinja.render_file(
+                            f,
+                            self.base,
+                            strict_undefined=True,
+                        ),
+                    )
+                    merge_dict(self.base, v)
+        except Exception:
+            pkdlog('error rendering db={}', f)
+            raise
 
     def channel_hosts(self):
         res = pkcollections.OrderedMapping()
@@ -89,11 +95,11 @@ class T(pkcollections.Dict):
         #TODO(robnagler) optimize by caching default and channels
         for l in LEVELS:
             v = self.base[l]
-            if l != 'default':
+            if l != LEVELS[0]:
                 v = v.get(channel)
                 if not v:
                     continue
-                if l == 'host':
+                if l == LEVELS[2]:
                     v = v.get(host)
                     if not v:
                         continue
@@ -116,6 +122,7 @@ class T(pkcollections.Dict):
             )
         )
         v.rsconf_db.resource_paths = _init_resource_paths(v)
+        v.rsconf_db.local_files = _init_local_files(v)
         pkio.unchecked_remove(v.rsconf_db.tmp_d)
         pkio.mkdir_parent(v.rsconf_db.tmp_d)
         merge_dict(res, v)
@@ -259,6 +266,17 @@ def _cfg_srv_group(value):
     assert pkconfig.channel_in('dev'), \
         'must be configured except in DEV'
     return grp.getgrgid(os.getgid()).gr_name
+
+
+def _init_local_files(values):
+    v = values.rsconf_db
+    r = v.db_d.join(LOCAL_SUBDIR)
+    res = pkcollections.Dict()
+    for l in LEVELS[0], v.channel, v.host:
+        d = r.join(l)
+        for f in pkio.walk_tree(d):
+            res['/' + d.bestrelpath(f)] = f
+    return res
 
 
 def _init_resource_paths(values):

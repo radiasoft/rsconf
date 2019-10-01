@@ -16,29 +16,37 @@ PASSWD_SECRET_F = 'rsconf_auth'
 
 
 class T(component.T):
-    def internal_build(self):
+
+    def internal_build_compile(self):
         from rsconf.component import nginx
         from rsconf import db
 
         # docker is required to build container-perl
         self.buildt.require_component('docker', 'nginx')
-        j2_ctx = self.hdb.j2_ctx_copy()
-        j2_ctx.rsconf = pkcollections.Dict(
+        self.j2_ctx = self.hdb.j2_ctx_copy()
+        jc = self.j2_ctx
+        jc.rsconf = pkcollections.Dict(
             auth_f=nginx.CONF_D.join(PASSWD_SECRET_F),
-            srv_d=j2_ctx.rsconf_db.srv_d,
+            srv_d=jc.rsconf_db.srv_d,
             host_subdir=db.HOST_SUBDIR,
         )
+
+    def internal_build_write(self):
+        from rsconf.component import nginx
+        from rsconf import db
+
+        jc = self.j2_ctx
         nginx.install_vhost(
             self,
-            vhost=_vhost(j2_ctx),
-            j2_ctx=j2_ctx,
+            vhost=_vhost(jc),
+            j2_ctx=jc,
         )
         nginx.install_auth(
             self,
             PASSWD_SECRET_F,
-            j2_ctx.rsconf.auth_f,
+            jc.rsconf.auth_f,
             db.VISIBILITY_GLOBAL,
-            j2_ctx,
+            jc,
         )
 
 
