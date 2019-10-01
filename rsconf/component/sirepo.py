@@ -18,7 +18,6 @@ import os
 _DB_SUBDIR = 'db'
 #TODO(robnagler) import from sirepo directly
 _USER_SUBDIR = 'user'
-_BEAKER_SECRET_BASE = 'sirepo_beaker_secret'
 _COOKIE_PRIVATE_KEY = 'sirepo_cookie_private_key'
 
 
@@ -46,7 +45,6 @@ class T(component.T):
         run_d = systemd.docker_unit_prepare(self, j2_ctx)
         z.db_d = run_d.join(_DB_SUBDIR)
         z.run_u = j2_ctx.rsconf_db.run_u
-        beaker_secret_f = z.db_d.join('beaker_secret')
         cookie_name = z.get('cookie_name', 'sirepo_{}'.format(j2_ctx.rsconf_db.channel))
         docker_hosts = z.get('docker_hosts')
         z.setdefault('feature_config', pkcollections.Dict())
@@ -55,8 +53,6 @@ class T(component.T):
             'pykern.pkconfig.channel': j2_ctx.rsconf_db.channel,
             'pykern.pkdebug.redirect_logging': True,
             'pykern.pkdebug.want_pid_time': True,
-            'sirepo.beaker_compat.key': cookie_name,
-            'sirepo.beaker_compat.secret': beaker_secret_f,
             'sirepo.cookie.http_name': cookie_name,
             'sirepo.cookie.private_key':  self.secret_path_value(
                 _COOKIE_PRIVATE_KEY,
@@ -90,11 +86,6 @@ class T(component.T):
         self._auth(params, j2_ctx)
         install_user_d(self, j2_ctx)
         self.install_access(mode='400')
-        self.install_secret_path(
-            _BEAKER_SECRET_BASE,
-            host_path=beaker_secret_f,
-            gen_secret=lambda: db.random_string(length=64),
-        )
         nginx.install_vhost(
             self,
             vhost=z.vhost,
