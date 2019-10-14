@@ -30,7 +30,7 @@ class T(component.T):
             'sirepo.mpi_cores',
             'sirepo.celery_tasks.celeryd_concurrency',
         ):
-            env[f.upper().replace('.', '_')] = j2_ctx.nested_get(f)
+            env[f.upper().replace('.', '_')] = j2_ctx.pknested_get(f)
         # Might be on a different server so need to setup permissions right
         user_d = sirepo.install_user_d(self, j2_ctx)
         #TODO(robnagler) need to set hostname so celery flower shows up right

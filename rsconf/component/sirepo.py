@@ -127,7 +127,7 @@ class T(component.T):
         a = j2_ctx.get('sirepo').get('auth')
         if not a:
             # deprecated mode
-            if j2_ctx.nested_get('sirepo.oauth.github_secret'):
+            if j2_ctx.pknested_get('sirepo.oauth.github_secret'):
                 _params_copy(
                     params,
                     j2_ctx,
@@ -205,7 +205,7 @@ def _env_value(v):
 
 def _params_copy(params, j2_ctx, keys, validate=False):
     for k in keys:
-        params[k] = j2_ctx.nested_get(k)
+        params[k] = j2_ctx.pknested_get(k)
         if validate:
             assert params[k], \
                 'key={} has no value'.format(k)
