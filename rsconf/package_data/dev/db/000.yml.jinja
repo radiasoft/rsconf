@@ -35,7 +35,7 @@ default:
     mirror_d: /srv/bkp/mirror
     # Time zones not accepted in systemd 219 (CentOS 7).
     # Times are in UTC. We may need to change the local time zone.
-    on_calendar: "*-*-* 08:00:00"
+    on_calendar: "8"
     primary: {{ master }}
     secondaries: [ {{ all_host }} ]
     simple_mirrors:
@@ -54,12 +54,12 @@ default:
     spec:
       petshop:
         first_one:
-          on_calendar: "*-*-* 12:00:00"
+          on_calendar: "12"
           bash_script: |
             true
 
         second_thing:
-          on_calendar: "*-*-1 00:00:00"
+          on_calendar: "1 0"
           bash_script: |
             echo doing that thing
 
@@ -69,7 +69,7 @@ default:
     client_host: {{ master }}
     email_user: {{ user }}
     apps: [ petshop ]
-    on_calendar: "*-*-* 12:00:00"
+    on_calendar: "12"
   celery_sirepo:
     queues: "sequential,parallel"
   component:
@@ -89,7 +89,7 @@ default:
         - {{ host }}
   db_bkp:
     max_copies: 2
-    on_calendar: "*-*-* 06:30:00"
+    on_calendar: "6:30"
   docker:
     iptables: false
   docker_cache:
@@ -100,7 +100,7 @@ default:
     docker_image: docker.io/radiasoft/beamsim
     exclude_re: ''
     # Relatively early, because it takes a long time (3 hours)
-    on_calendar: "*-*-* 03:00:00"
+    on_calendar: "3"
     test_mode: True
   jupyterhub:
     admin_users: [ '{{ user }}' ]
@@ -115,7 +115,7 @@ default:
   logrotate:
     verbose: true
     # sometime before bkp.on_calendar
-    on_calendar: "*-*-* 07:30:00"
+    on_calendar: "7:30"
   mpi_worker:
     docker_image: docker.io/radiasoft/beamsim-jupyter
     guest_d: /home/vagrant/jupyter
@@ -403,7 +403,7 @@ host:
           - joeblow
           - marysmith
       bkp:
-        on_calendar: "*-*-1 18:00:00"
+        on_calendar: "1 18"
         secondary_copy_d: /bkp_copy
         secondary_setup_f: {{ root_d }}/etc/secondary_setup.sh
       jupyterhub:

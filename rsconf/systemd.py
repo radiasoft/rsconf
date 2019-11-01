@@ -5,10 +5,12 @@ u"""create systemd files
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
-from pykern import pkcollections
+from pykern.pkcollections import PKDict
 from pykern import pkconfig
 from pykern import pkio
-import types
+import datetime
+import pytz
+import re
 
 
 _SYSTEMD_DIR = pkio.py_path('/etc/systemd/system')
@@ -75,7 +77,7 @@ def docker_unit_enable(compt, j2_ctx, image, cmd, env=None, volumes=None, after=
 
     z = j2_ctx.systemd
     if env is None:
-        env = pkcollections.Dict()
+        env = PKDict()
     if 'TZ' not in env:
         # Tested on CentOS 7, and it does have the localtime stat problem
         # https://blog.packagecloud.io/eng/2017/02/21/set-environment-variable-save-thousands-of-system-calls/
@@ -185,9 +187,11 @@ def timer_prepare(compt, j2_ctx, on_calendar, watch_files=(), service_name=None)
     n = service_name or compt.name
     tn = n + '.timer'
     run_d = unit_run_d(j2_ctx, n)
-    j2_ctx.systemd = pkcollections.Dict(
+    z = j2_ctx.pksetdefault(systemd=PKDict).systemd
+    z.pksetdefault(timezone='America/Denver')
+    z.pkupdate(
         is_timer=True,
-        on_calendar=on_calendar,
+        on_calendar=_on_calendar(on_calendar, z.timezone),
         run_d=run_d,
         service_f=_SYSTEMD_DIR.join(n + '.service'),
         service_name=n,
@@ -196,7 +200,7 @@ def timer_prepare(compt, j2_ctx, on_calendar, watch_files=(), service_name=None)
         timer_start_f=run_d.join('start'),
     )
     compt.service_prepare(
-        [j2_ctx.systemd.service_f, j2_ctx.systemd.timer_f, run_d] + list(watch_files),
+        [z.service_f, z.timer_f, run_d] + list(watch_files),
         name=tn,
     )
     return run_d
@@ -212,7 +216,7 @@ def unit_prepare(compt, j2_ctx, watch_files=()):
     """Must be first call"""
     f = _SYSTEMD_DIR.join('{}.service'.format(compt.name))
     d = pkio.py_path(str(f) + '.d')
-    j2_ctx.systemd = pkcollections.Dict(
+    j2_ctx.systemd = PKDict(
         service_name=compt.name,
         service_f=f,
         unit_override_d=d,
@@ -228,6 +232,68 @@ def _colon_format(flag, values):
     return ' '.join(
         ["{} '{}'".format(flag, ':'.join(x)) for x in values],
     )
+
+
+def _on_calendar(value, tz, now=None):
+    """Simulation systemd timezones
+
+    On CentOS, systemd does not support time zones.
+    This code will generate the correct on_calendar offset.
+
+    NOTE: You have to rerun rsconf no DST changeover and
+    push to all hosts.
+
+    Args:
+        value (str): format: ``DOW H:M``, ``D H:M``, ``H``, ``H:M``
+        tz (str): Olson time zone (e.g. ``America/Denver``)
+        now (datetime): for testing only
+    Returns:
+        str: on_calendar format: ``[DOW] *-*-[D] H:M:S``
+    """
+    if now is None:
+        # for unit testing
+        now = datetime.datetime.utcnow()
+    x = value.split(' ')
+    res = '*-*-*'
+    d = None
+    if len(x) == 2:
+        d = x.pop(0)
+        if d.isdigit():
+            res = '*-*-' + d
+        else:
+            assert re.search(r'^\w{3}(?:-\w{3})?$', d), \
+                'Only day or day of week for value={}'.format(value)
+            res = d + ' ' + res
+    else:
+        assert len(x) == 1, \
+            'only "day h:m" and "h:m" for value={}'.format(value)
+    x = x[0].split(':')
+    h = x[0]
+    if h == '*':
+        assert len(x) == 2, \
+            'hour={} requires minutes value={}'.format(value)
+        m = x[1]
+    else:
+        z = - int(pytz.timezone(tz).utcoffset(now).total_seconds()) // 3600
+        h = (int(h) + z) % 24
+        if d is not None:
+            # Mon-Fri 17:0 works in Denver but not later
+            # so we don't handle other cases. Value has to end in
+            # the same day except h=0 below or if d is not set (every day)
+            assert h == 0 or h >= z, \
+                'hour={} ends after midnight for value={}'.format(h, value)
+        m = '0'
+        if len(x) >= 2:
+            assert len(x) == 2, \
+                'seconds not supported for value={}'.format(value)
+            # may be of the form 0/5
+            m = x[1]
+        if h == 0 and d is not None:
+            assert m == '0'
+            # special case midnight to work (see above about 17:0)
+            h = 23
+            m = '59'
+    return res + ' {}:{}:0'.format(h, m)
 
 
 def _tuple_arg(values):
