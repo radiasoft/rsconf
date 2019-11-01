@@ -56,7 +56,7 @@ class T(component.T):
         s['initdb_weekly'] = pkcollections.Dict(
             # POSIT: btest is not running, and not much else either;
             # user can always override
-            on_calendar=z.get('initdb_weekly_on_calendar', 'Sun 7'),
+            on_calendar=z.get('initdb_weekly_on_calendar', 'Sun 0'),
             bash_script='initdb_weekly=1 {}\n'.format(app_vars.initdb_cmd),
             run_u=j2_ctx.rsconf_db.root_u
         )
