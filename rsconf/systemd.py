@@ -253,7 +253,7 @@ def _on_calendar(value, tz, now=None):
     if now is None:
         # for unit testing
         now = datetime.datetime.utcnow()
-    x = value.split(' ')
+    x = str(value).split(' ')
     res = '*-*-*'
     d = None
     if len(x) == 2:

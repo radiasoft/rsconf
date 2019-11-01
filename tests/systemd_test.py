@@ -15,6 +15,7 @@ def test_on_calendar():
     z = 'America/Denver'
     d = datetime.datetime(2019, 8, 1)
     s = datetime.datetime(2019, 12, 1)
+    pkeq('*-*-* 9:0:0', _on_calendar(3, z, d))
     pkeq('*-*-* 9:0:0', _on_calendar('3', z, d))
     pkeq('*-*-* 10:0:0', _on_calendar('3', z, s))
     pkeq('Mon-Fri *-*-* 23:0:0',_on_calendar('Mon-Fri 17', z, d))
