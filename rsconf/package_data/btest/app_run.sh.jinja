@@ -40,8 +40,8 @@ run_with_args() {
 }
 
 run_db_create() {
-    # RealmFile is a proxy for the database
-    local d='{{ btest.file_root }}/RealmFile'
+    # Cache is a proxy for the database
+    local d='{{ btest.file_root }}/Cache'
     # 6.5 days in seconds
     if [[ -e $d ]] && (( $(stat -c %Y $d) + 561600 > $(date -u +%s) )); then
         return
