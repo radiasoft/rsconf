@@ -187,7 +187,7 @@ class T(component.T):
                 seen.hosts[h] = n
             if n == _DEFAULT_POOL_V3:
                 assert 'user_groups' not in p, \
-                    'user_groups may not be specifed for pool={}'.format(n)
+                    'user_groups may not be specified for pool={}'.format(n)
             else:
                 for u in _users_for_groups(p.user_groups, 'pool', n):
                     assert s not in seen.users, \
