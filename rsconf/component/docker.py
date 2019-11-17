@@ -41,7 +41,7 @@ class T(component.T):
         z.daemon_hosts = ["unix://"]
         self.install_access(mode='700', owner=z.run_u)
         self.install_directory(_CONF_DIR)
-        if 'tls_host' in z:
+        if z.setdefault('tls_host', j2_ctx.rsconf_db.host):
             self._setup_tls_host(j2_ctx, z)
         self.install_access(mode='400')
         self.install_resource(
