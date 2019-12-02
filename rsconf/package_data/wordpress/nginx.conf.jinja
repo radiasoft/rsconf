@@ -9,12 +9,12 @@ server {
     }
 }
 server {
-    listen www.{{ nginx.vhost}}:80;
+    listen www.{{ nginx.vhost }}:80;
     server_name www.{{ nginx.vhost }};
     return 301 http://{{ nginx.vhost}}$request_uri;
 }
 server {
-    listen {{ nginx.vhost}}:443 ssl;
+    listen {{ nginx.vhost }}:443 ssl;
     server_name {{ nginx.vhost}};
     root {{ nginx.default_root }};
     client_max_body_size {{ wordpress.client_max_body_size }};
@@ -26,7 +26,7 @@ server {
     }
 }
 server {
-    listen www.{{ nginx.vhost}}:443 ssl;
+    listen www.{{ nginx.vhost }}:443 ssl;
     ssl_certificate {{ nginx.tls_crt }};
     ssl_certificate_key {{ nginx.tls_key }};
     server_name www.{{ nginx.vhost}};
