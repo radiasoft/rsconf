@@ -35,7 +35,7 @@ default:
     mirror_d: /srv/bkp/mirror
     # Time zones not accepted in systemd 219 (CentOS 7).
     # Times are in UTC. We may need to change the local time zone.
-    on_calendar: 8
+    on_calendar: "8"
     primary: {{ master }}
     secondaries: [ {{ all_host }} ]
     simple_mirrors:
@@ -403,7 +403,7 @@ host:
           - joeblow
           - marysmith
       bkp:
-        on_calendar: "1 18"
+        on_calendar: "1 17"
         secondary_copy_d: /bkp_copy
         secondary_setup_f: {{ root_d }}/etc/secondary_setup.sh
       jupyterhub:
