@@ -9,9 +9,9 @@ from rsconf import component
 from pykern import pkcollections
 
 # TO migrate to a new site
-# https://codex.wordpress.org/Changing_The_Site_URL
+# https://wordpress.org/support/article/changing-the-site-url/
 
-_DEFAULT_CLIENT_MAX_BODY_SIZE = '50M'
+_DEFAULT_CLIENT_MAX_BODY_SIZE = '100M'
 
 class T(component.T):
 
