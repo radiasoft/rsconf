@@ -287,11 +287,11 @@ host:
             servers_per_host: 2
             mem_limit: "1G"
             cpu_limit: 0.5
-            hosts: [ {{ master }} ]
+            hosts: [ {{ worker2_host }}, {{ worker5_host }} ]
           private:
             user_groups: [ private ]
             servers_per_host: 1
-            hosts: [ {{ worker2_host }}, {{ worker5_host }} ]
+            hosts: [ {{ master }} ]
         user_groups:
           private: [ vagrant ]
           instructors: [ teach1 ]
