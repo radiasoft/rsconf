@@ -338,8 +338,9 @@ def _find_tls_crt(j2_ctx, domain):
     for crt, domains in j2_ctx.component.tls_crt.items():
         if domain in domains:
             return d.join(crt), domains
-    src = d.join(domain)
-    if src.new(ext=tls.KEY_EXT).check():
+    # due to dots in domain, we can't use ext=
+    src = d.join(domain + tls.KEY_EXT)
+    if src.new().check():
         return src, domain
     src = d.join(domain.replace('.', '_'))
     if src.new(ext=tls.KEY_EXT).check():
