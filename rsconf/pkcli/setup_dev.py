@@ -99,6 +99,7 @@ def default_command():
         j2_ctx.master,
         j2_ctx.worker2_host,
         j2_ctx.worker5_host,
+        'wp1.' + j2_ctx.host,
     ):
         rsconf.pkcli.tls.gen_self_signed_crt(
             tls_d.join(h.replace('.', '_')),
