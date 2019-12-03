@@ -11,7 +11,7 @@ server {
 server {
     listen www.{{ nginx.vhost }}:80;
     server_name www.{{ nginx.vhost }};
-    return 301 http://{{ nginx.vhost}}$request_uri;
+    return 301 http://{{ nginx.vhost }}$request_uri;
 }
 server {
     listen {{ nginx.vhost }}:443 ssl;
