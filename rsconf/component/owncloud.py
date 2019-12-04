@@ -94,5 +94,4 @@ class T(component.T):
             backend_port=z.port,
             j2_ctx=j2_ctx,
         )
-        #TODO(robnagler) logrotate
         self.append_root_bash_with_main(j2_ctx)

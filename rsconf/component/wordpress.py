@@ -11,6 +11,8 @@ from pykern import pkcollections
 # TO migrate to a new site
 # https://codex.wordpress.org/Changing_The_Site_URL
 
+_DEFAULT_CLIENT_MAX_BODY_SIZE = '50M'
+
 class T(component.T):
 
     def internal_build(self):
@@ -28,15 +30,17 @@ class T(component.T):
         z.run_f = z.run_d.join('run')
         z.apache_conf_f = z.run_d.join('apache.conf')
         z.apache_envvars_f = z.run_d.join('envvars')
+        z.setdefault('client_max_body_size', _DEFAULT_CLIENT_MAX_BODY_SIZE)
         # Created dynamically every run
         z.apache_run_d = '/tmp/apache2'
         z.log_d = z.run_d.join('log')
         z.ip = '127.0.0.1'
+        z.log_postrotate_f = z.run_d.join('reload')
         z.setdefault('num_servers', 4)
         # 127.0.0.1 assumes docker --network=host
         # If you connect to "localhost" (not 127.0.0.1) mysql fails to connect,
         # because the socket isn't there, instead of trying TCP (port supplied).
-        # mysql -h localhost -P 7011 -u owncloud
+        # mysql -h localhost -P 7011 -u wordpress
         # ERROR 2002 (HY000): Can't connect to local MySQL server through socket '/var/run/mysqld/mysqld.sock' (2)
         z.db_host = '{}:{}'.format(
             j2_ctx.rs_mariadb.ip,
@@ -64,12 +68,14 @@ class T(component.T):
         self.install_resource('wordpress/apache.conf', j2_ctx, z.apache_conf_f)
         self.install_access(mode='500')
         self.install_resource('wordpress/run.sh', j2_ctx, z.run_f)
-        #TODO(robnagler) No ssl cert so have to listen manually
-        nginx.update_j2_ctx_and_install_access(self, j2_ctx)
-        self.install_resource(
-            'wordpress/nginx.conf',
-            j2_ctx,
-            nginx.CONF_D.join('wordpress_common.conf'),
-        )
+        self.install_resource('wordpress/reload.sh', j2_ctx, z.log_postrotate_f)
+        logrotate.install_conf(self, j2_ctx)
+        for h, v in z.vhosts.items():
+            nginx.install_vhost(
+                self,
+                vhost=h,
+                backend_host=z.ip,
+                backend_port=v.port,
+                j2_ctx=j2_ctx,
+            )
         self.append_root_bash_with_main(j2_ctx)
-        #TODO(robnagler) logrotate
