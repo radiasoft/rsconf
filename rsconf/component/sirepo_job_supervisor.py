@@ -27,6 +27,14 @@ class T(component.T):
 
         jc = self.j2_ctx
         z = self.j2_ctx[self.name]
+        systemd.docker_unit_enable(
+            self,
+            jc,
+            image=z.docker_image,
+            env=self.buildt.get_component('sirepo').sirepo_unit_env(),
+            cmd='sirepo job_supervisor',
+            #TODO(robnagler) wanted by nginx
+        )
         docker.setup_cluster(
             self,
             jc.sirepo.job_driver.docker.hosts,
@@ -38,24 +46,21 @@ class T(component.T):
             self,
             vhost=z.vhost,
             backend_host=jc.sirepo.pkcli.job_supervisor.ip,
-            backend_port=jc.sirepo.pkcli.job_supervisor.ip,
+            backend_port=jc.sirepo.pkcli.job_supervisor.port,
             j2_ctx=jc,
-        )
-        systemd.docker_unit_enable(
-            self,
-            jc,
-            image=jc.sirepo.docker_image,
-            env=self.buildt.get_component('sirepo').sirepo_unit_env(),
-            cmd='sirepo job_supervisor',
-            #TODO(robnagler) wanted by nginx
         )
 
     def sirepo_config(self, sirepo):
+        from rsconf.component import docker_registry
+
         jc = self.j2_ctx
         self.j2_ctx_pksetdefault(sirepo.j2_ctx)
-        self.j2_ctx_pksetdefault({
-            'sirepo_job_supervisor.vhost': lambda: 'job-supervisor-' + jc.sirepo.vhost,
-        })
+        self.j2_ctx_pksetdefault(dict(
+            sirepo_job_supervisor=dict(
+                docker_image=lambda: docker_registry.absolute_image(jc, jc.sirepo.docker_image),
+                vhost=lambda: 'job-supervisor-' + jc.sirepo.vhost,
+            ),
+        ))
         self.j2_ctx_pksetdefault({
             'sirepo.job.supervisor_uri': 'https://{}'.format(jc.sirepo_job_supervisor.vhost),
         })
@@ -67,7 +72,7 @@ class T(component.T):
             'sirepo.job_driver.docker': dict(
                 parallel=dict(gigabytes=4, cores=4, slots_per_host=1),
                 sequential=dict(gigabytes=1, slots_per_host=1),
-                image=jc.sirepo.docker_image,
+                image=jc.sirepo_job_supervisor.docker_image,
                 tls_dir=lambda: self.__run_d.join('docker_tls'),
             ),
         })

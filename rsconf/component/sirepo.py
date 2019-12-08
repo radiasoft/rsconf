@@ -59,7 +59,7 @@ class T(component.T):
                     ip='0.0.0.0',
                     run_dir=self.__run_d,
                 ),
-                'server.db_dir': lambda: self.__run_d.join(_DB_SUBDIR),
+                'srdb.root': lambda: self.__run_d.join(_DB_SUBDIR),
             },
             pykern={
                 'pkdebug': dict(
@@ -111,19 +111,12 @@ class T(component.T):
         jc = self.j2_ctx
         z = jc[self.name]
         install_user_d(self, jc)
-        self.install_access(mode='400')
         nginx.install_vhost(
             self,
             vhost=z.vhost,
             backend_host=jc.rsconf_db.host,
             backend_port=z.pkcli.service_port,
             j2_ctx=jc,
-        )
-        db_bkp.install_script_and_subdir(
-            self,
-            jc,
-            run_u=jc.rsconf_db.run_u,
-            run_d=self.__run_d,
         )
         systemd.docker_unit_enable(
             self,
@@ -133,6 +126,12 @@ class T(component.T):
             cmd='sirepo service uwsgi',
             after=self.__docker_unit_enable_after,
             #TODO(robnagler) wanted by nginx
+        )
+        db_bkp.install_script_and_subdir(
+            self,
+            jc,
+            run_u=jc.rsconf_db.run_u,
+            run_d=self.__run_d,
         )
 
     def sirepo_unit_env(compt=None):
