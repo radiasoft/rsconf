@@ -19,6 +19,7 @@ _DB_SUBDIR = 'db'
 #TODO(robnagler) import from sirepo directly
 _USER_SUBDIR = 'user'
 _COOKIE_PRIVATE_KEY = 'sirepo_cookie_private_key'
+_SERVER_SECRET = 'sirepo_job_server_secret'
 
 
 def install_user_d(compt, j2_ctx):
@@ -40,70 +41,67 @@ class T(component.T):
         from rsconf.component import docker
 
         self.buildt.require_component('docker', 'nginx', 'db_bkp')
-        j2_ctx = self.hdb.j2_ctx_copy()
-        z = j2_ctx.sirepo
-        z.run_d = systemd.docker_unit_prepare(self, jc)
-        z.db_d = z.run_d.join(_DB_SUBDIR)
-        z.run_u = jc.rsconf_db.run_u
+        jc, z = self.j2_ctx_copy()
+        self.__run_d = systemd.docker_unit_prepare(self, jc)
+        self.__run_u = jc.rsconf_db.run_u
         j = bool(z.get('job_driver'))
-        self.j2_ctx_defaults(
+        self.j2_ctx_pksetdefault(dict(
             sirepo={
-                'cookie.http_name': 'sirepo_{}'.format(jc.rsconf_db.channel),
-                'cookie.private_key': self.secret_path_value(
-                    _COOKIE_PRIVATE_KEY,
-                    gen_secret=lambda: base64.urlsafe_b64encode(os.urandom(32)),
-                    visibility='channel',
-                )[0],
-                'server.db_dir': z.db_d,
+                'cookie': dict(
+                    http_name=lambda: 'sirepo_{}'.format(jc.rsconf_db.channel),
+                    private_key=lambda: self.secret_path_value(
+                        _COOKIE_PRIVATE_KEY,
+                        gen_secret=lambda: base64.urlsafe_b64encode(os.urandom(32)),
+                        visibility='channel',
+                    )[0],
+                ),
+                'docker_image': docker_registry.absolute_image(jc, z.docker_image),
                 'feature_config': dict(
                     api_modules=[],
                     job=j,
                 ),
                 'pkcli.service': dict(
                     ip='0.0.0.0',
-                    run_dir=z.run_d,
+                    run_dir=self.__run_d,
                 ),
+                'server.db_dir': lambda: self.__run_d.join(_DB_SUBDIR),
             },
             pykern={
-                'pkdebug.redirect_logging': True,
-                'pkdebug.want_pid_time': True,
+                pkdebug=dict(
+                    redirect_logging=True,
+                    want_pid_time=True,
+                ),
                 'pkconfig.channel': jc.rsconf_db.channel,
             },
-        )
-        z.setdefault('cookie', PKDict()).pksetdefault(
-            http_name='sirepo_{}'.format(jc.rsconf_db.channel),
-        )
-        jc.setdefault('pykern', PKDict()).setdefault('pkdebug', PKDict()).pksetdefault(
-            redirect_logging=True,
-            want_pid_time=True,
-        )
-        jc.pykern.setdefault('pkconfig', PKDict()).pksetdefault(channel=jc.rsconf_db.channel)
-        z.setdefault('feature_config', PKDict()).pksetdefault(
-            api_modules=[],
-            job=j,
-        )
-        z.setdefault('pkcli', PKDict()).setdefault('service', PKDict()).pksetdefault(
-            ip='0.0.0.0',
-            run_dir=z.run_d,
-        )
-        z.setdefault('server', PKDict()).pksetdefault(db_dir=z.db_d)
-        z.setdefault('cookie', PKDict()).pksetdefault(
-            private_key=self.secret_path_value(
-                _COOKIE_PRIVATE_KEY,
-                gen_secret=lambda: base64.urlsafe_b64encode(os.urandom(32)),
-                visibility='channel',
-            )[0],
-        )
+        ))
         self._comsol(z)
         if j:
+            self.j2_ctx_pksetdefault({
+                'sirepo.pkcli.job_supervisor': dict(
+                    ip=127.0.0.1,
+                    port=8001,
+                ),
+                'sirepo.job.server_secret': lambda: self.secret_path_value(
+                    _SERVER_SECRET,
+                    gen_secret=lambda: base64.urlsafe_b64encode(os.urandom(32)),
+                    visibility='channel',
+                )[0],
+            })
             s = self.get_component('sirepo_job_supervisor')
             s.update_j2_ctx(self)
             self.__docker_unit_enable_after = [s.name]
+            # server connects locally
+            self.j2_ctx_pksetdefault({
+                'sirepo.job.supervisor_uri': lambda: 'http://{}:{}'.format(
+                    z.pkcli.job_supervisor.ip,
+                    z.pkcli.job_supervisor.port,
+                ),
+            })
         else:
             # REMOVE after Celery no longer in use
-            z.setdefault('runner', PKDict()).pksetdefault(job_class='Celery')
-            z.setdefault('celery_tasks', PKDict()).pksetdefault(job_class='Celery')
-            self.__docker_unit_enable_after = ['celery_tasks']
+            self.j2_ctx_pksetdefault({
+                'sirepo.runner.job_class': 'Celery',
+            })
 
     def internal_build_write(self):
         install_user_d(self, jc)
@@ -118,13 +116,13 @@ class T(component.T):
         db_bkp.install_script_and_subdir(
             self,
             jc,
-            run_u=z.run_u,
-            run_d=z.run_d,
+            run_u=self.__run_u,
+            run_d=self.__run_d,
         )
         systemd.docker_unit_enable(
             self,
             jc,
-            image=docker_registry.absolute_image(jc, z.docker_image),
+            image=z.docker_image,
             env=self.sirepo_docker_env(),
             cmd='sirepo service uwsgi',
             after=self.__docker_unit_enable_after,

@@ -16,26 +16,38 @@ import os
 class T(component.T):
     def internal_build_compile(self):
         self.buildt.require_component('docker', 'nginx')
-        jc = j2_ctx = self.hdb.j2_ctx_copy()
-        z = j2_ctx.sirepo_job_supervisor
-        run_d = systemd.docker_unit_prepare(self, j2_ctx)
+        jc, z = self.j2_ctx_init()
+        run_d = systemd.docker_unit_prepare(self, jc)
+        for m in jc.sirepo.job_driver.modules:
+            getattr(self, '_module_' + m)(self, jc)
+        z.pksetdefault(vhost=lambda: 'job-supervisor-' + jc.sirepo.vhost)
+        self.j2_ctx_pksetdefault(
+            'sirepo.job.supervisor_uri': 'https://{}'.format(z.vhost),
+        )
+    })
 
-            docker_tls_d = z.run_d.join('docker_tls')
-                params,
-                j2_ctx,
-                (
-                    'sirepo.job_driver.docker.parallel_gigabytes',
-                    'sirepo.job_driver.docker.sequential_gigabytes',
-                    'sirepo.mpi_cores',
-                ),
-            )
-    def sirepo_server_setup(self, j2_ctx):
+    def update_j2_ctx(self, sirepo):
+        pass
 
-        'sirepo.server.db_dir': z.db_d,
+    def _module_docker(self, jc):
+        self.j2_ctx_pksetdefault(
+            'sirepo.job_driver.docker': dict(
+                parallel=dict(gigabytes=4, cores=4, slots_per_host=1),
+                sequential=dict(gigabytes=1, slots_per_host=1),
+                image=jc.sirepo.docker_image,
+                tls_dir=lambda: self.__run_d.join('docker_tls'),
+            ),
+        )
 
-        z.docker_image
-        z.db_d = run_d.join(_DB_SUBDIR)
+    def _module_local(self, jc):
+        self.j2_ctx_pksetdefault(
+            'sirepo.job_driver.local.slots': dict(parallel=1, sequential=1),
+        )
 
+    def _module_sbatch(self, jc):
+        self.j2_ctx_pksetdefault(
+            shifter_image=jc.sirepo.docker_image,
+        )
 
     def internal_build_write(self):
 

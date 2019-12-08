@@ -1,5 +1,5 @@
 #!/bin/bash
-cd '{{ sirepo.db_d }}/user'
+cd '{{ sirepo.server.db_dir }}/user'
 
 #TODO(robnagler) copied from sirepo/misc/expunge.sh
 # changed default days to 30 and removed "$@" passed to expunge_main
@@ -29,8 +29,8 @@ expunge_main() {
 #TODO(robnagler) how to decide whom to expunge
     return
     local reg=' never-match '
-    if [[ -f '{{ sirepo.db_d }}/auth.db' ]]; then
-        reg=" $(echo $(echo 'select uid from user_registration_t;' | sqlite3 -batch '{{ sirepo.db_d }}/auth.db') ) "
+    if [[ -f '{{ sirepo.server.db_dir }}/auth.db' ]]; then
+        reg=" $(echo $(echo 'select uid from user_registration_t;' | sqlite3 -batch '{{ sirepo.server.db_dir }}/auth.db') ) "
     fi
     for u in *; do
         if [[ $u =~ ^[a-zA-Z0-9]{8}$ && ! $reg =~ " $u " ]]; then

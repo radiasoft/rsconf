@@ -174,6 +174,35 @@ class T(pkcollections.Dict):
         """Called after internal_build_compile"""
         pass
 
+    def j2_ctx_init(self):
+        self.j2_ctx = self.hdb.j2_ctx_copy()
+        return self.j2_ctx, self.j2_ctx[self.name]
+
+    def j2_ctx_pksetdefault(self, defaults):
+        """Set defaults on self.j2_ctx
+
+        defaults is nested dicts with dotted keys that
+        will be turned into nested `PKDict` if not defined.
+
+        Uses PKDictpksetdefault to set values so can use
+        callables as initializers.
+
+        Args:
+            defaults (dict): nested values
+        """
+        def f(prefix, defaults):
+            for k, v in defaults.items():
+                k = prefix + k.split('.')
+                if isinstance(v, dict):
+                    f(k, v)
+                    return
+                n = self.j2_ctx
+                for y in k[:-1]:
+                    n = n.setdefault(y, PKDict())
+                n.pksetdefault(k[-1], v)
+
+        f([], defaults)
+
     def rsconf_append(self, path, line_or_grep, line=None):
         l = "rsconf_edit_no_change_res=0 rsconf_append '{}' '{}'".format(path, line_or_grep)
         if not line is None:
