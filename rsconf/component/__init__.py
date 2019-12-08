@@ -18,6 +18,7 @@ _START = 'start'
 _MODE_RE = re.compile(r'^\d{3,4}$')
 _BASH_FUNC_SUFFIX = '_rsconf_component'
 TLS_SECRET_SUBDIR = 'tls'
+_WILDCARD_TLS = 'star'
 
 class T(pkcollections.Dict):
 
@@ -367,7 +368,13 @@ def _find_tls_crt(j2_ctx, domain):
     for crt, domains in j2_ctx.component.tls_crt.items():
         if domain in domains:
             return d.join(crt), domains
-    for s in domain, domain.replace('.', '_'):
+    for s in (
+        domain,
+        domain.replace('.', '_'),
+        '.'.join([_WILDCARD_TLS] + domain.split('.')[1:]),
+        # sirepo.com is in wildcard cert star.sirepo.com
+        _WILDCARD_TLS + '.' + domain,
+    ):
         src = d.join(s)
         # due to dots in domain, we can't use ext=
         if (src + tls.KEY_EXT).check():

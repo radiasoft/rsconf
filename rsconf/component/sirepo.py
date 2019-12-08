@@ -35,10 +35,7 @@ def install_user_d(compt, j2_ctx):
 
 class T(component.T):
     def internal_build_compile(self):
-        from rsconf.component import db_bkp
-        from rsconf.component import nginx
         from rsconf.component import docker_registry
-        from rsconf.component import docker
 
         self.buildt.require_component('docker', 'nginx', 'db_bkp')
         jc, z = self.j2_ctx_copy()
@@ -104,6 +101,10 @@ class T(component.T):
             })
 
     def internal_build_write(self):
+        from rsconf.component import db_bkp
+        from rsconf.component import nginx
+        from rsconf.component import docker
+
         install_user_d(self, jc)
         self.install_access(mode='400')
         nginx.install_vhost(
@@ -123,13 +124,13 @@ class T(component.T):
             self,
             jc,
             image=z.docker_image,
-            env=self.sirepo_docker_env(),
+            env=self.sirepo_unit_env(),
             cmd='sirepo service uwsgi',
             after=self.__docker_unit_enable_after,
             #TODO(robnagler) wanted by nginx
         )
 
-    def sirepo_docker_env(compt=None):
+    def sirepo_unit_env(compt=None):
         if not compt:
             compt = self
         # Only variable that is required to be in the environment
