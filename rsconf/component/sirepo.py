@@ -38,10 +38,8 @@ class T(component.T):
         from rsconf.component import docker_registry
 
         self.buildt.require_component('docker', 'nginx', 'db_bkp')
-        jc, z = self.j2_ctx_copy()
+        jc, z = self.j2_ctx_init()
         self.__run_d = systemd.docker_unit_prepare(self, jc)
-        self.__run_u = jc.rsconf_db.run_u
-        j = bool(z.get('job_driver'))
         self.j2_ctx_pksetdefault(dict(
             sirepo={
                 'cookie': dict(
@@ -55,7 +53,7 @@ class T(component.T):
                 'docker_image': docker_registry.absolute_image(jc, z.docker_image),
                 'feature_config': dict(
                     api_modules=[],
-                    job=j,
+                    job=bool(z.get('job_driver')),
                 ),
                 'pkcli.service': dict(
                     ip='0.0.0.0',
@@ -64,7 +62,7 @@ class T(component.T):
                 'server.db_dir': lambda: self.__run_d.join(_DB_SUBDIR),
             },
             pykern={
-                pkdebug=dict(
+                'pkdebug': dict(
                     redirect_logging=True,
                     want_pid_time=True,
                 ),
@@ -72,22 +70,25 @@ class T(component.T):
             },
         ))
         self._comsol(z)
-        if j:
+        if z.feature_config.job:
             self.j2_ctx_pksetdefault({
-                'sirepo.pkcli.job_supervisor': dict(
-                    ip='127.0.0.1',
-                    port=8001,
-                ),
+                'sirepo.job_driver.modules': ['docker'],
                 'sirepo.job.server_secret': lambda: self.secret_path_value(
                     _SERVER_SECRET,
                     gen_secret=lambda: base64.urlsafe_b64encode(os.urandom(32)),
                     visibility='channel',
                 )[0],
+                'sirepo.pkcli.job_supervisor': dict(
+                    ip='127.0.0.1',
+                    port=8001,
+                ),
             })
-            s = self.get_component('sirepo_job_supervisor')
+            self.buildt.require_component('sirepo_job_supervisor')
+            s = self.buildt.get_component('sirepo_job_supervisor')
             s.sirepo_config(self)
             self.__docker_unit_enable_after = [s.name]
-            # server connects locally only so no https
+            # server connects locally only so go direct to tornado.
+            # supervisor has different uri to pass to agents.
             self.j2_ctx_pksetdefault({
                 'sirepo.job.supervisor_uri': lambda: 'http://{}:{}'.format(
                     z.pkcli.job_supervisor.ip,
@@ -99,12 +100,16 @@ class T(component.T):
             self.j2_ctx_pksetdefault({
                 'sirepo.runner.job_class': 'Celery',
             })
+            self.buildt.require_component('celery_sirepo')
+            self.__docker_unit_enable_after = ['celery_sirepo']
 
     def internal_build_write(self):
         from rsconf.component import db_bkp
         from rsconf.component import nginx
         from rsconf.component import docker
 
+        jc = self.j2_ctx
+        z = jc[self.name]
         install_user_d(self, jc)
         self.install_access(mode='400')
         nginx.install_vhost(
@@ -117,7 +122,7 @@ class T(component.T):
         db_bkp.install_script_and_subdir(
             self,
             jc,
-            run_u=self.__run_u,
+            run_u=jc.rsconf_db.run_u,
             run_d=self.__run_d,
         )
         systemd.docker_unit_enable(
@@ -134,11 +139,16 @@ class T(component.T):
         if not compt:
             compt = self
         # Only variable that is required to be in the environment
-        e = pkconfig.to_environ(['sirepo.*', 'pykern.*'], compt.j2_ctx)
+        e = pkconfig.to_environ(
+            ['*'],
+            values=PKDict((k, v) for k, v in compt.j2_ctx.items() if k in ('sirepo', 'pykern')),
+            # local only values
+            exclude_re=r'(?:docker_image|vhost)',
+        )
         e.PYTHONUNBUFFERED = '1'
         return e
 
-    def _comsol(self, jc):
+    def _comsol(self, z):
         r = z.get('comsol_register')
         if not r:
             return

@@ -45,34 +45,37 @@ class T(component.T):
             self,
             jc,
             image=jc.sirepo.docker_image,
-            env=self.get_component('sirepo').sirepo_unit_env(),
+            env=self.buildt.get_component('sirepo').sirepo_unit_env(),
             cmd='sirepo job_supervisor',
             #TODO(robnagler) wanted by nginx
         )
 
     def sirepo_config(self, sirepo):
+        jc = self.j2_ctx
         self.j2_ctx_pksetdefault(sirepo.j2_ctx)
-        z.pksetdefault(vhost=lambda: 'job-supervisor-' + jc.sirepo.vhost)
-        self.j2_ctx_pksetdefault(
-            'sirepo.job.supervisor_uri': 'https://{}'.format(z.vhost),
-        )
+        self.j2_ctx_pksetdefault({
+            'sirepo_job_supervisor.vhost': lambda: 'job-supervisor-' + jc.sirepo.vhost,
+        })
+        self.j2_ctx_pksetdefault({
+            'sirepo.job.supervisor_uri': 'https://{}'.format(jc.sirepo_job_supervisor.vhost),
+        })
         for m in jc.sirepo.job_driver.modules:
-            getattr(self, '_module_' + m)(self, jc)
+            getattr(self, '_module_' + m)(jc)
 
     def _module_docker(self, jc):
-        self.j2_ctx_pksetdefault(
+        self.j2_ctx_pksetdefault({
             'sirepo.job_driver.docker': dict(
                 parallel=dict(gigabytes=4, cores=4, slots_per_host=1),
                 sequential=dict(gigabytes=1, slots_per_host=1),
                 image=jc.sirepo.docker_image,
                 tls_dir=lambda: self.__run_d.join('docker_tls'),
             ),
-        )
+        })
 
     def _module_local(self, jc):
-        self.j2_ctx_pksetdefault(
+        self.j2_ctx_pksetdefault({
             'sirepo.job_driver.local.slots': dict(parallel=1, sequential=1),
-        )
+        })
 
     def _module_sbatch(self, jc):
         self.j2_ctx_pksetdefault(

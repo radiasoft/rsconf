@@ -9,18 +9,21 @@ from pykern import pkcollections
 from rsconf import component
 
 class T(component.T):
-    def internal_build(self):
+    def internal_build_compile(self):
+        self.buildt.require_component('nginx')
+        jc, z = self.j2_ctx_init()
+        z.setdefault(listen_any=False)
+
+    def internal_build_write(self):
         from rsconf.component import nginx
 
-        self.buildt.require_component('nginx')
-        j2_ctx = self.hdb.j2_ctx_copy()
-
-        j2_ctx.setdefault(self.name, pkcollections.Dict())
-        for h, vh in j2_ctx.jupyterhub.vhosts.items():
+        jc = self.j2_ctx
+        for h, vh in jc.jupyterhub.vhosts.items():
             nginx.install_vhost(
                 self,
                 vhost=vh,
                 backend_host=h,
-                backend_port=j2_ctx.jupyterhub.port,
-                j2_ctx=j2_ctx,
+                backend_port=jc.jupyterhub.port,
+                j2_ctx=jc,
+                listen_any=jc.jupyterhub_proxy.listen_any,
             )

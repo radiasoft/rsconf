@@ -5,7 +5,7 @@ u"""Load components
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
-from pykern import pkcollections
+from pykern.pkcollections import PKDict
 from pykern import pkconfig
 from pykern import pkio
 from pykern.pkdebug import pkdp, pkdc, pkdlog
@@ -20,7 +20,7 @@ _BASH_FUNC_SUFFIX = '_rsconf_component'
 TLS_SECRET_SUBDIR = 'tls'
 _WILDCARD_TLS = 'star'
 
-class T(pkcollections.Dict):
+class T(PKDict):
 
     def __init__(self, name, buildt):
         super(T, self).__init__(
@@ -51,7 +51,7 @@ class T(pkcollections.Dict):
 
     def build_compile(self):
         self.state = _DONE
-        self._install_access = pkcollections.Dict()
+        self._install_access = PKDict()
         self._root_bash = [self.name + _BASH_FUNC_SUFFIX + '() {']
         self._root_bash_aux = []
         if hasattr(self, 'internal_build_compile'):
@@ -163,7 +163,7 @@ class T(pkcollections.Dict):
 
     def install_tls_key_and_crt(self, domain, dst_d):
         kc = tls_key_and_crt(self.hdb, domain)
-        dst = pkcollections.Dict(
+        dst = PKDict(
             key=dst_d.join(kc.key.basename),
             crt=dst_d.join(kc.crt.basename),
         )
@@ -177,7 +177,7 @@ class T(pkcollections.Dict):
 
     def j2_ctx_init(self):
         self.j2_ctx = self.hdb.j2_ctx_copy()
-        return self.j2_ctx, self.j2_ctx[self.name]
+        return self.j2_ctx, self.j2_ctx.setdefault(self.name, PKDict())
 
     def j2_ctx_pksetdefault(self, defaults):
         """Set defaults on self.j2_ctx
@@ -196,7 +196,7 @@ class T(pkcollections.Dict):
                 k = prefix + k.split('.')
                 if isinstance(v, dict):
                     f(k, v)
-                    return
+                    continue
                 n = self.j2_ctx
                 for y in k[:-1]:
                     n = n.setdefault(y, PKDict())
@@ -352,7 +352,7 @@ def tls_key_and_crt(j2_ctx, domain):
         tls.gen_self_signed_crt(str(src), *domains)
     assert src_key.check(), \
         '{}: missing key for: {}'.format(src_key, domain)
-    return pkcollections.Dict(key=src_key, crt=src_crt)
+    return PKDict(key=src_key, crt=src_crt)
 
 
 def _assert_host_path(host_path):

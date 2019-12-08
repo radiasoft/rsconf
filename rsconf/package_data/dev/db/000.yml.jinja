@@ -75,18 +75,9 @@ default:
   component:
     tls_crt_create: true
     tls_crt:
-      dev_host:
+      misc_hosts:
         - alpha2.sirepo.com
-        - beforeother.{{ host }}
         - bivio.biz.{{ host }}
-        - jupyter.{{ host }}
-        - m-petshop.{{ host }}
-        - other.{{ host }}
-        - owncloud.{{ host }}
-        - petshop.{{ host }}
-        - requiresecure.{{ host }}
-        - sirepo.{{ host }}
-        - {{ host }}
   db_bkp:
     max_copies: 2
     on_calendar: "6:30"
@@ -305,6 +296,8 @@ host:
               rw: [ instructors ]
         vhosts:
           {{ master }}: jupyter.{{ master }}
+      jupyterhub_proxy:
+        listen_any: True
       nfs_server:
         exports:
           /srv/mpi_worker/user: [ 10.10.10.0/24 ]
@@ -369,9 +362,11 @@ host:
 #        components: [ bop ]
 #        components: [ jupyterhub, jupyterhub_proxy ]
 #        components: [ rabbitmq, celery_sirepo, sirepo, nfs_server ]
-        components: [ nfs_client, nfs_server, mpi_worker ]
-#      sirepo:
-#        docker_hosts: [ {{ host }}, {{ worker5_host }} ]
+        components: [ nfs_client, nfs_server, sirepo ]
+      sirepo:
+        job_driver:
+          docker:
+            hosts: [ {{ host }} ]
     {{ worker5_host }}:
       docker:
         tls_host: {{ worker5_host }}
@@ -466,7 +461,6 @@ host:
           - rabbitmq
           - bkp
           - comsol
-          - celery_sirepo
           - sirepo
           - bop
           - btest
