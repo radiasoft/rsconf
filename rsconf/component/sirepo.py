@@ -75,7 +75,7 @@ class T(component.T):
         if j:
             self.j2_ctx_pksetdefault({
                 'sirepo.pkcli.job_supervisor': dict(
-                    ip=127.0.0.1,
+                    ip='127.0.0.1',
                     port=8001,
                 ),
                 'sirepo.job.server_secret': lambda: self.secret_path_value(
@@ -85,9 +85,9 @@ class T(component.T):
                 )[0],
             })
             s = self.get_component('sirepo_job_supervisor')
-            s.update_j2_ctx(self)
+            s.sirepo_config(self)
             self.__docker_unit_enable_after = [s.name]
-            # server connects locally
+            # server connects locally only so no https
             self.j2_ctx_pksetdefault({
                 'sirepo.job.supervisor_uri': lambda: 'http://{}:{}'.format(
                     z.pkcli.job_supervisor.ip,

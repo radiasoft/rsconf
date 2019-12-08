@@ -50,7 +50,7 @@ class T(component.T):
             #TODO(robnagler) wanted by nginx
         )
 
-    def update_j2_ctx(self, sirepo):
+    def sirepo_config(self, sirepo):
         self.j2_ctx_pksetdefault(sirepo.j2_ctx)
         z.pksetdefault(vhost=lambda: 'job-supervisor-' + jc.sirepo.vhost)
         self.j2_ctx_pksetdefault(
