@@ -13,5 +13,5 @@ server {
     client_max_body_size 100m;
     location / {
         proxy_pass http://{{ nginx.backend_host }}:{{ nginx.backend_port }};
-   }
+    }
 }
