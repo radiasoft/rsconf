@@ -42,13 +42,12 @@ EOF
 
 wordpress_main() {
     {% for h, v in wordpress.vhosts.items() %}
-        if [[ -e {{ v.srv_d }}/wp-config.php ]]; then
-            return
+        if [[ ! -e {{ v.srv_d }}/wp-config.php ]]; then
+            (
+                cd '{{ v.srv_d }}';
+                wordpress_init '{{ v.db_name }}' '{{ v.db_user }}' '{{ v.db_password }}'
+            )
         fi
-        (
-            cd '{{ v.srv_d }}';
-            wordpress_init '{{ v.db_name }}' '{{ v.db_user }}' '{{ v.db_password }}'
-        )
     {% endfor %}
 
 }
