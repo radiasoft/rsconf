@@ -31,8 +31,11 @@ class T(component.T):
             self,
             jc,
             image=z.docker_image,
-            env=self.buildt.get_component('sirepo').sirepo_unit_env(),
-            cmd='sirepo job_supervisor',
+            env=self.buildt.get_component('sirepo').sirepo_unit_env().pkupdate(
+                PYENV_VERSION='py3',
+            ),
+            # cannot pass PYENV_VERSION=py3 to cmd
+            cmd='pyenv exec sirepo job_supervisor',
             #TODO(robnagler) wanted by nginx
         )
         docker.setup_cluster(
