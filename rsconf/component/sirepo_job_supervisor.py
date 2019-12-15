@@ -26,17 +26,18 @@ class T(component.T):
         from rsconf.component import docker
 
         jc = self.j2_ctx
-        z = self.j2_ctx[self.name]
+        z = jc[self.name]
         systemd.docker_unit_enable(
             self,
             jc,
             image=z.docker_image,
-            env=self.buildt.get_component('sirepo').sirepo_unit_env().pkupdate(
+            env=self.buildt.get_component('sirepo').sirepo_unit_env(self).pkupdate(
                 PYENV_VERSION='py3',
             ),
             # cannot pass PYENV_VERSION=py3 to cmd
             cmd='pyenv exec sirepo job_supervisor',
             #TODO(robnagler) wanted by nginx
+            volumes=[jc.sirepo.srdb.root]
         )
         docker.setup_cluster(
             self,

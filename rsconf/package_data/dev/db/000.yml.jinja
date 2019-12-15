@@ -358,6 +358,9 @@ host:
       nfs_server:
         exports:
           /srv/sirepo/db/user: [ 10.10.10.0/24 ]
+      pykern:
+        pkdebug:
+          control: .
       rsconf_db:
 #        components: [ bop ]
 #        components: [ jupyterhub, jupyterhub_proxy ]
@@ -366,6 +369,7 @@ host:
       sirepo:
         job_driver:
           docker:
+            dev_volumes: false
             hosts: [ {{ host }} ]
     {{ worker5_host }}:
       docker:

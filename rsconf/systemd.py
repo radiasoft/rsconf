@@ -24,7 +24,7 @@ def custom_unit_enable(compt, j2_ctx, start='start', reload=None, stop=None, aft
         resource_d = compt.name
     z = j2_ctx.systemd
     z.update(
-        after=' '.join(after or []),
+        after=_after(after),
         reload=reload,
         run_u=run_u or j2_ctx.rsconf_db.run_u,
         start=start,
@@ -84,7 +84,7 @@ def docker_unit_enable(compt, j2_ctx, image, cmd, env=None, volumes=None, after=
         env['TZ'] = ':/etc/localtime'
     image = docker_registry.absolute_image(j2_ctx, image)
     z.update(
-        after=' '.join(after or []),
+        after=_after(after),
         extra_run_flags=' '.join("'{}'".format(f) for f in extra_run_flags) if extra_run_flags else '',
         service_exec=cmd,
         exports='\n'.join(
@@ -226,6 +226,15 @@ def unit_prepare(compt, j2_ctx, watch_files=()):
 
 def unit_run_d(j2_ctx, unit_name):
     return j2_ctx.rsconf_db.host_run_d.join(unit_name)
+
+
+def _after(values):
+    if not values:
+        return ''
+    s = '.service'
+    return ' '.join(
+        [(v if v.endswith(s) else v + s) for v in values],
+    )
 
 
 def _colon_format(flag, values):

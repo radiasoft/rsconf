@@ -40,6 +40,7 @@ class T(component.T):
         self.buildt.require_component('docker', 'nginx', 'db_bkp')
         jc, z = self.j2_ctx_init()
         self.__run_d = systemd.docker_unit_prepare(self, jc)
+        d = self.__run_d.join(_DB_SUBDIR)
         self.j2_ctx_pksetdefault(dict(
             sirepo={
                 'cookie': dict(
@@ -59,7 +60,7 @@ class T(component.T):
                     ip='0.0.0.0',
                     run_dir=self.__run_d,
                 ),
-                'srdb.root': lambda: self.__run_d.join(_DB_SUBDIR),
+                'srdb.root': d,
             },
             pykern={
                 'pkdebug': dict(
@@ -73,11 +74,14 @@ class T(component.T):
         if z.feature_config.job:
             self.j2_ctx_pksetdefault({
                 'sirepo.job_driver.modules': ['docker'],
-                'sirepo.job.server_secret': lambda: self.secret_path_value(
-                    _SERVER_SECRET,
-                    gen_secret=lambda: base64.urlsafe_b64encode(os.urandom(32)),
-                    visibility='channel',
-                )[0],
+                'sirepo.job': dict(
+                    server_secret=lambda: self.secret_path_value(
+                        _SERVER_SECRET,
+                        gen_secret=lambda: base64.urlsafe_b64encode(os.urandom(32)),
+                        visibility='channel',
+                    )[0],
+                    verify_tls=lambda: jc.pykern.pkconfig.channel != 'dev',
+                ),
                 'sirepo.pkcli.job_supervisor': dict(
                     ip='127.0.0.1',
                     port=8001,
@@ -134,7 +138,7 @@ class T(component.T):
             run_d=self.__run_d,
         )
 
-    def sirepo_unit_env(compt=None):
+    def sirepo_unit_env(self, compt=None):
         if not compt:
             compt = self
         # Only variable that is required to be in the environment
@@ -142,7 +146,7 @@ class T(component.T):
             ['*'],
             values=PKDict((k, v) for k, v in compt.j2_ctx.items() if k in ('sirepo', 'pykern')),
             # local only values
-            exclude_re=r'(?:docker_image|vhost)',
+            exclude_re=r'^sirepo_(?:docker_image|vhost)',
         )
         e.PYTHONUNBUFFERED = '1'
         return e
