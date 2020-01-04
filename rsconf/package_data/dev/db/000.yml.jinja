@@ -202,6 +202,8 @@ default:
       service_processes: 1
       service_threads: 20
       service_port: 7000
+      job_supervisor:
+        port: 7001
   spamd: {}
   wordpress:
     docker_image: docker.io/radiasoft/wordpress
@@ -311,10 +313,11 @@ host:
             vagrant: vagrant
       rsconf_db:
         #TODO(robnagler) need to edit this to just rsconf to bootstrap
-        #components: [ rsconf, bkp, docker_registry ]
+        components: [ rsconf, docker_registry ]
+#NOTE: 8001 used by sirepo during build
         # jupyterhub_proxy, btest, github_bkp, dovecot ]
-        components: [ rsconf, docker_registry, nfs_server, jupyterhub, jupyterhub_proxy ]
-        # components: [ rsconf, docker_registry, btest ]
+        #components: [ rsconf, docker_registry, nfs_server, jupyterhub, jupyterhub_proxy ]
+        #components: [ rsconf, docker_registry, btest ]
     {{ host }}:
       docker:
         tls_host: {{ host }}

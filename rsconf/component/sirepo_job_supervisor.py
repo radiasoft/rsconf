@@ -65,9 +65,7 @@ class T(component.T):
                 vhost=lambda: 'job-supervisor-' + jc.sirepo.vhost,
             ),
         ))
-        self.j2_ctx_pksetdefault({
-            'sirepo.job.supervisor_uri': 'https://{}'.format(jc.sirepo_job_supervisor.vhost),
-        })
+        jc.sirepo.job.supervisor_uri = 'https://{}'.format(jc.sirepo_job_supervisor.vhost)
         for m in jc.sirepo.job_driver.modules:
             getattr(self, '_module_' + m)(jc)
 

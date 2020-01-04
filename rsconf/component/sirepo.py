@@ -93,12 +93,10 @@ class T(component.T):
             self.__docker_unit_enable_after = [s.name]
             # server connects locally only so go direct to tornado.
             # supervisor has different uri to pass to agents.
-            self.j2_ctx_pksetdefault({
-                'sirepo.job.supervisor_uri': lambda: 'http://{}:{}'.format(
-                    z.pkcli.job_supervisor.ip,
-                    z.pkcli.job_supervisor.port,
-                ),
-            })
+            self.j2_ctx.sirepo.job_supervisor_uri = 'http://{}:{}'.format(
+                z.pkcli.job_supervisor.ip,
+                z.pkcli.job_supervisor.port,
+            )
         else:
             # REMOVE after Celery no longer in use
             self.j2_ctx_pksetdefault({
