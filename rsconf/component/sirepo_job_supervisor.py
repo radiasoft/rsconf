@@ -86,5 +86,5 @@ class T(component.T):
 
     def _module_sbatch(self, jc):
         self.j2_ctx_pksetdefault({
-            'sirepo.job_driver.sbatch.shifter_image': jc.sirepo.docker_image,
+            'sirepo.job_driver.sbatch.shifter_image': 'radiasoft/sirepo:' + jc.rsconf_db.channel,
         })
