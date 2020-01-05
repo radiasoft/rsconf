@@ -85,6 +85,6 @@ class T(component.T):
         })
 
     def _module_sbatch(self, jc):
-        self.j2_ctx_pksetdefault(
-            'sirepo.job_driver.sbatch.shifter_image'=jc.sirepo.docker_image,
-        )
+        self.j2_ctx_pksetdefault({
+            'sirepo.job_driver.sbatch.shifter_image': jc.sirepo.docker_image,
+        })
