@@ -87,16 +87,19 @@ class T(component.T):
                     port=8001,
                 ),
             })
+            z.pksetdefault(job_api=PKDict)
+            # server connects locally only so go direct to tornado.
+            # supervisor has different uri to pass to agents.
+            z.job_api.supervisor_uri = 'http://{}:{}'.format(
+                z.pkcli.job_supervisor.ip,
+                z.pkcli.job_supervisor.port,
+            )
             self.buildt.require_component('sirepo_job_supervisor')
             s = self.buildt.get_component('sirepo_job_supervisor')
             s.sirepo_config(self)
             self.__docker_unit_enable_after = [s.name]
-            # server connects locally only so go direct to tornado.
-            # supervisor has different uri to pass to agents.
-            self.j2_ctx.sirepo.job_supervisor_uri = 'http://{}:{}'.format(
-                z.pkcli.job_supervisor.ip,
-                z.pkcli.job_supervisor.port,
-            )
+#TODO(robnagler) remove when deployed to alpha
+            z.job.supervisor_uri = z.job_api.supervisor_uri
         else:
             # REMOVE after Celery no longer in use
             self.j2_ctx_pksetdefault({
@@ -144,7 +147,7 @@ class T(component.T):
             ['*'],
             values=PKDict((k, v) for k, v in compt.j2_ctx.items() if k in ('sirepo', 'pykern')),
             # local only values
-            exclude_re=r'^sirepo_(?:docker_image|vhost)',
+            exclude_re=r'^sirepo(?:_docker_image|.*_vhost)',
         )
         e.PYTHONUNBUFFERED = '1'
         return e

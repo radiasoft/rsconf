@@ -46,28 +46,36 @@ class T(component.T):
             run_u=self.__run_u,
             j2_ctx=self.j2_ctx,
         )
-        nginx.install_vhost(
-            self,
-            vhost=z.vhost,
-            backend_host=jc.sirepo.pkcli.job_supervisor.ip,
-            backend_port=jc.sirepo.pkcli.job_supervisor.port,
-            j2_ctx=jc,
-        )
+        for v in self._vhosts:
+            nginx.install_vhost(
+                self,
+                vhost=v,
+                backend_host=jc.sirepo.pkcli.job_supervisor.ip,
+                backend_port=jc.sirepo.pkcli.job_supervisor.port,
+                j2_ctx=jc,
+            )
 
     def sirepo_config(self, sirepo):
         from rsconf.component import docker_registry
 
         jc = self.j2_ctx
+        self._vhosts = set()
         self.j2_ctx_pksetdefault(sirepo.j2_ctx)
         self.j2_ctx_pksetdefault(dict(
             sirepo_job_supervisor=dict(
                 docker_image=lambda: docker_registry.absolute_image(jc, jc.sirepo.docker_image),
+#TODO(robnagler) remove after alpha
                 vhost=lambda: 'job-supervisor-' + jc.sirepo.vhost,
             ),
         ))
-        jc.sirepo.job.supervisor_uri = 'https://{}'.format(jc.sirepo_job_supervisor.vhost)
+#TODO(robnagler) remove after alpha
+        jc.sirepo.job.supervisor_uri = 'https://{}'.format(
+            jc.sirepo_job_supervisor.vhost,
+        )
+        self._vhosts.add(jc.sirepo.job.supervisor_uri)
         for m in jc.sirepo.job_driver.modules:
             getattr(self, '_module_' + m)(jc)
+            self._uri(m)
 
     def _module_docker(self, jc):
         self.j2_ctx_pksetdefault({
@@ -88,3 +96,13 @@ class T(component.T):
         self.j2_ctx_pksetdefault({
             'sirepo.job_driver.sbatch.shifter_image': 'radiasoft/sirepo:' + jc.rsconf_db.channel,
         })
+
+    def _uri(self, module):
+        p = 'sirepo.job_driver.{}.'.format(module)
+        v = p + 'vhost'
+        self.j2_ctx_pksetdefault({
+            v: lambda: module + '-job-supervisor-' + self.j2_ctx.sirepo.vhost,
+        })
+        v = self.j2_ctx.pknested_get(v)
+        self._vhosts.add(v)
+        self.j2_ctx.sirepo.job_driver[module].supervisor_uri = 'https://{}'.format(v)
