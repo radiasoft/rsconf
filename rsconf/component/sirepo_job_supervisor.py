@@ -72,7 +72,7 @@ class T(component.T):
         jc.sirepo.job.supervisor_uri = 'https://{}'.format(
             jc.sirepo_job_supervisor.vhost,
         )
-        self._vhosts.add(jc.sirepo.job.supervisor_uri)
+        self._vhosts.add(jc.sirepo_job_supervisor.vhost)
         for m in jc.sirepo.job_driver.modules:
             getattr(self, '_module_' + m)(jc)
             self._uri(m)
