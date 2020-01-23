@@ -165,7 +165,7 @@ rsmpi_ping() {
             -o IdentityFile="$_rsmpi_conf_d/$h"/identity \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
-            "$h" hostname 2>/dev/null || true)
+            "$h" hostname 2>/dev/null < /dev/null || true)
         if [[ $x == $h ]]; then
             ok+=1
         else
