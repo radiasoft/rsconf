@@ -3,7 +3,6 @@ export BCONF='{{ bop.bconf_f }}'
 export BIVIO_IO_ALERT_WANT_TIME=0
 export BIVIO_IO_ALERT_WANT_PID=0
 bivio sql export_db .
-{{ rsconf_db.compress_cmd }} *pg_dump
 declare -a dirs=()
 for d in '{{ bop.bkp_d }}' '{{ bop.logbop_d }}' \
     '{{ bop.db_d }}'/{RealmMail,RealmMailBounce,MailReceiveDispatchForm,LegacyClubUploadForm,OFXImportForm,DynamicsUpdate}; do
