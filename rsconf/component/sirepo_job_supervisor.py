@@ -64,15 +64,8 @@ class T(component.T):
         self.j2_ctx_pksetdefault(dict(
             sirepo_job_supervisor=dict(
                 docker_image=lambda: docker_registry.absolute_image(jc, jc.sirepo.docker_image),
-#TODO(robnagler) remove after alpha
-                vhost=lambda: 'job-supervisor-' + jc.sirepo.vhost,
             ),
         ))
-#TODO(robnagler) remove after alpha
-        jc.sirepo.job.supervisor_uri = 'https://{}'.format(
-            jc.sirepo_job_supervisor.vhost,
-        )
-        self._vhosts.add(jc.sirepo_job_supervisor.vhost)
         for m in jc.sirepo.job_driver.modules:
             getattr(self, '_module_' + m)(jc)
             self._uri(m)
