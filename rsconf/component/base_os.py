@@ -11,6 +11,7 @@ from pykern.pkdebug import pkdp
 from rsconf import component
 
 _JOURNAL_CONF_D = pkio.py_path('/etc/systemd/journald.conf.d')
+_SSHD_CONF_F = pkio.py_path('/etc/ssh/sshd_config')
 
 class T(component.T):
 
@@ -28,6 +29,7 @@ class T(component.T):
                 )
         z.logical_volume_cmds = cmds
         self.service_prepare([_JOURNAL_CONF_D], name='systemd-journald')
+        self.service_prepare([_SSHD_CONF_F.dirpath()], name='sshd')
 
     def internal_build_write(self):
         jc = self.j2_ctx
@@ -44,6 +46,11 @@ class T(component.T):
             'base_os/60-rsconf-base.conf',
             jc,
             '/etc/sysctl.d/60-rsconf-base.conf',
+        )
+        self.install_resource(
+            'base_os/sshd_config',
+            jc,
+            _SSHD_CONF_F,
         )
         self.install_access(mode='444')
         self.install_resource('base_os/hostname', jc, '/etc/hostname')

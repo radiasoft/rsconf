@@ -24,9 +24,4 @@ network_main() {
     {% if network.iptables_enable %}
     network_iptables
     {% endif %}
-    {% if network.public_ssh_port %}
-    if rsconf_append /etc/ssh/sshd_config 'Port {{ network.public_ssh_port }}'; then
-        systemctl restart sshd
-    fi
-    {% endif %}
 }

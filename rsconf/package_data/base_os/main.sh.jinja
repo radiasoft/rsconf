@@ -120,7 +120,6 @@ base_os_ipv4() {
         sysctl -w net.ipv6.conf.all.disable_ipv6=1 net.ipv6.conf.default.disable_ipv6=1
         dracut -f
     fi
-    base_os_sshd
     base_os_postfix
     base_os_rpcbind_patch
     return $no_reboot
@@ -147,21 +146,4 @@ base_os_rpcbind_patch() {
         systemctl daemon-reload
         rsconf_service_trigger_restart rpcbind.socket
     fi
-}
-
-base_os_sshd() {
-    #TODO(robnagler) is this necessary?
-    # ClientAliveInterval 180
-    # ClientAliveCountMax 3
-    #
-    # https://access.redhat.com/solutions/8709
-    # breaks SSH Xforwarding unless AddressFamily inet is set in sshd_config
-    # idempotent so ok to repeat and the file might get updated with a new release.
-    rsconf_edit_no_change_res=0 rsconf_edit /etc/ssh/sshd_config ^AddressFamily.inet \
-        's{^#(AddressFamily) any}{$1 inet}'
-    rsconf_edit_no_change_res=0 rsconf_edit /etc/ssh/sshd_config ^PermitRootLogin.without \
-        's{^#?\s*(PermitRootLogin) .*}{$1 without-password}'
-    # Uncoment Port 22. Needed for network.public_ssh_port to work right
-    rsconf_edit_no_change_res=0 rsconf_edit /etc/ssh/sshd_config ^Port.22 \
-        's{^#\s*(Port) .*}{$1 22}'
 }
