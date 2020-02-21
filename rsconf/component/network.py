@@ -48,6 +48,7 @@ class T(component.T):
         z.public_tcp_ports = []
         z.trusted_tcp_ports = []
         z.public_udp_ports = []
+        z.setdefault('pci_scanner_net', None)
         self.__trusted_nets = self._nets(jc, z.trusted)
         z.setdefault(
             'trusted_public_nets',

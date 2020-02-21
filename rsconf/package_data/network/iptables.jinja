@@ -6,8 +6,12 @@
  # about this, many common firewall books say "block ICMP" -- it's
  # clear their authors have never read an RFC or had to solve issues
  # surrounding such advice. It's bad advice to block all ICMP.
+ #
+ # PCI compliance requires dropping timestamp requests
  #}
--A INPUT -p icmp -j ACCEPT
+-A INPUT -p icmp --icmp-type timestamp-request -j DROP
+-A INPUT -p icmp --icmp-type timestamp-reply -j DROP
+-A OUTPUT -p icmp -j ACCEPT
 {# https://unix.stackexchange.com/a/108186
  # found this thread from the netfilter@vger.kernel.org netfilte/iptables
  # discussions, titled: state match is obsolete 1.4.17, which pretty much
@@ -19,6 +23,9 @@
 {% for d in network.private_devs %}
     -A INPUT -i {{ d }} -j ACCEPT
 {% endfor %}
+{% if network.pci_scanner_net %}
+    -A INPUT -s {{ network.pci_scanner_net }} -j ACCEPT
+{% endif %}
 {% if network.public_tcp_ports %}
     -A INPUT -i {{ network.inet_dev.name }} -p tcp -m state --state NEW -m tcp --match multiport --dports {{ network.public_tcp_ports | join(',') }} -j ACCEPT
 {% endif %}
