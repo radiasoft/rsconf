@@ -1,5 +1,10 @@
 server {
-    listen localhost.localdomain:80;
+    {# must be an IP
+        nginx: [emerg] a duplicate listen 127.0.0.1:80 in /etc/nginx/conf.d/bop_common.conf:2
+       probably related to ipv6 duplicate
+       https://github.com/tus/tusd/issues/218#issuecomment-439611663
+    #}
+    listen 127.0.0.1:80;
     server_name localhost.localdomain;
     root {{ nginx.default_root }};
     client_max_body_size {{ bop.client_max_body_size }};
