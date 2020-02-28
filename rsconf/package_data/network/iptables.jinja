@@ -9,8 +9,9 @@
  #
  # PCI compliance requires dropping timestamp requests
  #}
--A INPUT -p icmp --icmp-type timestamp-request -j DROP
--A INPUT -p icmp --icmp-type timestamp-reply -j DROP
+{% if network.pci_scanner_net %}
+    -A INPUT -s {{ network.pci_scanner_net }} -p icmp --icmp-type timestamp-request -j DROP
+{% endif %}
 -A OUTPUT -p icmp -j ACCEPT
 {# https://unix.stackexchange.com/a/108186
  # found this thread from the netfilter@vger.kernel.org netfilte/iptables
@@ -23,9 +24,6 @@
 {% for d in network.private_devs %}
     -A INPUT -i {{ d }} -j ACCEPT
 {% endfor %}
-{% if network.pci_scanner_net %}
-    -A INPUT -s {{ network.pci_scanner_net }} -j ACCEPT
-{% endif %}
 {% if network.public_tcp_ports %}
     -A INPUT -i {{ network.inet_dev.name }} -p tcp -m state --state NEW -m tcp --match multiport --dports {{ network.public_tcp_ports | join(',') }} -j ACCEPT
 {% endif %}
@@ -56,7 +54,7 @@
     -A INPUT -i {{ network.inet_dev.name }} -p tcp -m tcp --dport {{ network.public_ssh_port }} -m state --state NEW -m recent --update --seconds 180 --hitcount 6 --name SSHPROBES --mask 255.255.255.0 --rsource -j DROP
     -A INPUT -i {{ network.inet_dev.name }} -p tcp -m state --state NEW -m tcp --dport {{ network.public_ssh_port }} -j ACCEPT
 {% endif %}
--A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A INPUT -j REJECT --reject-with icmp-port-unreachable
 
 {% if network.nat_input_dev %}
     -A FORWARD -i {{ network.nat_output_dev.name }} -m state --state INVALID -j REJECT --reject-with icmp-port-unreachable
