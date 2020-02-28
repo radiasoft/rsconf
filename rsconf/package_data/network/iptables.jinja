@@ -12,7 +12,7 @@
 {% if network.pci_scanner_net %}
     -A INPUT -s {{ network.pci_scanner_net }} -p icmp --icmp-type timestamp-request -j DROP
 {% endif %}
--A OUTPUT -p icmp -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
 {# https://unix.stackexchange.com/a/108186
  # found this thread from the netfilter@vger.kernel.org netfilte/iptables
  # discussions, titled: state match is obsolete 1.4.17, which pretty much
