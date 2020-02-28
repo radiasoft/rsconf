@@ -9,9 +9,7 @@
  #
  # PCI compliance requires dropping timestamp requests
  #}
-{% if network.pci_scanner_net %}
-    -A INPUT -s {{ network.pci_scanner_net }} -p icmp --icmp-type timestamp-request -j DROP
-{% endif %}
+-A INPUT -p icmp --icmp-type timestamp-request -j DROP
 -A INPUT -p icmp -j ACCEPT
 {# https://unix.stackexchange.com/a/108186
  # found this thread from the netfilter@vger.kernel.org netfilte/iptables
