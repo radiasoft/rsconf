@@ -313,7 +313,17 @@ host:
             vagrant: vagrant
       rsconf_db:
         #TODO(robnagler) need to edit this to just rsconf to bootstrap
-        components: [ rsconf, docker_registry ]
+        components:
+          # must be here, because docker needs to be setup on master
+          - docker
+          - rsconf
+          - docker_registry
+          # - jupyterhub
+          # - jupyterhub_proxy
+          # - nfs_server
+          # - btest
+          # - github_bkp
+          # - dovecot
 #NOTE: 8001 used by sirepo during build
         # jupyterhub_proxy, btest, github_bkp, dovecot ]
         #components: [ rsconf, docker_registry, nfs_server, jupyterhub, jupyterhub_proxy ]
