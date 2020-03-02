@@ -1,7 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 if [[ ! -r ~/src/yum ]]; then
-    echo 'You need to run: bash ~/src/radiasoft/download/installers/rpm-code/dev-setup.sh'
+    echo 'You need to run:
+
+cd ~/src/radiasoft/download/installers/rpm-code
+bash dev-setup.sh
+'
     exit 1
 fi
 if [[ ! -r {{ srv_d }}/yum ]]; then
