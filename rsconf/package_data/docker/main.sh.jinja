@@ -32,12 +32,5 @@ docker_install() {
 }
 
 docker_main() {
-    # REMOVE 12/21/2018 after deployed everywhere
-    if [[ -f '{{ systemd.service_f }}' ]]; then
-        # unpatch previous implementation of override; Need to remove link to service_F
-        # before re-enabling. systemd gets confused
-        systemctl disable docker || true
-        rm -f '{{ systemd.service_f }}'
-    fi
     docker_install
 }
