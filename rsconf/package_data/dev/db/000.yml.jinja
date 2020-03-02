@@ -265,13 +265,6 @@ host:
                 #POSIT: download/installers/vagrant-dev:config.persistent_storage.size=102400
                 gigabytes: 99
                 mount_d: /srv/docker
-      base_users:
-        add:
-          - joeblow
-          - marysmith
-        spec:
-          joeblow:
-            want_shell: true
       docker:
         tls_host: {{ master }}
       jupyterhub:
@@ -329,6 +322,13 @@ host:
         #components: [ rsconf, docker_registry, nfs_server, jupyterhub, jupyterhub_proxy ]
         #components: [ rsconf, docker_registry, btest ]
     {{ host }}:
+      base_users:
+        add:
+          - joeblow
+          - marysmith
+        spec:
+          joeblow:
+            want_shell: true
       docker:
         tls_host: {{ host }}
       jupyterhub:
