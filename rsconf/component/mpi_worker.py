@@ -23,6 +23,7 @@ class T(component.T):
         z = jc.mpi_worker
         self._find_cluster(jc, z)
         z.host_d = z.host_root_d.join(z.user)
+        z.setdefault('volumes', {});
         z.secrets = self._gen_keys(jc, z, jc.rsconf_db.host)
         for x in 'guest', 'host':
             z[x] = self._gen_paths(jc, z, z.get(x + '_d'))
@@ -54,16 +55,21 @@ class T(component.T):
             self.install_directory(z.host.bin_d)
             self.install_access(mode='500')
             self.install_resource(z.host.bin_d.join('rsmpi.sh'), jc)
-        volumes = [
+        x = [
             [z.host_d, z.guest_d],
             # SECURITY: no modifications to run_d
             [z.run_d, z.run_d, 'ro'],
         ]
+        for k in sorted(z.volumes.keys()):
+            g = str(z.volumes[k])
+            assert g.startswith(str(z.guest_d) + '/'), \
+                'mount={} must start with guest_d={}'.format(g, z.guest_d)
+            x.append([k, g])
         systemd.docker_unit_enable(
             self,
             jc,
             image=docker_registry.absolute_image(jc, z.docker_image),
-            volumes=volumes,
+            volumes=x,
             cmd="/usr/sbin/sshd -D -f '{}'".format(z.guest.sshd_config),
         )
 

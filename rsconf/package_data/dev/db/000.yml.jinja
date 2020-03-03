@@ -254,6 +254,9 @@ host:
         mounts:
           {{ master }}:
             - /srv/mpi_worker/user
+      mpi_worker:
+        volumes:
+          /srv/mpi_worker/tmp: /home/vagrant/jupyter/tmp
       rsconf_db:
         components: [ mpi_worker ]
     {{ master }}:
