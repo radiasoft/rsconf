@@ -6,6 +6,7 @@ u"""SSL cert operations
 """
 from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
+from pykern import pkcompat
 from pykern import pkio
 from pykern.pkdebug import pkdc, pkdp, pkdlog
 import subprocess
@@ -217,11 +218,13 @@ CN = {}'''.format(alt, first)
 def _run(cmd):
     try:
         pkdc('{}', ' '.join(cmd))
-        return subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+        return pkcompat.from_bytes(
+            subprocess.check_output(cmd, stderr=subprocess.STDOUT),
+        )
     except Exception as e:
         o = ''
         if hasattr(e, 'output'):
-            o = e.output
+            o = pkcompat.from_bytes(e.output)
         pkdlog('command error: cmd={} error={} out={}', cmd, e, o)
         raise
 
