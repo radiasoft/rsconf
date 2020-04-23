@@ -27,7 +27,7 @@ class T(component.T):
         z.email_aliases = pkcollections.Dict()
         z.added = pkcollections.Dict()
         mailboxes = set(
-            j2_ctx.dovecot.alias_users + j2_ctx.dovecot.pop_users.keys(),
+            j2_ctx.dovecot.alias_users + list(j2_ctx.dovecot.pop_users.keys()),
         ) if 'dovecot' in j2_ctx else set()
         for u in z.add:
             assert not u in z.added, \

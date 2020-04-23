@@ -110,7 +110,7 @@ def default_command():
 
     prev_umask = None
     try:
-        prev_umask = os.umask(027)
+        prev_umask = os.umask(0o27)
         dbt = db.T()
         # Outside of srv_d so nginx doesn't see it. However,
         # make sure the same levels of directory so relative

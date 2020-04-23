@@ -64,7 +64,11 @@ class T(component.T):
         for t in sorted(values.keys()):
             s = values[t]
             x = s.stat()
-            self.install_access(mode=oct(x.mode & 0777), owner=x.owner, group=x.group)
+            self.install_access(
+                mode='{:o}'.format(x.mode & 0o777),
+                owner=x.owner,
+                group=x.group,
+            )
             # Local files overwrite existing (distro) files but if a component tries
             # to overwrite a local file, and error will occur.
             self.install_abspath(s, t, ignore_exists=True)

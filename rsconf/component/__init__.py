@@ -99,7 +99,7 @@ class T(PKDict):
         )
 
     def install_directory(self, host_path):
-        assert int(self._install_access.mode, 8) & 0700 == 0700, \
+        assert int(self._install_access.mode, 8) & 0o700 == 0o700, \
             '{}: directory must be at least 700 mode (u=rwx)'
         self._bash_append(host_path, is_file=False)
 

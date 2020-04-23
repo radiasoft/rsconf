@@ -5,6 +5,7 @@ u"""create sirepo configuration
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
+from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from pykern import pkcollections
 from pykern import pkjson
@@ -130,7 +131,7 @@ class T(component.T):
             pkcollections.Dict(bind=str(z.home_d.join('jupyter'))),
         )
         self._rsdockerspawner_v3(j2_ctx, z, seen)
-        c.user_groups = z.user_groups
+        c.user_groups = z.get('user_groups', PKDict())
         c.volumes = z.volumes
         c.pools = z.pools
         z.rsdockerspawner_cfg = pkjson.dump_pretty(c)

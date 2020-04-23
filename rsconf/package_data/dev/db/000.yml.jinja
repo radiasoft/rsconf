@@ -426,15 +426,11 @@ host:
           client_id: xyzzy
           client_secret: big-secret
         pools:
-          default:
+          everybody:
             servers_per_host: 2
             mem_limit: "1G"
             cpu_limit: 0.5
             hosts: [ {{ all_host }} ]
-          private:
-            users: [ vagrant ]
-            servers_per_host: 1
-            hosts: [ {{ master }} ]
         vhosts:
           {{ all_host }}: jupyter.{{ all_host }}
       network:

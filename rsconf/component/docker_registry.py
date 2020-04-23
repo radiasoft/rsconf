@@ -5,9 +5,10 @@ u"""create base os configuration
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
-from pykern import pkcollections
+from pykern import pkcompat
 from pykern import pkio
 from pykern import pkjson
+from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from rsconf import component
 from rsconf import db
@@ -56,15 +57,22 @@ def host_init(hdb, host):
         with jf.open() as f:
             y = pkjson.load_any(f)
     else:
-        y = pkcollections.Dict()
+        y = PKDict()
     assert not host in y, \
         '{}: host already exists'.format(host)
     y[host] = db.random_string()
     pkjson.dump_pretty(y, filename=jf)
     pf = db.secret_path(hdb, _PASSWD_SECRET_F, visibility=_PASSWD_VISIBILITY)
-    with pf.open(mode='a') as f:
-        f.write('{}:{}\n'.format(host, bcrypt.hashpw(y[host], bcrypt.gensalt(5))))
-
+    with pf.open(mode='at') as f:
+        f.write(
+            '{}:{}\n'.format(
+                host,
+                bcrypt.hashpw(
+                    pkcompat.to_bytes(y[host]),
+                    bcrypt.gensalt(5),
+                ),
+            ),
+        )
 
 def install_crt_and_login(compt, j2_ctx):
     from rsconf.pkcli import tls
@@ -79,7 +87,9 @@ def install_crt_and_login(compt, j2_ctx):
     if not p:
         return
     j2_ctx.docker.auths[j2_ctx.docker_registry.http_addr] = dict(
-        auth=base64.b64encode(u + ':' + p),
+        auth=pkcompat.from_bytes(
+            base64.b64encode(pkcompat.to_bytes(u + ':' + p)),
+        ),
     )
     compt.install_access(mode='700', owner=j2_ctx.docker_registry.run_u)
     crt = component.tls_key_and_crt(j2_ctx, j2_ctx.docker_registry.host).crt
@@ -101,7 +111,7 @@ def update_j2_ctx(j2_ctx):
     if not j2_ctx.docker_registry.host:
         return False
     addr = '{}:{}'.format(j2_ctx.docker_registry.host, _PORT)
-    j2_ctx.docker_registry.update(pkcollections.Dict(
+    j2_ctx.docker_registry.update(PKDict(
         http_addr=addr,
         http_host='https://' + addr,
         run_u=j2_ctx.rsconf_db.root_u,

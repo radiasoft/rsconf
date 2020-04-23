@@ -5,6 +5,7 @@ u"""Database
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
+from pykern.pkcollections import PKDict
 from pykern import pkcollections
 from pykern import pkconfig
 from pykern import pkio
@@ -42,7 +43,7 @@ _BASE62_CHARS = string.ascii_lowercase + string.digits + string.ascii_uppercase
 _HEX_CHARS = '0123456789abcdef'
 
 
-class Host(pkcollections.Dict):
+class Host(PKDict):
     def j2_ctx_copy(self):
         return copy.deepcopy(self)
 
@@ -67,7 +68,7 @@ class Host(pkcollections.Dict):
        return str(v)
 
 
-class T(pkcollections.Dict):
+class T(PKDict):
 
     def __init__(self, *args, **kwargs):
         super(T, self).__init__(*args, **kwargs)
@@ -78,7 +79,7 @@ class T(pkcollections.Dict):
         self.secret_d = self.db_d.join(SECRET_SUBDIR)
         self.srv_d = self.root_d.join(SRV_SUBDIR)
         self.srv_host_d = self.srv_d.join(HOST_SUBDIR)
-        self.base = pkcollections.Dict()
+        self.base = PKDict()
         f = None
         try:
             for d in self.db_d, self.secret_d:
@@ -99,14 +100,14 @@ class T(pkcollections.Dict):
         res = pkcollections.OrderedMapping()
         for c in pkconfig.VALID_CHANNELS:
             res[c] = sorted(
-                self.base.host.get(c, pkcollections.Dict()).keys(),
+                self.base.host.get(c, PKDict()).keys(),
             )
         return res
 
     def host_db(self, channel, host):
         res = Host()
-        v = pkcollections.Dict(
-            rsconf_db=pkcollections.Dict(
+        v = PKDict(
+            rsconf_db=PKDict(
                 # Common defaults we allow overrides for
                 host_run_d='/srv',
                 run_u='vagrant',
@@ -127,8 +128,8 @@ class T(pkcollections.Dict):
                         continue
             merge_dict(res, v)
         host = host.lower()
-        v = pkcollections.Dict(
-            rsconf_db=pkcollections.Dict(
+        v = PKDict(
+            rsconf_db=PKDict(
                 channel=channel,
                 db_d=self.db_d,
                 host=host,
@@ -299,7 +300,7 @@ def _cfg_srv_group(value):
 def _init_local_files(values):
     v = values.rsconf_db
     r = v.db_d.join(LOCAL_SUBDIR)
-    res = pkcollections.Dict()
+    res = PKDict()
     for l in LEVELS[0], v.channel, v.host:
         d = r.join(l)
         for f in pkio.walk_tree(d):

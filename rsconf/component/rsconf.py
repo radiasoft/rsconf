@@ -6,9 +6,13 @@ u"""rsconf server config
 """
 from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
+from pykern import pkcompat
 from pykern import pkjson
 from rsconf import component
-import urlparse
+try:
+    from urllib.parse import urlparse
+except:
+    from urlparse import urlparse
 
 
 _PASSWD_SECRET_JSON_F = 'rsconf_auth.json'
@@ -52,7 +56,6 @@ class T(component.T):
 
 def host_init(j2_ctx, host):
     from rsconf import db
-    import urlparse
 
     jf = db.secret_path(j2_ctx, _PASSWD_SECRET_JSON_F, visibility=db.VISIBILITY_GLOBAL)
     if jf.check():
@@ -97,12 +100,12 @@ def _passwd_entry(j2_ctx, host):
         stderr=subprocess.PIPE,
         stdin=subprocess.PIPE,
     )
-    out, err = p.communicate(input=pw)
-    with pf.open(mode='a') as f:
-        f.write('{}:{}\n'.format(host, out.rstrip()))
+    out, err = p.communicate(input=pkcompat.to_bytes(pw))
+    with pf.open(mode='at') as f:
+        f.write('{}:{}\n'.format(host, pkcompat.from_bytes(out).rstrip()))
     return pw
 
 
 def _vhost(j2_ctx):
-    u = urlparse.urlparse(j2_ctx.rsconf_db.http_host)
+    u = urlparse(j2_ctx.rsconf_db.http_host)
     return u.hostname

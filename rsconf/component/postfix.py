@@ -12,7 +12,6 @@ from pykern import pkjson
 from rsconf import component
 import re
 import socket
-import subprocess
 
 # Fixing things and debugging
 # Display queue: postqueue -p
