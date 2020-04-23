@@ -1,10 +1,5 @@
 # -*-python-*-
 import binascii
-import grp
-import jupyter_client.localinterfaces
-import os
-import os.path
-import pwd
 
 c.Authenticator.admin_users = set([{{ jupyterhub.admin_users_str }}])
 {% if 'whitelist_users_str' in jupyterhub %}
@@ -28,10 +23,11 @@ class _Auth(jupyterhub.auth.Authenticator):
 c.JupyterHub.authenticator_class = _Auth
 {% endif %}
 c.JupyterHub.cleanup_servers = False
+#TODO(robnagler) DEPRECATED remove after prod release
 c.JupyterHub.confirm_no_ssl = True
 c.JupyterHub.cookie_secret = binascii.a2b_hex('{{ jupyterhub.cookie_secret_hex }}')
-c.JupyterHub.hub_ip = jupyter_client.localinterfaces.public_ips()[0]
-c.JupyterHub.ip = '0.0.0.0'
+c.JupyterHub.hub_ip = '{{ jupyterhub.hub_ip }}'
+c.JupyterHub.ip = '{{ jupyterhub.hub_ip }}'
 c.JupyterHub.port = {{ jupyterhub.port }}
 c.JupyterHub.template_paths = ['{{ jupyterhub.template_d }}']
 c.JupyterHub.template_vars = {{ jupyterhub.template_vars }}
@@ -43,35 +39,10 @@ c.DockerSpawner.image_whitelist = []
 c.DockerSpawner.image = '{{ jupyterhub.jupyter_docker_image }}'
 c.DockerSpawner.remove = True
 c.DockerSpawner.use_internal_ip = True
-{% if 'rsdockerspawner_cfg' in jupyterhub %}
 c.DockerSpawner.network_name = 'host'
 c.RSDockerSpawner.cfg = '''{{ jupyterhub.rsdockerspawner_cfg }}'''
 from rsdockerspawner import rsdockerspawner
 c.JupyterHub.spawner_class = rsdockerspawner.RSDockerSpawner
-{% else %}
-from dockerspawner import dockerspawner
-class _Spawner(dockerspawner.DockerSpawner):
-    def _volumes_to_binds(self, *args, **kwargs):
-        binds = super(_Spawner, self)._volumes_to_binds(*args, **kwargs)
-        for v in binds:
-            while not os.path.exists(v):
-                os.mkdir(v)
-                uid = pwd.getpwnam('{{ jupyterhub.jupyter_run_u }}').pw_uid
-                gid = grp.getgrnam('{{ jupyterhub.jupyter_run_u }}').gr_gid
-                os.chown(v, uid, gid)
-                v = os.path.dirname(v)
-        return binds
-c.JupyterHub.spawner_class = _Spawner
-c.DockerSpawner.volumes = {
-    '{{ jupyterhub.user_d }}/{username}': {
-        # POSIT: notebook_dir in
-        # radiasoft/container-beamsim-jupyter/container-conf/build.sh
-        # parameterize anyway, because matches above
-        'bind': '{{ jupyterhub.home_d }}/jupyter',
-    },
-}
-{% endif %}
-c.Spawner.default_url = '/lab'
 #c.Application.log_level = 'DEBUG'
 # Might not want this, but for now it's useful to see everything
 #c.JupyterHub.debug_db = True

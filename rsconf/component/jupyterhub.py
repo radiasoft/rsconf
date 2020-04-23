@@ -19,43 +19,36 @@ _USER_SUBDIR = 'user'
 _DOCKER_TLS_SUBDIR = 'docker_tls'
 _DEFAULT_PORT_BASE = 8100
 # POSIT: rsdockerspawner._DEFAULT_POOL_NAME
-_DEFAULT_POOL_V2 = 'default'
 _DEFAULT_USER_GROUP = 'everybody'
 _DEFAULT_POOL_V3 = _DEFAULT_USER_GROUP
 _DEFAULT_MOCK_PASSWORD = 'testpass'
 
 
 class T(component.T):
-    def internal_build(self):
+    def internal_build_compile(self):
         from rsconf import db
         from rsconf import systemd
-        from rsconf.component import docker
         from rsconf.component import docker_registry
 
-        self.buildt.require_component('docker')
-        j2_ctx = self.hdb.j2_ctx_copy()
-        z = j2_ctx.jupyterhub
-        rsd = bool(z.get('pools'))
-        z.vhost = j2_ctx.jupyterhub.vhosts[j2_ctx.rsconf_db.host]
-        z.run_d = systemd.docker_unit_prepare(self, j2_ctx)
+        self.buildt.require_component('docker', 'network')
+        jc = self.jc = self.hdb.j2_ctx_copy()
+        z = jc.jupyterhub
+        z.vhost = jc.jupyterhub.vhosts[jc.rsconf_db.host]
+        z.run_d = systemd.docker_unit_prepare(self, jc)
         z.update(
             user_d=z.run_d.join(_USER_SUBDIR),
             jupyter_docker_image=docker_registry.absolute_image(
-                j2_ctx, z.jupyter_docker_image,
+                jc, z.jupyter_docker_image,
             ),
-            run_u=j2_ctx.rsconf_db.get('run_u' if rsd else 'root_u'),
-            jupyter_run_u=j2_ctx.rsconf_db.run_u,
+            run_u=jc.rsconf_db.get('run_u'),
+            jupyter_run_u=jc.rsconf_db.run_u,
         )
         z.setdefault('http_timeout', 30);
         z.setdefault('template_vars', {});
+        nc = self.buildt.get_component('network')
+        z.hub_ip = nc.ip_and_net_for_host(jc.rsconf_db.host)[0]
         z.template_d = z.run_d.join(_TEMPLATE_D)
-        z.home_d = db.user_home_path(j2_ctx, z.jupyter_run_u)
-        self.install_access(mode='711', owner=z.run_u)
-        self.install_directory(z.run_d)
-        self.install_access(mode='700', owner=z.jupyter_run_u)
-        self.install_directory(z.user_d)
-        self.install_directory(z.template_d)
-        self.install_access(mode='400', owner=z.run_u)
+        z.home_d = db.user_home_path(jc, z.jupyter_run_u)
         z.cookie_secret_hex = self.secret_path_value(
             _COOKIE_SECRET,
             gen_secret=lambda: db.random_string(length=64, is_hex=True),
@@ -71,28 +64,47 @@ class T(component.T):
         if z.get('whitelist_users'):
             # admin_users are implicitly part of whitelist
             z.whitelist_users_str = _list_to_str(z.whitelist_users)
-        if rsd:
-            self._rsdockerspawner(j2_ctx, z)
-        if j2_ctx.rsconf_db.channel == 'dev':
+        self._rsdockerspawner(jc, z)
+
+    def internal_build_write(self):
+        from rsconf import db
+        from rsconf import systemd
+        from rsconf.component import docker_registry
+        from rsconf.component import docker
+
+        z = self.jc.jupyterhub
+        self.install_access(mode='711', owner=z.run_u)
+        self.install_directory(z.run_d)
+        self.install_access(mode='700', owner=z.jupyter_run_u)
+        self.install_directory(z.user_d)
+        self.install_directory(z.template_d)
+        self.install_access(mode='400', owner=z.run_u)
+        docker.setup_cluster(
+            self,
+            hosts=z.docker_hosts,
+            tls_d=z.tls_d,
+            run_u=z.run_u,
+            j2_ctx=self.jc,
+        )
+        if self.jc.rsconf_db.channel == 'dev':
             z.setdefault('mock_password', _DEFAULT_MOCK_PASSWORD)
         else:
             g = z.get('github')
             assert g and g.get('client_id') and g.get('client_secret'), \
                 'jupyter.github={} client_id/secret not set'.format(g)
         conf_f = z.run_d.join(_CONF_F)
-        self.install_resource('jupyterhub/{}'.format(_CONF_F), j2_ctx, conf_f)
+        self.install_resource('jupyterhub/{}'.format(_CONF_F), self.jc, conf_f)
         self.append_root_bash(
             "rsconf_service_docker_pull '{}'".format(z.jupyter_docker_image),
         )
         kw = pkcollections.Dict()
-        if not rsd:
-            kw.ports = [int(z.port)]
-            kw.volumes = [docker.DOCKER_SOCK]
+        kw.ports = [int(z.port)]
+        kw.volumes = [docker.DOCKER_SOCK]
         systemd.docker_unit_enable(
             self,
-            j2_ctx,
-            cmd='jupyterhub -f {}'.format(conf_f),
-            image=docker_registry.absolute_image(j2_ctx, z.docker_image),
+            self.jc,
+            cmd="bash -l -c 'jupyterhub -f {}'".format(conf_f),
+            image=docker_registry.absolute_image(self.jc, z.docker_image),
             run_u=z.run_u,
             **kw
         )
@@ -100,10 +112,10 @@ class T(component.T):
     def _rsdockerspawner(self, j2_ctx, z):
         from rsconf.component import docker
 
-        tls_d = z.run_d.join(_DOCKER_TLS_SUBDIR)
+        z.tls_d = z.run_d.join(_DOCKER_TLS_SUBDIR)
         c = pkcollections.Dict(
             port_base=z.setdefault('port_base', _DEFAULT_PORT_BASE),
-            tls_dir=str(tls_d),
+            tls_dir=str(z.tls_d),
         )
         seen = pkcollections.Dict(
             hosts=pkcollections.Dict(),
@@ -117,42 +129,12 @@ class T(component.T):
             str(z.user_d.join('{username}')),
             pkcollections.Dict(bind=str(z.home_d.join('jupyter'))),
         )
-        if z.get('user_groups'):
-            self._rsdockerspawner_v3(j2_ctx, z, seen)
-            c.user_groups = z.user_groups
-        else:
-            self._rsdockerspawner_v2_deprecated(j2_ctx, z, seen)
-        docker.setup_cluster(
-            self,
-            hosts=seen.hosts.keys(),
-            tls_d=tls_d,
-            run_u=z.run_u,
-            j2_ctx=j2_ctx,
-        )
+        self._rsdockerspawner_v3(j2_ctx, z, seen)
+        c.user_groups = z.user_groups
         c.volumes = z.volumes
         c.pools = z.pools
         z.rsdockerspawner_cfg = pkjson.dump_pretty(c)
-
-    def _rsdockerspawner_v2_deprecated(self, j2_ctx, z, seen):
-        for n, p in z.pools.items():
-            if n == _DEFAULT_POOL_V2:
-                p.setdefault('users', [])
-            else:
-                assert p.users, \
-                    'no users in pool={}'.format(n)
-            assert p.setdefault('servers_per_host', 0) >= 1, \
-                'invalid servers_per_host={} in pool={}'.format(
-                    p.servers_per_host,
-                    n,
-                )
-            for x in 'hosts', 'users':
-                for y in p[x]:
-                    assert y not in seen[x], \
-                        'duplicate value={} in {} pool={}'.format(y, x, n)
-                    seen[x][y] = n
-            p.setdefault('mem_limit', None)
-            p.setdefault('cpu_limit', None)
-            p.setdefault('min_activity_hours', None)
+        z.docker_hosts = list(seen.hosts.keys())
 
     def _rsdockerspawner_v3(self, j2_ctx, z, seen):
         def _users_for_groups(groups, t, n):

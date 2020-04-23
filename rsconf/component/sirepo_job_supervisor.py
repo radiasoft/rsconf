@@ -34,8 +34,7 @@ class T(component.T):
             env=self.buildt.get_component('sirepo').sirepo_unit_env(self).pkupdate(
                 PYENV_VERSION='py3',
             ),
-            # cannot pass PYENV_VERSION=py3 to cmd
-            cmd='pyenv exec sirepo job_supervisor',
+            cmd='sirepo job_supervisor',
             #TODO(robnagler) wanted by nginx
             volumes=[jc.sirepo.srdb.root]
         )
