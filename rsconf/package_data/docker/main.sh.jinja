@@ -7,6 +7,16 @@ docker_install() {
         install_info "$dir: exists, docker already installed"
         return
     fi
+    if [[ -e /var/lib/docker ]]; then
+        # This will happen on dev systems only, but a good check
+        install_err '/var/lib/docker exists:
+systemctl stop docker
+sysetmctl disable docker
+rm -rf /var/lib/docker
+
+Then re-run rsconf
+'
+    fi
 #TODO(robnagler) need a list of repos and RPMs.
     # F27
     if rsconf_fedora_release_if 26; then
