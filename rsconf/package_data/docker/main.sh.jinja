@@ -14,7 +14,8 @@ systemctl stop docker
 systemctl disable docker
 rm -rf /var/lib/docker/*
 umount /var/lib/docker
-perl -pi -e 'm{^/var/lib/docker} && ($_ = "")' /etc/fstab
+rmdir /var/lib/docker
+perl -pi -e "s{^/var/lib/docker.*}{}" /etc/fstab
 lvremove -f /dev/mapper/docker-vps
 
 Then re-run rsconf
