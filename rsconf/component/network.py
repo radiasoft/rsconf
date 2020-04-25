@@ -218,4 +218,4 @@ class T(component.T):
             for n in nets:
                 if nip.subnet_of(n):
                     return nets[n]
-        raise AssertionError('{}: ip not found in network.trusted'.format(nip))
+        raise AssertionError('{}: ip not found in un/trusted_networks'.format(nip))
