@@ -67,9 +67,11 @@ def host_init(hdb, host):
         f.write(
             '{}:{}\n'.format(
                 host,
-                bcrypt.hashpw(
-                    pkcompat.to_bytes(y[host]),
-                    bcrypt.gensalt(5),
+                pkcompat.from_bytes(
+                    bcrypt.hashpw(
+                        pkcompat.to_bytes(y[host]),
+                        bcrypt.gensalt(5),
+                    ),
                 ),
             ),
         )
