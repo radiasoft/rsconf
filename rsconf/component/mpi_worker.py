@@ -162,7 +162,7 @@ class T(component.T):
                 pkcollections.Dict(
                     host=h,
                     ip=ip,
-                    host_key_pub=s.host_key_pub_f.read().rstrip(),
+                    host_key_pub=pkio.read_text(s.host_key_pub_f).rstrip(),
                     # replace this (first) host with current host (h) so we don't
                     # have to recompute
                     identity_f=pkio.py_path(

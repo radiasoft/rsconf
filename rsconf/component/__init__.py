@@ -6,6 +6,7 @@ u"""Load components
 """
 from __future__ import absolute_import, division, print_function
 from pykern.pkcollections import PKDict
+from pykern import pkcompat
 from pykern import pkconfig
 from pykern import pkio
 from pykern.pkdebug import pkdp, pkdc, pkdlog
@@ -130,7 +131,9 @@ class T(PKDict):
             '{}: rpm does not exist'.format(rpm_file)
         dst = j2_ctx.build.dst_d.join(rpm_file)
         dst.mksymlinkto(src, absolute=False)
-        version = subprocess.check_output(['rpm', '-qp',  str(src)]).strip()
+        version = pkcompat.from_bytes(
+            subprocess.check_output(['rpm', '-qp',  str(src)]),
+        ).strip()
         self.append_root_bash("rsconf_install_perl_rpm '{}' '{}' '{}'".format(
             rpm_base,
             rpm_file,
@@ -232,11 +235,11 @@ class T(PKDict):
 
         src = db.secret_path(self.hdb, filename, visibility=visibility)
         if src.check():
-            return src.read(mode='rb'), src
+            return pkio.read_text(src), src
         assert gen_secret, \
             'unable to generate secret: path={}'.format(src)
         res = gen_secret()
-        res = self._write_binary(src, res)
+        res = pkcompat.from_bytes(self._write_binary(src, res))
         return res, src
 
     def service_prepare(self, watch_files, name=None):
@@ -283,10 +286,9 @@ class T(PKDict):
         if file_src:
             assert file_contents is None, \
                 '{}: do not pass both file_contents and file_src'.format(host_path)
-            file_contents = file_src.read()
+            file_contents = file_src.read_binary()
         if file_contents:
-            file_contents = self._write_binary(dst, file_contents)
-            md5 = _md5(file_contents)
+            md5 = _md5(self._write_binary(dst, file_contents))
         self._bash_append(host_path, md5=md5)
         return dst
 
@@ -306,7 +308,6 @@ class T(PKDict):
     def _write_binary(self, path, data):
         """Write as binary to Linux file
 
-        This may be Python2 only compatible. It's certainly not "true" unicode compatible.
         Any strings must be convertable to ascii. Since this is a configuration management
         system, we have control over this.
 
@@ -385,4 +386,4 @@ def _find_tls_crt(j2_ctx, domain):
 def _md5(data):
     m = hashlib.md5()
     m.update(data)
-    return m.hexdigest()
+    return pkcompat.from_bytes(m.hexdigest())

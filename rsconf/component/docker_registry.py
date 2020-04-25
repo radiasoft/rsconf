@@ -88,7 +88,7 @@ def install_crt_and_login(compt, j2_ctx):
         return
     j2_ctx.docker.auths[j2_ctx.docker_registry.http_addr] = dict(
         auth=pkcompat.from_bytes(
-            base64.b64encode(pkcompat.to_bytes(u + ':' + p)),
+            base64.b64encode(pkcompat.to_bytes(u + ':' + pkcompat.from_bytes(p))),
         ),
     )
     compt.install_access(mode='700', owner=j2_ctx.docker_registry.run_u)
