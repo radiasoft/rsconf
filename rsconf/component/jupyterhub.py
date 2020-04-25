@@ -41,7 +41,7 @@ class T(component.T):
             jupyter_docker_image=docker_registry.absolute_image(
                 jc, z.jupyter_docker_image,
             ),
-            run_u=jc.rsconf_db.get('run_u'),
+            run_u=jc.rsconf_db.run_u,
             jupyter_run_u=jc.rsconf_db.run_u,
         )
         z.setdefault('http_timeout', 30);
@@ -98,16 +98,12 @@ class T(component.T):
         self.append_root_bash(
             "rsconf_service_docker_pull '{}'".format(z.jupyter_docker_image),
         )
-        kw = pkcollections.Dict()
-        kw.ports = [int(z.port)]
-        kw.volumes = [docker.DOCKER_SOCK]
         systemd.docker_unit_enable(
             self,
             self.jc,
             cmd="bash -l -c 'jupyterhub -f {}'".format(conf_f),
             image=docker_registry.absolute_image(self.jc, z.docker_image),
             run_u=z.run_u,
-            **kw
         )
 
     def _rsdockerspawner(self, j2_ctx, z):
