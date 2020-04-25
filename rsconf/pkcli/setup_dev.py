@@ -57,13 +57,13 @@ def default_command():
         uid=os.getuid(),
         user=pwd.getpwuid(os.getuid())[0],
         worker5_host='v5.radia.run',
-        worker2_host='v2.radia.run',
+        worker6_host='v6.radia.run',
     )
     hosts = [h for h in j2_ctx.values() if str(h).endswith('.radia.run')]
     # bootstrap
     j2_ctx.update(boot_hdb)
     j2_ctx.rsconf_db.http_host = 'http://{}:{}'.format(j2_ctx.master, j2_ctx.port)
-    j2_ctx.bkp = pkcollections.Dict(primary=j2_ctx.master)
+    j2_ctx.bkp = pkcollections.Dict(primary=j2_ctx.host)
     j2_ctx.passwd_f = rsconf.component.rsconf.passwd_secret_f(j2_ctx)
     for h in hosts:
         _add_host(j2_ctx, srv, h)
@@ -94,11 +94,11 @@ def default_command():
     tls_d.ensure(dir=True)
     for h in (
         'jupyter.' + j2_ctx.all_host,
-        'jupyter.' + j2_ctx.master,
+        'jupyter.' + j2_ctx.host,
         j2_ctx.all_host,
         j2_ctx.master,
-        j2_ctx.worker2_host,
         j2_ctx.worker5_host,
+        j2_ctx.worker6_host,
     ):
         rsconf.pkcli.tls.gen_self_signed_crt(
             tls_d.join(h),

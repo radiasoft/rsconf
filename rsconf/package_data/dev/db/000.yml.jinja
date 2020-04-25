@@ -9,14 +9,14 @@ default:
     spec:
       joeblow:
         uid: 2002
-        email: devnull@{{ master }}
+        email: devnull@{{ host }}
       marysmith:
         uid: 2003
-        email: blackhole@{{ master }}
+        email: blackhole@{{ host }}
         procmail_want_include: true
       {{ user }}:
         uid: {{ uid }}
-        email: {{ user }}@{{ master }}
+        email: {{ user }}@{{ host }}
         want_shell: true
   bkp:
     archive_d: /srv/bkp/archive
@@ -24,7 +24,7 @@ default:
       - /etc/selinux
     hosts:
       - {{ host }}
-      - {{ master }}
+      - {{ worker5_host }}
     include:
       - /etc
       - /var/log
@@ -36,7 +36,7 @@ default:
     # Time zones not accepted in systemd 219 (CentOS 7).
     # Times are in UTC. We may need to change the local time zone.
     on_calendar: "8"
-    primary: {{ master }}
+    primary: {{ host }}
     secondaries: [ {{ all_host }} ]
     simple_mirrors:
       /srv/bkp/simple_mirror:
@@ -66,7 +66,7 @@ default:
 
 
   btest:
-    client_host: {{ master }}
+    client_host: {{ worker6_host }}
     email_user: {{ user }}
     apps: [ petshop ]
     on_calendar: "12"
@@ -160,9 +160,9 @@ default:
       - facade: requiresecure
   postfix:
     aliases:
-      root: root@{{ master }}
-      errors: errors@{{ master }}
-      critical-errors: critical-errors@{{ master }}
+      root: root@{{ host }}
+      errors: errors@{{ host }}
+      critical-errors: critical-errors@{{ host }}
     whitelist_senders:
       - poorly-configured-mailer.com
   postgresql:
@@ -214,7 +214,7 @@ channel:
       apps: [ petshop ]
     mpi_worker:
       clusters:
-        vagrant: [ {{ host }}, {{ worker5_host }}, {{ worker2_host }} ]
+        vagrant: [ {{ host }}, {{ worker5_host }}, {{ worker6_host }} ]
     network:
       trusted:
         # v*.radia.run private network
@@ -233,8 +233,8 @@ channel:
         celeryd_concurrency: 1
         broker_url: "amqp://guest@rabbitmq.{{ host }}//"
       comsol_register:
-        mail_server: {{ master }}
-        mail_username: comsol@{{ master }}
+        mail_server: {{ host }}
+        mail_username: comsol@{{ host }}
         mail_password: somepass
       mpi_cores: 4
       vhost: sirepo.{{ host }}
@@ -247,18 +247,6 @@ channel:
 
 host:
   dev:
-    {{ worker2_host }}:
-      docker:
-        tls_host: {{ worker2_host }}
-      nfs_client:
-        mounts:
-          {{ master }}:
-            - /srv/mpi_worker/user
-      mpi_worker:
-        volumes:
-          /srv/mpi_worker/tmp: /home/vagrant/jupyter/tmp
-      rsconf_db:
-        components: [ mpi_worker ]
     {{ master }}:
       base_os:
         volume_groups:
@@ -270,60 +258,11 @@ host:
                 mount_d: /srv/docker
       docker:
         tls_host: {{ master }}
-      jupyterhub:
-        pools:
-          everybody:
-            servers_per_host: 2
-            mem_limit: "1G"
-            cpu_limit: 0.5
-            hosts: [ {{ worker2_host }}, {{ worker5_host }} ]
-          private:
-            user_groups: [ private ]
-            servers_per_host: 1
-            hosts: [ {{ master }} ]
-        user_groups:
-          private: [ vagrant ]
-          instructors: [ teach1 ]
-        volumes:
-          /srv/jupyterhub/user/Workshop:
-            bind: /home/vagrant/jupyter/Workshop
-            mode: ro
-          /srv/jupyterhub/user/Workshop/{username}:
-            bind: /home/vagrant/jupyter/Workshop/{username}
-            mode:
-              rw: [ instructors ]
-        vhosts:
-          {{ master }}: jupyter.{{ master }}
-      jupyterhub_proxy:
-        listen_any: True
-      nfs_server:
-        exports:
-          /srv/mpi_worker/user: [ 10.10.10.0/24 ]
-      postfix:
-        aliases:
-          RSCONF_DB_REPLACE:
-            # root and errors gets delivered locally so we replace
-            blackhole: /dev/null
-        virtual_aliases:
-          wp1.{{ master }}:
-            vagrant: vagrant
       rsconf_db:
-        #TODO(robnagler) need to edit this to just rsconf to bootstrap
         components:
-          # must be here, because docker needs to be setup on master
           - docker
           - rsconf
           - docker_registry
-          # - jupyterhub
-          # - jupyterhub_proxy
-          # - nfs_server
-          # - btest
-          # - github_bkp
-          # - dovecot
-#NOTE: 8001 used by sirepo during build
-        # jupyterhub_proxy, btest, github_bkp, dovecot ]
-        #components: [ rsconf, docker_registry, nfs_server, jupyterhub, jupyterhub_proxy ]
-        #components: [ rsconf, docker_registry, btest ]
     {{ host }}:
       base_users:
         add:
@@ -334,9 +273,6 @@ host:
             want_shell: true
       docker:
         tls_host: {{ host }}
-      jupyterhub:
-        vhosts:
-          {{ host }}: jupyter.{{ host }}
 {# to test ip tables NAT
       base_os:
         ip_forward: true
@@ -357,6 +293,35 @@ host:
             ip: 10.10.10.40
             is_nat_input: true
 #}
+      jupyterhub:
+        pools:
+          everybody:
+            servers_per_host: 2
+            mem_limit: "1G"
+            cpu_limit: 0.5
+            hosts: [ {{ worker6_host }}, {{ worker5_host }} ]
+          private:
+            user_groups: [ private ]
+            servers_per_host: 1
+            hosts: [ {{ host }} ]
+        user_groups:
+          private: [ vagrant ]
+          instructors: [ teach1 ]
+        volumes:
+          /srv/jupyterhub/user/Workshop:
+            bind: /home/vagrant/jupyter/Workshop
+            mode: ro
+          /srv/jupyterhub/user/Workshop/{username}:
+            bind: /home/vagrant/jupyter/Workshop/{username}
+            mode:
+              rw: [ instructors ]
+        vhosts:
+          {{ host }}: jupyter.{{ host }}
+      jupyterhub_proxy:
+        listen_any: True
+      nfs_server:
+        exports:
+          /srv/mpi_worker/user: [ 10.10.10.0/24 ]
       nginx:
         redirects:
           - host_or_uri: www.google.com
@@ -367,21 +332,32 @@ host:
             server_names:
               - redirect3.{{ host }}
             want_www: true
-      nfs_client:
-        mounts:
-          {{ master }}:
-            - /srv/mpi_worker/user
       nfs_server:
         exports:
           /srv/sirepo/db/user: [ 10.10.10.0/24 ]
+      postfix:
+        aliases:
+          RSCONF_DB_REPLACE:
+            # root and errors gets delivered locally so we replace
+            blackhole: /dev/null
+        virtual_aliases:
+          wp1.{{ host }}:
+            vagrant: vagrant
       pykern:
         pkdebug:
           control: .
       rsconf_db:
+          # - jupyterhub
+          # - jupyterhub_proxy
+          # - nfs_server
+          # - btest
+          # - github_bkp
+          # - dovecot
+        #components: [ rsconf, docker_registry, btest ]
 #        components: [ bop ]
-#        components: [ jupyterhub, jupyterhub_proxy ]
+        components: [ jupyterhub, jupyterhub_proxy ]
 #        components: [ rabbitmq, celery_sirepo, sirepo, nfs_server ]
-        components: [ nfs_client, nfs_server, sirepo ]
+#        components: [ nfs_server, sirepo ]
       sirepo:
         job_driver:
           docker:
@@ -405,10 +381,22 @@ host:
 #}
       nfs_client:
         mounts:
-          {{ master }}:
+          {{ host }}:
             - /srv/mpi_worker/user
       postfix:
-        smart_host: {{ master }}
+        smart_host: {{ host }}
+      rsconf_db:
+        components: [ mpi_worker ]
+    {{ worker6_host }}:
+      docker:
+        tls_host: {{ worker6_host }}
+      nfs_client:
+        mounts:
+          {{ host }}:
+            - /srv/mpi_worker/user
+      mpi_worker:
+        volumes:
+          /srv/mpi_worker/tmp: /home/vagrant/jupyter/tmp
       rsconf_db:
         components: [ mpi_worker ]
     # This host never installed, just for testing build
@@ -457,7 +445,7 @@ host:
             search: radiasoft.net
       nfs_client:
         mounts:
-          {{ master }}:
+          {{ host }}:
             - /srv/sirepo/db/users
       nfs_server:
         num_servers: 64
@@ -466,7 +454,7 @@ host:
       postfix:
         # if you do not set this, you'll get to test the SLD matching:
         # fnl1i.bivio.biz: reverse dns for 216.17.132.33 does not match SLD of v5.radia.run
-        myhostname: '{{ master }}'
+        myhostname: '{{ host }}'
       rsconf_db:
         components:
           # order matters on startup, because not all dependencies
