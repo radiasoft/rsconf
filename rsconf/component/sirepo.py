@@ -74,44 +74,36 @@ class T(component.T):
             },
         ))
         self._comsol(z)
-        if z.feature_config.job:
-            self.j2_ctx_pksetdefault({
-                'sirepo.job_driver.modules': ['docker'],
-                'sirepo.job': dict(
-                    server_secret=lambda: self.secret_path_value(
-                        _SERVER_SECRET,
-                        gen_secret=lambda: pkcompat.from_bytes(
-                            base64.urlsafe_b64encode(os.urandom(32)),
-                        ),
-                        visibility='channel',
-                    )[0],
-                    verify_tls=lambda: jc.pykern.pkconfig.channel != 'dev',
-                ),
-                'sirepo.pkcli.job_supervisor': dict(
-                    ip='127.0.0.1',
-                    port=8001,
-                ),
-            })
-            z.pksetdefault(job_api=PKDict)
-            # server connects locally only so go direct to tornado.
-            # supervisor has different uri to pass to agents.
-            z.job_api.supervisor_uri = 'http://{}:{}'.format(
-                z.pkcli.job_supervisor.ip,
-                z.pkcli.job_supervisor.port,
-            )
-            self.buildt.require_component('sirepo_job_supervisor')
-            s = self.buildt.get_component('sirepo_job_supervisor')
-            s.sirepo_config(self)
-            self.__docker_unit_enable_after = [s.name]
+        self.j2_ctx_pksetdefault({
+            'sirepo.job_driver.modules': ['docker'],
+            'sirepo.job': dict(
+                server_secret=lambda: self.secret_path_value(
+                    _SERVER_SECRET,
+                    gen_secret=lambda: pkcompat.from_bytes(
+                        base64.urlsafe_b64encode(os.urandom(32)),
+                    ),
+                    visibility='channel',
+                )[0],
+                verify_tls=lambda: jc.pykern.pkconfig.channel != 'dev',
+            ),
+            'sirepo.pkcli.job_supervisor': dict(
+                ip='127.0.0.1',
+                port=8001,
+            ),
+        })
+        z.pksetdefault(job_api=PKDict)
+        # server connects locally only so go direct to tornado.
+        # supervisor has different uri to pass to agents.
+        z.job_api.supervisor_uri = 'http://{}:{}'.format(
+            z.pkcli.job_supervisor.ip,
+            z.pkcli.job_supervisor.port,
+        )
+        self.buildt.require_component('sirepo_job_supervisor')
+        s = self.buildt.get_component('sirepo_job_supervisor')
+        s.sirepo_config(self)
+        self.__docker_unit_enable_after = [s.name]
 #TODO(robnagler) remove when deployed to alpha
-            z.job.supervisor_uri = z.job_api.supervisor_uri
-        else:
-            # REMOVE after Celery no longer in use
-            self.j2_ctx_pksetdefault({
-                'sirepo.runner.job_class': 'Celery',
-            })
-            self.buildt.require_component('celery_sirepo')
-            self.__docker_unit_enable_after = ['celery_sirepo']
+        z.job.supervisor_uri = z.job_api.supervisor_uri
 
     def internal_build_write(self):
         from rsconf.component import db_bkp

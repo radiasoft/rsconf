@@ -70,8 +70,6 @@ default:
     email_user: {{ user }}
     apps: [ petshop ]
     on_calendar: "12"
-  celery_sirepo:
-    queues: "sequential,parallel"
   component:
     tls_crt_create: true
     tls_crt:
@@ -95,8 +93,8 @@ default:
     test_mode: True
   jupyterhub:
     admin_users: [ '{{ user }}' ]
-    docker_image: docker.io/radiasoft/jupyterhub
-    jupyter_docker_image: docker.io/radiasoft/beamsim-jupyter
+    docker_image: radiasoft/jupyterhub
+    jupyter_docker_image: radiasoft/beamsim-jupyter
     # github:
     #  client_id: ""
     #  client_secret: ""
@@ -108,7 +106,7 @@ default:
     # sometime before bkp.on_calendar
     on_calendar: "7:30"
   mpi_worker:
-    docker_image: docker.io/radiasoft/beamsim-jupyter
+    docker_image: radiasoft/beamsim-jupyter
     guest_d: /home/vagrant/jupyter
     host_root_d: /srv/mpi_worker/user
     ssh_port: 8022
@@ -176,8 +174,6 @@ default:
   postgrey:
     port: 10023
     whitelist_recipients: []
-  rabbitmq:
-    docker_image: docker.io/radiasoft/rabbitmq
   rsconf: {}
   rsconf_db:
     #TODO(robnagler) POSIT dev/nginx/nginx.conf.jinja
@@ -229,9 +225,6 @@ channel:
     postgresql:
       auth_local_method: trust
     sirepo:
-      celery_tasks:
-        celeryd_concurrency: 1
-        broker_url: "amqp://guest@rabbitmq.{{ host }}//"
       comsol_register:
         mail_server: {{ host }}
         mail_username: comsol@{{ host }}
@@ -317,8 +310,6 @@ host:
               rw: [ instructors ]
         vhosts:
           {{ host }}: jupyter.{{ host }}
-      jupyterhub_proxy:
-        listen_any: True
       nfs_server:
         exports:
           /srv/mpi_worker/user: [ 10.10.10.0/24 ]
@@ -356,7 +347,6 @@ host:
         #components: [ rsconf, docker_registry, btest ]
 #        components: [ bop ]
         components: [ jupyterhub, jupyterhub_proxy ]
-#        components: [ rabbitmq, celery_sirepo, sirepo, nfs_server ]
 #        components: [ nfs_server, sirepo ]
       sirepo:
         job_driver:
@@ -421,6 +411,8 @@ host:
             hosts: [ {{ all_host }} ]
         vhosts:
           {{ all_host }}: jupyter.{{ all_host }}
+      jupyterhub_proxy:
+        listen_any: True
       network:
         public_ssh_port: 5555
         devices:
@@ -457,15 +449,12 @@ host:
         myhostname: '{{ host }}'
       rsconf_db:
         components:
-          # order matters on startup, because not all dependencies
-          # are expressed in the require_component or imports,
-          # e.g. celery_sirepo must start before sirepo
           - nfs_client
           - nfs_server
-          - rabbitmq
           - bkp
           - comsol
           - sirepo
+          - sirepo_job_supervisor
           - bop
           - btest
           - dovecot
@@ -491,6 +480,9 @@ host:
           methods:
             - email
           deprecated_methods: [ github ]
+        job_driver:
+          docker:
+            hosts: [ {{ all_host }} ]
 
 # testing named needs build-perl-rpms.sh
 #          - bivio_named
