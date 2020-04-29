@@ -35,8 +35,10 @@ primary_host() {
     if [[ $primary_prev && -d $d ]]; then
         cmd+=( --link-dest="$d" )
     fi
+    local -a e=()
     for src_d in "${bkp_include[@]}"; do
-        "${cmd[@]}" "${bkp_exclude[@]}" "$host:$src_d" "$tgt_d"
+        e=( "${bkp_exclude[@]}" ${bkp_exclude_for_host[$host]:-} )
+        "${cmd[@]}" "${e[@]}" "$host:$src_d" "$tgt_d"
     done
     primary_archive_logs "$tgt_d"
 }

@@ -22,6 +22,8 @@ default:
     archive_d: /srv/bkp/archive
     exclude:
       - /etc/selinux
+    exclude_for_host:
+      {{ host }}: [ /etc/passwd ]
     hosts:
       - {{ host }}
       - {{ worker5_host }}
@@ -344,9 +346,10 @@ host:
           # - btest
           # - github_bkp
           # - dovecot
+
         #components: [ rsconf, docker_registry, btest ]
 #        components: [ bop ]
-        components: [ jupyterhub, jupyterhub_proxy ]
+        components: [ bkp, jupyterhub, jupyterhub_proxy ]
 #        components: [ nfs_server, sirepo ]
       sirepo:
         job_driver:

@@ -51,6 +51,15 @@ class T(component.T):
         for d in z.exclude:
             gv += "'--exclude={}'\n".format(d)
         gv += ')\n'
+        gv += 'declare -A bkp_exclude_for_host=(\n'
+        for h, v in z.get('exclude_for_host', {}).items():
+            gv += f"['{h}']='"
+            for d in v:
+                assert ' ' not in d, \
+                    f'dir="{d}" contains a space exclude_for_host={h}'
+                gv += f' --exclude={d}'
+            gv += "'\n"
+        gv += ')\n'
         for i in 'archive_d', 'max_try', 'mirror_d':
             gv += "bkp_{}='{}'\n".format(i, z[i])
         gv += 'bkp_include=(\n'
