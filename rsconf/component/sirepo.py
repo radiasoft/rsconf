@@ -37,6 +37,7 @@ def install_user_d(compt, j2_ctx):
 class T(component.T):
     def internal_build_compile(self):
         from rsconf.component import docker_registry
+        from rsconf import db
 
         self.buildt.require_component('docker', 'nginx', 'db_bkp')
         jc, z = self.j2_ctx_init()
@@ -48,9 +49,7 @@ class T(component.T):
                     http_name=lambda: 'sirepo_{}'.format(jc.rsconf_db.channel),
                     private_key=lambda: self.secret_path_value(
                         _COOKIE_PRIVATE_KEY,
-                        gen_secret=lambda: pkcompat.from_bytes(
-                            base64.urlsafe_b64encode(os.urandom(32)),
-                        ),
+                        gen_secret=db.random_string,
                         visibility='channel',
                     )[0],
                 ),

@@ -380,7 +380,12 @@ def _find_tls_crt(j2_ctx, domain):
         # due to dots in domain, we can't use ext=
         if (src + tls.KEY_EXT).check():
             return src, domain
-    raise AssertionError('{}: tls crt for domain not found'.format(domain))
+    assert j2_ctx.component.tls_crt_create, \
+        f'{domain}: tls crt for domain not found'
+    src = d.join(domain)
+    pkio.mkdir_parent_only(src)
+    tls.gen_self_signed_crt(str(src), *domain)
+    return src, domain
 
 
 def _md5(data):
