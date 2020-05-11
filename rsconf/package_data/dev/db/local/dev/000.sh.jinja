@@ -1,0 +1,4 @@
+{% if 'docker' in rsconf_db.components %}
+install_access 700 root root
+rsconf_install_directory /etc/docker/any-dir
+{% endif %}
