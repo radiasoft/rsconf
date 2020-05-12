@@ -34,6 +34,17 @@ class T(PKDict):
     def append_root_bash(self, *line):
         self._root_bash.extend(line)
 
+    def append_root_bash_with_file(self, abs_path, j2_ctx):
+        """Append lines from jinja-rendered path
+
+        Distinct from `append_root_bash_with_resource`.
+
+        Args:
+            abs_path (py.path): absolute path of file to render
+            j2_ctx (PKDict): dictionary to render
+        """
+        self._root_bash.append(self._render_file(abs_path, j2_ctx))
+
     def append_root_bash_with_main(self, j2_ctx):
         self.append_root_bash_with_resource(
             '{}/main.sh'.format(self.name),
@@ -292,18 +303,23 @@ class T(PKDict):
         self._bash_append(host_path, md5=md5)
         return dst
 
+    def _render_file(self, path, j2_ctx):
+        from pykern import pkjinja
+
+        try:
+            return pkjinja.render_file(path, j2_ctx, strict_undefined=True)
+        except Exception as e:
+            pkdlog('path={} exception={}', path, e)
+            raise
+
     def _render_resource(self, name, j2_ctx):
         from pykern import pkjinja
         from rsconf import db
-        try:
-            return pkjinja.render_file(
-                db.resource_path(j2_ctx, name + pkjinja.RESOURCE_SUFFIX),
-                j2_ctx,
-                strict_undefined=True,
-            )
-        except Exception as e:
-            pkdlog('{}: {}', name, e)
-            raise
+
+        return self._render_file(
+            db.resource_path(j2_ctx, name + pkjinja.RESOURCE_SUFFIX),
+            j2_ctx,
+        )
 
     def _write_binary(self, path, data):
         """Write as binary to Linux file

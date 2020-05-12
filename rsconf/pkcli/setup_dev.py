@@ -73,10 +73,15 @@ def default_command():
     for f in pkio.walk_tree(dev_d):
         if str(f).endswith('~') or str(f).startswith('#'):
             continue
-        x = f.relto(dev_d)
-        dst = root_d.join(re.sub('.jinja$', '', x))
+        x = str(f.relto(dev_d))
+        if not ('local/' in x and x.endswith('.sh.jinja')):
+            x = re.sub('.jinja$', '', x)
+        dst = root_d.join(x)
         pkio.mkdir_parent_only(dst)
-        pkjinja.render_file(f, j2_ctx, output=dst, strict_undefined=True)
+        if f.basename == dst.basename:
+            f.copy(dst)
+        else:
+            pkjinja.render_file(f, j2_ctx, output=dst, strict_undefined=True)
     rpm_d = pkio.py_path(root_d.dirname).join('rpm')
     pkio.mkdir_parent(rpm_d)
     root_d.join('rpm').mksymlinkto(rpm_d, absolute=False)

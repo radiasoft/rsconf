@@ -63,6 +63,9 @@ class T(component.T):
         #  we will want to have local files for.
         for t in sorted(values.keys()):
             s = values[t]
+            if s.basename.endswith('.sh.jinja'):
+                self.append_root_bash_with_file(s, self.j2_ctx)
+                continue
             x = s.stat()
             self.install_access(
                 mode='{:o}'.format(x.mode & 0o777),
