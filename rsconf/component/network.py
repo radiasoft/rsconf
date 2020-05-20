@@ -45,10 +45,12 @@ class T(component.T):
         jc = self.j2_ctx
         z = jc.network
         z.trusted_nets = tuple(sorted(z.trusted.keys()))
-        z.public_tcp_ports = []
-        z.trusted_tcp_ports = []
-        z.public_udp_ports = []
-        z.setdefault('pci_scanner_net', None)
+        z.pksetdefault(
+            public_tcp_ports=[],
+            trusted_tcp_ports=[],
+            public_udp_ports=[],
+            pci_scanner_net=None,
+        )
         self.__trusted_nets = self._nets(jc, z.trusted)
         z.setdefault(
             'trusted_public_nets',
@@ -98,7 +100,8 @@ class T(component.T):
             self.append_root_bash(': nothing to do')
             return
         for w in 'public_tcp_ports', 'public_udp_ports', 'trusted_tcp_ports':
-            z[w] = sorted(z[w])
+            # some ports are listed as https and http, and others 9999
+            z[w] = sorted([str(p) for p in z[w]])
         # Only for jupyterhub, explicitly set, and not on a machine
         # with a public address
         self.install_access(mode='444', owner=self.hdb.rsconf_db.root_u)
