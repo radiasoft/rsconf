@@ -6,6 +6,7 @@ u"""create systemd files
 """
 from __future__ import absolute_import, division, print_function
 from pykern.pkcollections import PKDict
+from pykern.pkdebug import pkdp
 from pykern import pkconfig
 from pykern import pkio
 import datetime
@@ -71,9 +72,18 @@ def custom_unit_prepare(compt, j2_ctx, watch_files=()):
     return run_d
 
 
-def docker_unit_enable(compt, j2_ctx, image, cmd, env=None, volumes=None, after=None, run_u=None, ports=None, extra_run_flags=None):
+def docker_unit_enable(compt, j2_ctx, image, cmd, env=None, volumes=None, after=None, run_u=None, ports=None):
     """Must be last call"""
     from rsconf.component import docker_registry
+
+    def _extra_run_flags():
+        try:
+            c = z.pknested_get('extra_run_flags.' + compt.name)
+        except KeyError:
+            return ''
+        return ' '.join(
+            (f'--{k}={v}' for k, v in c.items()),
+        )
 
     z = j2_ctx.systemd
     if env is None:
@@ -85,7 +95,7 @@ def docker_unit_enable(compt, j2_ctx, image, cmd, env=None, volumes=None, after=
     image = docker_registry.absolute_image(j2_ctx, image)
     z.update(
         after=_after(after),
-        extra_run_flags=' '.join("'{}'".format(f) for f in extra_run_flags) if extra_run_flags else '',
+        extra_run_flags=_extra_run_flags(),
         service_exec=cmd,
         exports='\n'.join(
             ["export '{}={}'".format(k, env[k]) for k in sorted(env.keys())],
@@ -216,7 +226,7 @@ def unit_prepare(compt, j2_ctx, watch_files=()):
     """Must be first call"""
     f = _SYSTEMD_DIR.join('{}.service'.format(compt.name))
     d = pkio.py_path(str(f) + '.d')
-    j2_ctx.systemd = PKDict(
+    j2_ctx.pksetdefault(systemd=PKDict).systemd.pkupdate(
         service_name=compt.name,
         service_f=f,
         unit_override_d=d,
