@@ -17,9 +17,15 @@ import os
 
 
 _DB_SUBDIR = 'db'
-#TODO(robnagler) import from sirepo directly
+
 _USER_SUBDIR = 'user'
+
+_PROPIETARY_CODE_SUBDIR = 'proprietary_code'
+
+#: secret basename
 _COOKIE_PRIVATE_KEY = 'sirepo_cookie_private_key'
+
+#: secret basename
 _SERVER_SECRET = 'sirepo_job_server_secret'
 
 
@@ -57,11 +63,13 @@ class T(component.T):
                 'feature_config': dict(
                     api_modules=[],
                     job=bool(z.get('job_driver')),
+                    proprietary_sim_types=tuple(),
                 ),
                 'pkcli.service': dict(
                     ip='0.0.0.0',
                     run_dir=self.__run_d,
                 ),
+                'proprietary_code_d': d.join(_PROPIETARY_CODE_SUBDIR),
                 'srdb.root': d,
             },
             pykern={
@@ -112,6 +120,24 @@ class T(component.T):
         jc = self.j2_ctx
         z = jc[self.name]
         install_user_d(self, jc)
+        compt.install_access(mode='400')
+        for c in z.proprietary_sim_types:
+            self.install_abspath(
+                self.rpm_file(j2_ctx, c),
+                z.proprietary_code_d.join(c),
+            )
+        version = pkcompat.from_bytes(
+            subprocess.check_output(['rpm', '-qp',  str(src)]),
+        ).strip()
+        self.append_root_bash("rsconf_install_perl_rpm '{}' '{}' '{}'".format(
+            rpm_base,
+            rpm_file,
+            version,
+        ))
+        return rpm_file
+
+
+            self.rpm_file(self, j2_ctx, c)
         nginx.install_vhost(
             self,
             vhost=z.vhost,
@@ -143,7 +169,7 @@ class T(component.T):
             ['*'],
             values=PKDict((k, v) for k, v in compt.j2_ctx.items() if k in ('sirepo', 'pykern')),
             # local only values
-            exclude_re=r'^sirepo(?:_docker_image|.*_vhost)',
+            exclude_re=r'^sirepo(?:_docker_image|.*_vhost|rpm_d)',
         )
         e.PYTHONUNBUFFERED = '1'
         return e

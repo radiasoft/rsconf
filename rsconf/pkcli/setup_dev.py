@@ -85,7 +85,9 @@ def default_command():
     rpm_d = pkio.py_path(root_d.dirname).join('rpm')
     pkio.mkdir_parent(rpm_d)
     root_d.join('rpm').mksymlinkto(rpm_d, absolute=False)
-    subprocess.check_call(['bash', str(secret_d.join('setup_dev.sh'))])
+    subprocess.check_call(
+        ['bash', str(secret_d.join('setup_dev.sh')), str(rpm_d)],
+    )
     # dev only, really insecure, but makes consistent builds easy
     _sym('~/src/radiasoft')
     _sym('~/src/biviosoftware')

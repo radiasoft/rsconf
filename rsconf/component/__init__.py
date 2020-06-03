@@ -130,17 +130,24 @@ class T(PKDict):
         self.install_abspath(p, host_path)
 
     def install_perl_rpm(self, j2_ctx, rpm_base, channel=None):
-        rpm_file = '{}-{}.rpm'.format(
+        src = self._rpm_file(j2_ctx, rpm_base, channel)
+        r = src.basename
+        if r in self.hdb.component.setdefault('_installed_rpms', set()):
+            return r
+        self.hdb.component._installed_rpms.add(r)
+        dst = j2_ctx.build.dst_d.join(r)
+        dst.mksymlinkto(src, absolute=False)
+        self.append_root_bash("rsconf_install_perl_rpm '{}' '{}' '{}'".format(
             rpm_base,
-            channel or j2_ctx.rsconf_db.channel,
-        )
-        if rpm_file in self.hdb.component.setdefault('_installed_rpms', set()):
-            return rpm_file
-        self.hdb.component._installed_rpms.add(rpm_file)
-        src = j2_ctx.rsconf_db.rpm_source_d.join(rpm_file)
-        assert src.check(), \
-            '{}: rpm does not exist'.format(rpm_file)
-        dst = j2_ctx.build.dst_d.join(rpm_file)
+            r,
+            pkcompat.from_bytes(
+                subprocess.check_output(['rpm', '-qp',  str(src)]),
+            ).strip(),
+        ))
+        return rpm_file
+
+    def install_proprietary_code(self, j2_ctx, rpm_base, dst_d):
+        src = self._rpm_file(j2_ctx, rpm_base)
         dst.mksymlinkto(src, absolute=False)
         version = pkcompat.from_bytes(
             subprocess.check_output(['rpm', '-qp',  str(src)]),
@@ -320,6 +327,16 @@ class T(PKDict):
             db.resource_path(j2_ctx, name + pkjinja.RESOURCE_SUFFIX),
             j2_ctx,
         )
+
+    def _rpm_file(self, j2_ctx, rpm_base, channel=None):
+        s = j2_ctx.rsconf_db.rpm_source_d.join(
+            '{}-{}.rpm'.format(
+                rpm_base,
+                channel or j2_ctx.rsconf_db.channel,
+            )
+        assert s.check(), \
+            '{}: rpm does not exist'.format(s)
+        return s
 
     def _write_binary(self, path, data):
         """Write as binary to Linux file
