@@ -130,7 +130,7 @@ class T(PKDict):
         self.install_abspath(p, host_path)
 
     def install_perl_rpm(self, j2_ctx, rpm_base, channel=None):
-        src = self._rpm_file(j2_ctx, rpm_base, channel)
+        src = self.rpm_file(j2_ctx, rpm_base, channel)
         r = src.basename
         if r in self.hdb.component.setdefault('_installed_rpms', set()):
             return r
@@ -144,20 +144,7 @@ class T(PKDict):
                 subprocess.check_output(['rpm', '-qp',  str(src)]),
             ).strip(),
         ))
-        return rpm_file
-
-    def install_proprietary_code(self, j2_ctx, rpm_base, dst_d):
-        src = self._rpm_file(j2_ctx, rpm_base)
-        dst.mksymlinkto(src, absolute=False)
-        version = pkcompat.from_bytes(
-            subprocess.check_output(['rpm', '-qp',  str(src)]),
-        ).strip()
-        self.append_root_bash("rsconf_install_perl_rpm '{}' '{}' '{}'".format(
-            rpm_base,
-            rpm_file,
-            version,
-        ))
-        return rpm_file
+        return r
 
     def install_resource(self, name, j2_ctx, host_path=None):
         if not host_path:
@@ -224,6 +211,17 @@ class T(PKDict):
                 n.pksetdefault(k[-1], v)
 
         f([], defaults)
+
+    def rpm_file(self, j2_ctx, rpm_base, channel=None):
+        s = j2_ctx.rsconf_db.rpm_source_d.join(
+            '{}-{}.rpm'.format(
+                rpm_base,
+                channel or j2_ctx.rsconf_db.channel,
+            ),
+        )
+        assert s.check(), \
+            '{}: rpm does not exist'.format(s)
+        return s
 
     def rsconf_append(self, path, line_or_grep, line=None):
         l = "rsconf_edit_no_change_res=0 rsconf_append '{}' '{}'".format(path, line_or_grep)
@@ -327,16 +325,6 @@ class T(PKDict):
             db.resource_path(j2_ctx, name + pkjinja.RESOURCE_SUFFIX),
             j2_ctx,
         )
-
-    def _rpm_file(self, j2_ctx, rpm_base, channel=None):
-        s = j2_ctx.rsconf_db.rpm_source_d.join(
-            '{}-{}.rpm'.format(
-                rpm_base,
-                channel or j2_ctx.rsconf_db.channel,
-            )
-        assert s.check(), \
-            '{}: rpm does not exist'.format(s)
-        return s
 
     def _write_binary(self, path, data):
         """Write as binary to Linux file

@@ -489,6 +489,8 @@ host:
           methods:
             - email
           deprecated_methods: [ github ]
+        feature_config:
+          proprietary_sim_types: [ myapp ]
         job_driver:
           docker:
             hosts: [ {{ all_host }} ]

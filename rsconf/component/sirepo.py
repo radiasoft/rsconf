@@ -29,17 +29,6 @@ _COOKIE_PRIVATE_KEY = 'sirepo_cookie_private_key'
 _SERVER_SECRET = 'sirepo_job_server_secret'
 
 
-def install_user_d(compt, j2_ctx):
-    run_d = systemd.unit_run_d(j2_ctx, 'sirepo')
-    compt.install_access(mode='700', owner=j2_ctx.rsconf_db.run_u)
-    compt.install_directory(run_d)
-    db_d = run_d.join(_DB_SUBDIR)
-    compt.install_directory(db_d)
-    user_d = db_d.join(_USER_SUBDIR)
-    compt.install_directory(user_d)
-    return user_d
-
-
 class T(component.T):
     def internal_build_compile(self):
         from rsconf.component import docker_registry
@@ -69,7 +58,6 @@ class T(component.T):
                     ip='0.0.0.0',
                     run_dir=self.__run_d,
                 ),
-                'proprietary_code_d': d.join(_PROPIETARY_CODE_SUBDIR),
                 'srdb.root': d,
             },
             pykern={
@@ -119,25 +107,7 @@ class T(component.T):
 
         jc = self.j2_ctx
         z = jc[self.name]
-        install_user_d(self, jc)
-        compt.install_access(mode='400')
-        for c in z.proprietary_sim_types:
-            self.install_abspath(
-                self.rpm_file(j2_ctx, c),
-                z.proprietary_code_d.join(c),
-            )
-        version = pkcompat.from_bytes(
-            subprocess.check_output(['rpm', '-qp',  str(src)]),
-        ).strip()
-        self.append_root_bash("rsconf_install_perl_rpm '{}' '{}' '{}'".format(
-            rpm_base,
-            rpm_file,
-            version,
-        ))
-        return rpm_file
-
-
-            self.rpm_file(self, j2_ctx, c)
+        self._install_dirs_and_files()
         nginx.install_vhost(
             self,
             vhost=z.vhost,
@@ -169,7 +139,7 @@ class T(component.T):
             ['*'],
             values=PKDict((k, v) for k, v in compt.j2_ctx.items() if k in ('sirepo', 'pykern')),
             # local only values
-            exclude_re=r'^sirepo(?:_docker_image|.*_vhost|rpm_d)',
+            exclude_re=r'^sirepo(?:_docker_image|.*_vhost)',
         )
         e.PYTHONUNBUFFERED = '1'
         return e
@@ -184,3 +154,24 @@ class T(component.T):
             mail_recipient_email=e,
         )
         z.pknested_get('feature_config.api_modules').append('comsol_register')
+
+    def _install_dirs_and_files(self):
+        jc = self.j2_ctx
+        z = jc[self.name]
+        self.install_access(mode='700', owner=jc.rsconf_db.run_u)
+        self.install_directory(self.__run_d)
+        d = self.__run_d.join(_DB_SUBDIR)
+        self.install_directory(d)
+        self.install_directory(d.join(_USER_SUBDIR))
+        if not z.feature_config.proprietary_sim_types:
+            return
+        p = d.join(_PROPIETARY_CODE_SUBDIR)
+        self.install_directory(p)
+        for c in z.feature_config.proprietary_sim_types:
+            self.install_directory(p.join(c))
+        self.install_access(mode='400')
+        for c in z.feature_config.proprietary_sim_types:
+            self.install_abspath(
+                self.rpm_file(jc, c),
+                p.join(c, c + '.rpm'),
+            )
