@@ -29,6 +29,8 @@ _COOKIE_PRIVATE_KEY = 'sirepo_cookie_private_key'
 _SERVER_SECRET = 'sirepo_job_server_secret'
 
 
+_RPM_PREFIX = 'rscode-'
+
 class T(component.T):
     def internal_build_compile(self):
         from rsconf.component import docker_registry
@@ -172,6 +174,6 @@ class T(component.T):
         self.install_access(mode='400')
         for c in z.feature_config.proprietary_sim_types:
             self.install_abspath(
-                self.rpm_file(jc, c),
+                self.rpm_file(jc, f'{_RPM_PREFIX}{c}'),
                 p.join(c, c + '.rpm'),
             )
