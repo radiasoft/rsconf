@@ -42,6 +42,7 @@ class T(component.T):
         d = self.__run_d.join(_DB_SUBDIR)
         self.j2_ctx_pksetdefault(dict(
             sirepo={
+                'client_max_body_size': '200m',
                 'cookie': dict(
                     http_name=lambda: 'sirepo_{}'.format(jc.rsconf_db.channel),
                     private_key=lambda: self.secret_path_value(
@@ -141,7 +142,7 @@ class T(component.T):
             ['*'],
             values=PKDict((k, v) for k, v in compt.j2_ctx.items() if k in ('sirepo', 'pykern')),
             # local only values
-            exclude_re=r'^sirepo(?:_docker_image|.*_vhost)',
+            exclude_re=r'^sirepo(?:_docker_image|.*_vhost|.*_client_max_body)',
         )
         e.PYTHONUNBUFFERED = '1'
         return e

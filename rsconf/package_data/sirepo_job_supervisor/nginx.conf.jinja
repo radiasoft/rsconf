@@ -9,6 +9,7 @@ server {
         return 404;
     }
     location ~ ^/job- {
+        client_max_body_size {{ sirepo.client_max_body_size }};
         proxy_pass http://{{ nginx.backend_host }}:{{ nginx.backend_port }};
     }
     location / {
