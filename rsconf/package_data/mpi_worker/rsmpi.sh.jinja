@@ -89,7 +89,7 @@ rsmpi_hosts() {
             s=$(( s + slots ))
         fi
         echo "${_rsmpi_ips[i-1]}:$s"
-        if (( $slots < 0 )); then
+        if (( $slots <= 0 )); then
             break
         fi
     done | install -m 400 /dev/stdin "$t"
