@@ -41,9 +41,11 @@ class T(component.T):
         self.__run_d = systemd.docker_unit_prepare(self, jc)
         d = self.__run_d.join(_DB_SUBDIR)
         self.j2_ctx_pksetdefault(dict(
-            sirepo={
-                'client_max_body_size': '200m',
-                'cookie': dict(
+            job=dict(
+                max_message_bytes='200m',
+            ),
+            sirepo=dict(
+                cookie=dict(
                     http_name=lambda: 'sirepo_{}'.format(jc.rsconf_db.channel),
                     private_key=lambda: self.secret_path_value(
                         _COOKIE_PRIVATE_KEY,
@@ -51,44 +53,51 @@ class T(component.T):
                         visibility='channel',
                     )[0],
                 ),
-                'docker_image': docker_registry.absolute_image(jc, z.docker_image),
-                'feature_config': dict(
+                docker_image=docker_registry.absolute_image(jc, z.docker_image),
+                feature_config=dict(
                     api_modules=[],
-                    job=bool(z.get('job_driver')),
+                    job=True,
                     proprietary_sim_types=tuple(),
                 ),
-                'pkcli.service': dict(
-                    ip='0.0.0.0',
-                    run_dir=self.__run_d,
+                pkcli=dict(
+                    service=dict(
+                        ip='0.0.0.0',
+                        run_dir=self.__run_d,
+                    ),
                 ),
-                'srdb.root': d,
-            },
-            pykern={
-                'pkdebug': dict(
+                srdb=dict(root=d),
+            ),
+            pykern=dict(
+                pkdebug=dict(
                     redirect_logging=True,
                     want_pid_time=True,
                 ),
-                'pkconfig.channel': jc.rsconf_db.channel,
-            },
+                pkconfig=dict(channel=jc.rsconf_db.channel),
+            ),
         ))
         self._comsol(z)
-        self.j2_ctx_pksetdefault({
-            'sirepo.job_driver.modules': ['docker'],
-            'sirepo.job': dict(
-                server_secret=lambda: self.secret_path_value(
-                    _SERVER_SECRET,
-                    gen_secret=lambda: pkcompat.from_bytes(
-                        base64.urlsafe_b64encode(os.urandom(32)),
-                    ),
-                    visibility='channel',
-                )[0],
+        self.j2_ctx_pksetdefault(dict(
+            sirepo=dict(
+                client_max_body_size=pkconfig.parse_bytes(z.job.max_message_bytes),
+                job_driver=dict(modules=['docker']),
+                job=dict(
+                    server_secret=lambda: self.secret_path_value(
+                        _SERVER_SECRET,
+                        gen_secret=lambda: pkcompat.from_bytes(
+                            base64.urlsafe_b64encode(os.urandom(32)),
+                        ),
+                        visibility='channel',
+                    )[0],
+                ),
                 verify_tls=lambda: jc.pykern.pkconfig.channel != 'dev',
+                pkcli=dict(
+                    job_supervisor=dict(
+                        ip='127.0.0.1',
+                        port=8001,
+                    ),
+                ),
             ),
-            'sirepo.pkcli.job_supervisor': dict(
-                ip='127.0.0.1',
-                port=8001,
-            ),
-        })
+        ))
         z.pksetdefault(job_api=PKDict)
         # server connects locally only so go direct to tornado.
         # supervisor has different uri to pass to agents.
