@@ -41,9 +41,6 @@ class T(component.T):
         self.__run_d = systemd.docker_unit_prepare(self, jc)
         d = self.__run_d.join(_DB_SUBDIR)
         self.j2_ctx_pksetdefault(dict(
-            job=dict(
-                max_message_bytes='200m',
-            ),
             sirepo=dict(
                 cookie=dict(
                     http_name=lambda: 'sirepo_{}'.format(jc.rsconf_db.channel),
@@ -58,6 +55,9 @@ class T(component.T):
                     api_modules=[],
                     job=True,
                     proprietary_sim_types=tuple(),
+                ),
+                job=dict(
+                    max_message_bytes='200m',
                 ),
                 pkcli=dict(
                     service=dict(
