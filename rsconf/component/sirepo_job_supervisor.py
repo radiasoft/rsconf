@@ -45,7 +45,7 @@ class T(component.T):
             run_u=self.__run_u,
             j2_ctx=self.j2_ctx,
         )
-        for v in self._vhosts:
+        for v in sorted(self._vhosts):
             nginx.install_vhost(
                 self,
                 vhost=v,
