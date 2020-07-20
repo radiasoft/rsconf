@@ -37,7 +37,7 @@ class T(component.T):
             i.setdefault('gid', i.uid)
             s = 1 if i.setdefault('want_shell', False) else ''
             z.add_cmds += "base_users_add '{name}' '{uid}' '{gid}' '{s}'\n".format(s=s, **i)
-            z.email_aliases[u] = None if self.setdefault(
+            z.email_aliases[u] = None if i.setdefault(
                 'want_mailbox',
                 u in mailboxes,
             ) else i.email

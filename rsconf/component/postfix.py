@@ -35,7 +35,7 @@ class T(component.T):
     def internal_build_compile(self):
         from rsconf import systemd
 
-        self.buildt.require_component('network')
+        self.buildt.require_component('network', 'base_users')
         self.j2_ctx = self.hdb.j2_ctx_copy()
         jc = self.j2_ctx
         z = jc.setdefault('postfix', pkcollections.Dict())
@@ -80,7 +80,7 @@ class T(component.T):
         for f in 'main.cf', 'master.cf':
             self.install_resource('postfix/' + f, jc, _CONF_D.join(f))
         # see base_users.py which may clear email_aliases
-        # by setting to None
+        # by setting a value in this list to None
         z.aliases.update(jc.base_users.email_aliases)
         self.install_resource(
             'postfix/aliases',
