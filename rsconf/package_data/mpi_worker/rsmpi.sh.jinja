@@ -26,12 +26,7 @@ declare -i _rsmpi_num_hosts=${#_rsmpi_ips[@]}
 rsmpi_exec() {
     local hostfile=$1
     shift
-    local d=$HOME/.ssh
-    if [[ ! -d $d ]]; then
-        install -d -m 700 "$d"
-    fi
-    install -m 600 "$_rsmpi_ssh_config" "$d/config"
-    install -m 600 "$_rsmpi_known_hosts" "$d/known_hosts"
+    rsmpi_exec_ssh_config
     local a=
     local x
     for x in $(compgen -A variable|egrep '(SYNERGIA|PYENV|PYTHON|VIRTUAL|PATH|MODULE)'); do
@@ -42,6 +37,41 @@ rsmpi_exec() {
         echo "cannot determine local ip address for network=$_rsmpi_net" 1>&2
     fi
     exec mpiexec -f "$hostfile" -localhost "$i" -envlist "${a[@]:0:-1}" "$@"
+}
+
+rsmpi_exec_ssh_config() {
+    local d=$HOME/.ssh
+    local l=$d.lock
+    local i
+    for i in $(seq 1 5); do
+        if ! mkdir "$l" >& /dev/null; then
+            if (( i == 4 )); then
+                # remove the lock before last try, because
+                # something is wrong. If it fails again, we
+                # report the error
+                rmdir "$l"
+            else
+                sleep 1
+            fi
+            continue
+        fi
+        if [[ ! -d $d ]]; then
+            install -d -m 700 "$d"
+        fi
+        rsmpi_exec_ssh_config_cp "$_rsmpi_ssh_config" "$d/config"
+        rsmpi_exec_ssh_config_cp "$_rsmpi_known_hosts" "$d/known_hosts"
+        rmdir "$l"
+        return
+    done
+    echo "Unable to create lock=$l; rmdir failed?"
+}
+
+rsmpi_exec_ssh_config_cp() {
+    local src=$1
+    local dst=$2
+    if ! cmp "$src" "$dst" >& /dev/null; then
+        install -m 600 "$src" "$dst"
+    fi
 }
 
 rsmpi_help() {
@@ -75,7 +105,8 @@ rsmpi_hosts() {
         hosts=( $(seq 1 $_rsmpi_num_hosts) )
     fi
     local t=/tmp/rsmpi_hosts-
-    rm -f "$t"*
+    # Avoid collisions with parallel executions
+    find "$t"* -mmin +60 -exec rm -f {} \; >& /dev/null || true
     local i
     t+=$RANDOM$RANDOM
     if (( $slots <= 0 )); then
