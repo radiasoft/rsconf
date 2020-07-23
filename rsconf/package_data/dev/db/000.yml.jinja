@@ -396,7 +396,7 @@ host:
             - /srv/mpi_worker/user
       mpi_worker:
         volumes:
-          /srv/mpi_worker/tmp: /home/vagrant/jupyter/tmp
+          '/srv/mpi_worker/tmp/{username}': '/home/vagrant/jupyter/tmp/{username}'
       rsconf_db:
         components: [ mpi_worker ]
     # This host never installed, just for testing build

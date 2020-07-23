@@ -61,9 +61,10 @@ class T(component.T):
             [z.run_d, z.run_d, 'ro'],
         ]
         for k in sorted(z.volumes.keys()):
-            g = str(z.volumes[k])
+            g = str(z.volumes[k]).format(username=z.user)
             assert g.startswith(str(z.guest_d) + '/'), \
                 'mount={} must start with guest_d={}'.format(g, z.guest_d)
+            k = k.format(username=z.user)
             x.append([k, g])
         systemd.docker_unit_enable(
             self,
