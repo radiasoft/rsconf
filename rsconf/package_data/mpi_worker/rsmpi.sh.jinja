@@ -43,13 +43,13 @@ rsmpi_exec_ssh_config() {
     local d=$HOME/.ssh
     local l=$d.lock
     local i
-    for i in $(seq 1 5); do
+    for i in $(seq 1 10); do
         if ! mkdir "$l" >& /dev/null; then
-            if (( i == 4 )); then
+            if (( i == 9 )); then
                 # remove the lock before last try, because
                 # something is wrong. If it fails again, we
                 # report the error
-                rmdir "$l"
+                rm -rf "$l"
             else
                 sleep 1
             fi
@@ -60,7 +60,7 @@ rsmpi_exec_ssh_config() {
         fi
         rsmpi_exec_ssh_config_cp "$_rsmpi_ssh_config" "$d/config"
         rsmpi_exec_ssh_config_cp "$_rsmpi_known_hosts" "$d/known_hosts"
-        rmdir "$l"
+        rm -rf "$l"
         return
     done
     echo "Unable to create lock=$l; rmdir failed?"
