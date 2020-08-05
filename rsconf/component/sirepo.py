@@ -46,7 +46,9 @@ class T(component.T):
                     http_name=lambda: 'sirepo_{}'.format(jc.rsconf_db.channel),
                     private_key=lambda: self.secret_path_value(
                         _COOKIE_PRIVATE_KEY,
-                        gen_secret=db.random_string,
+                        gen_secret=lambda: pkcompat.from_bytes(
+                            base64.urlsafe_b64encode(os.urandom(32)),
+                        ),
                         visibility='channel',
                     )[0],
                 ),
