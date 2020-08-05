@@ -12,7 +12,6 @@ from pykern.pkdebug import pkdp
 from rsconf import component
 from rsconf import db
 from rsconf import systemd
-from rsconf.component import base_users
 
 CONF_ROOT_D = pkio.py_path('/etc/dovecot')
 CONF_D = CONF_ROOT_D.join('conf.d')
@@ -23,24 +22,30 @@ _PASSWORD_VISIBILITY = 'host'
 
 class T(component.T):
 
-    def internal_build(self):
+    def internal_build_compile(self):
+        self.buildt.require_component('postfix', 'base_users')
+        jc = self.j2_ctx = self.hdb.j2_ctx_copy()
+        z = jc.dovecot
+        z.base_users = self.buildt.get_component('base_users')
+        z.network = self.buildt.get_component('network')
+        nc = z.network.add_public_tcp_ports(['pop3s'])
+
+    def internal_build_write(self):
         from rsconf import systemd
         from rsconf.component import db_bkp
+        jc = self.j2_ctx
 
+        z = jc.dovecot
         # dependency not strictly necessary but logical
-        self.buildt.require_component('postfix')
         self.append_root_bash('rsconf_yum_install dovecot')
-        j2_ctx = self.hdb.j2_ctx_copy()
-        z = j2_ctx.dovecot
-        nc = self.buildt.get_component('network').add_public_tcp_ports(['pop3s'])
         z.passdb_scheme = 'SHA512-CRYPT'
         z.user_mail_d = 'Maildir'
         # Needs to happen first to get read for install
         self.service_prepare([CONF_ROOT_D])
-        z.pop_users_flattened = self._pop_users_flattened(j2_ctx, z)
-        self._alias_users(j2_ctx, z)
-        self.install_access(mode='400', owner=j2_ctx.rsconf_db.root_u)
-        kc = self.install_tls_key_and_crt(j2_ctx.rsconf_db.host, CONF_ROOT_D)
+        z.pop_users_flattened = self._pop_users_flattened()
+        self._alias_users()
+        self.install_access(mode='400', owner=jc.rsconf_db.root_u)
+        kc = self.install_tls_key_and_crt(jc.rsconf_db.host, CONF_ROOT_D)
         z.tls_crt = kc.crt
         z.tls_key = kc.key
         z.users_f = CONF_ROOT_D.join('users')
@@ -49,31 +54,33 @@ class T(component.T):
         self.install_access(mode='444')
         self.install_resource(
             'dovecot/rsconf.conf',
-            j2_ctx,
+            jc,
             CONF_D.join('99-rsconf.conf'),
         )
         # password file needs to be readable by dovecot user
         self.install_access(
             mode='440',
-            owner=j2_ctx.rsconf_db.root_u,
+            owner=jc.rsconf_db.root_u,
             group=z.run_u,
         )
         self.install_resource(
             'dovecot/users',
-            j2_ctx,
+            jc,
             z.users_f,
         )
-        self.install_access(mode='700', owner=j2_ctx.rsconf_db.root_u)
-        db_bkp_root_d = systemd.unit_run_d(j2_ctx, self.name)
+        self.install_access(mode='700', owner=jc.rsconf_db.root_u)
+        db_bkp_root_d = systemd.unit_run_d(jc, self.name)
         self.install_directory(db_bkp_root_d)
         db_bkp.install_script_and_subdir(
             self,
-            j2_ctx,
+            jc,
             run_d=db_bkp_root_d,
-            run_u=j2_ctx.rsconf_db.root_u,
+            run_u=jc.rsconf_db.root_u,
         )
 
-    def _setup_procmail(self, j2_ctx, z, i, is_alias=False):
+    def _setup_procmail(self, i, is_alias=False):
+        jc = self.j2_ctx
+        z = jc.dovecot
         z.procmail_d = i.home_d.join('procmail')
         z.procmail_log_f = z.procmail_d.join('log')
         z.procmail_deliver = '! ' + i.email if is_alias \
@@ -85,15 +92,17 @@ class T(component.T):
         self.install_access(mode='400')
         self.install_resource(
             'dovecot/procmailrc',
-            j2_ctx,
+            jc,
             i.home_d.join('.procmailrc'),
         )
         self.install_access(mode='600')
         self.install_ensure_file_exists(z.procmail_log_f)
 
-    def _pop_users_flattened(self, j2_ctx, z):
+    def _pop_users_flattened(self):
+        jc = self.j2_ctx
+        z = jc.dovecot
         pw_f = db.secret_path(
-            j2_ctx,
+            jc,
             _PASSWORD_SECRET_JSON_F,
             visibility=_PASSWORD_VISIBILITY,
         )
@@ -111,25 +120,25 @@ class T(component.T):
                 pw_modified = True
                 pw_db[v.username] \
                     = '{' + z.passdb_scheme + '}' + _sha512_crypt(v.password)
-            i = base_users.hdb_info(j2_ctx, u)
+            i = z.base_users.user_spec(u)
             i.pw_hash = pw_db[v.username]
             i.username = v.username
-            i.home_d = db.user_home_path(j2_ctx, u)
+            i.home_d = db.user_home_path(jc, u)
             res.append(i)
-            self._setup_procmail(j2_ctx, z, i)
+            self._setup_procmail(i)
             self.install_access(mode='700', owner=i.uid, group=i.gid)
             self.install_directory(i.home_d.join(z.user_mail_d))
         if pw_modified:
             pkjson.dump_pretty(pw_db, filename=pw_f)
         return sorted(res, key=lambda x: x.username)
 
-    def _alias_users(self, j2_ctx, z):
-        from rsconf.component import base_users
-
+    def _alias_users(self):
+        jc = self.j2_ctx
+        z = jc.dovecot
         for u in z.alias_users:
-            i = base_users.hdb_info(j2_ctx, u)
-            i.home_d = db.user_home_path(j2_ctx, u)
-            self._setup_procmail(j2_ctx, z, i, is_alias=True)
+            i = z.base_users.user_spec(u)
+            i.home_d = db.user_home_path(jc, u)
+            self._setup_procmail(i, is_alias=True)
 
 
 def _sha512_crypt(password):

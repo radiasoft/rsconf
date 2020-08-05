@@ -39,6 +39,7 @@ class T(component.T):
         self.j2_ctx = self.hdb.j2_ctx_copy()
         jc = self.j2_ctx
         z = jc.setdefault('postfix', pkcollections.Dict())
+        z.base_users = self.buildt.get_component('base_users')
         nc = self.buildt.get_component('network')
         z.have_public_smtp = not z.get('smart_host')
         if z.have_public_smtp:
@@ -81,7 +82,7 @@ class T(component.T):
             self.install_resource('postfix/' + f, jc, _CONF_D.join(f))
         # see base_users.py which may clear email_aliases
         # by setting a value in this list to None
-        z.aliases.update(jc.base_users.email_aliases)
+        z.aliases.update(z.base_users.j2_ctx.base_users.email_aliases)
         self.install_resource(
             'postfix/aliases',
             jc,

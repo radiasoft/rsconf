@@ -94,6 +94,7 @@ class T(component.T):
 
     def internal_build_write(self):
         jc = self.j2_ctx
+        jc = self.j2_ctx
         z = jc.network
         if not '_devs' in z:
             # no devices, no network config

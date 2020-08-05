@@ -10,3 +10,4 @@ rsc() {
     {% endraw %}{% endif %}
     curl {{ rsconf_db.http_host }} | install_server={{ rsconf_db.http_host }} bash ${install_debug:+-x} -s rsconf.sh ${args+"${args[@]}"}
 }
+{{ base_users.root_bashrc_aux }}

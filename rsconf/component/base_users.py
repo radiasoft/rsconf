@@ -6,29 +6,23 @@ u"""create base os configuration
 """
 from __future__ import absolute_import, division, print_function
 from rsconf import component
-from pykern import pkcollections
+from pykern.pkcollections import PKDict
 import copy
 
-class T(component.T):
-    def internal_build(self):
-        from rsconf.component import bkp
 
+class T(component.T):
+
+    def internal_build_compile(self):
         self.buildt.require_component('base_os')
-        j2_ctx = self.hdb.j2_ctx_copy()
-        z = j2_ctx.base_users
-        self.install_access(mode='400', owner=self.hdb.rsconf_db.root_u)
-        self.install_resource(
-            'base_users/root_post_bivio_bashrc',
-            j2_ctx,
-            '/root/.post_bivio_bashrc',
-        )
-        bkp.append_authorized_key(self, j2_ctx)
+        jc = self.j2_ctx = self.hdb.j2_ctx_copy()
+        z = jc.base_users
         z.add_cmds = ''
-        z.email_aliases = pkcollections.Dict()
-        z.added = pkcollections.Dict()
+        z.email_aliases = PKDict()
+        z.added = PKDict()
+        z.setdefault('root_bashrc_aux', '')
         mailboxes = set(
-            j2_ctx.dovecot.alias_users + list(j2_ctx.dovecot.pop_users.keys()),
-        ) if 'dovecot' in j2_ctx else set()
+            jc.dovecot.alias_users + list(jc.dovecot.pop_users.keys()),
+        ) if 'dovecot' in jc else set()
         for u in z.add:
             assert not u in z.added, \
                 '{}: duplicate user'.format(u)
@@ -42,11 +36,19 @@ class T(component.T):
                 u in mailboxes,
             ) else i.email
             z.added[u] = i
-        # POSIT: postfix will use this as an override for its aliases
-        self.hdb.base_users.email_aliases = z.email_aliases
-        self.hdb.base_users.added = z.added
-        self.append_root_bash_with_main(j2_ctx)
 
+    def internal_build_write(self):
+        from rsconf.component import bkp
 
-def hdb_info(j2_ctx, name):
-    return copy.deepcopy(j2_ctx.base_users.added[name])
+        jc = self.j2_ctx
+        self.install_access(mode='400', owner=self.hdb.rsconf_db.root_u)
+        self.install_resource(
+            'base_users/root_post_bivio_bashrc',
+            jc,
+            '/root/.post_bivio_bashrc',
+        )
+        bkp.append_authorized_key(self, jc)
+        self.append_root_bash_with_main(jc)
+
+    def user_spec(self, name):
+        return copy.deepcopy(self.j2_ctx.base_users.added[name])
