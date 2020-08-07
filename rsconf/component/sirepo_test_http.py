@@ -15,8 +15,6 @@ class T(component.T):
         from rsconf import systemd
         from rsconf.component import docker_registry
 
-        self.buildt.require_component('sirepo')
-
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.sirepo_test_http
         systemd.timer_prepare(self, j2_ctx, on_calendar=z.on_calendar)
@@ -25,8 +23,8 @@ class T(component.T):
             image=docker_registry.absolute_image(j2_ctx, j2_ctx.sirepo.docker_image),
             j2_ctx=j2_ctx,
             env=pkcollections.PKDict(
-                SIREPO_PKCLI_TEST_HTTP_SERVER_URI=f'http://{j2_ctx.sirepo.vhost}',
+                SIREPO_PKCLI_TEST_HTTP_SERVER_URI=f'https://{j2_ctx.sirepo.vhost}',
             ),
             run_u=j2_ctx.rsconf_db.run_u,
-            cmd='sirepo test_http test',
+            cmd='sirepo test_http',
         )
