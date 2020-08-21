@@ -64,7 +64,7 @@ class T(component.T):
         for x in 'admin', 'blacklist', 'whitelist':
             y = z.get(f'{x}_users')
             if y:
-                z.[f'{x}_users_str'] = _list_to_str(y)
+                z[f'{x}_users_str'] = _list_to_str(y)
         self._rsdockerspawner(jc, z)
 
     def internal_build_write(self):
