@@ -5,6 +5,9 @@ c.Authenticator.admin_users = set([{{ jupyterhub.admin_users_str }}])
 {% if 'whitelist_users_str' in jupyterhub %}
 c.Authenticator.whitelist = set([{{ jupyterhub.whitelist_users_str }}])
 {% endif %}
+{% if 'blacklist_users_str' in jupyterhub %}
+c.Authenticator.blacklist = set([{{ jupyterhub.blacklist_users_str }}])
+{% endif %}
 {% if 'github' in jupyterhub %}
 import oauthenticator
 c.JupyterHub.authenticator_class = oauthenticator.GitHubOAuthenticator

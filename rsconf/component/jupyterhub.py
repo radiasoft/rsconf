@@ -60,11 +60,11 @@ class T(component.T):
             gen_secret=lambda: db.random_string(length=64, is_hex=True),
             visibility='channel',
         )[0]
-        z.admin_users_str = _list_to_str(z.admin_users)
-        # deprecated but does not conflict so leave
-        if z.get('whitelist_users'):
-            # admin_users are implicitly part of whitelist
-            z.whitelist_users_str = _list_to_str(z.whitelist_users)
+        # admin_users are implicitly part of whitelist
+        for x in 'admin', 'blacklist', 'whitelist':
+            y = z.get(f'{x}_users')
+            if y:
+                z.[f'{x}_users_str'] = _list_to_str(y)
         self._rsdockerspawner(jc, z)
 
     def internal_build_write(self):
