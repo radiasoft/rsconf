@@ -304,11 +304,11 @@ host:
             mem_limit: "1G"
             cpu_limit: 0.5
             shm_size: "256M"
-            hosts: [ {{ worker6_host }}, {{ worker5_host }} ]
-          private:
-            user_groups: [ private ]
-            servers_per_host: 1
             hosts: [ {{ host }} ]
+          # private:
+          #   user_groups: [ private ]
+          #   servers_per_host: 1
+          #   hosts: [ {{ host }} ]
         user_groups:
           private: [ vagrant ]
           instructors: [ teach1 ]
@@ -357,7 +357,7 @@ host:
 
         #components: [ rsconf, docker_registry, btest ]
 #        components: [ bop ]
-        components: [ bkp, jupyterhub, jupyterhub_proxy ]
+        components: [ docker_registry, jupyterhub, jupyterhub_proxy ]
 #        components: [ nfs_server, sirepo ]
       sirepo:
         job_driver:
