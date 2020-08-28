@@ -46,12 +46,14 @@ class T(component.T):
         z = jc.network
         z.trusted_nets = tuple(sorted(z.trusted.keys()))
         z.pksetdefault(
+            blacklist=[],
             public_tcp_ports=[],
             trusted_tcp_ports=[],
             public_udp_ports=[],
             pci_scanner_net=None,
         )
         self.__trusted_nets = self._nets(jc, z.trusted)
+        z.blacklist = [str(ipaddress.ip_network(n)) for n in z.blacklist]
         z.setdefault(
             'trusted_public_nets',
             sorted([n.name for n in self.__trusted_nets.values() if n.is_global]),

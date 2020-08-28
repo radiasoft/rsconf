@@ -2,6 +2,9 @@
 :INPUT ACCEPT [0:0]
 :FORWARD ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
+{% for n in network.blacklist %}
+    -A INPUT -s {{ n }} -j DROP
+{% endfor %}
 {# https://serverfault.com/a/84981 To make it even harder to learn
  # about this, many common firewall books say "block ICMP" -- it's
  # clear their authors have never read an RFC or had to solve issues

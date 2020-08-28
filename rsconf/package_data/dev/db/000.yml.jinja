@@ -220,6 +220,9 @@ channel:
       clusters:
         vagrant: [ {{ host }}, {{ worker5_host }}, {{ worker6_host }} ]
     network:
+      blacklist:
+        - 1.2.3.4
+        - 99.99.99.0/24
       trusted:
         # v*.radia.run private network
         10.10.10.0/24:
