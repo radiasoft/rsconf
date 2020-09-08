@@ -3,4 +3,6 @@
 spamd_main() {
     find {{ spamd.sa_update_keys_d }} ! -user root \
         | xargs chown root:root
+    # replace logrotate, which limits rotations and restarts spamd
+    rm -f /etc/logrotate.d/sa-update
 }
