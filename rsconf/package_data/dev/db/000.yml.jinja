@@ -325,6 +325,7 @@ host:
       nfs_server:
         exports:
           /srv/mpi_worker/user: [ 10.10.10.0/24 ]
+          /srv/sirepo/db/user: [ 10.10.10.0/24 ]
       nginx:
         redirects:
           - host_or_uri: www.google.com
@@ -335,9 +336,6 @@ host:
             server_names:
               - redirect3.{{ host }}
             want_www: true
-      nfs_server:
-        exports:
-          /srv/sirepo/db/user: [ 10.10.10.0/24 ]
       postfix:
         aliases:
           RSCONF_DB_REPLACE:
