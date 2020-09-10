@@ -5,26 +5,44 @@ u"""Timer to run sirepo test_http
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
-from pykern import pkcollections
+from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from rsconf import component
 
 
+_SECRET = 'SIREPO_UTIL_CREATE_TOKEN_SECRET'
+
 class T(component.T):
+
     def internal_build(self):
         from rsconf import systemd
         from rsconf.component import docker_registry
+        import pykern.pkdebug
 
-        j2_ctx = self.hdb.j2_ctx_copy()
-        z = j2_ctx.sirepo_test_http
-        systemd.timer_prepare(self, j2_ctx, on_calendar=z.on_calendar)
+        def _env_ok(k):
+            if k.startswith('PYKERN_') or k.startswith('SIREPO_FEATURE_CONFIG_'):
+                return not pykern.pkdebug.SECRETS_RE.search(k)
+            return (
+                k == _SECRET
+                or k.startswith('SIREPO_PKCLI_TEST_HTTP_SERVER')
+            )
+
+        jc, z = self.j2_ctx_init()
+        e = PKDict()
+        for k, v in self.buildt.get_component('sirepo').sirepo_unit_env(self).items():
+            if _env_ok(k):
+                e[k] = v
+        assert e.get(_SECRET), \
+            f'{_SECRET} not found in sirepo config'
+        systemd.timer_prepare(self, jc, on_calendar=z.on_calendar)
+        e.pksetdefault(
+            SIREPO_PKCLI_TEST_HTTP_SERVER_URI=f'https://{jc.sirepo.vhost}',
+        )
         systemd.docker_unit_enable(
             self,
-            image=docker_registry.absolute_image(j2_ctx, j2_ctx.sirepo.docker_image),
-            j2_ctx=j2_ctx,
-            env=pkcollections.PKDict(
-                SIREPO_PKCLI_TEST_HTTP_SERVER_URI=f'https://{j2_ctx.sirepo.vhost}',
-            ),
-            run_u=j2_ctx.rsconf_db.run_u,
             cmd='sirepo test_http',
+            env=e,
+            image=docker_registry.absolute_image(jc, jc.sirepo.docker_image),
+            j2_ctx=jc,
+            run_u=jc.rsconf_db.run_u,
         )

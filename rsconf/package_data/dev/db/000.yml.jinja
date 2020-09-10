@@ -471,6 +471,7 @@ host:
           - comsol
           - sirepo
           - sirepo_job_supervisor
+          - sirepo_test_http
           - bop
           - btest
           - dovecot
@@ -501,6 +502,8 @@ host:
         job_driver:
           docker:
             hosts: [ {{ all_host }} ]
+      sirepo_test_http:
+        on_calendar: "9:00"
 
 # testing named needs build-perl-rpms.sh
 #          - bivio_named
