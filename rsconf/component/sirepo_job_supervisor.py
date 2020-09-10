@@ -31,10 +31,8 @@ class T(component.T):
             self,
             jc,
             image=z.docker_image,
-            env=self.buildt.get_component('sirepo').sirepo_unit_env(self).pkupdate(
-                PYENV_VERSION='py3',
-            ),
-            cmd='pyenv exec sirepo job_supervisor',
+            env=self.buildt.get_component('sirepo').sirepo_unit_env(self),
+            cmd='sirepo job_supervisor',
             #TODO(robnagler) wanted by nginx
             volumes=[jc.sirepo.srdb.root]
         )
