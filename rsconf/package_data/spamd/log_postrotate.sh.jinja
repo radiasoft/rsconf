@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu -o pipefail
 local_cf="$( (ls /var/lib/spamassassin/[1-9]*/updates_spamassassin_org/local.cf || true) | tail -1)"
-if [[ -w $local_cf ]]; then
+if [[ -z $local_cf ]]; then
     echo 'Unable to find or write /var/lib/spamassassin/[1-9]*/updates_spamassassin_org/local.cf' 1>&2
     exit 1
 fi
