@@ -26,12 +26,15 @@ class T(component.T):
         z.sa_update_keys_d = conf_d.join('sa-update-keys')
         z.trusted_networks = ' '.join(nc.trusted_nets())
         watch = bop.install_perl_rpms(self, jc) + [conf_d]
-        systemd.custom_unit_prepare(self, jc, watch)
+        z.run_d = systemd.custom_unit_prepare(self, jc, watch)
+        z.log_postrotate_f = z.run_d.join('log_postrotate')
         socket_d = pkio.py_path('/run/spamd')
         z.socket_path = pkio.py_path('/run/spamd/spamd.sock')
         self.install_access(mode='755', owner=jc.rsconf_db.run_u)
         self.install_directory(conf_d)
         self.install_directory(socket_d)
+        self.install_access(mode='500')
+        self.install_resource('spamd/log_postrotate.sh', jc, z.log_postrotate_f)
         self.install_access(mode='444')
         self.install_resource(
             'spamd/spamc.conf',

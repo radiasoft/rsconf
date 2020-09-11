@@ -3,7 +3,7 @@
     missingok
     notifempty
     postrotate
-        systemctl restart spamd
+        {{ spamd.log_postrotate_f }}
     endscript
     # Ensure postrotate only runs once for all logs
     sharedscripts
