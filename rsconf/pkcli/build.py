@@ -5,7 +5,7 @@ u"""Build the tree
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
-from pykern import pkcollections
+from pykern.pkcollections import PKDict
 from pykern import pkconfig
 from pykern import pkio
 from pykern.pkdebug import pkdp, pkdc, pkdlog, pkdexc
@@ -14,11 +14,11 @@ import os
 import subprocess
 
 
-class T(pkcollections.Dict):
+class T(PKDict):
 
     def __init__(self, dbt, channel, host):
         super(T, self).__init__(
-            components=pkcollections.Dict(),
+            components=PKDict(),
             components_required=[],
             dbt=dbt,
             hdb=dbt.host_db(channel, host),
@@ -53,7 +53,7 @@ class T(pkcollections.Dict):
         try:
             dst_d = dst_d.join(h)
             pkio.mkdir_parent(dst_d)
-            self.hdb.build = pkcollections.Dict(dst_d=dst_d)
+            self.hdb.build = PKDict(dst_d=dst_d)
             self._write_queue = []
             self.require_component(*self.hdb.rsconf_db.components)
             self._do_write_queue()
@@ -123,7 +123,7 @@ def default_command():
         pkio.mkdir_parent(new_d)
         #TODO(robnagler) make this global pkconfig. Doesn't make sense to
         # be configured in rsconf_db, because not host-based.
-        for c, hosts in pkcollections.map_items(dbt.channel_hosts()):
+        for c, hosts in dbt.channel_hosts().items():
             for h in hosts:
                 t = T(dbt, c, h)
                 t.create_host(new_d)

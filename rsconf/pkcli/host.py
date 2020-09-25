@@ -6,7 +6,6 @@ u"""host manipulation
 """
 from __future__ import absolute_import, division, print_function
 from pykern import pkcli
-from pykern import pkcollections
 from pykern import pkjson
 
 
@@ -27,7 +26,7 @@ def _init_do(host, comp):
 
     host = host.lower()
     dbt = db.T()
-    for c, hosts in pkcollections.map_items(dbt.channel_hosts()):
+    for c, hosts in dbt.channel_hosts().items():
         for h in hosts:
             if h == host.lower():
                 return comp.host_init(dbt.host_db(c, h), h)

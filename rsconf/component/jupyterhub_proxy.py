@@ -6,13 +6,15 @@ u"""setup proxy for jupyterhub backends
 """
 from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
+from pykern.pkdebug import pkdp
 from rsconf import component
+
 
 class T(component.T):
     def internal_build_compile(self):
         self.buildt.require_component('nginx')
         jc, z = self.j2_ctx_init()
-        z.setdefault(listen_any=False)
+        z.pksetdefault(listen_any=False)
 
     def internal_build_write(self):
         from rsconf.component import nginx

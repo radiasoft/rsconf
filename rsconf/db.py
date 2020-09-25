@@ -6,7 +6,6 @@ u"""Database
 """
 from __future__ import absolute_import, division, print_function
 from pykern.pkcollections import PKDict
-from pykern import pkcollections
 from pykern import pkconfig
 from pykern import pkio
 from pykern import pkjinja
@@ -59,7 +58,7 @@ class Host(PKDict):
 
     def __str(self, v):
        if isinstance(v, dict):
-            res = {}
+            res = PKDict()
             for k, v in v.items():
                 res[str(k)] = self.__str(v)
             return res
@@ -97,7 +96,7 @@ class T(PKDict):
             raise
 
     def channel_hosts(self):
-        res = pkcollections.OrderedMapping()
+        res = PKDict()
         for c in pkconfig.VALID_CHANNELS:
             res[c] = sorted(
                 self.base.host.get(c, PKDict()).keys(),
