@@ -40,7 +40,6 @@ c.DockerSpawner.http_timeout = {{ jupyterhub.http_timeout }}
 # https://github.com/radiasoft/rsconf/issues/54
 c.DockerSpawner.image_whitelist = []
 c.DockerSpawner.image = '{{ jupyterhub.jupyter_docker_image }}'
-c.DockerSpawner.remove = True
 c.DockerSpawner.use_internal_ip = True
 c.DockerSpawner.network_name = 'host'
 c.RSDockerSpawner.cfg = '''{{ jupyterhub.rsdockerspawner_cfg }}'''
