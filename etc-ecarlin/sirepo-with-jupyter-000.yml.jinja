@@ -1,0 +1,525 @@
+---
+default:
+  base_os:
+    ip_forward: false
+    volume_groups: {}
+  base_users:
+    add:
+      - {{ user }}
+    spec:
+      joeblow:
+        uid: 2002
+        email: devnull@{{ host }}
+      marysmith:
+        uid: 2003
+        email: blackhole@{{ host }}
+        procmail_want_include: true
+      {{ user }}:
+        uid: {{ uid }}
+        email: {{ user }}@{{ host }}
+        want_shell: true
+  bkp:
+    archive_d: /srv/bkp/archive
+    exclude:
+      - /etc/selinux
+    exclude_for_host:
+      {{ host }}: [ /etc/passwd ]
+    hosts:
+      - {{ host }}
+      - {{ worker5_host }}
+    include:
+      - /etc
+      - /var/log
+    log_dirs:
+      - /var/log
+      - /srv/*/log
+    max_try: 6
+    mirror_d: /srv/bkp/mirror
+    # Time zones not accepted in systemd 219 (CentOS 7).
+    # Times are in UTC. We may need to change the local time zone.
+    on_calendar: "8"
+    primary: {{ host }}
+    secondaries: [ {{ all_host }} ]
+    simple_mirrors:
+      /srv/bkp/simple_mirror:
+        - "{{ host }}:/etc/profile.d"
+  bop:
+    num_servers: 2
+    secret:
+      algorithm: DES
+      magic: XYZ
+    server_status_location: /bop-status
+    vhost_common:
+      # Only for test
+      host_suffix: {{ host }}
+  bop_timer:
+    spec:
+      petshop:
+        first_one:
+          on_calendar: "12"
+          bash_script: |
+            true
+
+        second_thing:
+          on_calendar: "1 0"
+          bash_script: |
+            echo doing that thing
+
+
+
+  btest:
+    client_host: {{ worker6_host }}
+    email_user: {{ user }}
+    apps: [ petshop ]
+    on_calendar: "12"
+  component:
+    tls_crt_create: true
+    tls_crt:
+      misc_hosts:
+        - alpha2.sirepo.com
+        - bivio.biz.{{ host }}
+  db_bkp:
+    max_copies: 2
+    on_calendar: "6:30"
+  docker:
+    iptables: false
+  docker_cache:
+    host: ''
+  docker_registry:
+    host: {{ master }}
+  github_bkp:
+    docker_image: docker.io/radiasoft/beamsim
+    exclude_re: ''
+    # Relatively early, because it takes a long time (3 hours)
+    on_calendar: "3"
+    test_mode: True
+  jupyterhub:
+    admin_users: [ '{{ user }}' ]
+    docker_image: radiasoft/jupyterhub
+    jupyter_docker_image: radiasoft/beamsim-jupyter
+    # github:
+    #  client_id: ""
+    #  client_secret: ""
+    port: 7913
+    vhosts:
+      {{ host }}: jupyter.{{ host }}
+  logrotate:
+    verbose: true
+    # sometime before bkp.on_calendar
+    on_calendar: "7:30"
+  mpi_worker:
+    docker_image: radiasoft/beamsim-jupyter
+    guest_d: /home/vagrant/jupyter
+    host_root_d: /srv/mpi_worker/user
+    ssh_port: 8022
+    slots_per_host: 2
+  network:
+    devices: {}
+    trusted: {}
+  nfs_server:
+    num_servers: 16
+  nginx:
+    worker_processes: 1
+  owncloud:
+    admin_user: admin
+    db_name: owncloud
+    db_prefix: oc_
+    db_user: owncloud
+    docker_image: docker.io/radiasoft/owncloud
+    domain: owncloud.{{ host }}
+    port: 7010
+  owncloud_redis:
+    docker_image: docker.io/radiasoft/redis
+    port: 7012
+  petshop:
+    cookie_tag: PSD
+    filter_out_of_office: true
+    http_host: petshop.{{ host }}
+    listen_base: 8114
+    mail_host: petshop.{{ host }}
+    nginx_aux_directives: ''
+    num_servers: 4
+    perl_rpm: perl-Bivio
+    perl_root: Bivio::PetShop
+    short_prefix: pet
+    vhosts:
+      # first vhost is default mail_host
+      - domains:
+          - petshop.{{ host }}
+          - bprog.{{ host }}
+        facade: petshop
+        receive_mail: true
+        nginx_aux_directives: |
+          location /nginx_redirect/(.*) {
+              return 301 $scheme://$host/$1;
+          }
+
+      - facade: beforeother
+      - facade: m-petshop
+      - facade: other
+      - facade: requiresecure
+  postfix:
+    aliases:
+      root: root@{{ host }}
+      errors: errors@{{ host }}
+      critical-errors: critical-errors@{{ host }}
+    whitelist_senders:
+      - poorly-configured-mailer.com
+  postgresql:
+    # https://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server#effective_cache_size
+    effective_cache_size: 244MB
+    # https://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server#shared_buffers
+    # "If you have a system with 1GB or more of RAM, a reasonable
+    # starting value for shared_buffers is 1/4 of the memory in your system."
+    shared_buffers: 122MB
+    auth_local_method: md5
+  postgrey:
+    port: 10023
+    whitelist_recipients: []
+  rsconf: {}
+  rsconf_db:
+    #TODO(robnagler) POSIT dev/nginx/nginx.conf.jinja
+    # defunct elvin_server https://en.wikipedia.org/wiki/Elvin
+    http_host: http://{{ master }}:{{ port }}
+    host_run_d: /srv
+    root_u: root
+    run_u: {{ user }}
+    run_uid: {{ uid }}
+  rs_mariadb:
+    docker_image: docker.io/radiasoft/mariadb
+    ip: 127.0.0.1
+    port: 7011
+  sirepo:
+    docker_image: radiasoft/sirepo
+    auth:
+      methods:
+        - guest
+      guest:
+        expiry_days: 1
+    job:
+      max_message_bytes: 333m
+    pkcli:
+      service_processes: 1
+      service_threads: 20
+      service_port: 7000
+      job_supervisor:
+        port: 7001
+  spamd: {}
+  systemd:
+    extra_run_flags:
+      mpi_worker:
+        shm-size: "1G"
+  wordpress:
+    docker_image: docker.io/radiasoft/wordpress
+
+channel:
+  dev:
+    bop:
+      apps: [ petshop ]
+    mpi_worker:
+      clusters:
+        vagrant: [ {{ host }}, {{ worker5_host }}, {{ worker6_host }} ]
+    network:
+      blacklist:
+        - 1.2.3.4
+        - 99.99.99.0/24
+      trusted:
+        # v*.radia.run private network
+        10.10.10.0/24:
+          gateway: 10.10.10.2
+        # random network to test
+        216.17.132.32/27:
+          gateway: 216.17.132.62
+          search: radia.run
+          nameservers: [ 162.159.27.72, 162.159.24.39 ]
+      untrusted: {}
+    postgresql:
+      auth_local_method: trust
+    sirepo:
+      auth:
+        methods:
+          - email
+          - github
+        github:
+          key: <redacted>
+          secret: <redacted>
+          method_visible: ''
+      comsol_register:
+        mail_server: {{ host }}
+        mail_username: comsol@{{ host }}
+        mail_password: somepass
+      feature_config:
+       sim_types:
+         - srw
+         - jupyterhublogin
+      mpi_cores: 4
+      vhost: sirepo.{{ host }}
+    wordpress:
+      vhosts:
+        wp1.{{ host }}:
+          port: 7101
+          db_name: wp1
+          db_user: wp1user
+
+host:
+  dev:
+    {{ master }}:
+      base_os:
+        volume_groups:
+          docker:
+            logical_volumes:
+              docker:
+                #POSIT: download/installers/vagrant-dev:config.persistent_storage.size=102400
+                gigabytes: 99
+                mount_d: /srv/docker
+      docker:
+        tls_host: {{ master }}
+      rsconf_db:
+        components:
+          - docker
+          - rsconf
+          - docker_registry
+    {{ host }}:
+      base_users:
+        add:
+          - joeblow
+          - marysmith
+        spec:
+          joeblow:
+            want_shell: true
+      docker:
+        tls_host: {{ host }}
+{# to test ip tables NAT
+      base_os:
+        ip_forward: true
+      network:
+        trusted:
+          10.0.2.0/24:
+            search: radiasoft.net
+            is_global: true
+            nameservers: [ 8.8.8.8 ]
+        iptables_enable: true
+        devices:
+          eth0:
+            ip: 10.0.2.15
+            gateway: 10.2.2
+            defroute: true
+            is_nat_output: true
+          eth1:
+            ip: 10.10.10.40
+            is_nat_input: true
+#}
+      jupyterhub:
+        pools:
+          everybody:
+            servers_per_host: 2
+            mem_limit: "1G"
+            cpu_limit: 0.5
+            shm_size: "256M"
+            hosts: [ {{ host }} ]
+          # private:
+          #   user_groups: [ private ]
+          #   servers_per_host: 1
+          #   hosts: [ {{ host }} ]
+        user_groups:
+          private: [ vagrant ]
+          instructors: [ teach1 ]
+        volumes:
+          /srv/jupyterhub/user/Workshop:
+            bind: /home/vagrant/jupyter/Workshop
+            mode: ro
+          /srv/jupyterhub/user/Workshop/{username}:
+            bind: /home/vagrant/jupyter/Workshop/{username}
+            mode:
+              rw: [ instructors ]
+        vhosts:
+          {{ host }}: jupyter.{{ host }}
+      nfs_server:
+        exports:
+          /srv/mpi_worker/user: [ 10.10.10.0/24 ]
+          /srv/sirepo/db/user: [ 10.10.10.0/24 ]
+      nginx:
+        redirects:
+          - host_or_uri: www.google.com
+            server_names:
+              - redirect1.{{ host }}
+              - redirect2.{{ host }}
+          - host_or_uri: https://beta.sirepo.com/warp
+            server_names:
+              - redirect3.{{ host }}
+            want_www: true
+      postfix:
+        aliases:
+          RSCONF_DB_REPLACE:
+            # root and errors gets delivered locally so we replace
+            blackhole: /dev/null
+        virtual_aliases:
+          wp1.{{ host }}:
+            vagrant: vagrant
+      pykern:
+        pkdebug:
+          control: .
+      rsconf_db:
+          # - jupyterhub
+          # - jupyterhub_proxy
+          # - nfs_server
+          # - btest
+          # - github_bkp
+          # - dovecot
+
+        #components: [ rsconf, docker_registry, btest ]
+#        components: [ bop ]
+        # components: [ docker_registry, jupyterhub, jupyterhub_proxy ]
+       components: [ nfs_server, sirepo ]
+      sirepo:
+        job_driver:
+          docker:
+            dev_volumes: false
+            hosts: [ {{ host }} ]
+    {{ worker5_host }}:
+      docker:
+        tls_host: {{ worker5_host }}
+{# test iptables NAT
+      network:
+        trusted:
+          # v*.radia.run private (hostonly) network
+          10.10.10.0/24:
+            gateway: 10.10.10.40
+            search: radiasoft.net
+            nameservers: [ 8.8.8.8 ]
+        devices:
+          eth1:
+            ip: 10.10.10.50
+            defroute: true
+#}
+      nfs_client:
+        mounts:
+          {{ host }}:
+            - /srv/mpi_worker/user
+      postfix:
+        smart_host: {{ host }}
+      rsconf_db:
+        components: [ mpi_worker ]
+    {{ worker6_host }}:
+      docker:
+        tls_host: {{ worker6_host }}
+      nfs_client:
+        mounts:
+          {{ host }}:
+            - /srv/mpi_worker/user
+      mpi_worker:
+        volumes:
+          '/srv/mpi_worker/tmp/{username}': '/home/vagrant/jupyter/tmp/{username}'
+      rsconf_db:
+        components: [ mpi_worker ]
+    # This host never installed, just for testing build
+    {{ all_host }}:
+      base_users:
+        add:
+          - joeblow
+          - marysmith
+        root_bashrc_aux: |
+          : this will do nothing
+          true
+
+      bkp:
+        on_calendar: "1 17"
+        secondary_copy_d: /bkp_copy
+        secondary_setup_f: {{ root_d }}/etc/secondary_setup.sh
+      jupyterhub:
+        github:
+          client_id: xyzzy
+          client_secret: big-secret
+        pools:
+          everybody:
+            servers_per_host: 2
+            mem_limit: "1G"
+            cpu_limit: 0.5
+            hosts: [ {{ all_host }} ]
+        vhosts:
+          {{ all_host }}: jupyter.{{ all_host }}
+      jupyterhub_proxy:
+        listen_any: True
+      network:
+        public_ssh_port: 5555
+        public_tcp_ports: [ 9999 ]
+        devices:
+          em1:
+            ip: 10.10.10.5
+            is_nat_input: True
+          em2:
+            ip: 216.17.132.33
+            is_nat_output: True
+#          eth0:
+#            ip: 104.237.137.251
+        trusted:
+          104.237.137.251/32: {}
+          216.17.132.32/27:
+            # Switch to CloudFlare (test RSCONF_DB_REPLACE)
+            nameservers:
+              RSCONF_DB_REPLACE: [ 1.1.1.1, 1.0.0.1 ]
+        untrusted:
+          104.237.137.0/24:
+            gateway: 104.237.137.1
+            nameservers: [ 1.0.0.1 ]
+            search: radiasoft.net
+      nfs_client:
+        mounts:
+          {{ host }}:
+            - /srv/sirepo/db/users
+      nfs_server:
+        num_servers: 64
+        exports:
+          /exports/foo: [ 10.10.10.0/24, localhost ]
+      postfix:
+        # if you do not set this, you'll get to test the SLD matching:
+        # fnl1i.bivio.biz: reverse dns for 216.17.132.33 does not match SLD of v5.radia.run
+        myhostname: '{{ host }}'
+      rsconf_db:
+        components:
+          - nfs_client
+          - nfs_server
+          - bkp
+          - comsol
+          - sirepo
+          - sirepo_job_supervisor
+          - sirepo_test_http
+          - bop
+          - btest
+          - dovecot
+          - jupyterhub
+          - jupyterhub_proxy
+          - owncloud
+          - github_bkp
+          - wordpress
+      sirepo:
+        auth:
+          email:
+            from_email: support@radisoft.net
+            from_name: support
+            smtp_password: password
+            smtp_server: mta.bivio.biz
+            smtp_user: this-is-ignored
+          github:
+            callback_uri: https://{{ all_host }}oauth-authorized/github
+            key: n/a
+            secret: ignored
+          guest:
+            expiry_days: 1
+          # methods:
+          #   - email
+          deprecated_methods: [ github ]
+        feature_config:
+          proprietary_sim_types: [ myapp ]
+        job_driver:
+          docker:
+            hosts: [ {{ all_host }} ]
+      sirepo_test_http:
+        on_calendar: "9:00"
+
+# testing named needs build-perl-rpms.sh
+#          - bivio_named
+
+#Local Variables:
+#mode:yaml
+#End:
