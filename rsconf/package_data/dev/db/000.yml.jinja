@@ -64,9 +64,6 @@ default:
           on_calendar: "1 0"
           bash_script: |
             echo doing that thing
-
-
-
   btest:
     client_host: {{ worker6_host }}
     email_user: {{ user }}
@@ -204,6 +201,13 @@ default:
       service_port: 7000
       job_supervisor:
         port: 7001
+  sirepo_jupyterhub:
+    admin_users: [ '{{ user }}' ]
+    docker_image: radiasoft/jupyterhub
+    jupyter_docker_image: radiasoft/beamsim-jupyter
+    port: 7914
+    configurable_http_proxy_port: 8111
+    uri_root: 'jupyter'
   spamd: {}
   systemd:
     extra_run_flags:
@@ -240,6 +244,10 @@ channel:
         mail_server: {{ host }}
         mail_username: comsol@{{ host }}
         mail_password: somepass
+      feature_config:
+       sim_types:
+         - srw
+         - jupyterhublogin
       mpi_cores: 4
       vhost: sirepo.{{ host }}
     wordpress:
@@ -357,13 +365,42 @@ host:
 
         #components: [ rsconf, docker_registry, btest ]
 #        components: [ bop ]
-        components: [ bkp, jupyterhub, jupyterhub_proxy ]
-#        components: [ nfs_server, sirepo ]
+        #components: [ bkp, jupyterhub, jupyterhub_proxy ]
+        components: [ nfs_server, sirepo, sirepo_jupyterhub ]
       sirepo:
+        auth:
+          methods:
+            - email
         job_driver:
           docker:
             dev_volumes: false
             hosts: [ {{ host }} ]
+      sirepo_jupyterhub:
+        pools:
+          everybody:
+            servers_per_host: 2
+            mem_limit: "1G"
+            cpu_limit: 0.5
+            shm_size: "256M"
+            hosts: [ {{ worker6_host }}, {{ worker5_host }} ]
+          private:
+            user_groups: [ private ]
+            servers_per_host: 1
+            hosts: [ {{ host }} ]
+        user_groups:
+          private: [ vagrant ]
+          instructors: [ teach1 ]
+        # volumes:
+        #   # TODO(e-carlin): /srv/jupyterhub or move to /srv/sirepo_jupyterhub?
+        #   /srv/jupyterhub/user/Workshop:
+        #     bind: /home/vagrant/jupyter/Workshop
+        #     mode: ro
+        #   /srv/jupyterhub/user/Workshop/{username}:
+        #     bind: /home/vagrant/jupyter/Workshop/{username}
+        #     mode:
+        #       rw: [ instructors ]
+        vhosts:
+          {{ host }}: sirepo.{{ host }}
     {{ worker5_host }}:
       docker:
         tls_host: {{ worker5_host }}
@@ -471,6 +508,7 @@ host:
           - comsol
           - sirepo
           - sirepo_job_supervisor
+          - sirepo_jupyterhub
           - sirepo_test_http
           - bop
           - btest
@@ -502,6 +540,15 @@ host:
         job_driver:
           docker:
             hosts: [ {{ all_host }} ]
+      sirepo_jupyterhub:
+        pools:
+          everybody:
+            servers_per_host: 2
+            mem_limit: "1G"
+            cpu_limit: 0.5
+            hosts: [ {{ all_host }} ]
+        vhosts:
+          {{ all_host }}: sirepo.{{ all_host }}
       sirepo_test_http:
         on_calendar: "9:00"
 

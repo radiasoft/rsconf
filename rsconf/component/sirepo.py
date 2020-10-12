@@ -57,6 +57,8 @@ class T(component.T):
                     api_modules=[],
                     job=True,
                     proprietary_sim_types=tuple(),
+                    # TODO(e-carlin): other_sim_types=tuple()
+                    # Waiting on https://github.com/radiasoft/sirepo/pull/3018
                 ),
                 job=dict(
                     max_message_bytes='200m',
@@ -107,10 +109,12 @@ class T(component.T):
             z.pkcli.job_supervisor.ip,
             z.pkcli.job_supervisor.port,
         )
-        self.buildt.require_component('sirepo_job_supervisor')
-        s = self.buildt.get_component('sirepo_job_supervisor')
-        s.sirepo_config(self)
-        self.__docker_unit_enable_after = [s.name]
+        self.__docker_unit_enable_after = []
+        for n in 'sirepo_job_supervisor', 'sirepo_jupyterhub':
+            self.buildt.require_component(n)
+            c = self.buildt.get_component(n)
+            c.sirepo_config(self)
+            self.__docker_unit_enable_after.append(c.name)
 #TODO(robnagler) remove when deployed to alpha
         z.job.supervisor_uri = z.job_api.supervisor_uri
 
@@ -122,13 +126,25 @@ class T(component.T):
         jc = self.j2_ctx
         z = jc[self.name]
         self._install_dirs_and_files()
+        k = PKDict()
+        if self._jupyterhublogin_enabled():
+            k.jupyterhub_enabled = True
+            k.jupyterhub_proxy_port = jc.sirepo_jupyterhub.port
+            k.jupyterhub_uri_root = jc.sirepo_jupyterhub.uri_root
         nginx.install_vhost(
             self,
             vhost=z.vhost,
             backend_host=jc.rsconf_db.host,
             backend_port=z.pkcli.service_port,
             j2_ctx=jc,
+            nginx_kwargs=k,
         )
+        v = []
+        try:
+            v = [z.pknested_get('sim_api.jupyterhublogin.src_db_root')]
+        except KeyError:
+            pass
+
         systemd.docker_unit_enable(
             self,
             jc,
@@ -137,6 +153,9 @@ class T(component.T):
             cmd='sirepo service uwsgi',
             after=self.__docker_unit_enable_after,
             #TODO(robnagler) wanted by nginx
+            # TODO(e-carlin): How do I make the vol readable by Sirepo?
+            # /srv/jupyterhub is owned by root
+            volumes=v,
         )
         db_bkp.install_script_and_subdir(
             self,
@@ -189,3 +208,9 @@ class T(component.T):
                 self.rpm_file(jc, f'{_RPM_PREFIX}{c}'),
                 p.join(c, c + '.rpm'),
             )
+
+    def _jupyterhublogin_enabled(self):
+        # TODO(e-carlin): Need other_sim_types
+        # Waiting on https://github.com/radiasoft/sirepo/pull/3018
+        # return 'jupyterhublogin' in self.j2_ctx.feature_config.other_sim_types
+        return 'jupyterhublogin' in self.j2_ctx.sirepo.feature_config.sim_types
