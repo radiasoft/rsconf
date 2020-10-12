@@ -1,0 +1,27 @@
+# -*-python-*-
+from rsdockerspawner import rsdockerspawner
+import binascii
+import jupyterhub.spawner
+import sirepo.jupyterhub
+
+
+c.Authenticator.admin_users = set([{{ sirepo_jupyterhub.admin_users_str }}])
+c.ConfigurableHTTPProxy.api_url = 'http://127.0.0.1:{{ sirepo_jupyterhub.configurable_http_proxy_port }}'
+c.ConfigurableHTTPProxy.auth_token = '{{ sirepo_jupyterhub.proxy_auth_token }}'
+c.DockerSpawner.http_timeout = {{sirepo_jupyterhub.http_timeout}}
+c.DockerSpawner.image = '{{ sirepo_jupyterhub.jupyter_docker_image }}'
+# https://github.com/radiasoft/rsconf/issues/54
+c.DockerSpawner.image_whitelist = []
+c.DockerSpawner.network_name = 'host'
+c.DockerSpawner.use_internal_ip = True
+c.JupyterHub.authenticator_class = sirepo.jupyterhub.Authenticator
+c.JupyterHub.base_url = '/{{ sirepo_jupyterhub.uri_root }}'
+c.JupyterHub.cleanup_servers = False
+c.JupyterHub.cookie_secret = binascii.a2b_hex('{{ sirepo_jupyterhub.cookie_secret_hex }}')
+c.JupyterHub.ip = '127.0.0.1'
+c.JupyterHub.port = {{ sirepo_jupyterhub.port }}
+c.JupyterHub.spawner_class = rsdockerspawner.RSDockerSpawner
+c.JupyterHub.template_paths = ['{{ sirepo_jupyterhub.template_d }}']
+c.JupyterHub.template_vars = {{ sirepo_jupyterhub.template_vars }}
+c.JupyterHub.upgrade_db = True
+c.RSDockerSpawner.cfg = '''{{ sirepo_jupyterhub.rsdockerspawner_cfg }}'''

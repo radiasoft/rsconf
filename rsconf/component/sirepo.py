@@ -36,6 +36,9 @@ class T(component.T):
         from rsconf.component import docker_registry
         from rsconf import db
 
+        self.__docker_unit_enable_after = []
+        self.__uwsgi_docker_vols = []
+
         self.buildt.require_component('docker', 'nginx', 'db_bkp')
         jc, z = self.j2_ctx_init()
         self.__run_d = systemd.docker_unit_prepare(self, jc)
@@ -56,6 +59,7 @@ class T(component.T):
                 feature_config=dict(
                     api_modules=[],
                     job=True,
+                    other_sim_types=tuple(),
                     proprietary_sim_types=tuple(),
                 ),
                 job=dict(
@@ -78,6 +82,7 @@ class T(component.T):
             ),
         ))
         self._comsol(z)
+        self._jupyterhublogin(z)
         self.j2_ctx_pksetdefault(dict(
             sirepo=dict(
                 client_max_body_size=pkconfig.parse_bytes(z.job.max_message_bytes),
@@ -107,10 +112,7 @@ class T(component.T):
             z.pkcli.job_supervisor.ip,
             z.pkcli.job_supervisor.port,
         )
-        self.buildt.require_component('sirepo_job_supervisor')
-        s = self.buildt.get_component('sirepo_job_supervisor')
-        s.sirepo_config(self)
-        self.__docker_unit_enable_after = [s.name]
+        self._set_sirepo_config('sirepo_job_supervisor')
 #TODO(robnagler) remove when deployed to alpha
         z.job.supervisor_uri = z.job_api.supervisor_uri
 
@@ -122,12 +124,18 @@ class T(component.T):
         jc = self.j2_ctx
         z = jc[self.name]
         self._install_dirs_and_files()
+        k = PKDict()
+        if self._jupyterhublogin_enabled():
+            k.jupyterhub_enabled = True
+            k.jupyterhub_proxy_port = jc.sirepo_jupyterhub.port
+            k.jupyterhub_uri_root = jc.sirepo_jupyterhub.uri_root
         nginx.install_vhost(
             self,
             vhost=z.vhost,
             backend_host=jc.rsconf_db.host,
             backend_port=z.pkcli.service_port,
             j2_ctx=jc,
+            nginx_kwargs=k,
         )
         systemd.docker_unit_enable(
             self,
@@ -137,6 +145,7 @@ class T(component.T):
             cmd='sirepo service uwsgi',
             after=self.__docker_unit_enable_after,
             #TODO(robnagler) wanted by nginx
+            volumes=self.__uwsgi_docker_vols,
         )
         db_bkp.install_script_and_subdir(
             self,
@@ -189,3 +198,31 @@ class T(component.T):
                 self.rpm_file(jc, f'{_RPM_PREFIX}{c}'),
                 p.join(c, c + '.rpm'),
             )
+
+    def _jupyterhublogin(self, z):
+        if not self._jupyterhublogin_enabled():
+            return
+        self.buildt.require_component('jupyterhub')
+        j = self.buildt.get_component('jupyterhub')
+        d = j.jc.jupyterhub.user_d
+        self.j2_ctx_pksetdefault(dict(
+            sirepo=dict(
+                sim_api=dict(
+                    jupyterhublogin=dict(
+                        src_db_root=d,
+                        dst_db_root=d,
+                    ),
+                ),
+            ),
+        ))
+        self.__uwsgi_docker_vols.append(d)
+        self._set_sirepo_config('sirepo_jupyterhub')
+
+    def _jupyterhublogin_enabled(self):
+        return 'jupyterhublogin' in self.j2_ctx.sirepo.feature_config.other_sim_types
+
+    def _set_sirepo_config(self, component):
+        self.buildt.require_component(component)
+        c = self.buildt.get_component(component)
+        c.sirepo_config(self)
+        self.__docker_unit_enable_after.append(c.name)
