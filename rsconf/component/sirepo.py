@@ -56,9 +56,8 @@ class T(component.T):
                 feature_config=dict(
                     api_modules=[],
                     job=True,
+                    other_sim_types=tuple(),
                     proprietary_sim_types=tuple(),
-                    # TODO(e-carlin): other_sim_types=tuple()
-                    # Waiting on https://github.com/radiasoft/sirepo/pull/3018
                 ),
                 job=dict(
                     max_message_bytes='200m',
@@ -210,7 +209,4 @@ class T(component.T):
             )
 
     def _jupyterhublogin_enabled(self):
-        # TODO(e-carlin): Need other_sim_types
-        # Waiting on https://github.com/radiasoft/sirepo/pull/3018
-        # return 'jupyterhublogin' in self.j2_ctx.feature_config.other_sim_types
-        return 'jupyterhublogin' in self.j2_ctx.sirepo.feature_config.sim_types
+        return 'jupyterhublogin' in self.j2_ctx.sirepo.feature_config.other_sim_types

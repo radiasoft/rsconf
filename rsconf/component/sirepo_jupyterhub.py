@@ -69,9 +69,7 @@ class T(component.T):
             for p in (
                     'SIREPO_AUTH',
                     'SIREPO_COOKIE',
-                    # TODO(e-carlin): should be SIREPO_FEATURE_CONFIG_OTHER
-                    # Waiting on https://github.com/radiasoft/sirepo/pull/3018
-                    'SIREPO_FEATURE_CONFIG_SIM',
+                    'SIREPO_FEATURE_CONFIG_OTHER_SIM',
                     'SIREPO_SIM_API_JUPYTERHUBLOGIN',
                     'SIREPO_SRDB',
             ):
