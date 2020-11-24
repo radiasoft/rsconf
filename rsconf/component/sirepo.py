@@ -197,7 +197,7 @@ class T(component.T):
         z.jupyterhub_enabled =  'jupyterhublogin' in self.j2_ctx.sirepo.feature_config.other_sim_types
         if not z.jupyterhub_enabled:
             return
-        self.__uwsgi_docker_vols.append(z.sim_api.jupyterhublogin.user_db_root)
+        self.__uwsgi_docker_vols.append(z.sim_api.jupyterhublogin.user_db_root_d)
         self._set_sirepo_config('sirepo_jupyterhub')
 
     def _set_sirepo_config(self, component):

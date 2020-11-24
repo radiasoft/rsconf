@@ -59,7 +59,7 @@ class T(component.T):
         z = jc[self.name]
         s = jc.sirepo
         z.update(
-            user_d=pkio.py_path(s.sim_api.jupyterhublogin.user_db_root),
+            user_d=s.sim_api.jupyterhublogin.user_db_root_d,
             jupyter_docker_image=docker_registry.absolute_image(
                 jc, z.jupyter_docker_image,
             ),
@@ -86,6 +86,8 @@ class T(component.T):
         self.install_access(mode='711', owner=z.run_u)
         self.install_directory(self.__run_d)
         self.install_access(mode='700', owner=z.jupyter_run_u)
+        if z.user_d.dirname == '/srv/jupyterhub':
+            self.install_directory(z.user_d.dirname)
         self.install_directory(z.user_d)
         self.install_directory(z.template_d)
         self.install_access(mode='400', owner=z.run_u)
@@ -113,7 +115,7 @@ class T(component.T):
             image=docker_registry.absolute_image(jc, z.docker_image),
             run_u=z.run_u,
             volumes=[
-                s.sim_api.jupyterhublogin.user_db_root,
+                s.sim_api.jupyterhublogin.user_db_root_d,
                 s.srdb.root,
             ],
         )
