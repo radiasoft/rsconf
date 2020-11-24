@@ -247,6 +247,10 @@ channel:
       feature_config:
        other_sim_types:
          - jupyterhublogin
+      sim_api:
+        jupyterhublogin:
+          # POSIT: Jupyterhub user_d
+          user_db_root: /srv/jupyterhub/user
       mpi_cores: 4
       vhost: sirepo.{{ host }}
     wordpress:
@@ -365,7 +369,7 @@ host:
         #components: [ rsconf, docker_registry, btest ]
 #        components: [ bop ]
         #components: [ bkp, jupyterhub, jupyterhub_proxy ]
-        components: [ nfs_server, sirepo, sirepo_jupyterhub ]
+        components: [ nfs_server, sirepo ]
       sirepo:
         auth:
           methods:

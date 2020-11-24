@@ -59,7 +59,7 @@ class T(component.T):
         z = jc[self.name]
         s = jc.sirepo
         z.update(
-            user_d=s.sim_api.jupyterhublogin.dst_db_root,
+            user_d=s.sim_api.jupyterhublogin.user_db_root,
             jupyter_docker_image=docker_registry.absolute_image(
                 jc, z.jupyter_docker_image,
             ),
@@ -113,7 +113,7 @@ class T(component.T):
             image=docker_registry.absolute_image(jc, z.docker_image),
             run_u=z.run_u,
             volumes=[
-                s.sim_api.jupyterhublogin.dst_db_root,
+                s.sim_api.jupyterhublogin.user_db_root,
                 s.srdb.root,
             ],
         )
