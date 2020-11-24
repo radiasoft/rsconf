@@ -10,7 +10,7 @@ server {
     root {{ nginx.default_root }};
     ssl_certificate {{ nginx.tls_crt }};
     ssl_certificate_key {{ nginx.tls_key }};
-{% if 'jupyterhub_enabled' in nginx  %}
+{% if 'jupyterhub_enabled' in sirepo %}
     proxy_http_version 1.1;
     proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
     proxy_read_timeout 600s;
@@ -33,12 +33,12 @@ server {
         uwsgi_send_timeout 300s;
         uwsgi_pass {{ nginx.backend_host }}:{{ nginx.backend_port }};
     }
-{% if 'jupyterhub_enabled' in nginx  %}
-    location /{{ nginx.jupyterhub_uri_root }}/hub/logout {
+{% if 'jupyterhub_enabled' in sirepo %}
+    location /{{ sirepo_jupyterhub.uri_root }}/hub/logout {
         return 301 /auth-logout;
     }
-    location /{{ nginx.jupyterhub_uri_root }}/ {
-        proxy_pass http://127.0.0.1:{{ nginx.jupyterhub_proxy_port }};
+    location /{{ sirepo_jupyterhub.uri_root }}/ {
+        proxy_pass http://127.0.0.1:{{ sirepo_jupyterhub.port }};
     }
 {% endif %}
 }

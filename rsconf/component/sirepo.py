@@ -124,18 +124,12 @@ class T(component.T):
         jc = self.j2_ctx
         z = jc[self.name]
         self._install_dirs_and_files()
-        k = PKDict()
-        if self._jupyterhublogin_enabled():
-            k.jupyterhub_enabled = True
-            k.jupyterhub_proxy_port = jc.sirepo_jupyterhub.port
-            k.jupyterhub_uri_root = jc.sirepo_jupyterhub.uri_root
         nginx.install_vhost(
             self,
             vhost=z.vhost,
             backend_host=jc.rsconf_db.host,
             backend_port=z.pkcli.service_port,
             j2_ctx=jc,
-            nginx_kwargs=k,
         )
         systemd.docker_unit_enable(
             self,
@@ -200,13 +194,11 @@ class T(component.T):
             )
 
     def _jupyterhublogin(self, z):
-        if not self._jupyterhublogin_enabled():
+        z.jupyterhub_enabled =  'jupyterhublogin' in self.j2_ctx.sirepo.feature_config.other_sim_types
+        if not z.jupyterhub_enabled:
             return
         self.__uwsgi_docker_vols.append(z.sim_api.jupyterhublogin.user_db_root)
         self._set_sirepo_config('sirepo_jupyterhub')
-
-    def _jupyterhublogin_enabled(self):
-        return 'jupyterhublogin' in self.j2_ctx.sirepo.feature_config.other_sim_types
 
     def _set_sirepo_config(self, component):
         self.buildt.require_component(component)
