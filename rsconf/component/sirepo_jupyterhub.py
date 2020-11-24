@@ -5,7 +5,7 @@ u"""JupyterHub under Sirepo configuration
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
-from pykern import pkjson
+from pykern import pkjson, pkio
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from rsconf import component
@@ -59,7 +59,7 @@ class T(component.T):
         z = jc[self.name]
         s = jc.sirepo
         z.update(
-            user_d=s.sim_api.jupyterhublogin.user_db_root,
+            user_d=pkio.py_path(s.sim_api.jupyterhublogin.user_db_root),
             jupyter_docker_image=docker_registry.absolute_image(
                 jc, z.jupyter_docker_image,
             ),
