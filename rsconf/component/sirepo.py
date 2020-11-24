@@ -202,20 +202,8 @@ class T(component.T):
     def _jupyterhublogin(self, z):
         if not self._jupyterhublogin_enabled():
             return
-        self.buildt.require_component('jupyterhub')
-        j = self.buildt.get_component('jupyterhub')
-        d = j.jc.jupyterhub.user_d
-        self.j2_ctx_pksetdefault(dict(
-            sirepo=dict(
-                sim_api=dict(
-                    jupyterhublogin=dict(
-                        src_db_root=d,
-                        dst_db_root=d,
-                    ),
-                ),
-            ),
-        ))
-        self.__uwsgi_docker_vols.append(d)
+        # TODO(e-carlin): verify dir
+        self.__uwsgi_docker_vols.append(z.sim_api.jupyterhublogin.user_db_root)
         self._set_sirepo_config('sirepo_jupyterhub')
 
     def _jupyterhublogin_enabled(self):
