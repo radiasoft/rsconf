@@ -5,7 +5,7 @@ u"""JupyterHub under Sirepo configuration
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
-from pykern import pkjson, pkio
+from pykern import pkjson, pkio, pkconfig
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from rsconf import component
@@ -108,10 +108,16 @@ class T(component.T):
             self,
             jc,
             cmd="bash -l -c 'jupyterhub -f {}'".format(conf_f),
-            env=PKDict(filter(
-                _env_ok,
-                self.buildt.get_component('sirepo').sirepo_unit_env(self).items(),
-            )),
+            env=PKDict(
+                filter(
+                    _env_ok,
+                    self.buildt.get_component('sirepo').sirepo_unit_env(self).items(),
+                ),
+                **pkconfig.to_environ(
+                    ['*'],
+                    values=dict(sirepo=dict(feature_config=dict(sim_types=set(('jupyterhublogin',))))),
+                ),
+            ),
             image=docker_registry.absolute_image(jc, z.docker_image),
             run_u=z.run_u,
             volumes=[
