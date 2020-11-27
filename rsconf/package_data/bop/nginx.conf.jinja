@@ -17,7 +17,11 @@ server {
         deny all;
         return 403;
     }
-
+{% if bop.block_goto %}
+    location ~ ^(/[^/]+)?/go(to)?(/|$) {
+        return 404;
+    }
+{% endif %}
     location / {
         allow all;
         autoindex off;

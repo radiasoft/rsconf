@@ -178,6 +178,7 @@ def merge_app_vars(j2_ctx, app_name):
     # all apps are secured by TLS now
     z.can_secure = True
     z.setdefault('bconf_aux', '')
+    z.setdefault('block_goto', True)
     z.setdefault('client_max_body_size', _DEFAULT_CLIENT_MAX_BODY_SIZE)
     z.source_code_d = SOURCE_CODE_D
     # Assumed by PetShop's crm-ticket-deletion.btest
