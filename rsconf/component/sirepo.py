@@ -59,7 +59,6 @@ class T(component.T):
                 feature_config=dict(
                     api_modules=[],
                     job=True,
-                    other_sim_types=tuple(),
                     proprietary_sim_types=tuple(),
                 ),
                 job=dict(
@@ -194,7 +193,7 @@ class T(component.T):
             )
 
     def _jupyterhublogin(self, z):
-        z.jupyterhub_enabled =  'jupyterhublogin' in self.j2_ctx.sirepo.feature_config.other_sim_types
+        z.jupyterhub_enabled =  'jupyterhublogin' in self.j2_ctx.sirepo.feature_config.proprietary_sim_types
         if not z.jupyterhub_enabled:
             return
         self.__uwsgi_docker_vols.append(z.sim_api.jupyterhublogin.user_db_root_d)

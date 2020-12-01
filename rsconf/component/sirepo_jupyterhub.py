@@ -46,7 +46,7 @@ class T(component.T):
                     # so we have to bring in their full config.
                     'SIREPO_AUTH',
                     'SIREPO_COOKIE',
-                    'SIREPO_FEATURE_CONFIG_OTHER_SIM',
+                    'SIREPO_FEATURE_PROPRIETARY_SIM',
                     'SIREPO_SIM_API_JUPYTERHUBLOGIN',
                     'SIREPO_SMTP',
                     'SIREPO_SRDB',
