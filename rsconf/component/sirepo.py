@@ -36,6 +36,9 @@ class T(component.T):
         from rsconf.component import docker_registry
         from rsconf import db
 
+        self.__docker_unit_enable_after = []
+        self.__uwsgi_docker_vols = []
+
         self.buildt.require_component('docker', 'nginx', 'db_bkp')
         jc, z = self.j2_ctx_init()
         self.__run_d = systemd.docker_unit_prepare(self, jc)
@@ -78,6 +81,7 @@ class T(component.T):
             ),
         ))
         self._comsol(z)
+        self._jupyterhublogin(z)
         self.j2_ctx_pksetdefault(dict(
             sirepo=dict(
                 client_max_body_size=pkconfig.parse_bytes(z.job.max_message_bytes),
@@ -107,10 +111,7 @@ class T(component.T):
             z.pkcli.job_supervisor.ip,
             z.pkcli.job_supervisor.port,
         )
-        self.buildt.require_component('sirepo_job_supervisor')
-        s = self.buildt.get_component('sirepo_job_supervisor')
-        s.sirepo_config(self)
-        self.__docker_unit_enable_after = [s.name]
+        self._set_sirepo_config('sirepo_job_supervisor')
 #TODO(robnagler) remove when deployed to alpha
         z.job.supervisor_uri = z.job_api.supervisor_uri
 
@@ -137,6 +138,7 @@ class T(component.T):
             cmd='sirepo service uwsgi',
             after=self.__docker_unit_enable_after,
             #TODO(robnagler) wanted by nginx
+            volumes=self.__uwsgi_docker_vols,
         )
         db_bkp.install_script_and_subdir(
             self,
@@ -185,7 +187,21 @@ class T(component.T):
             self.install_directory(p.join(c))
         self.install_access(mode='400')
         for c in z.feature_config.proprietary_sim_types:
-            self.install_abspath(
-                self.rpm_file(jc, f'{_RPM_PREFIX}{c}'),
-                p.join(c, c + '.rpm'),
-            )
+            if c != 'jupyterhublogin':
+                self.install_abspath(
+                    self.rpm_file(jc, f'{_RPM_PREFIX}{c}'),
+                    p.join(c, c + '.rpm'),
+                )
+
+    def _jupyterhublogin(self, z):
+        z.jupyterhub_enabled =  'jupyterhublogin' in self.j2_ctx.sirepo.feature_config.proprietary_sim_types
+        if not z.jupyterhub_enabled:
+            return
+        self.__uwsgi_docker_vols.append(z.sim_api.jupyterhublogin.user_db_root_d)
+        self._set_sirepo_config('sirepo_jupyterhub')
+
+    def _set_sirepo_config(self, component):
+        self.buildt.require_component(component)
+        c = self.buildt.get_component(component)
+        c.sirepo_config(self)
+        self.__docker_unit_enable_after.append(c.name)
