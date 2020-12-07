@@ -187,6 +187,9 @@ class T(component.T):
             self.install_directory(p.join(c))
         self.install_access(mode='400')
         for c in z.feature_config.proprietary_sim_types:
+            # TODO(e-carlin): Need a better way to configure this
+            if c == 'jupyterhublogin':
+                continue
             self.install_abspath(
                 self.rpm_file(jc, f'{_RPM_PREFIX}{c}'),
                 p.join(c, c + '.rpm'),
