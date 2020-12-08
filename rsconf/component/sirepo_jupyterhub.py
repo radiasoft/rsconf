@@ -32,16 +32,16 @@ class T(rsconf.component.jupyterhub.T):
 
         def _env_ok(elem):
             for p in (
-                    # TODO(e-carlin): all of auth and smtp is really too much.
-                    # We just need auth_methods for checking if the cookies is
-                    # valid. But bringing in methods then initializes the methods
-                    # so we have to bring in their full config.
-                    'SIREPO_AUTH',
-                    'SIREPO_COOKIE',
-                    'SIREPO_FEATURE_PROPRIETARY_SIM',
-                    'SIREPO_SIM_API_JUPYTERHUBLOGIN',
-                    'SIREPO_SMTP',
-                    'SIREPO_SRDB',
+                # TODO(e-carlin): all of auth and smtp is really too much.
+                # We just need auth_methods for checking if the cookies is
+                # valid. But bringing in methods then initializes the methods
+                # so we have to bring in their full config.
+                'SIREPO_AUTH',
+                'SIREPO_COOKIE',
+                'SIREPO_FEATURE_PROPRIETARY_SIM',
+                'SIREPO_SIM_API_JUPYTERHUBLOGIN',
+                'SIREPO_SMTP',
+                'SIREPO_SRDB',
             ):
                 if elem[0].startswith(f'{p}'):
                     return True
@@ -68,7 +68,7 @@ class T(rsconf.component.jupyterhub.T):
             image=docker_registry.absolute_image(self.j2_ctx, z.docker_image),
             run_u=z.run_u,
             volumes=[
-                self.__jupyterhub_run_d,
+                self._jupyterhub_db(),
                 self.j2_ctx.sirepo.srdb.root,
             ],
         )
