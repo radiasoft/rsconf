@@ -116,7 +116,7 @@ class T(component.T):
         return self.__run_d
 
     def _network(self, z, jc):
-        z.vhost = jc.jupyterhub.vhosts[jc.rsconf_db.host]
+        self._vhost(z, jc)
         self.buildt.require_component('network')
         nc = self.buildt.get_component('network')
         z.hub_ip = nc.ip_and_net_for_host(jc.rsconf_db.host)[0]
@@ -199,6 +199,8 @@ class T(component.T):
             if y:
                 z[f'{x}_users_str'] = _list_to_str(y)
 
+    def _vhost(self, z, jc):
+        z.vhost = jc.jupyterhub.vhosts[jc.rsconf_db.host]
 
 
 def _list_to_str(v):
