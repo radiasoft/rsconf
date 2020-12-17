@@ -80,7 +80,7 @@ class T(rsconf.component.jupyterhub.T):
     def _jupyterhub_db(self):
         return self.__jupyterhub_run_d
 
-    def _network(self, z, jc):
+    def _vhost(self, z, jc):
         pass
 
 

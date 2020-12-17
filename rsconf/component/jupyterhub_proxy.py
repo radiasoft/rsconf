@@ -25,7 +25,7 @@ class T(component.T):
                 self,
                 vhost=vh,
                 backend_host=h,
-                backend_port=jc.jupyterhub.port,
+                backend_port=jc.jupyterhub.api_port,
                 j2_ctx=jc,
                 listen_any=jc.jupyterhub_proxy.listen_any,
             )

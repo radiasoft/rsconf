@@ -98,7 +98,8 @@ default:
     # github:
     #  client_id: ""
     #  client_secret: ""
-    port: 7913
+    api_port: 7913
+    configurable_http_proxy_port: 8110
     vhosts:
       {{ host }}: jupyter.{{ host }}
   logrotate:
@@ -206,7 +207,7 @@ default:
     admin_users: [ '{{ user }}' ]
     docker_image: radiasoft/jupyterhub
     jupyter_docker_image: radiasoft/beamsim-jupyter
-    port: 7914
+    api_port: 7914
     configurable_http_proxy_port: 8111
     uri_root: 'jupyter'
   spamd: {}

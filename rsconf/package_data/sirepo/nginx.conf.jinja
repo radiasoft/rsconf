@@ -24,7 +24,7 @@ server {
         return 301 /auth-logout;
     }
     location /{{ sirepo_jupyterhub.uri_root }}/ {
-        proxy_pass http://127.0.0.1:{{ sirepo_jupyterhub.port }};
+        proxy_pass http://127.0.0.1:{{ sirepo_jupyterhub.configurable_http_proxy_port }};
     }
 {% endif %}
 }
