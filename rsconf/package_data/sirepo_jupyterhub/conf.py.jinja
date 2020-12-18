@@ -11,6 +11,9 @@ c.Authenticator.admin_users = set([{{sirepo_jupyterhub.admin_users_str}}])
 c.JupyterHub.ip = '{{ sirepo_jupyterhub.hub_ip }}'
 c.JupyterHub.port = {{sirepo_jupyterhub.configurable_http_proxy_port}}
 
+# url for hub api access to proxy
+c.ConfigurableHTTPProxy.api_url = 'http://{{ sirepo_jupyterhub.hub_ip }}:{{ sirepo_jupyterhub.configurable_http_proxy_api_port }}'
+
 # ip/port hub binds to. User servers and proxy will use this to
 # communicate with the hub.
 c.JupyterHub.hub_ip = '{{ sirepo_jupyterhub.hub_ip }}'

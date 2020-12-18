@@ -22,6 +22,7 @@ class T(rsconf.component.jupyterhub.T):
 
     def sirepo_config(self, sirepo):
         self.j2_ctx_pksetdefault(sirepo.j2_ctx)
+        sirepo.j2_ctx.sirepo_jupyterhub.hub_ip = self.j2_ctx.sirepo_jupyterhub.hub_ip
 
     def _auth(self, z):
         pass
