@@ -14,7 +14,7 @@ c.JupyterHub.port = {{sirepo_jupyterhub.configurable_http_proxy_port}}
 # ip/port hub binds to. User servers and proxy will use this to
 # communicate with the hub.
 c.JupyterHub.hub_ip = '{{ sirepo_jupyterhub.hub_ip }}'
-c.JupyterHub.hub_port = '{{ sirepo_jupyterhub.api_port }}'
+c.JupyterHub.hub_port = {{ sirepo_jupyterhub.api_port }}
 
 c.ConfigurableHTTPProxy.auth_token = '{{ sirepo_jupyterhub.proxy_auth_token }}'
 c.DockerSpawner.http_timeout = {{sirepo_jupyterhub.http_timeout}}
