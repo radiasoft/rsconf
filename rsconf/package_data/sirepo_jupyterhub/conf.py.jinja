@@ -5,8 +5,20 @@ import jupyterhub.spawner
 import sirepo.jupyterhub
 
 
-c.Authenticator.admin_users = set([{{ sirepo_jupyterhub.admin_users_str }}])
-c.ConfigurableHTTPProxy.api_url = 'http://127.0.0.1:{{ sirepo_jupyterhub.configurable_http_proxy_port }}'
+c.Authenticator.admin_users = set([{{sirepo_jupyterhub.admin_users_str}}])
+
+# ip/port for the http_proxy. Nginx will proxy requests to this.
+c.JupyterHub.ip = '{{ sirepo_jupyterhub.hub_ip }}'
+c.JupyterHub.port = {{sirepo_jupyterhub.configurable_http_proxy_port}}
+
+# url for hub api access to proxy
+c.ConfigurableHTTPProxy.api_url = 'http://{{ sirepo_jupyterhub.hub_ip }}:{{ sirepo_jupyterhub.configurable_http_proxy_api_port }}'
+
+# ip/port hub binds to. User servers and proxy will use this to
+# communicate with the hub.
+c.JupyterHub.hub_ip = '{{ sirepo_jupyterhub.hub_ip }}'
+c.JupyterHub.hub_port = {{ sirepo_jupyterhub.api_port }}
+
 c.ConfigurableHTTPProxy.auth_token = '{{ sirepo_jupyterhub.proxy_auth_token }}'
 c.DockerSpawner.http_timeout = {{sirepo_jupyterhub.http_timeout}}
 c.DockerSpawner.image = '{{ sirepo_jupyterhub.jupyter_docker_image }}'
@@ -18,8 +30,6 @@ c.JupyterHub.authenticator_class = sirepo.jupyterhub.Authenticator
 c.JupyterHub.base_url = '/{{ sirepo_jupyterhub.uri_root }}'
 c.JupyterHub.cleanup_servers = False
 c.JupyterHub.cookie_secret = binascii.a2b_hex('{{ sirepo_jupyterhub.cookie_secret_hex }}')
-c.JupyterHub.ip = '127.0.0.1'
-c.JupyterHub.port = {{ sirepo_jupyterhub.port }}
 c.JupyterHub.spawner_class = rsdockerspawner.RSDockerSpawner
 c.JupyterHub.template_paths = ['{{ sirepo_jupyterhub.template_d }}']
 c.JupyterHub.template_vars = {{ sirepo_jupyterhub.template_vars }}
