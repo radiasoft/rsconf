@@ -10,11 +10,11 @@ server {
     root {{ nginx.default_root }};
     ssl_certificate {{ nginx.tls_crt }};
     ssl_certificate_key {{ nginx.tls_key }};
+    client_max_body_size {{ sirepo.client_max_body_size }};
 
     location / {
         allow all;
         include uwsgi_params;
-        client_max_body_size {{ sirepo.client_max_body_size }};
         uwsgi_read_timeout 300s;
         uwsgi_send_timeout 300s;
         uwsgi_pass {{ nginx.backend_host }}:{{ nginx.backend_port }};
