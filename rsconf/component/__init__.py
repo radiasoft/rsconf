@@ -223,6 +223,17 @@ class T(PKDict):
             '{}: rpm does not exist'.format(s)
         return s
 
+    def proprietary_file(self, j2_ctx, file_base, channel=None):
+        s = j2_ctx.rsconf_db.proprietary_source_d.join(
+            '{}-{}.tar.gz'.format(
+                file_base,
+                channel or j2_ctx.rsconf_db.channel,
+            ),
+        )
+        assert s.check(), \
+            '{}: file does not exist'.format(s)
+        return s
+
     def rsconf_append(self, path, line_or_grep, line=None):
         l = "rsconf_edit_no_change_res=0 rsconf_append '{}' '{}'".format(path, line_or_grep)
         if not line is None:
