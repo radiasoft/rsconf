@@ -31,6 +31,7 @@ SRV_SUBDIR = 'srv'
 DEFAULT_ROOT_SUBDIR = 'run'
 DB_SUBDIR = 'db'
 LOCAL_SUBDIR = 'local'
+PROPRIETARY_SUBDIR = 'proprietary'
 RPM_SUBDIR = 'rpm'
 SECRET_SUBDIR = 'secret'
 RESOURCE_SUBDIR = 'resource'
@@ -73,6 +74,7 @@ class T(PKDict):
         super(T, self).__init__(*args, **kwargs)
         self.root_d = pkio.py_path(cfg.root_d)
         self.db_d = self.root_d.join(DB_SUBDIR)
+        self.proprietary_source_d = self.root_d.join(PROPRIETARY_SUBDIR)
         self.rpm_source_d = self.root_d.join(RPM_SUBDIR)
         self.tmp_d = self.root_d.join(TMP_SUBDIR)
         self.secret_d = self.db_d.join(SECRET_SUBDIR)
@@ -132,6 +134,7 @@ class T(PKDict):
                 channel=channel,
                 db_d=self.db_d,
                 host=host,
+                proprietary_source_d=self.proprietary_source_d,
                 rpm_source_d=self.rpm_source_d,
                 secret_d=self.secret_d,
                 srv_d=self.srv_d,

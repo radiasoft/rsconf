@@ -29,8 +29,6 @@ _COOKIE_PRIVATE_KEY = 'sirepo_cookie_private_key'
 _SERVER_SECRET = 'sirepo_job_server_secret'
 
 
-_RPM_PREFIX = 'rscode-'
-
 class T(component.T):
     def internal_build_compile(self):
         from rsconf.component import docker_registry
@@ -189,8 +187,8 @@ class T(component.T):
         for c in z.feature_config.proprietary_sim_types:
             if c != 'jupyterhublogin':
                 self.install_abspath(
-                    self.rpm_file(jc, f'{_RPM_PREFIX}{c}'),
-                    p.join(c, c + '.rpm'),
+                    self.proprietary_file(jc, c),
+                    p.join(c, c + '.tar.gz'),
                 )
 
     def _jupyterhublogin(self, z):
