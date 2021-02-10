@@ -472,7 +472,7 @@ host:
       jupyterhub_proxy:
         listen_any: True
       network:
-        public_ssh_port: 5555
+        public_ssh_ports: [ 5555, 6666 ]
         public_tcp_ports: [ 9999 ]
         devices:
           em1:

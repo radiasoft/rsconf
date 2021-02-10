@@ -15,8 +15,13 @@
 # semanage port -a -t ssh_port_t -p tcp #PORTNUMBER
 #
 Port 22
-{% if 'public_ssh_port' in network and network.public_ssh_port and network.public_ssh_port != 22 %}
-Port {{ network.public_ssh_port }}
+{# needs to be conditional, because network not yet initialized #}
+{% if 'public_ssh_ports' in network %}
+    {% for p in network.public_ssh_ports %}
+        {% if p != 22 -%}
+            Port {{ p }}
+        {% endif %}
+    {% endfor %}
 {% endif %}
 AddressFamily inet
 #ListenAddress 0.0.0.0
