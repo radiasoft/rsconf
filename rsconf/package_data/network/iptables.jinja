@@ -44,16 +44,15 @@
 
 {# ssh: Accept our networks always #}
 {% for n in network.trusted_public_nets %}
-    -A INPUT -i {{ network.inet_dev.name }} -s {{ n }} -p tcp -m tcp {% if network.public_ssh_ports_str -%}
-        --match multiport --dports ssh,{{ network.public_ssh_ports_str }}
-        {%- else -%}--dport ssh
-        {%- endif %} -j ACCEPT
+    {% set s = ([ 22 ] + network.public_ssh_ports)|unique|join(',') %}
+    -A INPUT -i {{ network.inet_dev.name }} -s {{ n }} -p tcp -m tcp --match multiport --dports {{ s }} -j ACCEPT
 {% endfor %}
-{% if network.public_ssh_ports_str %}
-    {# uses a /24 mask, because we don't want many connections from the same block #}
-    -A INPUT -i {{ network.inet_dev.name }} -p tcp -m tcp --match multiport --dports {{ network.public_ssh_ports_str }} -m state --state NEW -m recent --set --name SSHPROBES --mask 255.255.255.0 --rsource
-    -A INPUT -i {{ network.inet_dev.name }} -p tcp -m tcp --match multiport --dports {{ network.public_ssh_ports_str }} -m state --state NEW -m recent --update --seconds 180 --hitcount 6 --name SSHPROBES --mask 255.255.255.0 --rsource -j DROP
-    -A INPUT -i {{ network.inet_dev.name }} -p tcp -m state --state NEW -m tcp --match multiport --dports {{ network.public_ssh_ports_str }} -j ACCEPT
+{% if network.public_ssh_ports %}
+    {% set s = '-A INPUT -i ' + network.inet_dev.name + ' -p tcp -m state --state NEW -m tcp --match multiport --dports ' +  (network.public_ssh_ports|join(',')) %}
+    {# uses a /24 mask, because we don't want many connections from the same network #}
+    {{ s }} -m recent --set --name SSHPROBES --mask 255.255.255.0 --rsource
+    {{ s }} -m recent --update --seconds 180 --hitcount 6 --name SSHPROBES --mask 255.255.255.0 --rsource -j DROP
+    {{ s }} -j ACCEPT
 {% endif %}
 -A INPUT -j REJECT --reject-with icmp-port-unreachable
 
