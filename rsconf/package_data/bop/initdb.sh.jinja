@@ -8,6 +8,9 @@ initdb_do() {
     bivio sql init_dbms || true
 {% if not bop.is_production %}
     bivio sql -f create_test_db
+    {% if 'initdb_post_cmd' in bop %}
+        {{ bop.initdb_post_cmd }}
+    {% endif %}
 {% endif %}
 EOF
     if type rsconf_service_trigger_restart >& /dev/null; then

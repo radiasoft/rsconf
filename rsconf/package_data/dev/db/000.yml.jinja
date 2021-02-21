@@ -142,6 +142,9 @@ default:
     perl_rpm: perl-Bivio
     perl_root: Bivio::PetShop
     short_prefix: pet
+    initdb_post_cmd: |
+      echo initdb_post_cmd
+
     vhosts:
       # first vhost is default mail_host
       - domains:
