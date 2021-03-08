@@ -186,10 +186,11 @@ class T(component.T):
             self.install_directory(p.join(c))
         self.install_access(mode='400')
         for c in z.feature_config.proprietary_sim_types:
-            self.install_abspath(
-                self.proprietary_file(jc, c),
-                p.join(c, c + '.tar.gz'),
-            )
+            if c == 'flash':
+                self.install_abspath(
+                    self.proprietary_file(jc, c),
+                    p.join(c, c + '.tar.gz'),
+                )
 
     def _jupyterhublogin(self, z):
         z.jupyterhub_enabled =  'jupyterhublogin' in self.j2_ctx.sirepo.feature_config.default_proprietary_sim_types
