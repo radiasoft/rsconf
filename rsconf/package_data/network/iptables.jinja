@@ -50,8 +50,10 @@
 {% if network.public_ssh_ports %}
     {% set s = '-A INPUT -i ' + network.inet_dev.name + ' -p tcp -m state --state NEW -m tcp --match multiport --dports ' +  (network.public_ssh_ports|join(',')) %}
     {# uses a /24 mask, because we don't want many connections from the same network #}
+{% if network.drop_ssh_probes %}
     {{ s }} -m recent --set --name SSHPROBES --mask 255.255.255.0 --rsource
     {{ s }} -m recent --update --seconds 180 --hitcount 6 --name SSHPROBES --mask 255.255.255.0 --rsource -j DROP
+{% endif %}
     {{ s }} -j ACCEPT
 {% endif %}
 -A INPUT -j REJECT --reject-with icmp-port-unreachable

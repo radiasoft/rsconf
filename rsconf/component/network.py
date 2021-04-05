@@ -47,16 +47,17 @@ class T(component.T):
         z.trusted_nets = tuple(sorted(z.trusted.keys()))
         z.pksetdefault(
             blacklist=[],
-            public_tcp_ports=[],
-            trusted_tcp_ports=[],
-            public_udp_ports=[],
+            drop_ssh_probes=True,
             pci_scanner_net=None,
+            public_ssh_ports=[],
+            public_tcp_ports=[],
+            public_udp_ports=[],
+            trusted_tcp_ports=[],
         )
         self.__trusted_nets = self._nets(jc, z.trusted)
         z.blacklist = [str(ipaddress.ip_network(n)) for n in z.blacklist]
-        z.setdefault(
-            'trusted_public_nets',
-            sorted([n.name for n in self.__trusted_nets.values() if n.is_global]),
+        z.pksetdefault(
+            trusted_public_nets=lambda: sorted([n.name for n in self.__trusted_nets.values() if n.is_global]),
         )
         self.__untrusted_nets = self._nets(jc, z.untrusted)
         if not self.hdb.network.devices:
@@ -66,7 +67,6 @@ class T(component.T):
         if z.defroute:
             assert z.defroute.net.search and z.defroute.net.nameservers, \
                 '{}: defroute needs search and nameservers'.format(z.defroute.net)
-        z.pksetdefault(public_ssh_ports=[])
         if z.get('iptables_enable', False) and len(z._devs) == 1:
             z.update(
                 inet_dev=z.defroute,
@@ -76,12 +76,11 @@ class T(component.T):
             z.update(
                 inet_dev=z.defroute if z.defroute.net.is_global else None,
             )
-            z.setdefault(
-                'private_devs',
-                ['lo'] + [d.name for d in z._devs if d.net.is_private],
+            z.pksetdefault(
+                private_devs=lambda: ['lo'] + [d.name for d in z._devs if d.net.is_private],
+                # No public addresses, no iptables,
+                iptables_enable=lambda: bool(z.inet_dev),
             )
-            # No public addresses, no iptables
-            z.setdefault('iptables_enable', bool(z.inet_dev))
         if z.iptables_enable:
             # Only restart iptables service if we have iptables
             self.service_prepare((_IPTABLES, _SCRIPTS), name='iptables')
@@ -202,13 +201,17 @@ class T(component.T):
             v.name = n
             v.ip = str(n.network_address)
             v.netmask = str(n.netmask)
-            # only needed for debugging
-            v.setdefault('is_global', n.is_global)
-            v.setdefault('is_private', not v.is_global and n.is_private)
-            g = v.setdefault('gateway', '')
-            if g:
-                assert ipaddress.ip_network(pkcompat.locale_str(g + '/32')).subnet_of(n), \
-                    '{}: gateway is not subnet of {}'.format(g, n)
+            v.pksetdefault(
+                # only needed for debugging
+                gateway='',
+                is_global=n.is_global,
+            )
+            v.pksetdefault(is_private=lambda: not v.is_global and n.is_private)
+            if v.gateway:
+                assert ipaddress.ip_network(
+                    pkcompat.locale_str(v.gateway + '/32')
+                ).subnet_of(n), \
+                    '{}: gateway is not subnet of {}'.format(v.gateway, n)
             if 'nameservers' in v:
                 v.nameservers = sorted([ipaddress.ip_address(x) for x in v.nameservers])
             nets[n] = v
