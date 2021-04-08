@@ -5,8 +5,8 @@ u"""create nginx configuration
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
+from pykern.pkcollections import PKDict
 from rsconf import component
-from pykern import pkcollections
 from pykern import pkio
 
 _CONF_ROOT_D = pkio.py_path('/etc/nginx')
@@ -56,7 +56,7 @@ def install_auth(compt, filename, host_path, visibility, j2_ctx):
 def install_vhost(compt, vhost, backend_host=None, backend_port=None, resource_d=None, j2_ctx=None, listen_any=False):
     update_j2_ctx_and_install_access(compt, j2_ctx)
     kc = compt.install_tls_key_and_crt(vhost, CONF_D)
-    j2_ctx.setdefault('nginx', pkcollections.Dict()).update(
+    j2_ctx.setdefault('nginx', PKDict()).update(
         tls_crt=kc.crt,
         tls_key=kc.key,
         vhost=vhost,
@@ -71,10 +71,8 @@ def install_vhost(compt, vhost, backend_host=None, backend_port=None, resource_d
     )
 
 
-def render_redirects(compt, j2_ctx, server_names, host_or_uri):
-    kw = pkcollections.Dict(
-        redirect_status=301,
-    )
+def render_redirects(compt, j2_ctx, server_names, host_or_uri, status=301):
+    kw = PKDict(redirect_status=status)
     if ':' in host_or_uri:
         kw.redirect_uri = host_or_uri
     else:
@@ -92,7 +90,7 @@ def render_redirects(compt, j2_ctx, server_names, host_or_uri):
 
 
 def update_j2_ctx_and_install_access(compt, j2_ctx):
-    j2_ctx.setdefault('nginx', pkcollections.Dict()).update(
+    j2_ctx.setdefault('nginx', PKDict()).update(
         default_error_pages=_DEFAULT_ERROR_PAGES,
         default_root=_DEFAULT_ROOT,
     )
@@ -140,5 +138,5 @@ class T(component.T):
             names = r.server_names
             if r.setdefault('want_www', False):
                 names = sum([[s, 'www.' + s] for s in names], [])
-            res += render_redirects(self, jc, names, r.host_or_uri)
+            res += render_redirects(self, jc, names, r.host_or_uri, r.get('status', 301))
         return res

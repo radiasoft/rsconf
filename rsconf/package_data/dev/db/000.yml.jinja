@@ -347,6 +347,7 @@ host:
       nginx:
         redirects:
           - host_or_uri: www.google.com
+            status: 302
             server_names:
               - redirect1.{{ host }}
               - redirect2.{{ host }}
