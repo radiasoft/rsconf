@@ -138,5 +138,11 @@ class T(component.T):
             names = r.server_names
             if r.setdefault('want_www', False):
                 names = sum([[s, 'www.' + s] for s in names], [])
-            res += render_redirects(self, jc, names, r.host_or_uri, r.get('status', 301))
+            res += render_redirects(
+                self,
+                jc,
+                names,
+                r.host_or_uri,
+                (302 if r.get('is_temporary') else 301),
+            )
         return res
