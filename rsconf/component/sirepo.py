@@ -93,8 +93,8 @@ class T(component.T):
                         ),
                         visibility='channel',
                     )[0],
+                    verify_tls=lambda: jc.pykern.pkconfig.channel != 'dev',
                 ),
-                verify_tls=lambda: jc.pykern.pkconfig.channel != 'dev',
                 pkcli=dict(
                     job_supervisor=dict(
                         ip='127.0.0.1',
