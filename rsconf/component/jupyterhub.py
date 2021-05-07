@@ -46,7 +46,7 @@ class T(component.T):
         z.setdefault('http_timeout', 30);
         z.setdefault('template_vars', {});
         self._network(z, jc)
-        self._user_lists(z)
+        z.admin_users_str = _list_to_str(z.admin_users)
         z.template_d = self.__run_d.join(_TEMPLATE_D)
         z.home_d = db.user_home_path(jc, z.jupyter_run_u)
         z.cookie_secret_hex = self.secret_path_value(
@@ -191,13 +191,6 @@ class T(component.T):
                             seen.hosts[s],
                         )
                     seen.users[s] = n
-
-    def _user_lists(self, z):
-        # admin_users are implicitly part of whitelist
-        for x in 'admin', 'blacklist', 'whitelist':
-            y = z.get(f'{x}_users')
-            if y:
-                z[f'{x}_users_str'] = _list_to_str(y)
 
     def _vhost(self, z, jc):
         z.vhost = jc.jupyterhub.vhosts[jc.rsconf_db.host]
