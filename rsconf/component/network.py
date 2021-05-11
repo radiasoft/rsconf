@@ -46,7 +46,7 @@ class T(component.T):
         z = jc.network
         z.trusted_nets = tuple(sorted(z.trusted.keys()))
         z.pksetdefault(
-            blacklist=[],
+            blocked_ips=[],
             drop_ssh_probes=True,
             pci_scanner_net=None,
             public_ssh_ports=[],
@@ -55,7 +55,7 @@ class T(component.T):
             trusted_tcp_ports=[],
         )
         self.__trusted_nets = self._nets(jc, z.trusted)
-        z.blacklist = [str(ipaddress.ip_network(n)) for n in z.blacklist]
+        z.blocked_ips = [str(ipaddress.ip_network(n)) for n in z.blocked_ips]
         z.pksetdefault(
             trusted_public_nets=lambda: sorted([n.name for n in self.__trusted_nets.values() if n.is_global]),
         )

@@ -231,7 +231,7 @@ channel:
       clusters:
         vagrant: [ {{ host }}, {{ worker5_host }}, {{ worker6_host }} ]
     network:
-      blacklist:
+      blocked_ips:
         - 1.2.3.4
         - 99.99.99.0/24
       trusted:
