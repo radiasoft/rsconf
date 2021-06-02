@@ -10,4 +10,10 @@ rsc() {
     {% endraw %}{% endif %}
     curl {{ rsconf_db.http_host }} | install_server={{ rsconf_db.http_host }} bash ${install_debug:+-x} -s rsconf.sh ${args+"${args[@]}"}
 }
+
+bivio() {
+    echo 'do not run bivio commands as root' 1>&2
+    return 1
+}
+
 {{ base_users.root_bashrc_aux }}
