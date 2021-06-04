@@ -135,6 +135,6 @@ http {
         {% endif %}
         return 444;
     }
-    {{ nginx.rendered_redirects | indent(4, indentfirst=False) }}
+    {{ nginx.rendered_redirects | indent(4, first=False) }}
     include /etc/nginx/conf.d/*.conf;
 }
