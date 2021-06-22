@@ -39,7 +39,6 @@ class T(rsconf.component.jupyterhub.T):
                 # so we have to bring in their full config.
                 'SIREPO_AUTH',
                 'SIREPO_COOKIE',
-                'SIREPO_FEATURE_PROPRIETARY_SIM',
                 'SIREPO_SIM_API_JUPYTERHUBLOGIN',
                 'SIREPO_SMTP',
                 'SIREPO_SRDB',
