@@ -186,8 +186,6 @@ class T(component.T):
             self.install_directory(p.join(c))
         self.install_access(mode='400')
         for c in z.feature_config.proprietary_sim_types:
-            assert c == 'flash', \
-                f'unknown proprietary_sim_type={c}'
             self.install_abspath(
                 self.proprietary_file(jc, c),
                 p.join(c, c + '.tar.gz'),
