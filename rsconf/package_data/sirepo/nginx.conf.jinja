@@ -28,6 +28,7 @@ server {
         return 301 /en/apps/particle-accelerators;
     }
     location ~ ^/(wp-content|en)/ {
+        proxy_set_header Host {{ sirepo.wordpress_host }};
         proxy_pass https://{{ sirepo.wordpress_host }};
     }
 {% endif %}
