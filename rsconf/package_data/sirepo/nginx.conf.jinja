@@ -19,9 +19,21 @@ server {
         uwsgi_send_timeout 300s;
         uwsgi_pass {{ nginx.backend_host }}:{{ nginx.backend_port }};
     }
+{% if sirepo.wordpress_host %}
+{# legacy redirects #}
+    location /en/xray-beamlines.html {
+        return 301 /en/apps/x-ray-beamlines;
+    }
+    location /en/particle-accelerators.html {
+        return 301 /en/apps/particle-accelerators;
+    }
+    location ~ ^/(wp-content|en)/ {
+        proxy_pass https://{{ sirepo.wordpress_host }};
+    }
+{% endif %}
 {% if sirepo.jupyterhub_enabled %}
     location /{{ sirepo_jupyterhub.uri_root }}/hub/logout {
-        return 301 /auth-logout;
+        return 302 /auth-logout;
     }
     location /{{ sirepo_jupyterhub.uri_root }}/ {
         proxy_pass http://{{ sirepo_jupyterhub.hub_ip }}:{{ sirepo_jupyterhub.configurable_http_proxy_port }};

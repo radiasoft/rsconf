@@ -41,9 +41,9 @@ class T(component.T):
         jc, z = self.j2_ctx_init()
         self.__run_d = systemd.docker_unit_prepare(self, jc)
         d = self.__run_d.join(_DB_SUBDIR)
-        self.j2_ctx_pksetdefault(dict(
-            sirepo=dict(
-                cookie=dict(
+        self.j2_ctx_pksetdefault(PKDict(
+            sirepo=PKDict(
+                cookie=PKDict(
                     http_name=lambda: 'sirepo_{}'.format(jc.rsconf_db.channel),
                     private_key=lambda: self.secret_path_value(
                         _COOKIE_PRIVATE_KEY,
@@ -54,38 +54,40 @@ class T(component.T):
                     )[0],
                 ),
                 docker_image=docker_registry.absolute_image(jc, z.docker_image),
-                feature_config=dict(
+                feature_config=PKDict(
                     api_modules=[],
                     job=True,
                     default_proprietary_sim_types=tuple(),
                     proprietary_sim_types=tuple(),
                 ),
-                job=dict(
+                job=PKDict(
                     max_message_bytes='200m',
                 ),
-                pkcli=dict(
-                    service=dict(
+                pkcli=PKDict(
+                    service=PKDict(
                         ip='0.0.0.0',
                         run_dir=self.__run_d,
                     ),
                 ),
-                srdb=dict(root=d),
+                srdb=PKDict(root=d),
+                wordpress_host=None,
             ),
-            pykern=dict(
-                pkdebug=dict(
+            pykern=PKDict(
+                pkdebug=PKDict(
                     redirect_logging=True,
                     want_pid_time=True,
                 ),
-                pkconfig=dict(channel=jc.rsconf_db.channel),
+                pkconfig=PKDict(channel=jc.rsconf_db.channel),
             ),
         ))
         self._comsol(z)
         self._jupyterhublogin(z)
-        self.j2_ctx_pksetdefault(dict(
-            sirepo=dict(
+        self.j2_ctx_pksetdefault(PKDict(
+            sirepo=PKDict(
                 client_max_body_size=pkconfig.parse_bytes(z.job.max_message_bytes),
-                job_driver=dict(modules=['docker']),
-                job=dict(
+                job_api=PKDict,
+                job_driver=PKDict(modules=['docker']),
+                job=PKDict(
                     server_secret=lambda: self.secret_path_value(
                         _SERVER_SECRET,
                         gen_secret=lambda: pkcompat.from_bytes(
@@ -95,15 +97,14 @@ class T(component.T):
                     )[0],
                     verify_tls=lambda: jc.pykern.pkconfig.channel != 'dev',
                 ),
-                pkcli=dict(
-                    job_supervisor=dict(
+                pkcli=PKDict(
+                    job_supervisor=PKDict(
                         ip='127.0.0.1',
                         port=8001,
                     ),
                 ),
             ),
         ))
-        z.pksetdefault(job_api=PKDict)
         # server connects locally only so go direct to tornado.
         # supervisor has different uri to pass to agents.
         z.job_api.supervisor_uri = 'http://{}:{}'.format(
