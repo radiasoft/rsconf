@@ -22,10 +22,22 @@ server {
 {% if sirepo.wordpress_host %}
 {# legacy redirects #}
     location /en/xray-beamlines.html {
-        return 301 /en/apps/x-ray-beamlines;
+        return 301 /en/apps/x-ray-beamlines/;
     }
     location /en/particle-accelerators.html {
-        return 301 /en/apps/particle-accelerators;
+        return 301 /en/apps/particle-accelerators/;
+    }
+    location /en/landing.html {
+        return 301 /en/;
+    }
+    location /en/terms.html {
+        return 301 /en/terms/;
+    }
+    location /en/privacy.html {
+        return 301 /en/privacy/;
+    }
+    location /activait {
+        return 301 /ml;
     }
     location ~ ^/(wp-content|en)/ {
         proxy_set_header Host {{ sirepo.wordpress_host }};
