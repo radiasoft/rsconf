@@ -21,22 +21,22 @@ server {
     }
 {% if sirepo.wordpress_host %}
 {# legacy redirects #}
-    location /en/xray-beamlines.html {
+    location = /en/xray-beamlines.html {
         return 301 /en/apps/x-ray-beamlines/;
     }
-    location /en/particle-accelerators.html {
+    location = /en/particle-accelerators.html {
         return 301 /en/apps/particle-accelerators/;
     }
-    location /en/landing.html {
+    location = /en/landing.html {
         return 301 /en/;
     }
-    location /en/terms.html {
+    location = /en/terms.html {
         return 301 /en/terms/;
     }
-    location /en/privacy.html {
+    location = /en/privacy.html {
         return 301 /en/privacy/;
     }
-    location /activait {
+    location = /activait {
         return 301 /ml;
     }
     location ~ ^/(wp-content|en)/ {
@@ -45,7 +45,7 @@ server {
     }
 {% endif %}
 {% if sirepo.jupyterhub_enabled %}
-    location /{{ sirepo_jupyterhub.uri_root }}/hub/logout {
+    location = /{{ sirepo_jupyterhub.uri_root }}/hub/logout {
         return 302 /auth-logout;
     }
     location /{{ sirepo_jupyterhub.uri_root }}/ {
