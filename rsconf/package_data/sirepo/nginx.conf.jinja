@@ -40,8 +40,7 @@ server {
         return 301 /ml;
     }
     location ~ ^/(wp-login\.php$|(wp-(admin|content)|en)/) {
-        proxy_set_header Host {{ sirepo.wordpress_host }};
-        proxy_pass https://{{ sirepo.wordpress_host }};
+        proxy_pass https://{{ sirepo.wordpress_ip }};
     }
 {% endif %}
 {% if sirepo.jupyterhub_enabled %}

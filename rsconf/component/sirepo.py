@@ -70,7 +70,7 @@ class T(component.T):
                     ),
                 ),
                 srdb=PKDict(root=d),
-                wordpress_host=None,
+                wordpress_ip=None,
             ),
             pykern=PKDict(
                 pkdebug=PKDict(
