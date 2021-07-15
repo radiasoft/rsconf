@@ -19,7 +19,7 @@ server {
         uwsgi_send_timeout 300s;
         uwsgi_pass {{ nginx.backend_host }}:{{ nginx.backend_port }};
     }
-{% if sirepo.wordpress_ip %}
+{% if sirepo.wordpress_host %}
 {# legacy redirects #}
     location = /en/xray-beamlines.html {
         return 301 /en/apps/x-ray-beamlines/;
@@ -40,7 +40,7 @@ server {
         return 301 /ml;
     }
     location ~ ^/(wp-login\.php$|(wp-(admin|content)|en)/) {
-        proxy_pass https://{{ sirepo.wordpress_ip }};
+        proxy_pass https://{{ sirepo.wordpress_host }};
     }
 {% endif %}
 {% if sirepo.jupyterhub_enabled %}
