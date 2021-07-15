@@ -19,7 +19,7 @@ server {
         uwsgi_send_timeout 300s;
         uwsgi_pass {{ nginx.backend_host }}:{{ nginx.backend_port }};
     }
-{% if sirepo.wordpress_host %}
+{% if sirepo.wordpress_ip %}
 {# legacy redirects #}
     location = /en/xray-beamlines.html {
         return 301 /en/apps/x-ray-beamlines/;
