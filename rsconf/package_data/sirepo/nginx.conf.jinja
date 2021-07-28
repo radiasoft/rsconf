@@ -39,7 +39,7 @@ server {
     location = /activait {
         return 301 /ml;
     }
-    location ~ ^/(wp-login\.php$|(wp-(admin|content)|en)/) {
+    location ~ ^/(wp-login\.php$|(wp-(admin|content|includes)|en)/) {
         proxy_pass https://{{ sirepo.wordpress_host }};
     }
 {% endif %}
