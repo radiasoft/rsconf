@@ -31,7 +31,8 @@ c.JupyterHub.base_url = '/{{ sirepo_jupyterhub.uri_root }}'
 c.JupyterHub.cleanup_servers = False
 c.JupyterHub.cookie_secret = binascii.a2b_hex('{{ sirepo_jupyterhub.cookie_secret_hex }}')
 c.JupyterHub.spawner_class = rsdockerspawner.RSDockerSpawner
-c.JupyterHub.template_paths = ['{{ sirepo_jupyterhub.template_d }}']
+if hasattr(rsdockerspawner.RSDockerSpawner, 'sirepo_template_dir'):
+    c.JupyterHub.template_paths = [rsdockerspawner.RSDockerSpawner.sirepo_template_dir()]
 c.JupyterHub.template_vars = {{ sirepo_jupyterhub.template_vars }}
 c.JupyterHub.upgrade_db = True
 c.RSDockerSpawner.cfg = '''{{ sirepo_jupyterhub.rsdockerspawner_cfg }}'''

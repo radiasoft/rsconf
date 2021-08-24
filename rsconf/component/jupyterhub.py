@@ -13,7 +13,6 @@ from rsconf import component
 
 
 _CONF_F = 'conf.py'
-_TEMPLATE_D = 'template'
 _USER_SUBDIR = 'user'
 _DOCKER_TLS_SUBDIR = 'docker_tls'
 _DEFAULT_PORT_BASE = 8100
@@ -47,7 +46,6 @@ class T(component.T):
         z.setdefault('template_vars', {});
         self._network(z, jc)
         z.admin_users_str = _list_to_str(z.admin_users)
-        z.template_d = self.__run_d.join(_TEMPLATE_D)
         z.home_d = db.user_home_path(jc, z.jupyter_run_u)
         z.cookie_secret_hex = self.secret_path_value(
             self._COOKIE_SECRET,
@@ -72,7 +70,6 @@ class T(component.T):
         self.install_directory(self.__run_d)
         self.install_access(mode='700', owner=z.jupyter_run_u)
         self.install_directory(z.user_d)
-        self.install_directory(z.template_d)
         self.install_access(mode='400', owner=z.run_u)
         self.__conf_f = self.__run_d.join(_CONF_F)
         self.install_resource(f'{self.name}/{_CONF_F}', self.j2_ctx, self.__conf_f)
