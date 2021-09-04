@@ -62,11 +62,13 @@ def install_vhost(compt, vhost, backend_host=None, backend_port=None, resource_d
     j2_ctx.setdefault('nginx', PKDict()).update(
         backend_host=backend_host,
         backend_port=backend_port,
-        listen_any=a or False,
         tls_crt=kc.crt,
         tls_key=kc.key,
         vhost=vhost,
     )
+    j2_ctx.nginx.pksetdefault(listen_any=False)
+    if a is not None:
+        j2_ctx.nginx.listen_any = a
     j2_ctx.nginx.listen_ip = '0.0.0.0' if j2_ctx.nginx.listen_any else vhost
     compt.install_resource(
         (resource_d or compt.name) + '/nginx.conf',
