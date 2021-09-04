@@ -5,7 +5,7 @@ u"""create postfix configuration
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
-from pykern import pkcollections
+from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from pykern import pkio
 from pykern import pkjson
@@ -38,7 +38,7 @@ class T(component.T):
         self.buildt.require_component('network', 'base_users')
         self.j2_ctx = self.hdb.j2_ctx_copy()
         jc = self.j2_ctx
-        z = jc.setdefault('postfix', pkcollections.Dict())
+        z = jc.setdefault('postfix', PKDict())
         z.base_users = self.buildt.get_component('base_users')
         nc = self.buildt.get_component('network')
         z.have_public_smtp = not z.get('smart_host')
@@ -51,7 +51,11 @@ class T(component.T):
         self.append_root_bash('rsconf_yum_install postfix procmail cyrus-sasl cyrus-sasl-plain')
         systemd.unit_prepare(self, jc, [_CONF_D])
         z.have_virtual_aliases = bool(z.get('virtual_aliases'))
-        z.have_sasl = bool(z.get('sasl_users'))
+        z.pksetdefault(
+            sasl_users=PKDict,
+            sasl_host_users=[],
+        )
+        z.have_sasl = bool(z.get('sasl_users') or z.get('sasl_host_users'))
         z.local_host_names = []
         self._setup_mynames(jc, z)
 
@@ -63,7 +67,7 @@ class T(component.T):
         assert bool(
             z.have_sasl or z.local_host_names or z.have_virtual_aliases
             ) == z.have_public_smtp, \
-            'either sasl_users, btest, or bop, or need a smarthost'
+            'either sasl_users, sasl_host_users, btest, or bop, or need a smarthost'
         z.mydestination = ','.join(
             [z.myhostname, 'localhost'] + sorted(z.local_host_names),
         )
@@ -130,30 +134,41 @@ class T(component.T):
     def _write_sasl(self, jc, z):
         if not z.have_sasl:
             return
-        self.install_access(mode='400', owner=jc.rsconf_db.root_u)
-        r = []
-        for domain, u in z.sasl_users.items():
-            for user, password in u.items():
-                r.append(
-                    pkcollections.Dict(
-                        domain=domain,
-                        user=user,
-                        password=password,
-                    ),
-                )
-        jf = _sasl_password_path(jc)
-        if jf.check():
-            with jf.open() as f:
+
+        def _host_users():
+            res = []
+            j = _sasl_password_path(jc)
+            if not j.check():
+                return res
+            with j.open() as f:
                 y = pkjson.load_any(f)
-            for u, p in y.items():
+            for h in z.sasl_host_users:
+                u = _SASL_PASSWORD_PREFIX + h
                 x = u.split('@')
-                r.append(
-                    pkcollections.Dict(
+                res.append(
+                    PKDict(
                         domain=x[1],
                         user=x[0],
-                        password=p,
+                        password=y[u],
                     ),
                 )
+            return res
+
+        def _users():
+            res = []
+            for domain, u in z.sasl_users.items():
+                for user, password in u.items():
+                    res.append(
+                        PKDict(
+                            domain=domain,
+                            user=user,
+                            password=password,
+                        ),
+                    )
+            return res
+
+        self.install_access(mode='400', owner=jc.rsconf_db.root_u)
+        r = _users() + _host_users()
         z.sasl_users_flattened = sorted(r, key=lambda x: x.user + x.domain)
         self.install_resource(
             'postfix/smtpd-sasldb.conf',
@@ -197,7 +212,7 @@ def host_init(j2_ctx, host):
         with jf.open() as f:
             y = pkjson.load_any(f)
     else:
-        y = pkcollections.Dict()
+        y = PKDict()
     u = _SASL_PASSWORD_PREFIX + host
     if not u in y:
         y[u] = db.random_string()
