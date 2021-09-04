@@ -377,7 +377,7 @@ host:
         #components: [ rsconf, docker_registry, btest ]
 #        components: [ bop ]
         #components: [ bkp, jupyterhub, jupyterhub_proxy ]
-        components: [ nfs_server, sirepo ]
+        components: [ postfix, nfs_server, sirepo ]
       sirepo:
         auth:
           methods:
@@ -416,7 +416,7 @@ host:
         tls_host: {{ worker5_host }}
 {# test iptables NAT
       network:
-        trusted:
+       trusted:
           # v*.radia.run private (hostonly) network
           10.10.10.0/24:
             gateway: 10.10.10.40
