@@ -1,11 +1,11 @@
 server {
-    listen {{ nginx.vhost }}:80;
+    listen {{ nginx.listen_ip }}:80;
     server_name {{ nginx.vhost }};
     return 301 https://{{ nginx.vhost }}$request_uri;
 }
 
 server {
-    listen {{ nginx.vhost }}:443 ssl;
+    listen {{ nginx.listen_ip }}:443 ssl;
     server_name {{ nginx.vhost }};
     root {{ nginx.default_root }};
     ssl_certificate {{ nginx.tls_crt }};

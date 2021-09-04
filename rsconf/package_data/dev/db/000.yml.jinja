@@ -345,6 +345,7 @@ host:
           /srv/mpi_worker/user: [ 10.10.10.0/24 ]
           /srv/sirepo/db/user: [ 10.10.10.0/24 ]
       nginx:
+        listen_any: True
         redirects:
           - host_or_uri: www.google.com
             is_temporary: true
@@ -529,6 +530,7 @@ host:
           - github_bkp
           - wordpress
       sirepo:
+        listen_any: True
         auth:
           email:
             from_email: support@radisoft.net

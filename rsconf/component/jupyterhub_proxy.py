@@ -14,7 +14,6 @@ class T(component.T):
     def internal_build_compile(self):
         self.buildt.require_component('nginx')
         jc, z = self.j2_ctx_init()
-        z.pksetdefault(listen_any=False)
 
     def internal_build_write(self):
         from rsconf.component import nginx
@@ -27,5 +26,4 @@ class T(component.T):
                 backend_host=h,
                 backend_port=jc.jupyterhub.configurable_http_proxy_port,
                 j2_ctx=jc,
-                listen_any=jc.jupyterhub_proxy.listen_any,
             )
