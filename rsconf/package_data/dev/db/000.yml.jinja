@@ -537,7 +537,8 @@ host:
             - email
           deprecated_methods: [ github ]
         feature_config:
-          proprietary_sim_types: [ myapp ]
+          proprietary_sim_types: [ myapp, zgoubi ]
+          proprietary_code_tarballs: [ myapp ]
         job_driver:
           docker:
             hosts: [ {{ all_host }} ]

@@ -20,7 +20,7 @@ _DB_SUBDIR = 'db'
 
 _USER_SUBDIR = 'user'
 
-_PROPIETARY_CODE_SUBDIR = 'proprietary_code'
+_PROPRIETARY_CODE_SUBDIR = 'proprietary_code'
 
 #: secret basename
 _COOKIE_PRIVATE_KEY = 'sirepo_cookie_private_key'
@@ -59,6 +59,7 @@ class T(component.T):
                     job=True,
                     default_proprietary_sim_types=tuple(),
                     proprietary_sim_types=tuple(),
+                    proprietary_code_tarballs=tuple(),
                 ),
                 job=PKDict(
                     max_message_bytes='200m',
@@ -179,14 +180,14 @@ class T(component.T):
         d = self.__run_d.join(_DB_SUBDIR)
         self.install_directory(d)
         self.install_directory(d.join(_USER_SUBDIR))
-        if not z.feature_config.proprietary_sim_types:
+        if not z.feature_config.proprietary_code_tarballs:
             return
-        p = d.join(_PROPIETARY_CODE_SUBDIR)
+        p = d.join(_PROPRIETARY_CODE_SUBDIR)
         self.install_directory(p)
-        for c in z.feature_config.proprietary_sim_types:
+        for c in z.feature_config.proprietary_code_tarballs:
             self.install_directory(p.join(c))
         self.install_access(mode='400')
-        for c in z.feature_config.proprietary_sim_types:
+        for c in z.feature_config.proprietary_code_tarballs:
             self.install_abspath(
                 self.proprietary_file(jc, c),
                 p.join(c, c + '.tar.gz'),
