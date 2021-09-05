@@ -60,7 +60,7 @@ class T(component.T):
         self.j2_ctx_pksetdefault(sirepo.j2_ctx)
         self.j2_ctx_pksetdefault(dict(
             sirepo_job_supervisor=dict(
-                docker_image=lambda: docker_registry.absolute_image(jc, jc.sirepo.docker_image),
+                docker_image=lambda: docker_registry.absolute_image(sirepo),
             ),
         ))
         for m in jc.sirepo.job_driver.modules:

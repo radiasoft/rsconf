@@ -53,7 +53,7 @@ class T(component.T):
                         visibility='channel',
                     )[0],
                 ),
-                docker_image=docker_registry.absolute_image(jc, z.docker_image),
+                docker_image=docker_registry.absolute_image(self),
                 feature_config=PKDict(
                     api_modules=[],
                     job=True,

@@ -18,8 +18,7 @@ class T(component.T):
 
         # nfs_client is required, because host_d is likely on nfs
         self.buildt.require_component('docker', 'nfs_client', 'network')
-        self.jc = self.hdb.j2_ctx_copy()
-        jc = self.jc
+        jc, z = self.j2_ctx_init()
         z = jc.mpi_worker
         self._find_cluster(jc, z)
         z.host_d = z.host_root_d.join(z.user)
@@ -38,7 +37,7 @@ class T(component.T):
         from rsconf import systemd
         from rsconf.component import docker_registry
 
-        jc = self.jc
+        jc = self.j2_ctx
         z = jc.mpi_worker
         self.install_access(mode='700', owner=z.run_u)
         # Need to make sure host_d exists, even though it isn't ours
@@ -69,7 +68,7 @@ class T(component.T):
         systemd.docker_unit_enable(
             self,
             jc,
-            image=docker_registry.absolute_image(jc, z.docker_image),
+            image=docker_registry.absolute_image(self),
             volumes=x,
             cmd="/usr/sbin/sshd -D -f '{}'".format(z.guest.sshd_config),
         )

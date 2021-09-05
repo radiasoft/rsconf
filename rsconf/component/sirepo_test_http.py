@@ -42,7 +42,12 @@ class T(component.T):
             self,
             cmd='sirepo test_http',
             env=e,
-            image=docker_registry.absolute_image(jc, jc.sirepo.docker_image),
+            image=docker_registry.absolute_image(
+                self,
+                j2_ctx=jc,
+                image=jc.sirepo.docker_image,
+                image_is_local=jc.sirepo.get('docker_image_is_local'),
+            ),
             j2_ctx=jc,
             run_u=jc.rsconf_db.run_u,
         )

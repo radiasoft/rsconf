@@ -65,7 +65,7 @@ class T(rsconf.component.jupyterhub.T):
                     )),
                 ),
             ),
-            image=docker_registry.absolute_image(self.j2_ctx, z.docker_image),
+            image=docker_registry.absolute_image(self),
             run_u=z.run_u,
             volumes=[
                 self._jupyterhub_db(),

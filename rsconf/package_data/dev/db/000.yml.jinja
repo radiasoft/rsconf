@@ -120,17 +120,6 @@ default:
     num_servers: 16
   nginx:
     worker_processes: 1
-  owncloud:
-    admin_user: admin
-    db_name: owncloud
-    db_prefix: oc_
-    db_user: owncloud
-    docker_image: docker.io/radiasoft/owncloud
-    domain: owncloud.{{ host }}
-    port: 7010
-  owncloud_redis:
-    docker_image: docker.io/radiasoft/redis
-    port: 7012
   petshop:
     cookie_tag: PSD
     filter_out_of_office: true
@@ -189,7 +178,8 @@ default:
     run_u: {{ user }}
     run_uid: {{ uid }}
   rs_mariadb:
-    docker_image: docker.io/radiasoft/mariadb
+    docker_image: radiasoft/mariadb:latest
+    docker_image_is_local: true
     ip: 127.0.0.1
     port: 7011
   sirepo:
@@ -526,7 +516,6 @@ host:
           - dovecot
           - jupyterhub
           - jupyterhub_proxy
-          - owncloud
           - github_bkp
           - wordpress
       sirepo:

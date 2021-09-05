@@ -30,7 +30,7 @@ class T(component.T):
         )
         systemd.docker_unit_enable(
             self,
-            image=docker_registry.absolute_image(j2_ctx, z.docker_image),
+            image=docker_registry.absolute_image(self, j2_ctx),
             j2_ctx=j2_ctx,
             env=env,
             run_u=z.run_u,

@@ -94,16 +94,12 @@ http {
     proxy_set_header Host $host;
     {# https://www.kb.cert.org/vuls/id/797896 #}
     proxy_set_header Proxy "";
-    {# "Old school" for logs in owncloud and wordpress #}
+    {# "Old school" for logs in wordpress #}
     proxy_set_header Via $remote_addr;
     {# tornado, used by jupyterhub, gives X-Real-Ip precendence over X-Forwarded-For
        so we set that, since there's some code about "trusted_downstream" which we
        don't want to configure. #}
     proxy_set_header X-Real-Ip $remote_addr;
-    {#
-    Looked through owncloud, and it only references X-Forwarded-For. Lots of
-    People recommend setting X-Real-IP, but that's not used.
-    #}
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
     proxy_cache_bypass $http_upgrade;

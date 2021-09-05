@@ -53,7 +53,7 @@ class T(component.T):
                 [z.apache_conf_f, '/etc/apache2/sites-enabled/000-default.conf'],
                 [z.apache_envvars_f, '/etc/apache2/envvars'],
             ],
-            image=docker_registry.absolute_image(j2_ctx, z.docker_image),
+            image=docker_registry.absolute_image(self, j2_ctx),
             cmd=z.run_f,
             run_u=z.run_u,
         )

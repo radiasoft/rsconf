@@ -40,15 +40,18 @@ _PORT = 5000
 #TODO(robnagler) need to proxy registry to control access to push (WTF???)
 # http://mindtrove.info/control-read-write-access-docker-private-registry/
 
-def absolute_image(j2_ctx, image):
-    if not ':' in image:
-        image += ':' + j2_ctx.rsconf_db.channel
+def absolute_image(*args, **kwargs):
+    j, i, l = _image_args(*args, **kwargs)
+    if not ':' in i:
+        i += f':{j.rsconf_db.channel}'
+    if l:
+        return i
     h = _DOCKER_HUB_HOST
-    if update_j2_ctx(j2_ctx):
-        h = j2_ctx.docker_registry.http_addr
-    if image.startswith(_DOCKER_HUB_HOST) or image.startswith(h):
-        return image
-    return '{}/{}'.format(h, image)
+    if update_j2_ctx(j):
+        h = j.docker_registry.http_addr
+    if i.startswith(_DOCKER_HUB_HOST) or i.startswith(h):
+        return i
+    return f'{h}/{i}'
 
 
 def host_init(hdb, host):
@@ -75,6 +78,11 @@ def host_init(hdb, host):
                 ),
             ),
         )
+
+
+def image_is_local(*args, **kwargs):
+    return _image_args(*args, *kwargs)[2]
+
 
 def install_crt_and_login(compt, j2_ctx):
     from rsconf.pkcli import tls
@@ -172,3 +180,15 @@ class T(component.T):
         self.install_resource(
             'docker_registry/config.yml', j2_ctx, j2_ctx.docker_registry.conf_f)
         self.rsconf_service_restart()
+
+
+def _image_args(compt, j2_ctx=None, image=None, image_is_local=None):
+    if j2_ctx is None:
+        j2_ctx = compt.j2_ctx
+    if not image:
+        image = j2_ctx[compt.name].docker_image
+    if image_is_local is None:
+        image_is_local = j2_ctx.pkunchecked_nested_get(
+            f'{compt.name}.docker_image_is_local',
+        )
+    return (j2_ctx, image, bool(image_is_local))

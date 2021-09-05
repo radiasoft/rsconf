@@ -37,7 +37,8 @@ class T(component.T):
         z.update(
             user_d=self._jupyterhub_db().join(_USER_SUBDIR),
             jupyter_docker_image=docker_registry.absolute_image(
-                jc, z.jupyter_docker_image,
+                self,
+                image=z.jupyter_docker_image,
             ),
             run_u=jc.rsconf_db.run_u,
             jupyter_run_u=jc.rsconf_db.run_u,
@@ -102,7 +103,7 @@ class T(component.T):
             self,
             self.j2_ctx,
             cmd="bash -l -c 'jupyterhub -f {}'".format(self.__conf_f),
-            image=docker_registry.absolute_image(self.j2_ctx, z.docker_image),
+            image=docker_registry.absolute_image(self),
             run_u=z.run_u,
         )
 

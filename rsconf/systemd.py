@@ -77,9 +77,8 @@ def docker_unit_enable(compt, j2_ctx, image, cmd, env=None, volumes=None, after=
     from rsconf.component import docker_registry
 
     def _extra_run_flags():
-        try:
-            c = z.pknested_get('extra_run_flags.' + compt.name)
-        except KeyError:
+        c = z.pkunchecked_nested_get('extra_run_flags.' + compt.name)
+        if not c:
             return ''
         return ' '.join(
             (f'--{k}={v}' for k, v in c.items()),
@@ -92,7 +91,6 @@ def docker_unit_enable(compt, j2_ctx, image, cmd, env=None, volumes=None, after=
         # Tested on CentOS 7, and it does have the localtime stat problem
         # https://blog.packagecloud.io/eng/2017/02/21/set-environment-variable-save-thousands-of-system-calls/
         env['TZ'] = ':/etc/localtime'
-    image = docker_registry.absolute_image(j2_ctx, image)
     z.update(
         after=_after(after),
         extra_run_flags=_extra_run_flags(),
@@ -100,7 +98,7 @@ def docker_unit_enable(compt, j2_ctx, image, cmd, env=None, volumes=None, after=
         exports='\n'.join(
             ["export '{}={}'".format(k, env[k]) for k in sorted(env.keys())],
         ),
-        image=image,
+        image=docker_registry.absolute_image(compt, j2_ctx, image),
         run_u=run_u or j2_ctx.rsconf_db.run_u,
     )
     volumes = _tuple_arg(volumes)
@@ -140,9 +138,10 @@ def docker_unit_enable(compt, j2_ctx, image, cmd, env=None, volumes=None, after=
         j2_ctx,
         z.service_f,
     )
-    compt.append_root_bash(
-        "rsconf_service_docker_pull '{}' '{}'".format(z.image, z.service_name),
-    )
+    if not docker_registry.image_is_local(compt, j2_ctx, z.image):
+        compt.append_root_bash(
+            "rsconf_service_docker_pull '{}' '{}'".format(z.image, z.service_name),
+        )
     unit_enable(compt, j2_ctx)
 
 
