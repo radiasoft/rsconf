@@ -177,6 +177,11 @@ default:
     root_u: root
     run_u: {{ user }}
     run_uid: {{ uid }}
+    local_files:
+      "/etc/base.rsconf":
+        mode: 0o700
+        owner: nobody
+        group: {{ user }}
   rs_mariadb:
     docker_image: radiasoft/mariadb:latest
     docker_image_is_local: true

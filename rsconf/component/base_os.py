@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
-u"""create base os configuration
+"""create base os configuration
 
 :copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from __future__ import absolute_import, division, print_function
-from pykern import pkcollections
+from pykern.pkcollections import PKDict
 from pykern import pkio
 from pykern.pkdebug import pkdp
 from rsconf import component
@@ -61,27 +60,32 @@ class T(component.T):
         #TODO(robnagler) do we have to create directories and/or trigger on
         #  directory creation? For example, nginx rpm installs conf.d, which
         #  we will want to have local files for.
+        x = PKDict(
+            mode=0o400,
+            owner=self.j2_ctx.rsconf_db.root_u,
+            group=self.j2_ctx.rsconf_db.root_u,
+        )
         for t in sorted(values.keys()):
-            s = values[t]
-            if s.basename.endswith('.sh.jinja'):
-                self.append_root_bash_with_file(s, self.j2_ctx)
+            v = values[t].copy()
+            if v._source.basename.endswith('.sh.jinja'):
+                self.append_root_bash_with_file(v._source, self.j2_ctx)
                 continue
-            x = s.stat()
+            v.pksetdefault(**x)
             self.install_access(
-                mode='{:o}'.format(x.mode & 0o777),
-                owner=x.owner,
-                group=x.group,
+                mode='{:o}'.format(v.mode),
+                owner=v.owner,
+                group=v.group,
             )
             # Local files overwrite existing (distro) files but if a component tries
             # to overwrite a local file, and error will occur.
-            self.install_abspath(s, t, ignore_exists=True)
+            self.install_abspath(v._source, t, ignore_exists=True)
 
     def _sorted_logical_volumes(self, vg):
         res = []
         for k, v in vg.logical_volumes.items():
             if v.gigabytes == 0:
                 continue
-            v = pkcollections.Dict(v)
+            v = PKDict(v)
             v.name = k
             res.append(v)
         return iter(sorted(res, key=lambda x: x.mount_d))

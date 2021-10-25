@@ -71,8 +71,6 @@ def default_command():
     _sym(pkresource.filename('rsconf/rsconf.sh'), 'rsconf.sh')
     dev_d = pkio.py_path(pkresource.filename('dev'))
     for f in pkio.walk_tree(dev_d):
-        if str(f).endswith('~') or str(f).startswith('#'):
-            continue
         x = str(f.relto(dev_d))
         if not ('local/' in x and x.endswith('.sh.jinja')):
             x = re.sub('.jinja$', '', x)

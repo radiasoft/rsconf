@@ -16,6 +16,7 @@ from pykern.pkdebug import pkdc, pkdlog, pkdp, pkdpretty
 import collections
 import copy
 import random
+import re
 import string
 
 
@@ -41,7 +42,7 @@ LEVELS = ('default', 'channel', 'host')
 # Secrets are long so keep them simple
 _BASE62_CHARS = string.ascii_lowercase + string.digits + string.ascii_uppercase
 _HEX_CHARS = '0123456789abcdef'
-
+_IGNORE_RE = re.compile(r'^(?:\.#|#)|~$')
 
 class Host(PKDict):
     def j2_ctx_copy(self):
@@ -106,6 +107,11 @@ class T(PKDict):
         return res
 
     def host_db(self, channel, host):
+        c = PKDict(
+            channel=channel,
+            db_d=self.db_d,
+            host=host.lower(),
+        )
         res = Host()
         v = PKDict(
             rsconf_db=PKDict(
@@ -113,7 +119,7 @@ class T(PKDict):
                 host_run_d='/srv',
                 run_u='vagrant',
                 root_u='root',
-            )
+            ).pkupdate(c)
         )
         merge_dict(res, v)
         #TODO(robnagler) optimize by caching default and channels
@@ -128,13 +134,13 @@ class T(PKDict):
                     if not v:
                         continue
             merge_dict(res, v)
-        host = host.lower()
         v = PKDict(
             rsconf_db=PKDict(
-                channel=channel,
                 db_d=self.db_d,
                 host=host,
+                local_files=_init_local_files(c),
                 proprietary_source_d=self.proprietary_source_d,
+                resource_paths=_init_resource_paths(c),
                 rpm_source_d=self.rpm_source_d,
                 secret_d=self.secret_d,
                 srv_d=self.srv_d,
@@ -144,10 +150,8 @@ class T(PKDict):
                 # compression with 8 threads and max compression
                 # Useful (random) constants
                 compress_cmd='pxz -T8 -9',
-            )
+            ).pkupdate(c),
         )
-        v.rsconf_db.resource_paths = _init_resource_paths(v)
-        v.rsconf_db.local_files = _init_local_files(v)
         pkio.unchecked_remove(v.rsconf_db.tmp_d)
         pkio.mkdir_parent(v.rsconf_db.tmp_d)
         merge_dict(res, v)
@@ -188,7 +192,7 @@ def merge_dict(base, new):
                 base[k] = copy.deepcopy(new_v) + base_v
                 # strings, numbers, etc. are hashable, but dicts and lists are not.
                 # this test ensures we don't have dup entries in lists.
-                y = [x for x in base[k] if isinstance(x, collections.Hashable)]
+                y = [x for x in base[k] if isinstance(x, collections.abc.Hashable)]
                 assert len(set(y)) == len(y), \
                     'duplicates in key={} list values={}'.format(k, base[k])
                 continue
@@ -267,7 +271,7 @@ def _cfg_root(value):
     from pykern import pkio, pkinspect
     import os, sys
 
-    if value:
+    if value and value != 'UNIT TEST':
         assert os.path.isabs(value), \
             '{}: must be absolute'.format(value)
         value = pkio.py_path(value)
@@ -276,15 +280,20 @@ def _cfg_root(value):
     else:
         assert pkconfig.channel_in('dev'), \
             'must be configured except in DEV'
-        fn = pkio.py_path(sys.modules[pkinspect.root_package(_cfg_root)].__file__)
-        root = pkio.py_path(pkio.py_path(fn.dirname).dirname)
-        # Check to see if we are in our ~/src/radiasoft/<pkg> dir. This is a hack,
-        # but should be reliable.
-        if not root.join('setup.py').check():
-            # Don't run from an install directorya
+        if value:
+            # See above: this is a unit test
             root = pkio.py_path('.')
+        else:
+            fn = pkio.py_path(sys.modules[pkinspect.root_package(_cfg_root)].__file__)
+            root = pkio.py_path(pkio.py_path(fn.dirname).dirname)
+            # Check to see if we are in our ~/src/radiasoft/<pkg> dir. This is a hack,
+            # but should be reliable.
+            if not root.join('setup.py').check():
+                # Don't run from an install directory
+                root = pkio.py_path('.')
         value = root.join(DEFAULT_ROOT_SUBDIR)
     return value
+
 
 @pkconfig.parse_none
 def _cfg_srv_group(value):
@@ -299,21 +308,21 @@ def _cfg_srv_group(value):
     return grp.getgrgid(os.getgid()).gr_name
 
 
-def _init_local_files(values):
-    v = values.rsconf_db
-    r = v.db_d.join(LOCAL_SUBDIR)
+def _init_local_files(rsconf_db):
+    r = rsconf_db.db_d.join(LOCAL_SUBDIR)
     res = PKDict()
-    for l in LEVELS[0], v.channel, v.host:
+    for l in LEVELS[0], rsconf_db.channel, rsconf_db.host:
         d = r.join(l)
-        for f in pkio.walk_tree(d):
-            res['/' + d.bestrelpath(f)] = f
+        for s in pkio.walk_tree(d):
+            if _IGNORE_RE.search(s.basename):
+                continue
+            res['/' + d.bestrelpath(s)] = PKDict(_source=s)
     return res
 
 
-def _init_resource_paths(values):
-    v = values.rsconf_db
-    res = [v.db_d.join(RESOURCE_SUBDIR)]
-    for i in values.rsconf_db.channel, values.rsconf_db.host:
+def _init_resource_paths(rsconf_db):
+    res = [rsconf_db.db_d.join(RESOURCE_SUBDIR)]
+    for i in rsconf_db.channel, rsconf_db.host:
         res.insert(0, res[0].join(i))
     return res
 

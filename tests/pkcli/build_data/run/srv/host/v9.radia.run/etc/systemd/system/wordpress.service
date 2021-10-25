@@ -1,0 +1,15 @@
+[Unit]
+After=docker.service 
+Description=wordpress
+Requires=docker.service
+
+[Service]
+ExecStart=/srv/wordpress/start
+ExecStartPre=/srv/wordpress/remove
+ExecStop=-/srv/wordpress/stop
+Restart=on-failure
+RestartSec=10
+SyslogIdentifier=wordpress
+
+[Install]
+WantedBy=multi-user.target
