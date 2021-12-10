@@ -4,6 +4,29 @@ set -euo pipefail
 secondary_mirror_d='{{ bkp.mirror_d }}'
 secondary_copy_d='{{ bkp.secondary_copy_d }}'
 
+secondary_assert_copy_d() {
+    if [[ ! -d $secondary_copy_d ]]; then
+        secondary_err "$secondary_copy_d does not exist"
+    fi
+    if [[ $(secondary_file_sys "$secondary_copy_d") == $(secondary_file_sys "$(dirname "$secondary_copy_d")") ]]; then
+        secondary_err "$secondary_copy_d is not on a separate file system; need to run secondary_setup"
+    fi
+    if [[ $(ls $secondary_copy_d) ]]; then
+        secondary_err "$secondary_copy_d is not empty"
+    fi
+}
+
+secondary_err() {
+    echo "$@" 1>&2
+    return 1
+}
+
+secondary_file_sys() {
+    local file=$1
+    local x=( $(df "$file" | tail -1) )
+    echo "${x[0]}"
+}
+
 secondary_main() {
     umask 077
     local snap=$secondary_mirror_d/secondary_snap
@@ -15,6 +38,7 @@ secondary_main() {
         rm "$snap"/RESTART
         secondary_msg "Reusing snapshot $snap"
     else
+        secondary_assert_copy_d
         rm -rf "$snap"
         cp -al '/bkp/mirror/current' "$snap"
     fi
