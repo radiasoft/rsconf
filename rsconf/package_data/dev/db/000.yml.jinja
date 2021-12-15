@@ -94,7 +94,7 @@ default:
   jupyterhub:
     admin_users: [ '{{ user }}' ]
     docker_image: radiasoft/jupyterhub
-    jupyter_docker_image: radiasoft/beamsim-jupyter
+    jupyter_docker_image: radiasoft/beamsim-jupyterw
     # github:
     #  client_id: ""
     #  client_secret: ""
@@ -458,6 +458,8 @@ host:
         secondary_copy_d: /bkp_copy
         secondary_setup_f: {{ root_d }}/etc/secondary_setup.sh
       jupyterhub:
+        jupyter_docker_image: radiasoft/custom-jupyter:latest
+        jupyter_docker_image_is_local: true
         github:
           client_id: xyzzy
           client_secret: big-secret

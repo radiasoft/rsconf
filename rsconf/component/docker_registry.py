@@ -81,7 +81,7 @@ def host_init(hdb, host):
 
 
 def image_is_local(*args, **kwargs):
-    return _image_args(*args, *kwargs)[2]
+    return _image_args(*args, **kwargs)[2]
 
 
 def install_crt_and_login(compt, j2_ctx):

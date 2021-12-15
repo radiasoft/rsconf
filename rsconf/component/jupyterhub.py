@@ -34,11 +34,13 @@ class T(component.T):
         self.buildt.require_component('docker')
         jc, z = self.j2_ctx_init()
         self.__run_d = systemd.docker_unit_prepare(self, jc)
+        z.setdefault('jupyter_docker_image_is_local', False)
         z.update(
             user_d=self._jupyterhub_db().join(_USER_SUBDIR),
             jupyter_docker_image=docker_registry.absolute_image(
                 self,
                 image=z.jupyter_docker_image,
+                image_is_local=z.jupyter_docker_image_is_local,
             ),
             run_u=jc.rsconf_db.run_u,
             jupyter_run_u=jc.rsconf_db.run_u,
@@ -63,6 +65,7 @@ class T(component.T):
     def internal_build_write(self):
         from rsconf import db
         from rsconf.component import docker
+        from rsconf.component import docker_registry
 
         z = self.j2_ctx[self.name]
         self._auth(z)
@@ -81,9 +84,14 @@ class T(component.T):
             run_u=z.run_u,
             j2_ctx=self.j2_ctx,
         )
-        self.append_root_bash(
-            "rsconf_service_docker_pull '{}'".format(z.jupyter_docker_image),
-        )
+        if not docker_registry.image_is_local(
+            self,
+            image=z.jupyter_docker_image,
+            image_is_local=z.jupyter_docker_image_is_local,
+        ):
+            self.append_root_bash(
+                "rsconf_service_docker_pull '{}'".format(z.jupyter_docker_image),
+            )
         self._enable_docker()
 
     def _auth(self, z):
