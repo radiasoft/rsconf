@@ -352,13 +352,13 @@ host:
               - redirect3.{{ host }}
             want_www: true
       postfix:
-        aliases:
-          RSCONF_DB_REPLACE:
-            # root and errors gets delivered locally so we replace
-            blackhole: /dev/null
-        virtual_aliases:
-          wp1.{{ host }}:
-            vagrant: vagrant
+        RSCONF_DB_REPLACE:
+          aliases:
+              # root and errors gets delivered locally so we replace
+              blackhole: /dev/null
+          virtual_aliases:
+            wp1.{{ host }}:
+              vagrant: vagrant
       pykern:
         pkdebug:
           control: .
