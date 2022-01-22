@@ -168,10 +168,13 @@ def merge_dict(base, new):
             base[k] = copy.deepcopy(new_v)
             continue
         base_v = base[k]
-        if isinstance(new_v, dict) and len(new_v) == 1 and \
-           'RSCONF_DB_REPLACE' in new_v:
+        if isinstance(new_v, dict) and 'RSCONF_DB_REPLACE' in new_v:
             # replacement is the value of key "RSCONF_DB_REPLACE"
-            new_v = new_v.RSCONF_DB_REPLACE
+            x = new_v.pkdel('RSCONF_DB_REPLACE')
+            if isinstance(x, dict):
+                new_v.pkupdate(x)
+            else:
+                new_v = x
         elif isinstance(new_v, dict) or isinstance(base_v, dict):
             if new_v is None or base_v is None:
                 # Just replace, because new_v overrides type in case of None
