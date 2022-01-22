@@ -172,7 +172,8 @@ def merge_dict(base, new):
             # replacement is the value of key "RSCONF_DB_REPLACE"
             x = new_v.pkdel('RSCONF_DB_REPLACE')
             if isinstance(x, dict):
-                new_v.pkupdate(x)
+                # give precendence to rsconf_db for replacements
+                merge_dict(new_v, x)
             else:
                 new_v = x
         elif isinstance(new_v, dict) or isinstance(base_v, dict):
