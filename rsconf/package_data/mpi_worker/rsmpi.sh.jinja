@@ -81,13 +81,14 @@ rsmpi_help() {
         fi
         local h=$(seq --separator=, 1 "$_rsmpi_num_hosts")
         cat <<EOF
-usage: rsmpi [-n processes] [-h hosts] <mpi-command args...>
+usage: rsmpi [-n processes] [-h hosts] [-t tasks-per-host] <mpi-command args...>
 
 Starts mpiexec <mpi-command args...> with specified processes and hosts.
 
 Options:
+    hosts: indices of hosts to use; all hosts is $h [default]
     processes: integer between 1 and $_rsmpi_max_slots [default]
-    hosts: indices of hosts to use, all hosts is $h [default]
+    tasks-per-host: integer between 1 and $_rsmpi_slots_per_host [default]
 
 For more information, please visit:
 
@@ -98,9 +99,11 @@ EOF
 }
 
 rsmpi_hosts() {
-    local -i slots=${1:-0}
+    local -i slots=$1
     shift
-    local hosts=( "$@" )
+    local -i tasks=$1
+    shift
+    local -a hosts=( "$@" )
     if (( $# <= 0 )); then
         hosts=( $(seq 1 $_rsmpi_num_hosts) )
     fi
@@ -109,13 +112,16 @@ rsmpi_hosts() {
     find "$t"* -mmin +60 -exec rm -f {} \; >& /dev/null || true
     local i
     t+=$RANDOM$RANDOM
-    if (( $slots <= 0 )); then
+    if (( slots <= 0 )); then
         slots=$(( ${#hosts[@]} * _rsmpi_slots_per_host ))
+    fi
+    if (( tasks <= 0 )); then
+        tasks=$_rsmpi_slots_per_host
     fi
     local s
     for i in "${hosts[@]}"; do
-        slots=$(( slots - _rsmpi_slots_per_host ))
-        s=$_rsmpi_slots_per_host
+        slots=$(( slots - tasks ))
+        s=$tasks
         if (( $slots < 0 )); then
             s=$(( s + slots ))
         fi
@@ -143,9 +149,9 @@ rsmpi_local_ip() {
 
 rsmpi_main() {
     local o OPTARG OPTIND=1 OPTERR h
-    local slots=
+    local -i slots=0 tasks=0
     local -a hosts=()
-    while getopts "h:n:" o; do
+    while getopts "h:n:t:" o; do
         case $o in
             h)
                 if [[ ! $OPTARG =~ ^[0-9,]+$ ]]; then
@@ -175,6 +181,15 @@ rsmpi_main() {
                     rsmpi_help "invalid process count: $slots"
                 fi
                 ;;
+            t)
+                if [[ ! $OPTARG =~ ^[0-9]+$ ]]; then
+                    rsmpi_help "tasks-per-host count must be a number: $OPTARG"
+                fi
+                tasks=$OPTARG
+                if (( tasks < 1 || tasks > _rsmpi_slots_per_host )); then
+                    rsmpi_help "invalid tasks-per-host count (max=$_rsmpi_slots_per_host): $tasks"
+                fi
+                ;;
             *)
                 rsmpi_help
                 ;;
@@ -185,7 +200,7 @@ rsmpi_main() {
         rsmpi_help 'missing command argument'
     fi
     rsmpi_ping
-    rsmpi_exec "$(rsmpi_hosts "$slots" ${hosts[@]+"${hosts[@]}"})" "$@"
+    rsmpi_exec "$(rsmpi_hosts "$slots" "$tasks" ${hosts[@]+"${hosts[@]}"})" "$@"
 }
 
 rsmpi_ping() {
