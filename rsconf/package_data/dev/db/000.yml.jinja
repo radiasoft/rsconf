@@ -224,7 +224,7 @@ channel:
       apps: [ petshop ]
     mpi_worker:
       clusters:
-        vagrant: [ {{ host }}, {{ worker5_host }}, {{ worker6_host }} ]
+        vagrant: [ {{ worker5_host }}, {{ worker6_host }}, {{ host }} ]
     network:
       blocked_ips:
         - 1.2.3.4
