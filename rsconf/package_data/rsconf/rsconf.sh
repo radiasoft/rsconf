@@ -409,7 +409,7 @@ rsconf_service_file_changed_check() {
 rsconf_service_prepare() {
     local service=$1
     rsconf_service_status[$service]=start
-    if [[ $service == reboot ]]; the
+    if [[ $service == reboot ]]; then
        if [[ ! ${rsconf_service_watch[$service]:-} ]]; then
            rsconf_service_order+=( $service )
            rsconf_service_restart_at_end $service
