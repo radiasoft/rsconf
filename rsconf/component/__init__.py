@@ -234,6 +234,9 @@ class T(PKDict):
             '{}: file does not exist'.format(s)
         return s
 
+    def reboot_on_change(self, watch_files):
+        self.service_prepare(watch_files, name='reboot')
+
     def rsconf_append(self, path, line_or_grep, line=None):
         l = "rsconf_edit_no_change_res=0 rsconf_append '{}' '{}'".format(path, line_or_grep)
         if not line is None:

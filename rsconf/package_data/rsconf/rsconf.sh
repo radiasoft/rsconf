@@ -409,6 +409,14 @@ rsconf_service_file_changed_check() {
 rsconf_service_prepare() {
     local service=$1
     rsconf_service_status[$service]=start
+    if [[ $service == reboot ]]; the
+       if [[ ! ${rsconf_service_watch[$service]:-} ]]; then
+           rsconf_service_order+=( $service )
+           rsconf_service_restart_at_end $service
+       fi
+       rsconf_service_watch[$service]+="$* "
+       return
+    fi
     rsconf_service_order+=( $service )
     if [[ ${rsconf_service_watch[$service]:-} ]]; then
         install_err "$service: rsconf_service_prepare is not re-entrant"
@@ -458,6 +466,10 @@ rsconf_service_restart_at_end() {
 
 rsconf_service_trigger_restart() {
     local service=$1
+    if [[ $service == reboot ]]; then
+        rsconf_reboot
+        # does not return
+    fi
     # Only trigger restart once
     if [[ ! ${rsconf_service_status[$service]:-} =~ active|restart ]]; then
         rsconf_service_status[$service]=restart
