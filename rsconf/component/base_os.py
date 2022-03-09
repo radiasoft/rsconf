@@ -54,7 +54,7 @@ class T(component.T):
                 jc,
                 '/etc/security/limits.d/99-rsconf.conf',
             )
-            self.reboot_on_change(['/etc/security/limits.d/60-rsconf.conf'])
+            self.reboot_on_change(['/etc/security/limits.d/99-rsconf.conf'])
         self.install_resource(
             'base_os/sshd_config',
             jc,
