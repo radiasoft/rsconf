@@ -436,6 +436,10 @@ rsconf_service_restart() {
         if [[ ${rsconf_service_status[$s]} == start ]]; then
             rsconf_service_file_changed_check "$s"
         fi
+        if [[ $s == reboot ]]; then
+            # reboot.service not a real service
+            continue
+        fi
         if [[ ${rsconf_service_status[$s]} == restart ]]; then
             # Just restart, most daemons are fast
             install_info "$s: restarting"
