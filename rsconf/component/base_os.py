@@ -32,6 +32,7 @@ class T(component.T):
 
     def internal_build_write(self):
         jc = self.j2_ctx
+        z = jc.base_os
         self._install_local_files(jc.rsconf_db.local_files)
         self.install_access(mode='700', owner=jc.rsconf_db.root_u)
         self.install_directory(_JOURNAL_CONF_D)
@@ -46,6 +47,14 @@ class T(component.T):
             jc,
             '/etc/sysctl.d/60-rsconf-base.conf',
         )
+        if 'pam_limits' in z:
+            # POSIT: /etc/security/limits.d/20-nproc.conf is the only file on CentOS 7
+            self.install_resource(
+                'base_os/pam_limits',
+                jc,
+                '/etc/security/limits.d/99-rsconf.conf',
+            )
+            self.reboot_on_change(['/etc/security/limits.d/99-rsconf.conf'])
         self.install_resource(
             'base_os/sshd_config',
             jc,
