@@ -2,7 +2,7 @@
 bkp_rsconf_component() {
 rsconf_service_prepare 'bkp.timer' '/etc/systemd/system/bkp.service' '/etc/systemd/system/bkp.timer' '/srv/bkp'
 rsconf_install_access '500' 'root' 'root'
-rsconf_install_file '/srv/bkp/secondary' '15db65a6f19197545d11cedb9d88907e'
+rsconf_install_file '/srv/bkp/secondary' 'b378d96f4acf76465a22b7f1719645bc'
 rsconf_install_file '/srv/bkp/secondary_setup' '9741f7b5e6f288022a8a0a3ce09fed24'
 rsconf_install_access '700' 'root' 'root'
 rsconf_install_directory '/srv/bkp'
