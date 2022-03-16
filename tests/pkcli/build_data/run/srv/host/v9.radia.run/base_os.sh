@@ -140,8 +140,6 @@ base_os_ipv4() {
         # Once disabled at the kernel init level, you can't query net.ipv6 at all
         i=1
     fi
-    rsconf_install_access 400 root root
-    rsconf_install_file /etc/sysctl.d/60-rsconf-base.conf
 #TODO(robnagler) return result to test install?
     sysctl -q -p --system
     if (( $i == 0 )); then
