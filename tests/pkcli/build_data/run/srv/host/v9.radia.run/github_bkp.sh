@@ -14,7 +14,7 @@ rsconf_install_file '/etc/systemd/system/github_bkp.timer' 'bca46813a5c7dd3020c6
 rsconf_install_file '/etc/systemd/system/github_bkp.service' 'c4c23cec8aeb4c20d03f4a2497e5bcaf'
 rsconf_service_docker_pull 'docker.io/radiasoft/beamsim:dev' 'github_bkp'
 rsconf_install_access '500' 'vagrant' 'vagrant'
-rsconf_install_file '/srv/github_bkp/run' '25d38d30da8e138c8a79d1a7b9b673cf'
+rsconf_install_file '/srv/github_bkp/run' '27969640e856d5bed8c1fd73d29afad2'
 rsconf_install_access '700' 'vagrant' 'vagrant'
 rsconf_install_directory '/srv/github_bkp/db'
 }
