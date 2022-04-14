@@ -18,15 +18,12 @@ class T(rsconf.component.jupyterhub.T):
     def internal_build_compile(self):
         # TODO(e-carlin): should this come from somewhere or ok to hardcode?
         self.__jupyterhub_run_d = pkio.py_path('/srv/jupyterhub')
-
-        # Must set directly on hdb so it is available in
-        # rsconf.component.jupyterhub.T.internal_build_compile
-        self.hdb[self.name].sirepo_uri = f'https://{self.hdb.sirepo.vhost}'
         super().internal_build_compile()
 
     def sirepo_config(self, sirepo):
         self.j2_ctx_pksetdefault(sirepo.j2_ctx)
         sirepo.j2_ctx.sirepo_jupyterhub.hub_ip = self.j2_ctx.sirepo_jupyterhub.hub_ip
+        self.j2_ctx.sirepo_jupyterhub.sirepo_uri = f'https://{sirepo.j2_ctx.sirepo.vhost}'
 
     def _auth(self, z):
         pass
