@@ -24,6 +24,14 @@ class T(rsconf.component.jupyterhub.T):
         self.j2_ctx_pksetdefault(sirepo.j2_ctx)
         sirepo.j2_ctx.sirepo_jupyterhub.hub_ip = self.j2_ctx.sirepo_jupyterhub.hub_ip
         self.j2_ctx.sirepo_jupyterhub.sirepo_uri = f'https://{sirepo.j2_ctx.sirepo.vhost}'
+        c = 'SirepoAuthenticator'
+        p = sirepo.j2_ctx.sirepo.feature_config.get('default_proprietary_sim_types', [])
+        if 'jupyterhublogin' in p:
+            m = sirepo.j2_ctx.sirepo.feature_config.get('moderated_sim_types', [])
+            assert not m, \
+                f'can only set one of default_proprietary_sim_types={p} or moderated_sim_types={m}'
+            c = 'Authenticator'
+        self.j2_ctx.sirepo_jupyterhub.authenticator_class = c
 
     def _auth(self, z):
         pass
