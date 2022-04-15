@@ -23,6 +23,7 @@ class T(rsconf.component.jupyterhub.T):
     def sirepo_config(self, sirepo):
         self.j2_ctx_pksetdefault(sirepo.j2_ctx)
         sirepo.j2_ctx.sirepo_jupyterhub.hub_ip = self.j2_ctx.sirepo_jupyterhub.hub_ip
+        self.j2_ctx.sirepo_jupyterhub.sirepo_uri = f'https://{sirepo.j2_ctx.sirepo.vhost}'
 
     def _auth(self, z):
         pass
@@ -82,7 +83,3 @@ class T(rsconf.component.jupyterhub.T):
 
     def _vhost(self, z, jc):
         pass
-
-
-def _list_to_str(v):
-    return "'" + "','".join(v) + "'"

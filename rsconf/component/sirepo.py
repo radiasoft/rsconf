@@ -57,7 +57,10 @@ class T(component.T):
                 feature_config=PKDict(
                     api_modules=[],
                     job=True,
+                    # TODO(e-carlin): Remove and use only moderated_sim_types once
+                    # git.radiasoft.org/sirepo/pull/4211 is in prod.
                     default_proprietary_sim_types=tuple(),
+                    moderated_sim_types=tuple(),
                     proprietary_sim_types=tuple(),
                     proprietary_code_tarballs=tuple(),
                 ),
@@ -194,7 +197,14 @@ class T(component.T):
             )
 
     def _jupyterhublogin(self, z):
-        z.jupyterhub_enabled =  'jupyterhublogin' in self.j2_ctx.sirepo.feature_config.default_proprietary_sim_types
+        p = set(self.j2_ctx.sirepo.feature_config.get('default_proprietary_sim_types', []))
+        m = set(self.j2_ctx.sirepo.feature_config.get('moderated_sim_types', []))
+        z.using_moderated_sim_types = True
+        if 'jupyterhublogin' in p:
+            assert not m, \
+                f'can only set one of default_proprietary_sim_types={p} or moderated_sim_types={m}'
+            z.using_moderated_sim_types = False
+        z.jupyterhub_enabled =  'jupyterhublogin' in p.union(m)
         if not z.jupyterhub_enabled:
             return
         self.__uwsgi_docker_vols.append(z.sim_api.jupyterhublogin.user_db_root_d)

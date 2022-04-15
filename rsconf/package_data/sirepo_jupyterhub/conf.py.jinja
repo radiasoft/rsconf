@@ -26,7 +26,13 @@ c.DockerSpawner.image = '{{ sirepo_jupyterhub.jupyter_docker_image }}'
 c.DockerSpawner.image_whitelist = []
 c.DockerSpawner.network_name = 'host'
 c.DockerSpawner.use_internal_ip = True
+{% if sirepo.using_moderated_sim_types %}
+c.JupyterHub.authenticator_class = sirepo.jupyterhub.SirepoAuthenticator
+c.SirepoAuthenticator.sirepo_uri = '{{ sirepo_jupyterhub.sirepo_uri }}'
+{% else %}
+{# TODO remove #}
 c.JupyterHub.authenticator_class = sirepo.jupyterhub.Authenticator
+{% endif %}
 c.JupyterHub.base_url = '/{{ sirepo_jupyterhub.uri_root }}'
 c.JupyterHub.cleanup_servers = False
 c.JupyterHub.cookie_secret = binascii.a2b_hex('{{ sirepo_jupyterhub.cookie_secret_hex }}')
