@@ -426,6 +426,9 @@ rsconf_service_prepare() {
 }
 
 rsconf_service_restart() {
+    if [[ ${rsconf_service_no_restart:-} ]]; then
+        return
+    fi
     local s
     # Always reload at start. Just easier and more reliable
     systemctl daemon-reload
