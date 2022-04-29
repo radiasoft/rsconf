@@ -48,16 +48,6 @@ class Host(PKDict):
     def j2_ctx_copy(self):
         return copy.deepcopy(self)
 
-    def __repr__(self):
-        """Writes tmp_d/db.json and returns filename
-
-        This is a hack to support pkdc below.
-        """
-        f = self.rsconf_db.tmp_d.join('db.json')
-        if self.rsconf_db.tmp_d:
-            pkjson.dump_pretty(self.__str(self), filename=f)
-        return str(f)
-
     def __str(self, v):
        if isinstance(v, dict):
             res = PKDict()
@@ -82,17 +72,14 @@ class T(PKDict):
         self.srv_d = self.root_d.join(SRV_SUBDIR)
         self.srv_host_d = self.srv_d.join(HOST_SUBDIR)
         self.base = PKDict()
+        pkio.mkdir_parent(self.tmp_d)
         f = None
         try:
             for d in self.db_d, self.secret_d:
                 for f in pkio.sorted_glob(d.join(ZERO_YML)):
-                    v = pkyaml.load_str(
-                        pkjinja.render_file(
-                            f,
-                            self.base,
-                            strict_undefined=True,
-                        ),
-                    )
+                    v = pkjinja.render_file(f, self.base, strict_undefined=True)
+                    pkio.write_text(self.tmp_d.join(f.basename), str(v))
+                    v = pkyaml.load_str(v)
                     merge_dict(self.base, v)
         except Exception:
             pkdlog('error rendering db={}', f)
@@ -157,7 +144,7 @@ class T(PKDict):
         merge_dict(res, v)
         _assert_no_rsconf_db_values(res)
         _update_paths(res)
-        pkdc('{}', res)
+        pkjson.dump_pretty(res, filename=res.rsconf_db.tmp_d.join('db.json'))
         return res
 
 
