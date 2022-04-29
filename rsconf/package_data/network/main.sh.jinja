@@ -7,6 +7,9 @@ network_iptables() {
         return
     fi
     rsconf_yum_install iptables-services
+    if [[ ${rsconf_service_no_restart:-} ]]; then
+        return
+    fi
     systemctl enable iptables
     systemctl start iptables
 }
