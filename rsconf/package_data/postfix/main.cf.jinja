@@ -31,7 +31,6 @@ biff = no
 {# https://codinfox.github.io/dev/2015/04/08/postfix-cannot-start/ #}
 inet_protocols = ipv4
 mailbox_command = /usr/bin/procmail -t -Y -a "$EXTENSION" -d "$USER"
-local_recipient_maps =
 mailbox_size_limit = 0
 message_size_limit = 50000000
 mydestination = {{ postfix.mydestination }}
