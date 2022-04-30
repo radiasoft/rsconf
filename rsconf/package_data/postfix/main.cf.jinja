@@ -103,6 +103,7 @@ smtp_tls_security_level = encrypt
 {% else %}
 smtpd_tls_security_level = may
 {% if postfix.have_bop %}
+local_recipient_maps =
 mailbox_transport = bsendmailhttp:unix
 smtpd_timeout = ${stress?12}${stress:300}
 smtpd_hard_error_limit = ${stress?1}${stress:20}
