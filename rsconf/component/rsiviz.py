@@ -10,6 +10,8 @@ from rsconf import component
 from rsconf import db
 from rsconf import systemd
 
+_DB_SUBDIR = 'db'
+
 class T(component.T):
     def internal_build_compile(self):
         # TODO(e-carlin): nginx
@@ -25,6 +27,17 @@ class T(component.T):
         jc = self.j2_ctx
         z = jc[self.name]
         d = self.__run_d.join(_DB_SUBDIR)
+        jc.nginx.pkupdate(
+            index_port=8880,
+            flask_port=8882,
+            docker_index_port=8000,
+            docker_flask_port=8002,
+        )
+        nginx.install_vhost(
+            self,
+            vhost=self.hdb.rsconf_db.host,
+            j2_ctx=jc,
+        )
         systemd.docker_unit_enable(
             self,
             jc,
@@ -32,6 +45,10 @@ class T(component.T):
             # TODO(e-carlin): This is the default command (set by build_docker_cmd)
             # is there a way to just use it and not specify cmd?
             cmd='bash /home/vagrant/.radia-run/start',
+            ports=(
+                (jc.nginx.docker_index_port, 8080),
+                (jc.nginx.docker_flask_port, 8082),
+            ),
         )
         self.install_access(mode='700', owner=jc.rsconf_db.run_u)
         self.install_directory(d)

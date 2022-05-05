@@ -1,0 +1,18 @@
+client_max_body_size 200m;
+
+server {
+    listen {{ nginx.index_port }};
+    root {{ nginx.default_root }};
+    server_name {{ nginx.vhost }};
+    location /kpmcyjtsoxks/ {
+        proxy_pass http://127.0.0.1:{{ nginx.docker_index_port }}/;
+    }
+}
+server {
+    listen {{ nginx.flask_port }};
+    root {{ nginx.default_root }};
+    server_name {{ nginx.vhost }};
+    location /kpmcyjtsoxks/ {
+        proxy_pass http://127.0.0.1:{{ nginx.docker_flask_port }}/;
+    }
+}
