@@ -14,8 +14,7 @@ _DB_SUBDIR = 'db'
 
 class T(component.T):
     def internal_build_compile(self):
-        # TODO(e-carlin): nginx
-        self.buildt.require_component('docker')
+        self.buildt.require_component('docker', 'nginx')
         jc, z = self.j2_ctx_init()
         self.__run_d = systemd.docker_unit_prepare(self, jc)
 
