@@ -4,5 +4,8 @@ spamd_main() {
     find {{ spamd.sa_update_keys_d }} ! -user root \
         | xargs chown root:root
     # replace logrotate, which limits rotations and restarts spamd
-    rm -f /etc/logrotate.d/sa-update
+    # sought.conf is removed, but Red Hat won't fix:
+    # https://bugzilla.redhat.com/show_bug.cgi?id=1630362
+    # See also https://github.com/biviosoftware/devops/issues/409
+    rm -f /etc/logrotate.d/sa-update /etc/mail/spamassassin/channel.d/sought.conf
 }
