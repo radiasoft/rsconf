@@ -171,7 +171,7 @@ def merge_app_vars(j2_ctx, app_name):
     z.setdefault("is_production", j2_ctx.rsconf_db.channel == "prod")
     z.is_test = not z.is_production
     z.run_u = j2_ctx.rsconf_db.run_u
-    db.merge_dict(z, j2_ctx[app_name])
+    z.pkmerge(j2_ctx[app_name])
     z.app_name = app_name
     # all apps are secured by TLS now
     z.can_secure = True

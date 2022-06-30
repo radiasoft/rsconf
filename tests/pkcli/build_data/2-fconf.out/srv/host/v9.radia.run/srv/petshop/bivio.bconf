@@ -1,0 +1,79 @@
+# -*-perl-*-
+use Bivio::PetShop::BConf;
+
+my($env_bool) = sub {
+    my($bool, $default) = @_;
+    return ! exists($ENV{$bool}) ? $default
+        : $ENV{$bool} ? 1 : 0;
+};
+
+Bivio::PetShop::BConf->merge_dir({
+    'Bivio::Agent::Request' => {
+        can_secure => 1,
+    },
+        'Bivio::Biz::Action::AssertClient' => {
+            # do not include localhost, because if there's a bug in the proxy, it will fail.
+            # It is only for test so should only be btest.client_host.
+            hosts => [qw(v6.radia.run)],
+        },
+    'Bivio::Biz::File' => {
+        root => '/srv/petshop/db',
+        backup_root => '/srv/petshop/bkp',
+    },
+    'Bivio::Biz::Model::CRMForm' => {
+        want_status_email => 1,
+    },
+    'Bivio::Biz::Model::MailReceiveDispatchForm' => {
+        filter_out_of_office => 1,
+    },
+    'Bivio::Delegate::Cookie' => {
+        tag => 'PSD',
+    },
+    'Bivio::Ext::DBI' => {
+        password => 'petpass',
+        dbms => {
+            password => 'pgpass',
+        },
+        template1 => {
+            password => 'pgpass',
+        },
+    },
+    'Bivio::IO::Alert' => {
+        want_pid => $env_bool->('BIVIO_IO_ALERT_WANT_PID', 1),
+        want_time => $env_bool->('BIVIO_IO_ALERT_WANT_TIME', 1),
+    },
+    'Bivio::IO::Config' => {
+        is_production => 0,
+    },
+    'Bivio::IO::Log' => {
+        directory => '/srv/petshop/logbop',
+    },
+        'Bivio::Test::Language::HTTP' => {
+            email_user => 'vagrant',
+            local_mail_host => 'v6.radia.run',
+        },
+    'Bivio::Type::Secret' => {
+        algorithm => 'DES',
+        key => pack('h*', 'ea7b54b876c11a'),
+        magic => 'IKY',
+    },
+    'Bivio::UI::Facade' => {
+        local_file_root => '/var/www/facades',
+        want_local_file_cache => 1,
+            http_host => 'petshop.v4.radia.run',
+            mail_host => 'petshop.v4.radia.run',
+    },
+    'Bivio::UI::HTML::Widget::SourceCode' => {
+        source_dir => '/usr/share/Bivio-bOP-src',
+    },
+    'Bivio::Util::HTTPLog' => {
+        error_file => '/srv/petshop/log/error_log',
+        # avoid spambots
+        email => join('@', 'errors', 'bivio.biz'),
+        pager_email => join('@', 'critical-errors', 'bivio.biz'),
+    },
+    'Bivio::Util::HTTPStats' => {
+        log_base => '/srv/petshop/log',
+    },
+
+});

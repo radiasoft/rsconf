@@ -1,0 +1,7 @@
+#!/bin/bash
+export 'SIREPO_FEATURE_CONFIG_MODERATED_SIM_TYPES=jupyterhublogin'
+export 'SIREPO_FEATURE_CONFIG_PROPRIETARY_CODE_TARBALLS=myapp'
+export 'SIREPO_FEATURE_CONFIG_PROPRIETARY_SIM_TYPES=myapp:zgoubi'
+export 'SIREPO_PKCLI_TEST_HTTP_SERVER_URI=https://sirepo.v4.radia.run'
+export 'SIREPO_UTIL_CREATE_TOKEN_SECRET=S5SMHHYBpwDJVD6m8mykLoYIveRXzi'
+export 'TZ=:/etc/localtime'

@@ -1,0 +1,2 @@
+#!/bin/bash
+docker rm -f mpi_worker >& /dev/null || true

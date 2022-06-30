@@ -1,0 +1,15 @@
+[Unit]
+After=docker.service sirepo_jupyterhub.service sirepo_job_supervisor.service
+Description=sirepo
+Requires=docker.service
+
+[Service]
+ExecStart=/srv/sirepo/start
+ExecStartPre=/srv/sirepo/remove
+ExecStop=-/srv/sirepo/stop
+Restart=on-failure
+RestartSec=10
+SyslogIdentifier=sirepo
+
+[Install]
+WantedBy=multi-user.target

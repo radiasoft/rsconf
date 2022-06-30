@@ -12,7 +12,9 @@ def test_build():
     from pykern.pkdebug import pkdlog
     from pykern.pkcollections import PKDict
     from rsconf.pkcli import build
+    from rsconf import db
 
     for d in pkunit.case_dirs():
+        db.cfg.fconf = 'fconf' in d.basename
         pkio.mkdir_parent(d.join("srv"))
         build.default_command()

@@ -1,0 +1,15 @@
+[Unit]
+After=docker.service 
+Description=mpi_worker
+Requires=docker.service
+
+[Service]
+ExecStart=/srv/mpi_worker/start
+ExecStartPre=/srv/mpi_worker/remove
+ExecStop=-/srv/mpi_worker/stop
+Restart=on-failure
+RestartSec=10
+SyslogIdentifier=mpi_worker
+
+[Install]
+WantedBy=multi-user.target

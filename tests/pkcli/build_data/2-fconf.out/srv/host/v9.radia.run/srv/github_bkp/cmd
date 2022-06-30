@@ -1,0 +1,11 @@
+#!/bin/bash
+if [[ -r ~/.bashrc ]]; then
+    source ~/.bashrc
+fi
+set -euo pipefail
+cd '/srv/github_bkp'
+source ./env
+if [[ $@ ]]; then
+    exec "$@"
+fi
+exec /srv/github_bkp/run
