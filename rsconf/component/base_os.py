@@ -9,64 +9,68 @@ from pykern import pkio
 from pykern.pkdebug import pkdp
 from rsconf import component
 
-_JOURNAL_CONF_D = pkio.py_path('/etc/systemd/journald.conf.d')
-_SSHD_CONF_F = pkio.py_path('/etc/ssh/sshd_config')
+_JOURNAL_CONF_D = pkio.py_path("/etc/systemd/journald.conf.d")
+_SSHD_CONF_F = pkio.py_path("/etc/ssh/sshd_config")
+
 
 class T(component.T):
-
     def internal_build_compile(self):
         self.j2_ctx = self.hdb.j2_ctx_copy()
         jc = self.j2_ctx
         z = jc.base_os
         vgs = z.volume_groups
-        cmds = ''
+        cmds = ""
         for vgn in sorted(vgs.keys()):
             vg = vgs[vgn]
             for lv in self._sorted_logical_volumes(vg):
                 cmds += "base_os_logical_volume '{}' '{}' '{}' '{}' '{}'\n".format(
-                    lv.name, lv.gigabytes, vgn, lv.mount_d, lv.get('mode', 700),
+                    lv.name,
+                    lv.gigabytes,
+                    vgn,
+                    lv.mount_d,
+                    lv.get("mode", 700),
                 )
         z.logical_volume_cmds = cmds
-        self.service_prepare([_JOURNAL_CONF_D], name='systemd-journald')
-        self.service_prepare([_SSHD_CONF_F.dirpath()], name='sshd')
+        self.service_prepare([_JOURNAL_CONF_D], name="systemd-journald")
+        self.service_prepare([_SSHD_CONF_F.dirpath()], name="sshd")
 
     def internal_build_write(self):
         jc = self.j2_ctx
         z = jc.base_os
         self._install_local_files(jc.rsconf_db.local_files)
-        self.install_access(mode='700', owner=jc.rsconf_db.root_u)
+        self.install_access(mode="700", owner=jc.rsconf_db.root_u)
         self.install_directory(_JOURNAL_CONF_D)
-        self.install_access(mode='400')
+        self.install_access(mode="400")
         self.install_resource(
-            'base_os/journald.conf',
+            "base_os/journald.conf",
             jc,
-            _JOURNAL_CONF_D.join('99-rsconf.conf'),
+            _JOURNAL_CONF_D.join("99-rsconf.conf"),
         )
         self.install_resource(
-            'base_os/60-rsconf-base.conf',
+            "base_os/60-rsconf-base.conf",
             jc,
-            '/etc/sysctl.d/60-rsconf-base.conf',
+            "/etc/sysctl.d/60-rsconf-base.conf",
         )
-        if 'pam_limits' in z:
+        if "pam_limits" in z:
             # POSIT: /etc/security/limits.d/20-nproc.conf is the only file on CentOS 7
             self.install_resource(
-                'base_os/pam_limits',
+                "base_os/pam_limits",
                 jc,
-                '/etc/security/limits.d/99-rsconf.conf',
+                "/etc/security/limits.d/99-rsconf.conf",
             )
-            self.reboot_on_change(['/etc/security/limits.d/99-rsconf.conf'])
+            self.reboot_on_change(["/etc/security/limits.d/99-rsconf.conf"])
         self.install_resource(
-            'base_os/sshd_config',
+            "base_os/sshd_config",
             jc,
             _SSHD_CONF_F,
         )
-        self.install_access(mode='444')
-        self.install_resource('base_os/hostname', jc, '/etc/hostname')
-        self.install_resource('base_os/motd', jc, '/etc/motd')
+        self.install_access(mode="444")
+        self.install_resource("base_os/hostname", jc, "/etc/hostname")
+        self.install_resource("base_os/motd", jc, "/etc/motd")
         self.append_root_bash_with_main(jc)
 
     def _install_local_files(self, values):
-        #TODO(robnagler) do we have to create directories and/or trigger on
+        # TODO(robnagler) do we have to create directories and/or trigger on
         #  directory creation? For example, nginx rpm installs conf.d, which
         #  we will want to have local files for.
         x = PKDict(
@@ -76,12 +80,12 @@ class T(component.T):
         )
         for t in sorted(values.keys()):
             v = values[t].copy()
-            if v._source.basename.endswith('.sh.jinja'):
+            if v._source.basename.endswith(".sh.jinja"):
                 self.append_root_bash_with_file(v._source, self.j2_ctx)
                 continue
             v.pksetdefault(**x)
             self.install_access(
-                mode='{:o}'.format(v.mode),
+                mode="{:o}".format(v.mode),
                 owner=v.owner,
                 group=v.group,
             )

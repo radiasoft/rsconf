@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-u"""manage comsol
+"""manage comsol
 
 Installing::
 
@@ -29,13 +29,15 @@ class T(component.T):
         from rsconf.component import db_bkp
         from rsconf import systemd
 
-        self.buildt.require_component('db_bkp')
+        self.buildt.require_component("db_bkp")
         j2_ctx = self.hdb.j2_ctx_copy()
-        z = j2_ctx.setdefault(self.name, pkcollections.Dict(
-            run_u='comsol',
-            run_d=systemd.unit_run_d(j2_ctx, 'comsol')
-        ))
-        self.install_access(mode='700', owner=z.run_u)
+        z = j2_ctx.setdefault(
+            self.name,
+            pkcollections.Dict(
+                run_u="comsol", run_d=systemd.unit_run_d(j2_ctx, "comsol")
+            ),
+        )
+        self.install_access(mode="700", owner=z.run_u)
         self.install_directory(z.run_d)
         db_bkp.install_script_and_subdir(
             self,

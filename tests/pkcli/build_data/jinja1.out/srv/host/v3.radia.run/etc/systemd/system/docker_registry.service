@@ -1,0 +1,15 @@
+[Unit]
+After=docker.service docker.service
+Description=docker_registry
+Requires=docker.service
+
+[Service]
+ExecStart=/srv/docker_registry/start
+ExecStartPre=/srv/docker_registry/remove
+ExecStop=-/srv/docker_registry/stop
+Restart=on-failure
+RestartSec=10
+SyslogIdentifier=docker_registry
+
+[Install]
+WantedBy=multi-user.target

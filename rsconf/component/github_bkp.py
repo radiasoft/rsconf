@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-u"""?
+"""?
 
 :copyright: Copyright (c) 2018 Bivio Software, Inc.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -14,18 +14,18 @@ class T(component.T):
         from rsconf import systemd
         from rsconf.component import docker_registry
 
-        self.buildt.require_component('docker')
+        self.buildt.require_component("docker")
 
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.github_bkp
         z.run_u = j2_ctx.rsconf_db.run_u
         run_d = systemd.timer_prepare(self, j2_ctx, on_calendar=z.on_calendar)
-        z.db_d = run_d.join('db')
-        z.run_f = run_d.join('run')
+        z.db_d = run_d.join("db")
+        z.run_f = run_d.join("run")
         env = pkcollections.Dict(
             PYKERN_PKCLI_GITHUB_EXCLUDE_RE=z.exclude_re,
             PYKERN_PKCLI_GITHUB_PASSWORD=z.password,
-            PYKERN_PKCLI_GITHUB_TEST_MODE=z.setdefault('test_mode', False),
+            PYKERN_PKCLI_GITHUB_TEST_MODE=z.setdefault("test_mode", False),
             PYKERN_PKCLI_GITHUB_USER=z.user,
         )
         systemd.docker_unit_enable(
@@ -36,7 +36,7 @@ class T(component.T):
             run_u=z.run_u,
             cmd=z.run_f,
         )
-        self.install_access(mode='500', owner=z.run_u)
-        self.install_resource('github_bkp/run.sh', j2_ctx, z.run_f)
-        self.install_access(mode='700')
+        self.install_access(mode="500", owner=z.run_u)
+        self.install_resource("github_bkp/run.sh", j2_ctx, z.run_f)
+        self.install_access(mode="700")
         self.install_directory(z.db_d)

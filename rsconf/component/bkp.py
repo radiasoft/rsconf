@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-u"""create backup server config
+"""create backup server config
 
 :copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -21,9 +21,8 @@ def append_authorized_key(compt, j2_ctx):
 
 
 class T(component.T):
-
     def internal_build(self):
-        self.buildt.require_component('base_all')
+        self.buildt.require_component("base_all")
 
         jc = self.hdb.j2_ctx_copy()
         z = jc.bkp
@@ -32,13 +31,13 @@ class T(component.T):
         secondary_setup = None
         if jc.rsconf_db.host == z.primary:
             self._primary(jc, z)
-            n = 'primary'
+            n = "primary"
         else:
             secondary_setup = self._secondary(jc, z)
-            n = 'secondary'
+            n = "secondary"
         te = z.run_d.join(n)
-        self.install_access(mode='500', owner=z.run_u)
-        self.install_resource('bkp/{}.sh'.format(n), jc, te)
+        self.install_access(mode="500", owner=z.run_u)
+        self.install_resource("bkp/{}.sh".format(n), jc, te)
         if secondary_setup:
             self.install_abspath(
                 secondary_setup,
@@ -47,38 +46,37 @@ class T(component.T):
         systemd.timer_enable(self, j2_ctx=jc, cmd=te, run_u=z.run_u)
 
     def _primary(self, jc, z):
-        gv = 'bkp_exclude=(\n'
+        gv = "bkp_exclude=(\n"
         for d in z.exclude:
             gv += "'--exclude={}'\n".format(d)
-        gv += ')\n'
-        gv += 'declare -A bkp_exclude_for_host=(\n'
-        for h, v in z.get('exclude_for_host', {}).items():
+        gv += ")\n"
+        gv += "declare -A bkp_exclude_for_host=(\n"
+        for h, v in z.get("exclude_for_host", {}).items():
             gv += f"['{h}']='"
             for d in v:
-                assert ' ' not in d, \
-                    f'dir="{d}" contains a space exclude_for_host={h}'
-                gv += f' --exclude={d}'
+                assert " " not in d, f'dir="{d}" contains a space exclude_for_host={h}'
+                gv += f" --exclude={d}"
             gv += "'\n"
-        gv += ')\n'
-        for i in 'archive_d', 'max_try', 'mirror_d':
+        gv += ")\n"
+        for i in "archive_d", "max_try", "mirror_d":
             gv += "bkp_{}='{}'\n".format(i, z[i])
-        gv += 'bkp_include=(\n'
+        gv += "bkp_include=(\n"
         for d in z.include:
             gv += "    '{}'\n".format(d)
-        gv += ')\n'
-        gv += 'bkp_log_dirs=(\n'
+        gv += ")\n"
+        gv += "bkp_log_dirs=(\n"
         for d in z.log_dirs:
             # POSIT: bkp_log_dirs looks in the mirror_d so relative needed
-            gv += "    '{}'\n".format(str(d).lstrip('/'))
-        gv += ')\n'
+            gv += "    '{}'\n".format(str(d).lstrip("/"))
+        gv += ")\n"
         z.global_vars = gv
-        z.host_cmds = ''.join(
+        z.host_cmds = "".join(
             ["    primary_host '{}'\n".format(h) for h in z.hosts],
         )
-        z.secondary_cmds = ''.join(
+        z.secondary_cmds = "".join(
             ["    primary_secondary '{}'\n".format(h) for h in z.secondaries],
         )
-        z.simple_mirror_cmds = ''
+        z.simple_mirror_cmds = ""
         for tgt in sorted(z.simple_mirrors.keys()):
             for src in z.simple_mirrors[tgt]:
                 z.simple_mirror_cmds += "    primary_simple_mirror '{}' '{}'\n".format(
@@ -86,7 +84,6 @@ class T(component.T):
                     tgt,
                 )
 
-
     def _secondary(self, jc, z):
-        z.setdefault('secondary_copy_unmount_cmds', '')
-        return z.setdefault('secondary_setup_f', None)
+        z.setdefault("secondary_copy_unmount_cmds", "")
+        return z.setdefault("secondary_setup_f", None)

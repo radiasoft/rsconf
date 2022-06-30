@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+"""
+
 yum install -y tftp-server tftp
 chown root:nobody /var/lib/tftpboot
 chmod 755 /var/lib/tftpboot
@@ -40,3 +43,9 @@ ListenDatagram={{ ip }}:69
 [Install]
 WantedBy=sockets.target
 EOF
+
+:copyright: Copyright (c) 2022 RadiaSoft LLC.  All Rights Reserved.
+:license: http://www.apache.org/licenses/LICENSE-2.0.html
+"""
+from pykern.pkcollections import PKDict
+from pykern.pkdebug import pkdc, pkdlog, pkdp
