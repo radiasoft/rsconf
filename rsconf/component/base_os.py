@@ -18,7 +18,7 @@ class T(component.T):
         self.j2_ctx = self.hdb.j2_ctx_copy()
         jc = self.j2_ctx
         z = jc.base_os
-        vgs = z.volume_groups
+        vgs = z.setdefault("volume_groups", PKDict())
         cmds = ""
         for vgn in sorted(vgs.keys()):
             vg = vgs[vgn]
