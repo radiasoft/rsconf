@@ -26,7 +26,7 @@ c.DockerSpawner.image = '{{ sirepo_jupyterhub.jupyter_docker_image }}'
 c.DockerSpawner.image_whitelist = []
 c.DockerSpawner.network_name = 'host'
 c.DockerSpawner.use_internal_ip = True
-{% if sirepo.using_moderated_sim_types %}
+{% if not sirepo_jupyterhub.get('use_authenticator') %}
 c.JupyterHub.authenticator_class = sirepo.jupyterhub.SirepoAuthenticator
 c.SirepoAuthenticator.sirepo_uri = '{{ sirepo_jupyterhub.sirepo_uri }}'
 {% else %}
