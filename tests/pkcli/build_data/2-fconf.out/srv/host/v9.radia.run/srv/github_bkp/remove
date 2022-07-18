@@ -1,0 +1,2 @@
+#!/bin/bash
+docker rm -f github_bkp >& /dev/null || true

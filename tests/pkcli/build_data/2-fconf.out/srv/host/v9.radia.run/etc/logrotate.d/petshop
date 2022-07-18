@@ -1,0 +1,10 @@
+/srv/petshop/log/*_log
+{
+    missingok
+    notifempty
+    postrotate
+        /srv/petshop/reload
+    endscript
+    # Ensure postrotate only runs once for all logs
+    sharedscripts
+}

@@ -1,0 +1,13 @@
+[Unit]
+Description=bkp
+
+[Service]
+Environment=TZ=:/etc/localtime
+ExecStart=/srv/bkp/start
+Group=root
+SyslogIdentifier=bkp
+Type=oneshot
+User=root
+
+[Install]
+WantedBy=multi-user.target

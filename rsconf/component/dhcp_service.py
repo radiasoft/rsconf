@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+"""test
+
 yum install -y dhcp
 cat > /etc/dhcp/dhcpd.conf <<'EOF'
 option domain-name "bivio.biz";
@@ -16,3 +19,10 @@ perl -pi -e '/^ExecStart/ && ! / em1/ && s/$/ em1 em1.5/' /etc/systemd/system/dh
 systemctl daemon-reload
 systemctl enable dhcpd
 systemctl start dhcpd
+
+
+:copyright: Copyright (c) 2022 RadiaSoft LLC.  All Rights Reserved.
+:license: http://www.apache.org/licenses/LICENSE-2.0.html
+"""
+from pykern.pkcollections import PKDict
+from pykern.pkdebug import pkdc, pkdlog, pkdp

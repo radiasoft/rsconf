@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-u"""Load components
+"""Load components
 
 :copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -14,15 +14,15 @@ import hashlib
 import re
 import subprocess
 
-_DONE = 'done'
-_START = 'start'
-_MODE_RE = re.compile(r'^\d{3,4}$')
-_BASH_FUNC_SUFFIX = '_rsconf_component'
-TLS_SECRET_SUBDIR = 'tls'
-_WILDCARD_TLS = 'star'
+_DONE = "done"
+_START = "start"
+_MODE_RE = re.compile(r"^\d{3,4}$")
+_BASH_FUNC_SUFFIX = "_rsconf_component"
+TLS_SECRET_SUBDIR = "tls"
+_WILDCARD_TLS = "star"
+
 
 class T(PKDict):
-
     def __init__(self, name, buildt):
         super(T, self).__init__(
             buildt=buildt,
@@ -47,9 +47,9 @@ class T(PKDict):
 
     def append_root_bash_with_main(self, j2_ctx):
         self.append_root_bash_with_resource(
-            '{}/main.sh'.format(self.name),
+            "{}/main.sh".format(self.name),
             j2_ctx,
-            '{}_main'.format(self.name),
+            "{}_main".format(self.name),
         )
 
     def append_root_bash_with_resource(self, script, j2_ctx, bash_func):
@@ -58,15 +58,16 @@ class T(PKDict):
         self.append_root_bash(bash_func)
 
     def assert_done(self):
-        assert self.state == _DONE, \
-            '{}: invalidate state for component.{}'.format(self.state, self.name)
+        assert self.state == _DONE, "{}: invalidate state for component.{}".format(
+            self.state, self.name
+        )
 
     def build_compile(self):
         self.state = _DONE
         self._install_access = PKDict()
-        self._root_bash = [self.name + _BASH_FUNC_SUFFIX + '() {']
+        self._root_bash = [self.name + _BASH_FUNC_SUFFIX + "() {"]
         self._root_bash_aux = []
-        if hasattr(self, 'internal_build_compile'):
+        if hasattr(self, "internal_build_compile"):
             self.internal_build_compile()
             self.buildt.append_write_queue(self)
         else:
@@ -75,7 +76,7 @@ class T(PKDict):
 
     def build_write(self):
         self.internal_build_write()
-        self.append_root_bash('}')
+        self.append_root_bash("}")
         self._root_bash.extend(self._root_bash_aux)
         self.buildt.write_root_bash(self.name, self._root_bash)
 
@@ -95,10 +96,10 @@ class T(PKDict):
 
     def install_access(self, mode=None, owner=None, group=None):
         if not mode is None:
-            assert not isinstance(mode, int), \
-                '{}: mode must be a string, not int'.format(mode)
-            assert _MODE_RE.search(mode), \
-                '{}: invalid mode'.format(mode)
+            assert not isinstance(
+                mode, int
+            ), "{}: mode must be a string, not int".format(mode)
+            assert _MODE_RE.search(mode), "{}: invalid mode".format(mode)
             self._install_access.mode = mode
         if owner:
             self._install_access.owner = owner
@@ -107,12 +108,15 @@ class T(PKDict):
         elif owner:
             self._install_access.group = owner
         self.append_root_bash(
-            "rsconf_install_access '{mode}' '{owner}' '{group}'".format(**self._install_access),
+            "rsconf_install_access '{mode}' '{owner}' '{group}'".format(
+                **self._install_access
+            ),
         )
 
     def install_directory(self, host_path):
-        assert int(self._install_access.mode, 8) & 0o700 == 0o700, \
-            '{}: directory must be at least 700 mode (u=rwx)'
+        assert (
+            int(self._install_access.mode, 8) & 0o700 == 0o700
+        ), "{}: directory must be at least 700 mode (u=rwx)"
         self._bash_append(host_path, is_file=False)
 
     def install_ensure_file_exists(self, host_path):
@@ -126,38 +130,42 @@ class T(PKDict):
             host_path (py.path): where to install
         """
         p = self.tmp_path()
-        p.write(''.join([x + '\n' for x in lines]))
+        p.write("".join([x + "\n" for x in lines]))
         self.install_abspath(p, host_path)
 
     def install_perl_rpm(self, j2_ctx, rpm_base, channel=None):
         src = self.rpm_file(j2_ctx, rpm_base, channel)
         r = src.basename
-        if r in self.hdb.component.setdefault('_installed_rpms', set()):
+        if r in self.hdb.component.setdefault("_installed_rpms", set()):
             return r
         self.hdb.component._installed_rpms.add(r)
         dst = j2_ctx.build.dst_d.join(r)
         dst.mksymlinkto(src, absolute=False)
-        self.append_root_bash("rsconf_install_perl_rpm '{}' '{}' '{}'".format(
-            rpm_base,
-            r,
-            pkcompat.from_bytes(
-                subprocess.check_output(['rpm', '-qp',  str(src)]),
-            ).strip(),
-        ))
+        self.append_root_bash(
+            "rsconf_install_perl_rpm '{}' '{}' '{}'".format(
+                rpm_base,
+                r,
+                pkcompat.from_bytes(
+                    subprocess.check_output(["rpm", "-qp", str(src)]),
+                ).strip(),
+            )
+        )
         return r
 
     def install_resource(self, name, j2_ctx, host_path=None):
         if not host_path:
             host_path = name
-            if host_path.ext == '.sh':
-                host_path = host_path.new(ext='')
-            name = self.name + '/' + name.basename
+            if host_path.ext == ".sh":
+                host_path = host_path.new(ext="")
+            name = self.name + "/" + name.basename
         self._bash_append_and_dst(
             host_path,
             file_contents=self._render_resource(name, j2_ctx),
         )
 
-    def install_secret_path(self, filename, host_path, gen_secret=None, visibility=None):
+    def install_secret_path(
+        self, filename, host_path, gen_secret=None, visibility=None
+    ):
         src = self.secret_path_value(filename, gen_secret, visibility)[1]
         dst = self._bash_append_and_dst(host_path, file_src=src)
 
@@ -199,9 +207,10 @@ class T(PKDict):
         Args:
             defaults (dict): nested values
         """
+
         def f(prefix, defaults):
             for k, v in defaults.items():
-                k = prefix + k.split('.')
+                k = prefix + k.split(".")
                 if isinstance(v, dict):
                     f(k, v)
                     continue
@@ -214,31 +223,31 @@ class T(PKDict):
 
     def rpm_file(self, j2_ctx, rpm_base, channel=None):
         s = j2_ctx.rsconf_db.rpm_source_d.join(
-            '{}-{}.rpm'.format(
+            "{}-{}.rpm".format(
                 rpm_base,
                 channel or j2_ctx.rsconf_db.channel,
             ),
         )
-        assert s.check(), \
-            '{}: rpm does not exist'.format(s)
+        assert s.check(), "{}: rpm does not exist".format(s)
         return s
 
     def proprietary_file(self, j2_ctx, file_base, channel=None):
         s = j2_ctx.rsconf_db.proprietary_source_d.join(
-            '{}-{}.tar.gz'.format(
+            "{}-{}.tar.gz".format(
                 file_base,
                 channel or j2_ctx.rsconf_db.channel,
             ),
         )
-        assert s.check(), \
-            '{}: file does not exist'.format(s)
+        assert s.check(), "{}: file does not exist".format(s)
         return s
 
     def reboot_on_change(self, watch_files):
-        self.service_prepare(watch_files, name='reboot')
+        self.service_prepare(watch_files, name="reboot")
 
     def rsconf_append(self, path, line_or_grep, line=None):
-        l = "rsconf_edit_no_change_res=0 rsconf_append '{}' '{}'".format(path, line_or_grep)
+        l = "rsconf_edit_no_change_res=0 rsconf_append '{}' '{}'".format(
+            path, line_or_grep
+        )
         if not line is None:
             l += " '{}'".format(line)
         self.append_root_bash(l)
@@ -253,7 +262,7 @@ class T(PKDict):
         )
 
     def rsconf_service_restart(self):
-        self.append_root_bash('rsconf_service_restart')
+        self.append_root_bash("rsconf_service_restart")
 
     def rsconf_service_restart_at_end(self):
         self.append_root_bash(
@@ -266,8 +275,7 @@ class T(PKDict):
         src = db.secret_path(self.hdb, filename, visibility=visibility)
         if src.check():
             return pkio.read_text(src), src
-        assert gen_secret, \
-            'unable to generate secret: path={}'.format(src)
+        assert gen_secret, "unable to generate secret: path={}".format(src)
         res = gen_secret()
         res = pkcompat.from_bytes(self._write_binary(src, res))
         return res, src
@@ -286,36 +294,38 @@ class T(PKDict):
 
         return self.hdb.rsconf_db.tmp_d.join(db.random_string())
 
-
     def _bash_append(self, host_path, is_file=True, ensure_exists=False, md5=None):
         _assert_host_path(host_path)
         if is_file:
-            op = 'ensure_file_exists' if ensure_exists else 'file'
+            op = "ensure_file_exists" if ensure_exists else "file"
             if md5:
                 md5 = " '{}'".format(md5)
         else:
-            assert not ensure_exists, \
-                '{}: do not pass ensure_exists for directories'.format(host_path)
-            assert not md5, \
-                '{}: do not pass md5 for directories'.format(host_path)
-            op = 'directory'
+            assert (
+                not ensure_exists
+            ), "{}: do not pass ensure_exists for directories".format(host_path)
+            assert not md5, "{}: do not pass md5 for directories".format(host_path)
+            op = "directory"
         if not md5:
-            md5 = ''
+            md5 = ""
         self.append_root_bash(
             "rsconf_install_{} '{}'{}".format(op, host_path, md5),
         )
 
-    def _bash_append_and_dst(self, host_path, ignore_exists=False, file_contents=None, file_src=None):
+    def _bash_append_and_dst(
+        self, host_path, ignore_exists=False, file_contents=None, file_src=None
+    ):
         dst = self.hdb.build.dst_d.join(host_path)
         if dst.check():
             if ignore_exists:
                 return None
-            raise AssertionError('{}: dst already exists'.format(dst))
+            raise AssertionError("{}: dst already exists".format(dst))
         pkio.mkdir_parent_only(dst)
         md5 = None
         if file_src:
-            assert file_contents is None, \
-                '{}: do not pass both file_contents and file_src'.format(host_path)
+            assert (
+                file_contents is None
+            ), "{}: do not pass both file_contents and file_src".format(host_path)
             file_contents = file_src.read_binary()
         if file_contents:
             md5 = _md5(self._write_binary(dst, file_contents))
@@ -328,7 +338,7 @@ class T(PKDict):
         try:
             return pkjinja.render_file(path, j2_ctx, strict_undefined=True)
         except Exception as e:
-            pkdlog('path={} exception={}', path, e)
+            pkdlog("path={} exception={}", path, e)
             raise
 
     def _render_resource(self, name, j2_ctx):
@@ -354,8 +364,8 @@ class T(PKDict):
             bytes: data (possibly converted)
         """
         if not isinstance(data, bytes):
-            data = data.encode('ascii')
-        path.write(data, mode='wb', ensure=True)
+            data = data.encode("ascii")
+        path.write(data, mode="wb", ensure=True)
         return data
 
 
@@ -369,7 +379,7 @@ def create_t(name, buildt):
     """
     import importlib
 
-    return importlib.import_module('.' + name, __name__).T(name, buildt)
+    return importlib.import_module("." + name, __name__).T(name, buildt)
 
 
 def tls_key_and_crt(j2_ctx, domain):
@@ -380,43 +390,43 @@ def tls_key_and_crt(j2_ctx, domain):
     src_key = src + tls.KEY_EXT
     src_crt = src + tls.CRT_EXT
     if not src_crt.check():
-        assert j2_ctx.component.tls_crt_create, \
-            '{}: missing crt for: {}'.format(src_crt, domain)
+        assert j2_ctx.component.tls_crt_create, "{}: missing crt for: {}".format(
+            src_crt, domain
+        )
         pkio.mkdir_parent_only(src_crt)
         # https://stackoverflow.com/a/42730929
         # Cannot pass (basename=str(src), *domains)
         tls.gen_self_signed_crt(str(src), *domains)
-    assert src_key.check(), \
-        '{}: missing key for: {}'.format(src_key, domain)
+    assert src_key.check(), "{}: missing key for: {}".format(src_key, domain)
     return PKDict(key=src_key, crt=src_crt)
 
 
 def _assert_host_path(host_path):
-    assert not "'" in str(host_path), \
-        "{}: host_path contains single quote (')".format(host_path)
+    assert not "'" in str(host_path), "{}: host_path contains single quote (')".format(
+        host_path
+    )
 
 
 def _find_tls_crt(j2_ctx, domain):
     from rsconf.pkcli import tls
     from rsconf import db
 
-    d = db.secret_path(j2_ctx, TLS_SECRET_SUBDIR, visibility='global')
+    d = db.secret_path(j2_ctx, TLS_SECRET_SUBDIR, visibility="global")
     for crt, domains in j2_ctx.component.tls_crt.items():
         if domain in domains:
             return d.join(crt), domains
     for s in (
         domain,
-        domain.replace('.', '_'),
-        '.'.join([_WILDCARD_TLS] + domain.split('.')[1:]),
+        domain.replace(".", "_"),
+        ".".join([_WILDCARD_TLS] + domain.split(".")[1:]),
         # sirepo.com is in wildcard cert star.sirepo.com
-        _WILDCARD_TLS + '.' + domain,
+        _WILDCARD_TLS + "." + domain,
     ):
         src = d.join(s)
         # due to dots in domain, we can't use ext=
         if (src + tls.KEY_EXT).check():
             return src, domain
-    assert j2_ctx.component.tls_crt_create, \
-        f'{domain}: tls crt for domain not found'
+    assert j2_ctx.component.tls_crt_create, f"{domain}: tls crt for domain not found"
     src = d.join(domain)
     pkio.mkdir_parent_only(src)
     tls.gen_self_signed_crt(str(src), *domain)

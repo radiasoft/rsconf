@@ -1,0 +1,22 @@
+[Unit]
+After=network.target remote-fs.target nss-lookup.target 
+Description=postgrey
+
+[Service]
+Environment=TZ=:/etc/localtime
+ExecStart=/srv/postgrey/start
+ExecStartPre=/bin/rm -f /run/postgrey/postgrey.pid
+Group=vagrant
+PIDFile=/run/postgrey/postgrey.pid
+PrivateTmp=true
+Restart=on-failure
+RestartSec=10
+RuntimeDirectory=postgrey
+RuntimeDirectoryMode=775
+SyslogIdentifier=postgrey
+Type=forking
+User=vagrant
+TimeoutStopSec=5
+
+[Install]
+WantedBy=multi-user.target

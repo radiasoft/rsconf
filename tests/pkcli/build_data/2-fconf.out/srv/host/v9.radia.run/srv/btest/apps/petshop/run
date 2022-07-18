@@ -1,0 +1,112 @@
+#!/bin/bash
+set -euo pipefail
+
+run_acceptance() {
+    PERLLIB='/srv/btest/apps/petshop/current' BCONF='/srv/btest/apps/petshop/bivio-acceptance.bconf' bivio test acceptance "$@"
+}
+
+run_with_args() {
+    local t
+    local unit=()
+    local acceptance=()
+    for t in "$@"; do
+        case $t in
+            *.btest)
+                acceptance+=( "$t" )
+                ;;
+            *.bunit|*.t)
+                unit+=( "$t" )
+                ;;
+            *)
+                if [[ ! -d $t ]]; then
+                    run_err "$t: unknown test type"
+                fi
+                if [[ $(shopt -s nullglob && cd "$t" && echo *.btest) ]]; then
+                    acceptance+=( "$t" )
+                else
+                    unit+=( "$t" )
+                fi
+                ;;
+        esac
+    done
+
+    if (( ${#unit[@]} )); then
+        run_unit "${unit[@]}"
+    fi
+    if (( ${#acceptance[@]} )); then
+        run_acceptance "${acceptance[@]}"
+    fi
+}
+
+run_db_create() {
+    # Cache is a proxy for the database
+    local d='/srv/btest/apps/petshop/db/Cache'
+    # 6.5 days in seconds
+    if [[ -e $d ]] && (( $(stat -c %Y $d) + 561600 > $(date -u +%s) )); then
+        return
+    fi
+    if ! bivio sql tables >& /dev/null; then
+        bivio sql init_dbms
+    fi
+    bivio sql write_bop_ddl_files
+    bivio sql -force create_test_db
+}
+
+run_err() {
+    echo "$1" 2>&1
+    exit 1
+}
+
+run_link_facade_files() {
+    # link_facade_files should not create javascript
+    bivio project link_facade_files \
+        --Bivio::Ext::DBI.connection=Bivio::SQL::Connection::None \
+        --Bivio::IO::Config.is_dev=0
+    local facade
+    for facade in '/srv/btest/apps/petshop/current/Bivio/PetShop/files'/*; do
+        if [[ ! -L $facade/plain/b ]]; then
+            mkdir -p "$facade/plain"
+            ln -s -r /usr/share/Bivio-bOP-javascript "$facade/plain/b"
+        fi
+    done
+}
+
+run_main() {
+    if [[ $USER != 'vagrant' ]]; then
+        run_err "user=$USER: must be run as vagrant"
+    fi
+    if [[ $@ ]]; then
+        run_with_args "$@"
+        return $?
+    fi
+    run_msg 'btest_petshop: begin'
+    cd '/srv/btest/apps/petshop'
+    if [[ -e previous ]]; then
+        # Some tests make directories read-only
+        chmod -R u+rwX previous || true
+        rm -rf previous
+    fi
+    mv 'current' previous >& /dev/null || true
+    mkdir 'current'
+    cd 'current'
+    # POSIT: container-bop/radiasoft-download.sh
+    cp -a '/usr/src/bop/Bivio' .
+    export PERLLIB='/srv/btest/apps/petshop/current' BCONF='/srv/btest/apps/petshop/bivio-unit.bconf'
+    run_link_facade_files
+    run_db_create
+    run_msg 'btest_petshop: run_unit'
+    run_unit 'Bivio' || true
+    run_msg 'btest_petshop: run_acceptance'
+    run_acceptance 'Bivio/PetShop'|| true
+    run_msg 'btest_petshop: end'
+}
+
+run_msg() {
+    echo "$@" 1>&2
+}
+
+run_unit() {
+    PERLLIB='/srv/btest/apps/petshop/current' BCONF='/srv/btest/apps/petshop/bivio-unit.bconf' bivio test unit "$@"
+}
+
+run_main "$@"

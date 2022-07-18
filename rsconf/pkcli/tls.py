@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-u"""SSL cert operations
+"""SSL cert operations
 
 :copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -14,12 +14,12 @@ import time
 import random
 
 
-_CRT = 'crt'
-_CSR = 'csr'
-_KEY = 'key'
-CRT_EXT = '.' + _CRT
-CSR_EXT = '.' + _CSR
-KEY_EXT = '.' + _KEY
+_CRT = "crt"
+_CSR = "csr"
+_KEY = "key"
+CRT_EXT = "." + _CRT
+CSR_EXT = "." + _CSR
+KEY_EXT = "." + _KEY
 
 
 def gen_ca_crt(common_name, basename=None):
@@ -85,24 +85,24 @@ def gen_signed_crt(ca_key, basename=None, *domains):
     res = _gen_req(_CSR, basename, domains)
 
     res[_CRT] = res[_KEY].new(ext=CRT_EXT)
-    cfg = res[_KEY].new(ext='.cfg')
+    cfg = res[_KEY].new(ext=".cfg")
     try:
-        cfg.write('[v3_req]\n{}'.format(_alt_names(domains)))
+        cfg.write("[v3_req]\n{}".format(_alt_names(domains)))
         cmd = [
-            'openssl',
-            'x509',
-            '-req',
-            '-in',
+            "openssl",
+            "x509",
+            "-req",
+            "-in",
             str(res[_CSR]),
-            '-CA',
+            "-CA",
             str(ca_key.new(ext=CRT_EXT)),
-            '-CAkey',
+            "-CAkey",
             str(ca_key),
-            '-extensions',
-            'v3_req',
-            '-extfile',
+            "-extensions",
+            "v3_req",
+            "-extfile",
             str(cfg),
-            '-out',
+            "-out",
             str(res[_CRT]),
         ] + _signing_args()
         _run(cmd)
@@ -122,8 +122,8 @@ def is_self_signed_crt(filename):
     Returns:
         bool: true or false
     """
-    o = _run(['openssl', 'verify', '-CAfile', str(filename), str(filename)])
-    return ': ok' in o.lower()
+    o = _run(["openssl", "verify", "-CAfile", str(filename), str(filename)])
+    return ": ok" in o.lower()
 
 
 def read_crt(filename):
@@ -135,7 +135,7 @@ def read_crt(filename):
     Returns:
         str: read certificate
     """
-    return _run(['openssl', 'x509', '-text', '-noout', '-in', str(filename)])
+    return _run(["openssl", "x509", "-text", "-noout", "-in", str(filename)])
 
 
 def read_csr(filename):
@@ -147,13 +147,14 @@ def read_csr(filename):
     Returns:
         str: read certificate
     """
-    return _run(['openssl', 'req', '-text', '-noout', '-verify', '-in', str(filename)])
+    return _run(["openssl", "req", "-text", "-noout", "-verify", "-in", str(filename)])
 
 
 def _alt_names(domains):
-    return 'subjectAltName = {}'.format(
-        ', '.join(['DNS:' + x for x in domains]),
+    return "subjectAltName = {}".format(
+        ", ".join(["DNS:" + x for x in domains]),
     )
+
 
 def _gen_req(which, basename, domains, is_ca=False):
     first = domains[0]
@@ -163,20 +164,20 @@ def _gen_req(which, basename, domains, is_ca=False):
     if is_ca:
         # pathlen:0 means can only be used for signing certs, not for
         # signing intermediate certs.
-        alt = '''x509_extensions = x509_req
+        alt = """x509_extensions = x509_req
 [x509_req]
-basicConstraints=critical,CA:true,pathlen:0'''
+basicConstraints=critical,CA:true,pathlen:0"""
     else:
         # Must always provide subjectAltName except for is_ca
         # see https://github.com/urllib3/urllib3/issues/497
         # which points to RFC 2818:
         # Although the use of the Common Name is existing practice, it is deprecated and
         # Certification Authorities are encouraged to use the dNSName instead.
-        alt = '{}_extensions = v3_req\n[v3_req]\n{}'.format(
-            'req' if which == 'csr' else 'x509',
+        alt = "{}_extensions = v3_req\n[v3_req]\n{}".format(
+            "req" if which == "csr" else "x509",
             _alt_names(domains),
         )
-    c = '''
+    c = """
 [req]
 distinguished_name = subj
 prompt = no
@@ -186,27 +187,29 @@ prompt = no
 C = US
 ST = Colorado
 L = Boulder
-CN = {}'''.format(alt, first)
-    cfg = basename + '.cfg'
+CN = {}""".format(
+        alt, first
+    )
+    cfg = basename + ".cfg"
     try:
         cfg.write(c)
         key = basename + KEY_EXT
-        out = basename + '.' + which
+        out = basename + "." + which
         cmd = [
-            'openssl',
-            'req',
-            '-nodes',
-            '-newkey',
-            'rsa:2048',
-            '-keyout',
+            "openssl",
+            "req",
+            "-nodes",
+            "-newkey",
+            "rsa:2048",
+            "-keyout",
             str(key),
-            '-out',
+            "-out",
             str(out),
-            '-config',
+            "-config",
             str(cfg),
         ]
         if which == _CRT:
-            cmd += ['-x509'] + _signing_args()
+            cmd += ["-x509"] + _signing_args()
         _run(cmd)
     finally:
         pkio.unchecked_remove(cfg)
@@ -217,26 +220,26 @@ CN = {}'''.format(alt, first)
 
 def _run(cmd):
     try:
-        pkdc('{}', ' '.join(cmd))
+        pkdc("{}", " ".join(cmd))
         return pkcompat.from_bytes(
             subprocess.check_output(cmd, stderr=subprocess.STDOUT),
         )
     except Exception as e:
-        o = ''
-        if hasattr(e, 'output'):
+        o = ""
+        if hasattr(e, "output"):
             o = pkcompat.from_bytes(e.output)
-        pkdlog('command error: cmd={} error={} out={}', cmd, e, o)
+        pkdlog("command error: cmd={} error={} out={}", cmd, e, o)
         raise
 
 
 def _signing_args():
     return [
-        '-days',
-        '9999',
-        '-set_serial',
+        "-days",
+        "9999",
+        "-set_serial",
         # must be distinct number for all certificates
         # people recommend 128, but that results in an empty serial in openssl
         # so 64 bits seems enough
         str(random.SystemRandom().getrandbits(64)),
-        '-sha256',
+        "-sha256",
     ]

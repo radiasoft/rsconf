@@ -6,17 +6,19 @@
 """
 import pytest
 
+
 def test_build():
     from pykern import pkconfig, pkunit, pkio
     from pykern.pkdebug import pkdlog
     from pykern.pkcollections import PKDict
+    from rsconf.pkcli import build
+    from rsconf import db
 
-    with pkio.save_chdir(pkunit.work_dir()) as d:
-        pkconfig.reset_state_for_testing(add_to_environ=PKDict(RSCONF_DB_ROOT_D='UNIT TEST'))
-
-        from rsconf.pkcli import build
+    pkdlog("""
+If you get an error caused by the hash in a component.sh file,
+update the component.sh file to see what changed in the file to be downloaded.
+    """)
+    for d in pkunit.case_dirs():
+        db.cfg.fconf = "fconf" in d.basename
+        pkio.mkdir_parent(d.join("srv"))
         build.default_command()
-        o = pkunit.data_dir()
-        for e in pkio.walk_tree(o):
-            pkdlog(e)
-            pkunit.file_eq(expect_path=e, actual_path=d.join(o.bestrelpath(e)))

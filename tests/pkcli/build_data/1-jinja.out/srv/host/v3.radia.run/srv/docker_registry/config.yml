@@ -1,0 +1,36 @@
+---
+# https://docs.docker.com/registry/configuration/
+version: 0.1
+log:
+  accesslog:
+    disabled: false
+  level: info
+  formatter: text
+  fields:
+    service: docker_registry
+    environment: dev
+storage:
+  filesystem:
+    rootdirectory: /srv/docker_registry/db
+    maxthreads: 20
+  delete:
+    # required for proxy (pull through cache)
+    enabled: true
+auth:
+  htpasswd:
+    realm: '*'
+    path: /srv/docker_registry/passwd
+http:
+  addr: v3.radia.run:5000
+  host: https://v3.radia.run:5000
+  secret: SEukhpyyjJrpOjEtHIOFMnusC8s1UWgbuB5wtzfimQEhAnH2Mxci6qPgfou0hvkU
+  tls:
+    certificate: /srv/docker_registry/v3.radia.run.crt
+    key:  /srv/docker_registry/v3.radia.run.key
+  headers:
+    X-Content-Type-Options: [nosniff]
+# https://docs.docker.com/registry/configuration/#proxy
+# Pushing to a registry configured as a pull-through cache is unsupported.
+#proxy:
+#  # Only pull public images
+#  remoteurl: https://registry-1.docker.io

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-u"""rsiviz (nginx + IndeX)
+"""rsiviz (nginx + IndeX)
 
 :copyright: Copyright (c) 2019 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -10,11 +10,12 @@ from rsconf import component
 from rsconf import db
 from rsconf import systemd
 
-_DB_SUBDIR = 'db'
+_DB_SUBDIR = "db"
+
 
 class T(component.T):
     def internal_build_compile(self):
-        self.buildt.require_component('docker', 'nginx')
+        self.buildt.require_component("docker", "nginx")
         jc, z = self.j2_ctx_init()
         self.__run_d = systemd.docker_unit_prepare(self, jc)
 
@@ -43,11 +44,11 @@ class T(component.T):
             image=z.docker_image,
             # TODO(e-carlin): This is the default command (set by build_docker_cmd)
             # is there a way to just use it and not specify cmd?
-            cmd='bash /home/vagrant/.radia-run/start',
+            cmd="bash /home/vagrant/.radia-run/start",
             ports=(
                 (jc.nginx.docker_index_port, 8080),
                 (jc.nginx.docker_flask_port, 8082),
             ),
         )
-        self.install_access(mode='700', owner=jc.rsconf_db.run_u)
+        self.install_access(mode="700", owner=jc.rsconf_db.run_u)
         self.install_directory(d)

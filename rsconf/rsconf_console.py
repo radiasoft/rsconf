@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-u"""Front-end command line for :mod:`rsconf`.
+"""Front-end command line for :mod:`rsconf`.
 
 See :mod:`pykern.pkcli` for how this module is used.
 
@@ -14,8 +14,8 @@ from pykern import pkcli
 
 
 def main():
-    return pkcli.main('rsconf')
+    return pkcli.main("rsconf")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

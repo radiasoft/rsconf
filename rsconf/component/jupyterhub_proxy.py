@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-u"""setup proxy for jupyterhub backends
+"""setup proxy for jupyterhub backends
 
 :copyright: Copyright (c) 2018 Bivio Software, Inc.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -12,7 +12,7 @@ from rsconf import component
 
 class T(component.T):
     def internal_build_compile(self):
-        self.buildt.require_component('nginx')
+        self.buildt.require_component("nginx")
         jc, z = self.j2_ctx_init()
 
     def internal_build_write(self):

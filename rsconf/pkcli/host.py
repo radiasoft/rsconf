@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-u"""host manipulation
+"""host manipulation
 
 :copyright: Copyright (c) 2018 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -30,4 +30,4 @@ def _init_do(host, comp):
         for h in hosts:
             if h == host.lower():
                 return comp.host_init(dbt.host_db(c, h), h)
-    pkcli.command_error('{}: host not found in rsconf_db', host)
+    pkcli.command_error("{}: host not found in rsconf_db", host)

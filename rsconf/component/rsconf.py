@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-u"""rsconf server config
+"""rsconf server config
 
 :copyright: Copyright (c) 2018 Bivio Software, Inc.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -9,24 +9,24 @@ from pykern import pkcollections
 from pykern import pkcompat
 from pykern import pkjson
 from rsconf import component
+
 try:
     from urllib.parse import urlparse
 except:
     from urlparse import urlparse
 
 
-_PASSWD_SECRET_JSON_F = 'rsconf_auth.json'
-PASSWD_SECRET_F = 'rsconf_auth'
+_PASSWD_SECRET_JSON_F = "rsconf_auth.json"
+PASSWD_SECRET_F = "rsconf_auth"
 
 
 class T(component.T):
-
     def internal_build_compile(self):
         from rsconf.component import nginx
         from rsconf import db
 
         # docker is required to build container-perl
-        self.buildt.require_component('docker', 'nginx')
+        self.buildt.require_component("docker", "nginx")
         self.j2_ctx = self.hdb.j2_ctx_copy()
         jc = self.j2_ctx
         jc.rsconf = pkcollections.Dict(
@@ -95,14 +95,14 @@ def _passwd_entry(j2_ctx, host):
     pw = db.random_string()
     pf = passwd_secret_f(j2_ctx)
     p = subprocess.Popen(
-        ['openssl', 'passwd', '-stdin', '-apr1'],
+        ["openssl", "passwd", "-stdin", "-apr1"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         stdin=subprocess.PIPE,
     )
     out, err = p.communicate(input=pkcompat.to_bytes(pw))
-    with pf.open(mode='at') as f:
-        f.write('{}:{}\n'.format(host, pkcompat.from_bytes(out).rstrip()))
+    with pf.open(mode="at") as f:
+        f.write("{}:{}\n".format(host, pkcompat.from_bytes(out).rstrip()))
     return pw
 
 

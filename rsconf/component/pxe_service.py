@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+"""?
+
 # https://www.unixmen.com/install-pxe-server-centos-7/
 # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/installation_guide/chap-installation-server-setup
 yum install -y syslinux nfs-utils
@@ -97,3 +100,9 @@ subnet 10.1.4.0 netmask 255.255.255.0 {
 subnet 10.1.6.0 netmask 255.255.255.0 {
 }
 EOF
+
+:copyright: Copyright (c) 2022 RadiaSoft LLC.  All Rights Reserved.
+:license: http://www.apache.org/licenses/LICENSE-2.0.html
+"""
+from pykern.pkcollections import PKDict
+from pykern.pkdebug import pkdc, pkdlog, pkdp

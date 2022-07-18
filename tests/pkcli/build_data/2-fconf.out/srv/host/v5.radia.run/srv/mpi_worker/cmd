@@ -1,0 +1,11 @@
+#!/bin/bash
+if [[ -r ~/.bashrc ]]; then
+    source ~/.bashrc
+fi
+set -euo pipefail
+cd '/srv/mpi_worker'
+source ./env
+if [[ $@ ]]; then
+    exec "$@"
+fi
+exec /usr/sbin/sshd -D -f '/home/vagrant/jupyter/.rsmpi/v5.radia.run/sshd_config'

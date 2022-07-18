@@ -1,0 +1,11 @@
+#!/bin/bash
+if [[ -r ~/.bashrc ]]; then
+    source ~/.bashrc
+fi
+set -euo pipefail
+cd '/srv/jupyterhub'
+source ./env
+if [[ $@ ]]; then
+    exec "$@"
+fi
+exec bash -l -c 'jupyterhub -f /srv/jupyterhub/conf.py'

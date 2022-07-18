@@ -1,0 +1,1 @@
+/srv/mpi_worker/user 10.10.10.0/24(rw,no_root_squash,no_subtree_check,async,secure)

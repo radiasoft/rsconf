@@ -1,0 +1,11 @@
+#!/bin/bash
+if [[ -r ~/.bashrc ]]; then
+    source ~/.bashrc
+fi
+set -euo pipefail
+cd '/srv/rs_mariadb'
+source ./env
+if [[ $@ ]]; then
+    exec "$@"
+fi
+exec mysqld
