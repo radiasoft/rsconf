@@ -203,9 +203,9 @@ class T(component.T):
             )
 
     def _jupyterhublogin(self, z):
-        z.jupyterhub_enabled =  'jupyterhublogin' in set(
-            self.j2_ctx.sirepo.feature_config.get('default_proprietary_sim_types', []),
-        ).union(set(self.j2_ctx.sirepo.feature_config.get('moderated_sim_types', [])))
+        z.jupyterhub_enabled = "jupyterhublogin" in set(
+            self.j2_ctx.sirepo.feature_config.get("default_proprietary_sim_types", []),
+        ).union(set(self.j2_ctx.sirepo.feature_config.get("moderated_sim_types", [])))
         if not z.jupyterhub_enabled:
             return
         self.__uwsgi_docker_vols.append(z.sim_api.jupyterhublogin.user_db_root_d)

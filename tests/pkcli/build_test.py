@@ -14,10 +14,12 @@ def test_build():
     from rsconf.pkcli import build
     from rsconf import db
 
-    pkdlog("""
+    pkdlog(
+        """
 If you get an error caused by the hash in a component.sh file,
 update the component.sh file to see what changed in the file to be downloaded.
-    """)
+    """
+    )
     for d in pkunit.case_dirs():
         db.cfg.fconf = "fconf" in d.basename
         pkio.mkdir_parent(d.join("srv"))
