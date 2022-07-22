@@ -428,7 +428,7 @@ def _update_paths(base):
 
 
 cfg = pkconfig.init(
-    fconf=(False, bool, "Use pykern.fconf for reading db"),
+    fconf=(True, bool, "Use pykern.fconf for reading db"),
     root_d=(None, _cfg_root, "Top of rsconf tree"),
     srv_group=(None, _cfg_srv_group, "Group id of files to srv directory"),
 )
