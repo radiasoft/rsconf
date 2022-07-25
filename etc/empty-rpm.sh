@@ -1,16 +1,24 @@
 #!/bin/bash
+#
+# Creates $rpm_name-<date>.<time>-1.rpm
+#
 set -euo pipefail
-base=$1
-if [[ ! -d ~/rpmbuild/SPECS ]]; then
-    echo 'You need to build a regular rpm first with build-perl-rpms.sh'
-    exit 1
-fi
-t=$HOME/rpmbuild
-s=$t/SPECS/$base.spec
-r=$t/BUILDROOT
-cat <<EOF > "$s"
-Summary: $base
-Name: $base
+
+empty_rpm_main() {
+    declare rpm_name=$1
+    declare t=$HOME/rpmbuild
+    mkdir -p "$t"/{RPMS,BUILD,BUILDROOT,SPECS,tmp}
+    if [[ ! -r "$HOME"/.rpmmacros ]]; then
+        cat <<EOF > "$HOME"/.rpmmacros
+%_topdir   $t
+%_tmppath  %{_topdir}/tmp
+EOF
+    fi
+    declare s=$t/SPECS/$rpm_name.spec
+    declare r=$t/BUILDROOT
+    cat <<EOF > "$s"
+Summary: $rpm_name
+Name: $rpm_name
 Version: $(date +%Y%m%d.%H%M%S)
 Release: 1
 License: Apache
@@ -26,15 +34,18 @@ empty
 %install
 rm -rf "$r"
 mkdir "$r"
-date > "$r/$base"
+date > "$r/$rpm_name"
 
 %clean
 rm -rf "$r"
 
 %files
 %defattr(-,root,root)
-/$base
+/$rpm_name
 EOF
-rpmbuild --buildroot "$r" -bb "$s"
-mv "$t/RPMS/x86_64/$base"*.rpm .
-echo "$base"*rpm
+    rpmbuild --buildroot "$r" -bb "$s"
+    mv "$t/RPMS/x86_64/$rpm_name"*.rpm .
+    echo "$rpm_name"*rpm
+}
+
+empty_rpm_main "$@"

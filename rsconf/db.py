@@ -200,7 +200,7 @@ class T(PKDict):
                 lambda r, i: r + pkio.sorted_glob(i[0].join(i[1])),
                 itertools.product(
                     (self.db_d, self.secret_d),
-                    ('*.py', ZERO_YML),
+                    ("*.py", ZERO_YML),
                 ),
                 [],
             ),

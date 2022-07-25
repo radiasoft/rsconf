@@ -426,7 +426,7 @@ host:
       bkp:
         on_calendar: "1 17"
         secondary_copy_d: /bkp_copy
-        secondary_setup_f: /home/vagrant/src/radiasoft/rsconf/run/etc/secondary_setup.sh
+        secondary_setup_f: etc/secondary_setup.sh
       jupyterhub:
         jupyter_docker_image: radiasoft/custom-jupyter:latest
         jupyter_docker_image_is_local: true
