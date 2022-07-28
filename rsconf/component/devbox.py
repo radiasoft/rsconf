@@ -13,28 +13,28 @@ import subprocess
 
 class T(component.T):
     def install_resource(self, *args, **kwargs):
-        super().install_resource(*args, component_name="sirepo_sandbox", **kwargs)
+        super().install_resource(*args, module_name="devbox", **kwargs)
 
     def internal_build_compile(self):
         from rsconf import systemd
 
-        if self.name == "sirepo_sandbox":
-            for u in self.hdb.sirepo_sandbox.users.keys():
+        if self.name == "devbox":
+            for u in self.hdb.devbox.users.keys():
                 t = T(u, self.buildt)
                 self.buildt.build_component(t)
             return
         self.buildt.require_component("docker", "network")
         jc, _ = self.j2_ctx_init()
-        z = jc.sirepo_sandbox
+        z = jc.devbox
         z.setdefault("volumes", {})
         # TODO(e-carlin): Better way then building the path manually
         # /srv/<component-name> is output by systemd.docker_unit_prepare
         # below but to call that we need z.host.ssh_d. z.host needs z.host_d
         # so we are in a dependency cycle
-        z.host_d = z.host_root_d.join(self.name, "db")
+        z.host_d = systemd.unit_run_d(jc, self.name)
         z.secrets = self._gen_keys(jc, z)
         for x in "guest", "host":
-            z[x] = self._gen_paths(z, z.get(x + "_d"))
+            z[x] = self._gen_paths(z, z[x + "_d"])
         z.run_u = jc.rsconf_db.run_u
         # Only additional config for the server is the sshd config.
         z.run_d = systemd.docker_unit_prepare(self, jc, watch_files=[z.host.ssh_d])
@@ -43,11 +43,11 @@ class T(component.T):
     def internal_build_write(self):
         from rsconf import systemd
 
-        if self.name == "sirepo_sandbox":
+        if self.name == "devbox":
             self.append_root_bash(": nothing to do")
             return
         jc = self.j2_ctx
-        z = jc.sirepo_sandbox
+        z = jc.devbox
         v = []
         x = [
             [z.host.ssh_d, z.guest.ssh_d],
@@ -61,7 +61,7 @@ class T(component.T):
         systemd.docker_unit_enable(
             self,
             jc,
-            image=jc.sirepo_sandbox.docker_image,
+            image=jc.devbox.docker_image,
             volumes=x,
             cmd="/usr/sbin/sshd -D -f '{}'".format(z.guest.sshd_config),
         )
@@ -76,7 +76,7 @@ class T(component.T):
     def _network(self, jc, z):
         n = self.buildt.get_component("network")
         z.ip, _ = n.ip_and_net_for_host(jc.rsconf_db.host)
-        z.ssh_port = jc.sirepo_sandbox.users[self.name]
+        z.ssh_port = jc.devbox.users[self.name]
 
     def _gen_keys(self, jc, z):
         from rsconf import db
@@ -84,7 +84,7 @@ class T(component.T):
         res = PKDict()
         b = db.secret_path(
             jc,
-            "sirepo_sandbox/" + self.name,
+            "devbox/" + self.name,
             visibility="channel",
         )
         pkio.mkdir_parent(b)
