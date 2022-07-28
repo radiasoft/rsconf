@@ -152,11 +152,10 @@ default:
       - facade: requiresecure
   postfix:
     aliases:
-      root: root@{{ host }}
-      errors: errors@{{ host }}
-      critical-errors: critical-errors@{{ host }}
-    whitelist_senders:
-      - poorly-configured-mailer.com
+      blackhole: /dev/null
+    virtual_aliases:
+      wp1.{{ host }}:
+        vagrant: vagrant
   postgresql:
     # https://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server#effective_cache_size
     effective_cache_size: 244MB
@@ -237,7 +236,7 @@ channel:
         216.17.132.32/27:
           gateway: 216.17.132.62
           search: radia.run
-          nameservers: [ 162.159.27.72, 162.159.24.39 ]
+          nameservers: [ 1.1.1.1, 1.0.0.1 ]
       untrusted: {}
     postgresql:
       auth_local_method: trust
@@ -351,14 +350,6 @@ host:
             server_names:
               - redirect3.{{ host }}
             want_www: true
-      postfix:
-        RSCONF_DB_REPLACE:
-          aliases:
-              # root and errors gets delivered locally so we replace
-              blackhole: /dev/null
-          virtual_aliases:
-            wp1.{{ host }}:
-              vagrant: vagrant
       pykern:
         pkdebug:
           control: .
@@ -490,10 +481,6 @@ host:
 #            ip: 104.237.137.251
         trusted:
           104.237.137.251/32: {}
-          216.17.132.32/27:
-            # Switch to CloudFlare (test RSCONF_DB_REPLACE)
-            nameservers:
-              RSCONF_DB_REPLACE: [ 1.1.1.1, 1.0.0.1 ]
         untrusted:
           104.237.137.0/24:
             gateway: 104.237.137.1
