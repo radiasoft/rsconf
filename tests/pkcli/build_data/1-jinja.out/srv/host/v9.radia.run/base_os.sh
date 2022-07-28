@@ -81,28 +81,6 @@ base_os_logical_volume() {
 }
 
 base_os_logical_volumes() {
-    if base_os_if_virtual_box; then
-        if lvs /dev/mapper/docker-vps >& /dev/null; then
-            # vagrant persistent_storage plugin creates an LV in the VG so need to
-            # remove it if it exists.
-            lvremove -f /dev/mapper/docker-vps
-        elif ! vgs docker >& /dev/null; then
-            # In virtualbox without docker volume group so
-            # need to create it
-            local bdev=/dev/sdb
-            if ! fdisk -l "$bdev" >& /dev/null; then
-                install_err "$bdev not found; persistent-storage not setup?"
-            fi
-            if fdisk -l "$bdev" | grep ^/dev >& /dev/null; then
-                install_err "$bdev contains mounted partitions; destroy with VirtualBox"
-            fi
-            if pvck "$bdev"; then
-                install_err "physical volume $bdev already initialized; destroy with VirtualBox"
-            fi
-            pvcreate /dev/sdb
-            vgcreate docker /dev/sdb
-        fi
-    fi
     
 }
 
