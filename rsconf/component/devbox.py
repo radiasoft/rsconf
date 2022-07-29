@@ -81,15 +81,13 @@ class T(component.T):
 
         res = PKDict()
         b = db.secret_path(
-            jc,
-            "devbox/" + self.user_name,
+            jc, "devbox/" + self.user_name, visibility="host", directory=True
         )
         pkio.mkdir_parent(b)
+        i = b.join("identity")
+        res.identity_pub_f = i.new(ext="pub")
         res.host_key_f = b.join("host_key")
-        res.host_key_pub_f = res.host_key_f + ".pub"
-        res.identity_f = b.join("identity")
-        res.identity_pub_f = b.join("identity") + ".pub"
-        for f in res.host_key_f, res.identity_f:
+        for f in res.host_key_f, i:
             if f.exists():
                 continue
             subprocess.check_call(

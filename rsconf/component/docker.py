@@ -111,7 +111,6 @@ def setup_cluster(compt, hosts, tls_d, run_u, j2_ctx):
     compt.install_access(mode="700", owner=run_u)
     compt.install_directory(tls_d)
     b = db.secret_path(j2_ctx, compt.name + "_" + _TLS_BASENAME, visibility="host")
-    pkio.mkdir_parent_only(b)
     for h in hosts:
         c, ca = _self_signed_crt(j2_ctx, h)
         c = _signed_crt(j2_ctx, ca, b.join(h))

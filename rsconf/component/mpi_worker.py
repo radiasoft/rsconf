@@ -97,11 +97,8 @@ class T(component.T):
 
         res = pkcollections.Dict()
         b = db.secret_path(
-            jc,
-            self.name + "/" + z.user,
-            visibility="channel",
+            jc, self.name + "/" + z.user, visibility="channel", directory=True
         )
-        pkio.mkdir_parent(b)
         res.host_key_f = b.join("host_key")
         res.host_key_pub_f = res.host_key_f + ".pub"
         res.identity_f = b.join("identity")
