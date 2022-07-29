@@ -42,7 +42,7 @@ class T(component.T):
         from rsconf import systemd
 
         if "user_name" not in self:
-            self.append_root_bash(": nothing to do")
+            self.append_root_bash(": user instances do all the installs")
             return
         jc = self.j2_ctx
         z = jc.devbox
