@@ -23,12 +23,9 @@ _WILDCARD_TLS = "star"
 
 
 class T(PKDict):
-    def __init__(self, name, buildt):
+    def __init__(self, name, buildt, **kwargs):
         super(T, self).__init__(
-            buildt=buildt,
-            hdb=buildt.hdb,
-            name=name,
-            state=_START,
+            buildt=buildt, hdb=buildt.hdb, name=name, state=_START, **kwargs
         )
 
     def append_root_bash(self, *line):

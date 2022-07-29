@@ -18,32 +18,30 @@ class T(component.T):
     def internal_build_compile(self):
         from rsconf import systemd
 
-        if self.name == "devbox":
+        if "user_name" not in self:
             for u in self.hdb.devbox.users.keys():
-                t = T(u, self.buildt)
+                t = T(u, self.buildt, user_name=u)
                 self.buildt.build_component(t)
             return
         self.buildt.require_component("docker", "network")
         jc, _ = self.j2_ctx_init()
         z = jc.devbox
         z.setdefault("volumes", {})
-        # TODO(e-carlin): Better way then building the path manually
-        # /srv/<component-name> is output by systemd.docker_unit_prepare
-        # below but to call that we need z.host.ssh_d. z.host needs z.host_d
-        # so we are in a dependency cycle
-        z.host_d = systemd.unit_run_d(jc, self.name)
+        z.host_d = systemd.unit_run_d(jc, "devbox_" + self.user_name)
         z.secrets = self._gen_keys(jc, z)
         for x in "guest", "host":
             z[x] = self._gen_paths(z, z[x + "_d"])
         z.run_u = jc.rsconf_db.run_u
         # Only additional config for the server is the sshd config.
-        z.run_d = systemd.docker_unit_prepare(self, jc, watch_files=[z.host.ssh_d])
+        z.run_d = systemd.custom_unit_prepare(
+            self, jc, watch_files=[z.host.ssh_d], run_d=z.host_d
+        )
         self._network(jc, z)
 
     def internal_build_write(self):
         from rsconf import systemd
 
-        if self.name == "devbox":
+        if "user_name" not in self:
             self.append_root_bash(": nothing to do")
             return
         jc = self.j2_ctx
@@ -76,7 +74,7 @@ class T(component.T):
     def _network(self, jc, z):
         n = self.buildt.get_component("network")
         z.ip, _ = n.ip_and_net_for_host(jc.rsconf_db.host)
-        z.ssh_port = jc.devbox.users[self.name]
+        z.ssh_port = jc.devbox.users[self.user_name]
 
     def _gen_keys(self, jc, z):
         from rsconf import db
@@ -84,8 +82,7 @@ class T(component.T):
         res = PKDict()
         b = db.secret_path(
             jc,
-            "devbox/" + self.name,
-            visibility="channel",
+            "devbox/" + self.user_name,
         )
         pkio.mkdir_parent(b)
         res.host_key_f = b.join("host_key")
@@ -102,7 +99,7 @@ class T(component.T):
                     "-t",
                     "ed25519",
                     "-N",
-                    z.user_passwords[self.name],
+                    z.user_passwords[self.user_name],
                     "-C",
                     jc.rsconf_db.host,
                     "-f",

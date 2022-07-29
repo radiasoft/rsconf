@@ -71,9 +71,9 @@ def custom_unit_enable(
     unit_enable(compt, j2_ctx)
 
 
-def custom_unit_prepare(compt, j2_ctx, watch_files=()):
+def custom_unit_prepare(compt, j2_ctx, watch_files=(), run_d=None):
     """Must be first call"""
-    run_d = unit_run_d(j2_ctx, compt.name)
+    run_d = run_d or unit_run_d(j2_ctx, compt.name)
     unit_prepare(compt, j2_ctx, [run_d] + list(watch_files))
     z = j2_ctx.systemd
     z.run_d = run_d
