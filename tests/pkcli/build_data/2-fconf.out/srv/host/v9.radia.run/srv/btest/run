@@ -1,5 +1,0 @@
-#!/bin/bash
-# If individual commands fail, keep going
-set +e
-/srv/btest/apps/petshop/run
-

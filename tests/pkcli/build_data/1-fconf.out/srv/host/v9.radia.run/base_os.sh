@@ -1,4 +1,28 @@
 #!/bin/bash
+base_os_rsconf_component() {
+rsconf_service_prepare 'systemd-journald' '/etc/systemd/journald.conf.d'
+rsconf_service_prepare 'sshd' '/etc/ssh'
+
+rsconf_install_access '700' 'nobody' 'vagrant'
+rsconf_install_file '/etc/base.rsconf' '8eec1e97ac602d3228bad33b61efeaae'
+rsconf_install_access '400' 'root' 'root'
+rsconf_install_file '/etc/default.rsconf' 'de2b14ae7499f90736fc4a92327553a5'
+rsconf_install_access '400' 'root' 'root'
+rsconf_install_file '/etc/dev.rsconf' '8eec1e97ac602d3228bad33b61efeaae'
+rsconf_install_access '700' 'root' 'root'
+rsconf_install_directory '/etc/systemd/journald.conf.d'
+rsconf_install_access '400' 'root' 'root'
+rsconf_install_file '/etc/systemd/journald.conf.d/99-rsconf.conf' '9556d6ace0f4113eed37ec4bb5225de1'
+rsconf_install_file '/etc/sysctl.d/60-rsconf-base.conf' 'da732edac738b7aeda84e28eb516c99b'
+rsconf_install_file '/etc/security/limits.d/99-rsconf.conf' '0e2ee6a80d800ef63084be31e954bbaa'
+rsconf_service_prepare 'reboot' '/etc/security/limits.d/99-rsconf.conf'
+rsconf_install_file '/etc/ssh/sshd_config' '1b44eb96fb99c6afc3b0ac7826a5653a'
+rsconf_install_access '444' 'root' 'root'
+rsconf_install_file '/etc/hostname' '20e1de3282fcdf4a1e3df4993b0fecfb'
+rsconf_install_file '/etc/motd' '6bf408e65fc8387235735f3caebd3593'
+base_os_main
+}
+#!/bin/bash
 
 base_os_chrony() {
     if ! base_os_if_virtual_box; then
@@ -58,17 +82,15 @@ base_os_logical_volume() {
 
 base_os_logical_volumes() {
     : this line is just in case base_os.logical_volume_cmds is empty
-    {{ base_os.logical_volume_cmds }}
+    
 }
 
 base_os_main() {
     rsconf_radia_run_as_user root redhat-base
-    {% if "ssh_key" in rsconf and rsconf.ssh_key %}
-    rsconf_append_authorized_key '{{ rsconf_db.root_u }}' '{{ rsconf.ssh_key }}'
-    {% endif %}
-    if [[ ! -d {{ rsconf_db.host_run_d }} ]]; then
-        mkdir -p {{ rsconf_db.host_run_d }}
-        chmod 755 {{ rsconf_db.host_run_d }}
+    rsconf_append_authorized_key 'root' 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIB3mhGsrxFV4KnHjDtBaaU7ZdlNhwxIEPZ3/+Bv1xZY v3.radia.run'
+    if [[ ! -d /srv ]]; then
+        mkdir -p /srv
+        chmod 755 /srv
     fi
     local reboot=
     if base_os_ipv4; then
@@ -141,3 +163,4 @@ base_os_rpcbind_patch() {
         rsconf_service_trigger_restart rpcbind.socket
     fi
 }
+

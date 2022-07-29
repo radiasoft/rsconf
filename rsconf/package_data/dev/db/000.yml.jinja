@@ -264,14 +264,6 @@ channel:
 host:
   dev:
     {{ master }}:
-      base_os:
-        volume_groups:
-          docker:
-            logical_volumes:
-              docker:
-                #POSIT: download/installers/vagrant-dev:config.persistent_storage.size=102400
-                gigabytes: 99
-                mount_d: /srv/docker
       docker:
         tls_host: {{ master }}
       rsconf_db:
