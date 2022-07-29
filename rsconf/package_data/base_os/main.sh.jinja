@@ -57,6 +57,7 @@ base_os_logical_volume() {
 }
 
 base_os_logical_volumes() {
+    : this line is just in case base_os.logical_volume_cmds is empty
     {{ base_os.logical_volume_cmds }}
 }
 
