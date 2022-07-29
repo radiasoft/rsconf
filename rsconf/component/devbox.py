@@ -29,8 +29,8 @@ class T(component.T):
         z.setdefault("volumes", {})
         z.host_d = systemd.unit_run_d(jc, "devbox_" + self.user_name)
         z.secrets = self._gen_keys(jc, z)
-        for x in "guest", "host":
-            z[x] = self._gen_paths(z, z[x + "_d"])
+        for x, d in ("guest", ".ssh"), ("host", "sshd"):
+            z[x] = self._gen_paths(z, z[x + "_d"], d)
         z.run_u = jc.rsconf_db.run_u
         # Only additional config for the server is the sshd config.
         z.run_d = systemd.custom_unit_prepare(
@@ -48,8 +48,8 @@ class T(component.T):
         z = jc.devbox
         v = []
         x = [
-            [z.host.ssh_d, z.guest.ssh_d],
-            # SECURITY: no modifications to run_d
+            # SECURITY: no modifications to run_d or ssh_d
+            [z.host.ssh_d, z.guest.ssh_d, "ro"],
             [z.run_d, z.run_d, "ro"],
         ]
         for d in z.volumes:
@@ -61,7 +61,7 @@ class T(component.T):
             jc,
             image=jc.devbox.docker_image,
             volumes=x,
-            cmd="/usr/sbin/sshd -D -f '{}'".format(z.guest.sshd_config),
+            cmd="/usr/sbin/sshd -D -f '{}'".format(z.guest.ssh_d.join("sshd_config")),
         )
         self.install_access(mode="700", owner=z.run_u)
         for d in [z.host_d, z.host.ssh_d, *v]:
@@ -110,13 +110,11 @@ class T(component.T):
             )
         return res
 
-    def _gen_paths(self, z, db_d):
-        res = PKDict()
-        s = db_d.join(".ssh")
-        res.ssh_d = s
-        res.sshd_config = s.join("sshd_config")
+    def _gen_paths(self, z, db_d, ssh_d):
+        res = PKDict(ssh_d=db_d.join(ssh_d))
+        res.pkupdate(sshd_config=res.ssh_d.join("sshd_config"))
+        for e in z.volumes:
+            res.pkupdate({e: db_d.join(e)})
         for k, v in z.secrets.items():
-            res[k] = s.join(v.basename)
-        for v in z.volumes:
-            res[v] = db_d.join(v)
+            res.pkupdate({k: res.ssh_d.join(v.basename)})
         return res
