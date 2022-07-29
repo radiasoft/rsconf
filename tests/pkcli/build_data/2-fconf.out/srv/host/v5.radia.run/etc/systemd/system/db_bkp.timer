@@ -1,8 +1,0 @@
-[Unit]
-Description=db_bkp
-
-[Timer]
-OnCalendar=*-*-* 12:30:0
-
-[Install]
-WantedBy=timers.target

@@ -1,8 +1,0 @@
-[Unit]
-Description=sirepo_test_http
-
-[Timer]
-OnCalendar=*-*-* 15:00:0
-
-[Install]
-WantedBy=timers.target
