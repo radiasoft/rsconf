@@ -329,6 +329,38 @@ class T(PKDict):
         self._bash_append(host_path, md5=md5)
         return dst
 
+    def _gen_host_and_identity_ssh_keys(
+        self, j2_ctx, filename, visibility, password=None
+    ):
+        from rsconf import db
+
+        res = PKDict()
+        b = db.secret_path(j2_ctx, filename, visibility=visibility, directory=True)
+        res.host_key_f = b.join("host_key")
+        res.host_key_pub_f = res.host_key_f + ".pub"
+        res.identity_f = b.join("identity")
+        res.identity_pub_f = b.join("identity") + ".pub"
+        for f in res.host_key_f, res.identity_f:
+            if f.exists():
+                continue
+            subprocess.check_call(
+                [
+                    "ssh-keygen",
+                    "-q",
+                    "-t",
+                    "ed25519",
+                    "-N",
+                    password or "",
+                    "-C",
+                    j2_ctx.rsconf_db.host,
+                    "-f",
+                    str(f),
+                ],
+                stderr=subprocess.STDOUT,
+                shell=False,
+            )
+        return res
+
     def _render_file(self, path, j2_ctx):
         from pykern import pkjinja
 

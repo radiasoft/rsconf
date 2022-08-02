@@ -31,7 +31,7 @@ class T(component.T):
         z = jc.devbox
         z.setdefault("volumes", {})
         z.host_d = systemd.unit_run_d(jc, "devbox_" + self.user_name)
-        z.secrets = self._gen_keys(jc, z)
+        z.secrets = self._gen_host_and_identity_ssh_keys(jc)
         for x, d in ("guest", ".ssh"), ("host", "sshd"):
             z[x] = self._gen_paths(z, z[x + "_d"], d)
         z.run_u = jc.rsconf_db.run_u
@@ -79,43 +79,20 @@ class T(component.T):
         z.ip, _ = n.ip_and_net_for_host(jc.rsconf_db.host)
         z.ssh_port = jc.devbox.users[self.user_name]
 
-    def _gen_keys(self, jc, z):
+    def _gen_host_and_identity_ssh_keys(self, jc):
         from rsconf import db
 
-        p = db.secret_path(jc, _PASSWD_SECRET_JSON_F, visibility="host")
-        o = pkjson.load_any(p) if p.check() else PKDict()
-        res = PKDict()
-        b = db.secret_path(
-            jc, "devbox/" + self.user_name, visibility="host", directory=True
+        p = db.random_string()
+        res = super()._gen_host_and_identity_ssh_keys(
+            jc, "devbox/" + self.user_name, visibility="host", password=p
         )
-        i = b.join("identity")
-        res.identity_pub_f = i.new(ext="pub")
-        res.host_key_f = b.join("host_key")
-        for f in res.host_key_f, i:
-            if f.exists():
-                assert (
-                    self.user_name in o
-                ), f"file={f} exists but user_name={self.user_name} not in passwd_file={p}"
-                continue
-            x = db.random_string()
-            subprocess.check_call(
-                [
-                    "ssh-keygen",
-                    "-q",
-                    "-t",
-                    "ed25519",
-                    "-N",
-                    x,
-                    "-C",
-                    jc.rsconf_db.host,
-                    "-f",
-                    str(f),
-                ],
-                stderr=subprocess.STDOUT,
-                shell=False,
-            )
-            o[self.user_name] = x
-        pkjson.dump_pretty(o, filename=p)
+        for k in list(res.keys()):
+            if k not in ("host_key_f", "identity_pub_f"):
+                res.pkdel(k)
+        f = db.secret_path(jc, _PASSWD_SECRET_JSON_F, visibility="host")
+        o = pkjson.load_any(f) if f.check() else PKDict()
+        o[self.user_name] = p
+        pkjson.dump_pretty(o, filename=f)
         return res
 
     def _gen_paths(self, z, db_d, ssh_d):
