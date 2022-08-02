@@ -5,10 +5,13 @@
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from pykern import pkio
+from pykern import pkjson
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from rsconf import component
 import subprocess
+
+_PASSWD_SECRET_JSON_F = "devbox_auth.json"
 
 
 class T(component.T):
@@ -79,17 +82,22 @@ class T(component.T):
     def _gen_keys(self, jc, z):
         from rsconf import db
 
+        p = db.secret_path(jc, _PASSWD_SECRET_JSON_F, visibility="host")
+        o = pkjson.load_any(p) if p.check() else PKDict()
         res = PKDict()
         b = db.secret_path(
             jc, "devbox/" + self.user_name, visibility="host", directory=True
         )
-        pkio.mkdir_parent(b)
         i = b.join("identity")
         res.identity_pub_f = i.new(ext="pub")
         res.host_key_f = b.join("host_key")
         for f in res.host_key_f, i:
             if f.exists():
+                assert (
+                    self.user_name in o
+                ), f"file={f} exists but user_name={self.user_name} not in passwd_file={p}"
                 continue
+            x = db.random_string()
             subprocess.check_call(
                 [
                     "ssh-keygen",
@@ -97,7 +105,7 @@ class T(component.T):
                     "-t",
                     "ed25519",
                     "-N",
-                    z.user_passwords[self.user_name],
+                    x,
                     "-C",
                     jc.rsconf_db.host,
                     "-f",
@@ -106,6 +114,8 @@ class T(component.T):
                 stderr=subprocess.STDOUT,
                 shell=False,
             )
+            o[self.user_name] = x
+        pkjson.dump_pretty(o, filename=p)
         return res
 
     def _gen_paths(self, z, db_d, ssh_d):
