@@ -57,7 +57,7 @@ class T(component.T):
         ]
         for d in z.volumes:
             h = z.host[d]
-            x.append([h, z.guest[d]])
+            x.append([h, z.guest[d], "rw"])
             v.append(h)
         systemd.docker_unit_enable(
             self,
