@@ -340,7 +340,7 @@ class T(PKDict):
         res.host_key_pub_f = res.host_key_f + ".pub"
         res.identity_f = b.join("identity")
         res.identity_pub_f = b.join("identity") + ".pub"
-        for f in res.host_key_f, res.identity_f:
+        for f, p in (res.host_key_f, ""), (res.identity_f, password or ""):
             if f.exists():
                 continue
             subprocess.check_call(
@@ -350,7 +350,7 @@ class T(PKDict):
                     "-t",
                     "ed25519",
                     "-N",
-                    password or "",
+                    p,
                     "-C",
                     j2_ctx.rsconf_db.host,
                     "-f",

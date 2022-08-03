@@ -2,10 +2,10 @@
 set -euo pipefail
 
 rsconf_append() {
-    local file=$1
-    local egrep=$2
+    declare file=$1
+    declare egrep=$2
     # Default $egrep is $line and $egrep is fgrep for exact match
-    local line=${3:-}
+    declare line=${3:-}
     if [[ ! $line ]]; then
         line=$egrep
         egrep=
@@ -27,32 +27,42 @@ rsconf_append() {
 }
 
 rsconf_append_authorized_key() {
-    local user=$1
-    local key=$2
-    local ssh_d="$( getent passwd "$user" | cut -d: -f6 )"/.ssh
+    declare user=$1
+    declare key=$2
+    declare ssh_d="$( getent passwd "$user" | cut -d: -f6 )"/.ssh
     if [[ ! -e "$ssh_d" ]]; then
         install -d -m 700 -o "$user" -g "$user" "$ssh_d"
     fi
-    local keys_f=$ssh_d/authorized_keys
+    declare keys_f=$ssh_d/authorized_keys
     if [[ ! -e $keys_f ]]; then
         install -m 600 -o "$user" -g "$user" /dev/null "$keys_f"
     fi
     rsconf_edit_no_change_res=0 rsconf_append "$keys_f" "$key"
 }
 
+rsconf_clone_repo() {
+    declare repo=$1
+    declare dest=$2
+    declare user=$3
+    if [[ ! -d $dest || ! $(ls -A "$dest") ]]; then
+        git clone "$repo" "$dest"
+    fi
+    chown -R "$user": "$dest"
+}
+
 rsconf_edit() {
-    local file=$1
-    local egrep=$2
-    local perl=$3
+    declare file=$1
+    declare egrep=$2
+    declare perl=$3
     if [[ ! -e $file ]]; then
         install_err "$file: does not exist"
     fi
-    local need=
+    declare need=
     if [[ $egrep =~ ^![[:space:]]*(.+) ]]; then
         need=1
         egrep=${BASH_REMATCH[1]}
     fi
-    local g=$( egrep -s -q -- "$egrep" "$file" && echo 1 || true )
+    declare g=$( egrep -s -q -- "$egrep" "$file" && echo 1 || true )
     if [[ $g != $need ]]; then
         return ${rsconf_edit_no_change_res:-1}
     fi
@@ -67,23 +77,23 @@ rsconf_edit() {
 
 rsconf_fedora_release_if() {
     # First supported release is 27, but this allows a general fedora test
-    local expect=${1:-26}
+    declare expect=${1:-26}
     [[ $install_os_release_id == fedora ]] && (( $expect >= $install_os_release_version_id ))
 }
 
 rsconf_file_hash() {
-    local file=$1
-    local x=( $(md5sum "$file" 2>/dev/null) )
+    declare file=$1
+    declare x=( $(md5sum "$file" 2>/dev/null) )
     echo ${x[0]:-NONE}
 }
 
 rsconf_file_hash_check() {
-    local file=$1
+    declare file=$1
     if [[ ! ${rsconf_file_hash[$file]:-} ]]; then
         install_err "$file: missing hash"
     fi
-    local new=$(rsconf_file_hash "$file")
-    local old=${rsconf_file_hash[$file]}
+    declare new=$(rsconf_file_hash "$file")
+    declare old=${rsconf_file_hash[$file]}
     unset rsconf_file_hash[$file]
     if [[ $new != $old ]]; then
         rsconf_service_file_changed "$file"
@@ -91,7 +101,7 @@ rsconf_file_hash_check() {
 }
 
 rsconf_file_hash_save() {
-    local file=$1
+    declare file=$1
     if [[ ${rsconf_file_hash[$file]:-} ]]; then
         install_err "$file: unchecked saved hash"
     fi
@@ -99,21 +109,21 @@ rsconf_file_hash_save() {
 }
 
 rsconf_unchecked_gid() {
-    local group=$1
+    declare group=$1
     cut -d: -f3 <(getent group "$group") || true
 }
 
 rsconf_group() {
-    local group=$1
-    local gid=$2
-    local exist_gid=$(rsconf_unchecked_gid "$group")
+    declare group=$1
+    declare gid=$2
+    declare exist_gid=$(rsconf_unchecked_gid "$group")
     if [[ $exist_gid ]]; then
         if [[ $exist_gid != $gid ]]; then
             install_err "$exist_gid: unexpected gid (expect=$gid) for group $group"
         fi
         return
     fi
-    local flags=()
+    declare flags=()
     #POSIT: <1000 is system
     if [[ $gid < 1000 ]]; then
         flags+=( -r )
@@ -134,9 +144,9 @@ rsconf_install_access() {
 }
 
 rsconf_install_chxxx() {
-    local path=$1
-    local actual=( $(stat --format '%a %U %G' "$path") )
-    local change=
+    declare path=$1
+    declare actual=( $(stat --format '%a %U %G' "$path") )
+    declare change=
     if [[ ! ${rsconf_install_access[group]} ]]; then
         install_err 'rsconf_install_access must be called first'
     fi
@@ -158,7 +168,7 @@ rsconf_install_chxxx() {
 }
 
 rsconf_install_directory() {
-    local path=$1
+    declare path=$1
     if [[ -L $path ]]; then
         install_err "$path: is a symbolic link, expecting a directory"
     fi
@@ -170,7 +180,7 @@ rsconf_install_directory() {
         install_err "$path: exists but is not a directory"
     fi
     # parent directory must already exist
-    local parent=$(dirname "$path")
+    declare parent=$(dirname "$path")
     if [[ ! -e $parent ]]; then
         install_err "$path: parent directory ($parent) does not exist"
     fi
@@ -180,7 +190,7 @@ rsconf_install_directory() {
 }
 
 rsconf_install_ensure_file_exists() {
-    local path=$1
+    declare path=$1
     if [[ -e $path ]]; then
         if [[ -L $path && ! -f $path ]]; then
             install_err "$path: is a link or not a plain file"
@@ -189,7 +199,7 @@ rsconf_install_ensure_file_exists() {
         return
     fi
     # parent directory must already exist
-    local parent=$(dirname "$path")
+    declare parent=$(dirname "$path")
     if [[ ! -e $parent ]]; then
         install_err "$path: parent directory ($parent) does not exist"
     fi
@@ -199,9 +209,9 @@ rsconf_install_ensure_file_exists() {
 }
 
 rsconf_install_file() {
-    local path=$1
-    local md5=${2:-}
-    local tmp
+    declare path=$1
+    declare md5=${2:-}
+    declare tmp
     if [[ -d "$path" ]]; then
         install_err "$path: is a directory, must be a file (remove first)"
     fi
@@ -227,14 +237,14 @@ rsconf_install_file() {
 }
 
 rsconf_install_mount_point() {
-    local path=$1
+    declare path=$1
     if [[ -e $path ]]; then
         if [[ -L $path || ! -d $path ]]; then
             install_err "$path: mount point is not a directory"
         fi
         return
     fi
-    local parent=$(dirname "$path")
+    declare parent=$(dirname "$path")
     if [[ ! -e $parent ]]; then
         # Create the parent directory with strict permission (root & 700),
         # because component may need to set permissions, and this maybe a
@@ -246,15 +256,15 @@ rsconf_install_mount_point() {
 
 rsconf_install_perl_rpm() {
     # installs a custom rpm from the local repo
-    local rpm_base=$1
-    local rpm_file=$2
-    local rpm_version=$3
-    local prev_version=$(rpm -q "$rpm_base" 2>&1 || true)
+    declare rpm_base=$1
+    declare rpm_file=$2
+    declare rpm_version=$3
+    declare prev_version=$(rpm -q "$rpm_base" 2>&1 || true)
     # Yum is wonky with update/install. We have to handle
     # both fresh install and update, which install does, but
     # it doesn't return an error if the update isn't done.
     # You just have to check so this way is more robust
-    local reinstall=
+    declare reinstall=
     if [[ $rpm_version == $prev_version ]]; then
         if rpm --verify "$rpm_base"; then
             return
@@ -262,7 +272,7 @@ rsconf_install_perl_rpm() {
         install_info "$rpm_version: rpm is modified, reinstalling"
         reinstall=1
     fi
-    local tmp=$rpm_file
+    declare tmp=$rpm_file
     install_download "$rpm_file" > "$tmp"
     if [[ ! $(file "$tmp" 2>/dev/null) =~ RPM ]]; then
         # Error messages from rpm -qp are strange:
@@ -271,7 +281,7 @@ rsconf_install_perl_rpm() {
     fi
     rsconf_yum_reinstall=$reinstall rsconf_yum_install "$tmp"
     rm -f "$tmp"
-    local curr_rpm=$(rpm -q "$rpm_base")
+    declare curr_rpm=$(rpm -q "$rpm_base")
     if [[ $curr_rpm != $rpm_version ]]; then
         install_err "$curr_rpm: did not get installed, new=$rpm_version"
     fi
@@ -279,10 +289,10 @@ rsconf_install_perl_rpm() {
 }
 
 rsconf_install_symlink() {
-    local old=$1
-    local new=$2
+    declare old=$1
+    declare new=$2
     if [[ -L $new ]]; then
-        local e=$(readlink "$new")
+        declare e=$(readlink "$new")
         if [[ $e == $old ]]; then
             return
         fi
@@ -304,8 +314,8 @@ rsconf_main() {
     if [[ ${1+$1} == rsconf.sh ]]; then
         shift
     fi
-    local host=${1:-$(hostname -f)}
-    local setup_dev=${2:-}
+    declare host=${1:-$(hostname -f)}
+    declare setup_dev=${2:-}
     if [[ $host =~ / ]]; then
         install_err "$host: invalid host name"
     fi
@@ -316,14 +326,14 @@ rsconf_main() {
     install_info "$host: rsconf begin"
     install_url host/$host
     # Dynamically scoped; must be inline here
-    local -A rsconf_file_hash=()
-    local -A rsconf_install_access=()
-    local -A rsconf_service_file_changed=()
-    local -A rsconf_service_restart_at_end=()
-    local -A rsconf_service_status=()
-    local -A rsconf_service_watch=()
-    local -a rsconf_service_order=()
-    local rsconf_rerun_required=
+    declare -A rsconf_file_hash=()
+    declare -A rsconf_install_access=()
+    declare -A rsconf_service_file_changed=()
+    declare -A rsconf_service_restart_at_end=()
+    declare -A rsconf_service_status=()
+    declare -A rsconf_service_watch=()
+    declare -a rsconf_service_order=()
+    declare rsconf_rerun_required=
     install_script_eval 000.sh
     rsconf_at_end=1 rsconf_service_restart
     if [[ $rsconf_rerun_required ]]; then
@@ -334,7 +344,7 @@ You need to rerun this command"
 }
 
 rsconf_mkdir() {
-    local d=$1
+    declare d=$1
     # Create the directory (and parents) with strict permissions;
     # Subsequent permissions will be created after
     install -d -o root -g root -m 700 "$d"
@@ -358,9 +368,9 @@ rsconf_rerun_required() {
 }
 
 rsconf_run() {
-    local script=$1
+    declare script=$1
     shift
-    local f=${script}_rsconf_component
+    declare f=${script}_rsconf_component
     if ! type "$f" >& /dev/null; then
         install_script_eval "$script.sh"
     elif [[ $rsconf_only_once ]]; then
@@ -371,16 +381,16 @@ rsconf_run() {
 }
 
 rsconf_service_docker_pull() {
-    local image=$1
-    local service=${2:-}
+    declare image=$1
+    declare service=${2:-}
     if [[ $service ]]; then
-        local container_image_id=$(docker inspect --format='{{.Image}}' "$service" 2>/dev/null || true)
-        local prev_id=$(docker inspect --format='{{.Id}}' "$image" 2>/dev/null || true)
+        declare container_image_id=$(docker inspect --format='{{.Image}}' "$service" 2>/dev/null || true)
+        declare prev_id=$(docker inspect --format='{{.Id}}' "$image" 2>/dev/null || true)
     fi
     install_info "docker pull $image (may take awhile)..."
     install_exec docker pull "$image"
     if [[ $service ]]; then
-        local curr_id=$(docker inspect --format='{{.Id}}' "$image" 2>/dev/null || true)
+        declare curr_id=$(docker inspect --format='{{.Id}}' "$image" 2>/dev/null || true)
         if [[ $prev_id != $curr_id || $container_image_id && $container_image_id != $curr_id ]]; then
             install_info "$image: new image, restart $service required"
             rsconf_service_trigger_restart "$service"
@@ -389,13 +399,13 @@ rsconf_service_docker_pull() {
 }
 
 rsconf_service_file_changed() {
-    local path=$1
+    declare path=$1
     rsconf_service_file_changed[$path]=1
 }
 
 rsconf_service_file_changed_check() {
-    local service=$1
-    local w c
+    declare service=$1
+    declare w c
     for w in ${rsconf_service_watch[$service]}; do
         for c in "${!rsconf_service_file_changed[@]}"; do
             if [[ $c == $w || $c =~ ^$w/ ]]; then
@@ -407,7 +417,7 @@ rsconf_service_file_changed_check() {
 }
 
 rsconf_service_prepare() {
-    local service=$1
+    declare service=$1
     rsconf_service_status[$service]=start
     if [[ $service == reboot ]]; then
        if [[ ! ${rsconf_service_watch[$service]:-} ]]; then
@@ -429,7 +439,7 @@ rsconf_service_restart() {
     if [[ ${rsconf_service_no_restart:-} ]]; then
         return
     fi
-    local s
+    declare s
     # Always reload at start. Just easier and more reliable
     systemctl daemon-reload
     for s in ${rsconf_service_order[@]}; do
@@ -467,12 +477,12 @@ rsconf_service_restart() {
 }
 
 rsconf_service_restart_at_end() {
-    local s=$1
+    declare s=$1
     rsconf_service_restart_at_end[$s]=1
 }
 
 rsconf_service_trigger_restart() {
-    local service=$1
+    declare service=$1
     if [[ $service == reboot ]]; then
         rsconf_reboot
         # does not return
@@ -484,16 +494,16 @@ rsconf_service_trigger_restart() {
 }
 
 rsconf_setup_dev() {
-    local host=$1
+    declare host=$1
     export install_channel=dev
     curl "$install_server/$host-netrc" > /root/.netrc
     chmod 400 /root/.netrc
 }
 
 rsconf_user() {
-    local user=$1
-    local uid=$2
-    local exist_uid=$(id -u "$user" 2>/dev/null || true)
+    declare user=$1
+    declare uid=$2
+    declare exist_uid=$(id -u "$user" 2>/dev/null || true)
     rsconf_group "$user" "$gid"
     if [[ $exist_uid ]]; then
         if [[ $exist_uid != $uid ]]; then
@@ -501,7 +511,7 @@ rsconf_user() {
         fi
         return
     fi
-    local flags=()
+    declare flags=()
     #POSIT: <1000 is system
     if [[ $gid < 1000 ]]; then
         flags+=( -r )
@@ -510,13 +520,13 @@ rsconf_user() {
 }
 
 rsconf_yum_install() {
-    local x todo=()
+    declare x todo=()
     for x in "$@"; do
         if ! rpm -q "$x" >& /dev/null; then
             todo+=( "$x" )
         fi
     done
-    local cmd=install
+    declare cmd=install
     if [[ ${rsconf_yum_reinstall:-} ]]; then
         cmd=reinstall
     fi

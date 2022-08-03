@@ -29,7 +29,7 @@ class T(component.T):
         self.buildt.require_component("docker", "network")
         jc, _ = self.j2_ctx_init()
         z = jc.devbox
-        z.setdefault("volumes", {})
+        z.setdefault("volumes", ["jupyter", "src"])
         z.host_d = systemd.unit_run_d(jc, "devbox_" + self.user_name)
         z.secrets = self._gen_host_and_identity_ssh_keys(jc)
         for x, d in ("guest", ".ssh"), ("host", "sshd"):
@@ -49,26 +49,34 @@ class T(component.T):
             return
         jc = self.j2_ctx
         z = jc.devbox
-        v = []
-        x = [
-            # SECURITY: no modifications to run_d or ssh_d
-            [z.host.ssh_d, z.guest.ssh_d, "ro"],
-            [z.run_d, z.run_d, "ro"],
-        ]
-        for d in z.volumes:
-            h = z.host[d]
-            x.append([h, z.guest[d], "rw"])
-            v.append(h)
+        v = [[z.host[v], z.guest[v], "rw"] for v in z.volumes]
+        v.extend(
+            [
+                # SECURITY: no modifications to run_d or ssh_d
+                [z.host.ssh_d, z.guest.ssh_d, "ro"],
+                [z.run_d, z.run_d, "ro"],
+            ],
+        )
         systemd.docker_unit_enable(
             self,
             jc,
             image=jc.devbox.docker_image,
-            volumes=x,
+            volumes=v,
             cmd="/usr/sbin/sshd -D -f '{}'".format(z.guest.ssh_d.join("sshd_config")),
         )
         self.install_access(mode="700", owner=z.run_u)
-        for d in [z.host_d, z.host.ssh_d, *v]:
+        for d in map(lambda x: x[0], v):
             self.install_directory(d)
+            if "src" in str(d):
+                r = ""
+                p = d
+                for c in ("biviosoftware", "home-env"):
+                    p = p.join(c)
+                    self.install_directory(p)
+                    r += f"/{c}"
+                self.append_root_bash(
+                    f"rsconf_clone_repo https://github.com{r}.git {p} {jc.rsconf_db.run_u}"
+                )
         self.install_access(mode="400")
         self.install_resource(z.host.sshd_config, jc)
         for k, v in z.secrets.items():
