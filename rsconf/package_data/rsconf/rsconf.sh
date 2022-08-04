@@ -43,11 +43,11 @@ rsconf_append_authorized_key() {
 rsconf_clone_repo() {
     declare repo=$1
     declare dest=$2
-    declare user=$3
+    declare owner=$3
     if [[ ! -d $dest || ! $(ls -A "$dest") ]]; then
-        git clone "$repo" "$dest"
+        $(umask 027 && git clone "$repo" "$dest")
     fi
-    chown -R "$user": "$dest"
+    chown -R "$owner": "$dest"
 }
 
 rsconf_edit() {
