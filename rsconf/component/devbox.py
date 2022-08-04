@@ -23,22 +23,21 @@ class T(component.T):
 
         if "user_name" not in self:
             for u in self.hdb.devbox.users.keys():
-                t = T(u, self.buildt, user_name=u)
-                self.buildt.build_component(t)
+                self.buildt.build_component(
+                    T(f"{self.name}_{u}", self.buildt, user_name=u)
+                )
             return
         self.buildt.require_component("docker", "network")
         jc, _ = self.j2_ctx_init()
         z = jc.devbox
         z.setdefault("volumes", ["jupyter", "src"])
-        z.host_d = systemd.unit_run_d(jc, "devbox_" + self.user_name)
+        z.host_d = systemd.unit_run_d(jc, self.name)
         z.secrets = self._gen_host_and_identity_ssh_keys(jc)
         for x, d in ("guest", ".ssh"), ("host", "sshd"):
             z[x] = self._gen_paths(z, z[x + "_d"], d)
         z.run_u = jc.rsconf_db.run_u
         # Only additional config for the server is the sshd config.
-        z.run_d = systemd.custom_unit_prepare(
-            self, jc, watch_files=[z.host.ssh_d], run_d=z.host_d
-        )
+        z.run_d = systemd.custom_unit_prepare(self, jc, watch_files=[z.host.ssh_d])
         self._network(jc, z)
 
     def internal_build_write(self):

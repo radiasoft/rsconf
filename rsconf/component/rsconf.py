@@ -8,6 +8,7 @@ from __future__ import absolute_import, division, print_function
 from pykern import pkcollections
 from pykern import pkcompat
 from pykern import pkjson
+from pykern.pkdebug import pkdp
 from rsconf import component
 
 try:
