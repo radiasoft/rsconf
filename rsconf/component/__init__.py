@@ -189,7 +189,7 @@ class T(PKDict):
             host_path = name
             if host_path.ext == ".sh":
                 host_path = host_path.new(ext="")
-            name = self.get("module_name", self.name) + "/" + name.basename
+            name = (self.get("module_name") or self.name) + "/" + name.basename
         self._bash_append_and_dst(
             host_path,
             file_contents=self._render_resource(name, j2_ctx),
