@@ -7,6 +7,7 @@
 from __future__ import absolute_import, division, print_function
 from pykern import pkcompat
 from pykern import pkconfig
+from pykern import pkinspect
 from pykern import pkio
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp, pkdc, pkdlog
@@ -24,9 +25,14 @@ _WILDCARD_TLS = "star"
 
 
 class T(PKDict):
-    def __init__(self, name, buildt, **kwargs):
+    def __init__(self, name, buildt, module_name=None, **kwargs):
         super(T, self).__init__(
-            buildt=buildt, hdb=buildt.hdb, name=name, state=_START, **kwargs
+            buildt=buildt,
+            hdb=buildt.hdb,
+            name=name,
+            state=_START,
+            module_name=module_name,
+            **kwargs,
         )
 
     def append_root_bash(self, *line):
@@ -178,12 +184,12 @@ class T(PKDict):
         )
         return r
 
-    def install_resource(self, name, j2_ctx, host_path=None, module_name=None):
+    def install_resource(self, name, j2_ctx, host_path=None):
         if not host_path:
             host_path = name
             if host_path.ext == ".sh":
                 host_path = host_path.new(ext="")
-            name = (module_name or self.name) + "/" + name.basename
+            name = self.get("module_name", self.name) + "/" + name.basename
         self._bash_append_and_dst(
             host_path,
             file_contents=self._render_resource(name, j2_ctx),

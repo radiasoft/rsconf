@@ -22,7 +22,7 @@ class T(component.T):
         o = pkjson.load_any(f) if f.check() else PKDict()
         res = super().gen_host_and_identity_ssh_keys(
             jc,
-            "devbox/" + self.user_name,
+            self.name,
             visibility="host",
             password=o.setdefault(self.user_name, db.random_string()),
         )
@@ -32,16 +32,18 @@ class T(component.T):
                 res.pkdel(k)
         return res
 
-    def install_resource(self, *args, **kwargs):
-        super().install_resource(*args, module_name="devbox", **kwargs)
-
     def internal_build_compile(self):
         from rsconf import systemd
 
         if "user_name" not in self:
             for u in self.hdb.devbox.users.keys():
                 self.buildt.build_component(
-                    T(f"{self.name}_{u}", self.buildt, user_name=u)
+                    T(
+                        f"{self.name}_{u}",
+                        self.buildt,
+                        user_name=u,
+                        module_name=self.name,
+                    )
                 )
             return
         self.buildt.require_component("docker", "network")
