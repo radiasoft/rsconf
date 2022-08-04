@@ -4,29 +4,18 @@
 :copyright: Copyright (c) 2019 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from pykern import pkio
-from pykern import pkjson
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from rsconf import component
-import subprocess
 
 _PASSWD_SECRET_JSON_F = "devbox_auth.json"
 
 
 class T(component.T):
     def gen_host_and_identity_ssh_keys(self, jc):
-        from rsconf import db
-
-        f = db.secret_path(jc, _PASSWD_SECRET_JSON_F, visibility="host")
-        o = pkjson.load_any(f) if f.check() else PKDict()
         res = super().gen_host_and_identity_ssh_keys(
-            jc,
-            self.name,
-            visibility="host",
-            password=o.setdefault(self.user_name, db.random_string()),
+            jc, "host", password_filename=_PASSWD_SECRET_JSON_F
         )
-        pkjson.dump_pretty(o, filename=f)
         for k in list(res.keys()):
             if k not in ("host_key_f", "identity_pub_f"):
                 res.pkdel(k)

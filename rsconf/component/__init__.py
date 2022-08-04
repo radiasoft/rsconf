@@ -5,8 +5,10 @@
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
+import contextlib
 from pykern import pkcompat
 from pykern import pkio
+from pykern import pkjson
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp, pkdc, pkdlog
 from rsconf import db
@@ -29,7 +31,7 @@ class T(PKDict):
             hdb=buildt.hdb,
             name=name,
             state=_START,
-            module_name=module_name,
+            module_name=module_name or name,
             **kwargs,
         )
 
@@ -82,33 +84,54 @@ class T(PKDict):
         self._root_bash.extend(self._root_bash_aux)
         self.buildt.write_root_bash(self.name, self._root_bash)
 
-    def gen_host_and_identity_ssh_keys(self, j2_ctx, filename, visibility, password=""):
-        res = PKDict()
-        b = db.secret_path(j2_ctx, filename, visibility=visibility, directory=True)
-        res.host_key_f = b.join("host_key")
-        res.host_key_pub_f = res.host_key_f.new(ext="pub")
-        res.identity_f = b.join("identity")
-        res.identity_pub_f = b.join("identity").new(ext="pub")
-        for f, p in (res.host_key_f, ""), (res.identity_f, password or ""):
-            if f.exists():
-                continue
-            subprocess.check_call(
-                [
-                    "ssh-keygen",
-                    "-q",
-                    "-t",
-                    "ed25519",
-                    "-N",
-                    p,
-                    "-C",
-                    j2_ctx.rsconf_db.host,
-                    "-f",
-                    str(f),
-                ],
-                stderr=subprocess.STDOUT,
-                shell=False,
+    def gen_host_and_identity_ssh_keys(
+        self, j2_ctx, visibility, password_filename=None
+    ):
+        @contextlib.contextmanager
+        def _persist_password(password_filename):
+            s = None
+            o = PKDict()
+            if password_filename:
+                s = db.secret_path(j2_ctx, password_filename, visibility=visibility)
+                if s.check():
+                    o = pkjson.load_any(s)
+                o.setdefault(self.user_name, db.random_string())
+            yield o.get(self.user_name, "")
+            if o:
+                pkjson.dump_pretty(o, filename=s)
+
+        with _persist_password(password_filename) as w:
+            res = PKDict()
+            b = db.secret_path(
+                j2_ctx,
+                f"{self.module_name}/{self.user_name}",
+                visibility=visibility,
+                directory=True,
             )
-        return res
+            res.host_key_f = b.join("host_key")
+            res.host_key_pub_f = res.host_key_f.new(ext="pub")
+            res.identity_f = b.join("identity")
+            res.identity_pub_f = b.join("identity").new(ext="pub")
+            for f, p in (res.host_key_f, ""), (res.identity_f, w):
+                if f.exists():
+                    continue
+                subprocess.check_call(
+                    [
+                        "ssh-keygen",
+                        "-q",
+                        "-t",
+                        "ed25519",
+                        "-N",
+                        p,
+                        "-C",
+                        j2_ctx.rsconf_db.host,
+                        "-f",
+                        str(f),
+                    ],
+                    stderr=subprocess.STDOUT,
+                    shell=False,
+                )
+            return res
 
     def has_tls(self, j2_ctx, domain):
         try:

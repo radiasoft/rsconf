@@ -9,14 +9,11 @@ from pykern.pkdebug import pkdp
 from pykern import pkcollections
 from pykern import pkio
 from rsconf import component
-import subprocess
 
 
 class T(component.T):
-    def gen_host_and_identity_ssh_keys(self, jc, z):
-        return super().gen_host_and_identity_ssh_keys(
-            jc, self.name + "/" + z.user, visibility="channel"
-        )
+    def gen_host_and_identity_ssh_keys(self, jc):
+        return super().gen_host_and_identity_ssh_keys(jc, visibility="channel")
 
     def internal_build_compile(self):
         from rsconf import systemd
@@ -28,7 +25,7 @@ class T(component.T):
         self._find_cluster(jc, z)
         z.host_d = z.host_root_d.join(z.user)
         z.setdefault("volumes", {})
-        z.secrets = self.gen_host_and_identity_ssh_keys(jc, z)
+        z.secrets = self.gen_host_and_identity_ssh_keys(jc)
         for x in "guest", "host":
             z[x] = self._gen_paths(jc, z, z.get(x + "_d"))
         z.run_u = jc.rsconf_db.run_u
@@ -90,6 +87,7 @@ class T(component.T):
                     u,
                     z.user,
                 )
+                self.user_name = u
                 z.update(
                     user=u,
                     hosts=hosts[:],
@@ -127,7 +125,7 @@ class T(component.T):
                 )
             else:
                 z.net = net
-            s = self.gen_host_and_identity_ssh_keys(jc, z)
+            s = self.gen_host_and_identity_ssh_keys(jc)
             res.append(
                 pkcollections.Dict(
                     host=h,
