@@ -82,25 +82,21 @@ class T(component.T):
         for k, v in z.secrets.items():
             self.install_abspath(v, z.host[k])
 
-    def _network(self, jc, z):
-        n = self.buildt.get_component("network")
-        z.ip, _ = n.ip_and_net_for_host(jc.rsconf_db.host)
-        z.ssh_port = jc.devbox.users[self.user_name]
-
     def _gen_host_and_identity_ssh_keys(self, jc):
         from rsconf import db
 
-        p = db.random_string()
+        f = db.secret_path(jc, _PASSWD_SECRET_JSON_F, visibility="host")
+        o = pkjson.load_any(f) if f.check() else PKDict()
         res = super()._gen_host_and_identity_ssh_keys(
-            jc, "devbox/" + self.user_name, visibility="host", password=p
+            jc,
+            "devbox/" + self.user_name,
+            visibility="host",
+            password=o.setdefault(self.user_name, db.random_string()),
         )
+        pkjson.dump_pretty(o, filename=f)
         for k in list(res.keys()):
             if k not in ("host_key_f", "identity_pub_f"):
                 res.pkdel(k)
-        f = db.secret_path(jc, _PASSWD_SECRET_JSON_F, visibility="host")
-        o = pkjson.load_any(f) if f.check() else PKDict()
-        o[self.user_name] = p
-        pkjson.dump_pretty(o, filename=f)
         return res
 
     def _gen_paths(self, z, db_d, ssh_d):
@@ -111,3 +107,8 @@ class T(component.T):
         for k, v in z.secrets.items():
             res.pkupdate({k: res.ssh_d.join(v.basename)})
         return res
+
+    def _network(self, jc, z):
+        n = self.buildt.get_component("network")
+        z.ip, _ = n.ip_and_net_for_host(jc.rsconf_db.host)
+        z.ssh_port = jc.devbox.users[self.user_name]

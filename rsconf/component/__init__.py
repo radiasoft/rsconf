@@ -5,11 +5,12 @@
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
-from pykern.pkcollections import PKDict
 from pykern import pkcompat
 from pykern import pkconfig
 from pykern import pkio
+from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp, pkdc, pkdlog
+from rsconf import db
 import hashlib
 import re
 import subprocess
@@ -267,8 +268,6 @@ class T(PKDict):
         )
 
     def secret_path_value(self, filename, gen_secret=None, visibility=None):
-        from rsconf import db
-
         src = db.secret_path(self.hdb, filename, visibility=visibility)
         if src.check():
             return pkio.read_text(src), src
@@ -287,8 +286,6 @@ class T(PKDict):
         )
 
     def tmp_path(self):
-        from rsconf import db
-
         return self.hdb.rsconf_db.tmp_d.join(db.random_string())
 
     def _bash_append(self, host_path, is_file=True, ensure_exists=False, md5=None):
@@ -330,16 +327,14 @@ class T(PKDict):
         return dst
 
     def _gen_host_and_identity_ssh_keys(
-        self, j2_ctx, filename, visibility, password=None
+        self, j2_ctx, filename, visibility, password=""
     ):
-        from rsconf import db
-
         res = PKDict()
         b = db.secret_path(j2_ctx, filename, visibility=visibility, directory=True)
         res.host_key_f = b.join("host_key")
-        res.host_key_pub_f = res.host_key_f + ".pub"
+        res.host_key_pub_f = res.host_key_f.new(ext="pub")
         res.identity_f = b.join("identity")
-        res.identity_pub_f = b.join("identity") + ".pub"
+        res.identity_pub_f = b.join("identity").new(ext="pub")
         for f, p in (res.host_key_f, ""), (res.identity_f, password or ""):
             if f.exists():
                 continue
@@ -372,7 +367,6 @@ class T(PKDict):
 
     def _render_resource(self, name, j2_ctx):
         from pykern import pkjinja
-        from rsconf import db
 
         return self._render_file(
             db.resource_path(j2_ctx, name + pkjinja.RESOURCE_SUFFIX),
@@ -413,7 +407,6 @@ def create_t(name, buildt):
 
 def tls_key_and_crt(j2_ctx, domain):
     from rsconf.pkcli import tls
-    from rsconf import db
 
     src, domains = _find_tls_crt(j2_ctx, domain)
     src_key = src + tls.KEY_EXT
@@ -438,7 +431,6 @@ def _assert_host_path(host_path):
 
 def _find_tls_crt(j2_ctx, domain):
     from rsconf.pkcli import tls
-    from rsconf import db
 
     d = db.secret_path(j2_ctx, TLS_SECRET_SUBDIR, visibility="global")
     for crt, domains in j2_ctx.component.tls_crt.items():
