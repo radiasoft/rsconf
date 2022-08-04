@@ -15,6 +15,23 @@ _PASSWD_SECRET_JSON_F = "devbox_auth.json"
 
 
 class T(component.T):
+    def gen_host_and_identity_ssh_keys(self, jc):
+        from rsconf import db
+
+        f = db.secret_path(jc, _PASSWD_SECRET_JSON_F, visibility="host")
+        o = pkjson.load_any(f) if f.check() else PKDict()
+        res = super().gen_host_and_identity_ssh_keys(
+            jc,
+            "devbox/" + self.user_name,
+            visibility="host",
+            password=o.setdefault(self.user_name, db.random_string()),
+        )
+        pkjson.dump_pretty(o, filename=f)
+        for k in list(res.keys()):
+            if k not in ("host_key_f", "identity_pub_f"):
+                res.pkdel(k)
+        return res
+
     def install_resource(self, *args, **kwargs):
         super().install_resource(*args, module_name="devbox", **kwargs)
 
@@ -32,7 +49,7 @@ class T(component.T):
         z = jc.devbox
         z.setdefault("volumes", ["jupyter", "src"])
         z.host_d = systemd.unit_run_d(jc, self.name)
-        z.secrets = self._gen_host_and_identity_ssh_keys(jc)
+        z.secrets = self.gen_host_and_identity_ssh_keys(jc)
         for x, d in ("guest", ".ssh"), ("host", "sshd"):
             z[x] = self._gen_paths(z, z[x + "_d"], d)
         z.run_u = jc.rsconf_db.run_u
@@ -80,23 +97,6 @@ class T(component.T):
         self.install_resource(z.host.sshd_config, jc)
         for k, v in z.secrets.items():
             self.install_abspath(v, z.host[k])
-
-    def _gen_host_and_identity_ssh_keys(self, jc):
-        from rsconf import db
-
-        f = db.secret_path(jc, _PASSWD_SECRET_JSON_F, visibility="host")
-        o = pkjson.load_any(f) if f.check() else PKDict()
-        res = super()._gen_host_and_identity_ssh_keys(
-            jc,
-            "devbox/" + self.user_name,
-            visibility="host",
-            password=o.setdefault(self.user_name, db.random_string()),
-        )
-        pkjson.dump_pretty(o, filename=f)
-        for k in list(res.keys()):
-            if k not in ("host_key_f", "identity_pub_f"):
-                res.pkdel(k)
-        return res
 
     def _gen_paths(self, z, db_d, ssh_d):
         res = PKDict(ssh_d=db_d.join(ssh_d))

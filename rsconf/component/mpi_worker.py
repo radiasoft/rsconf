@@ -13,6 +13,11 @@ import subprocess
 
 
 class T(component.T):
+    def gen_host_and_identity_ssh_keys(self, jc, z):
+        return super().gen_host_and_identity_ssh_keys(
+            jc, self.name + "/" + z.user, visibility="channel"
+        )
+
     def internal_build_compile(self):
         from rsconf import systemd
 
@@ -23,7 +28,7 @@ class T(component.T):
         self._find_cluster(jc, z)
         z.host_d = z.host_root_d.join(z.user)
         z.setdefault("volumes", {})
-        z.secrets = self._gen_host_and_identity_ssh_keys(jc, z)
+        z.secrets = self.gen_host_and_identity_ssh_keys(jc, z)
         for x in "guest", "host":
             z[x] = self._gen_paths(jc, z, z.get(x + "_d"))
         z.run_u = jc.rsconf_db.run_u
@@ -92,11 +97,6 @@ class T(component.T):
                 )
         assert "user" in z, "host={} not found in clusters".format(h)
 
-    def _gen_host_and_identity_ssh_keys(self, jc, z):
-        return super()._gen_host_and_identity_ssh_keys(
-            jc, self.name + "/" + z.user, visibility="channel"
-        )
-
     def _gen_paths(self, jc, z, d):
         res = pkcollections.Dict()
         res.bin_d = d.join("bin")
@@ -127,7 +127,7 @@ class T(component.T):
                 )
             else:
                 z.net = net
-            s = self._gen_host_and_identity_ssh_keys(jc, z)
+            s = self.gen_host_and_identity_ssh_keys(jc, z)
             res.append(
                 pkcollections.Dict(
                     host=h,
