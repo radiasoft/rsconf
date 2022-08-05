@@ -1,26 +1,15 @@
 # -*- coding: utf-8 -*-
 """Sirepo development in a docker container on a remote machine
 
-:copyright: Copyright (c) 2019 RadiaSoft LLC.  All Rights Reserved.
+:copyright: Copyright (c) 2022 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from rsconf import component
 
-_PASSWD_SECRET_JSON_F = "devbox_auth.json"
-
 
 class T(component.T):
-    def gen_host_and_identity_ssh_keys(self, jc):
-        res = super().gen_host_and_identity_ssh_keys(
-            jc, "host", password_filename=_PASSWD_SECRET_JSON_F
-        )
-        for k in list(res.keys()):
-            if k not in ("host_key_f", "identity_pub_f"):
-                res.pkdel(k)
-        return res
-
     def internal_build_compile(self):
         from rsconf import systemd
 
@@ -40,7 +29,7 @@ class T(component.T):
         z = jc.devbox
         z.setdefault("volumes", ["jupyter", "src"])
         z.host_d = systemd.unit_run_d(jc, self.name)
-        z.secrets = self.gen_host_and_identity_ssh_keys(jc)
+        self._gen_secrets(jc)
         for x, d in ("guest", ".ssh"), ("host", "sshd"):
             z[x] = self._gen_paths(z, z[x + "_d"], d)
         z.run_u = jc.rsconf_db.run_u
@@ -86,7 +75,7 @@ class T(component.T):
                 )
         self.install_access(mode="400")
         self.install_resource(z.host.sshd_config, jc)
-        for k, v in z.secrets.items():
+        for k, v in self.secrets.items():
             self.install_abspath(v, z.host[k])
 
     def _gen_paths(self, z, db_d, ssh_d):
@@ -94,9 +83,13 @@ class T(component.T):
         res.pkupdate(sshd_config=res.ssh_d.join("sshd_config"))
         for e in z.volumes:
             res.pkupdate({e: db_d.join(e)})
-        for k, v in z.secrets.items():
+        for k, v in self.secrets.items():
             res.pkupdate({k: res.ssh_d.join(v.basename)})
         return res
+
+    def _gen_secrets(self, jc):
+        s = super().gen_host_and_identity_ssh_keys(jc, "host", encrypt_identity=True)
+        self.secrets = PKDict({k: s[k] for k in ("host_key_f", "identity_pub_f")})
 
     def _network(self, jc, z):
         n = self.buildt.get_component("network")
