@@ -45,7 +45,7 @@ rsconf_clone_repo() {
     declare dest=$2
     declare owner=$3
     if [[ ! -d $dest || ! $(ls -A "$dest") ]]; then
-        $(umask 027 && git clone "$repo" "$dest")
+        (umask 027 && git clone "$repo" "$dest")
     fi
     chown -R "$owner": "$dest"
 }
