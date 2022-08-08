@@ -95,3 +95,4 @@ class T(component.T):
         n = self.buildt.get_component("network")
         z.ip, _ = n.ip_and_net_for_host(jc.rsconf_db.host)
         z.ssh_port = jc.devbox.users[self.user_name]
+        n.add_public_tcp_ports([z.ssh_port])

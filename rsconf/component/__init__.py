@@ -116,7 +116,9 @@ class T(PKDict):
                         "-t",
                         "ed25519",
                         "-N",
-                        _pass() if encrypt_identity and f == res.identity_f else "",
+                        _pass()
+                        if encrypt_identity and f == res.get("identity_f ")
+                        else "",
                         "-C",
                         j2_ctx.rsconf_db.host,
                         "-f",
