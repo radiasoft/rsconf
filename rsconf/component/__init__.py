@@ -83,7 +83,7 @@ class T(PKDict):
         self._root_bash.extend(self._root_bash_aux)
         self.buildt.write_root_bash(self.name, self._root_bash)
 
-    def gen_host_and_identity_ssh_keys(
+    def gen_identity_and_host_ssh_keys(
         self, j2_ctx, visibility, encrypt_identity=False
     ):
         def _pass():
@@ -104,7 +104,7 @@ class T(PKDict):
             visibility=visibility,
             directory=True,
         )
-        for x in "identity", "host_key":
+        for x in "host_key", "identity":
             y = tuple((f"{x}{s}_f", b.join(x).new(ext=s[1:])) for s in ("", "_pub"))
             res.update(y)
             f = y[0][1]

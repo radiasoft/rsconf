@@ -12,9 +12,6 @@ from rsconf import component
 
 
 class T(component.T):
-    def gen_host_and_identity_ssh_keys(self, jc):
-        return super().gen_host_and_identity_ssh_keys(jc, visibility="channel")
-
     def internal_build_compile(self):
         from rsconf import systemd
 
@@ -25,7 +22,7 @@ class T(component.T):
         self._find_cluster(jc, z)
         z.host_d = z.host_root_d.join(z.user)
         z.setdefault("volumes", {})
-        z.secrets = self.gen_host_and_identity_ssh_keys(jc)
+        z.secrets = self._gen_secrets(jc)
         for x in "guest", "host":
             z[x] = self._gen_paths(jc, z, z.get(x + "_d"))
         z.run_u = jc.rsconf_db.run_u
@@ -109,6 +106,9 @@ class T(component.T):
             res[k] = d.join(v.basename)
         return res
 
+    def _gen_secrets(self, jc):
+        return self.gen_identity_and_host_ssh_keys(jc, visibility="channel")
+
     def _prepare_hosts(self, jc, z):
         nc = self.buildt.get_component("network")
         z.ip, _ = nc.ip_and_net_for_host(jc.rsconf_db.host)
@@ -125,7 +125,7 @@ class T(component.T):
                 )
             else:
                 z.net = net
-            s = self.gen_host_and_identity_ssh_keys(jc)
+            s = self._gen_secrets(jc)
             res.append(
                 pkcollections.Dict(
                     host=h,

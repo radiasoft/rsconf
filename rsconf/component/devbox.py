@@ -88,7 +88,7 @@ class T(component.T):
         return res
 
     def _gen_secrets(self, jc):
-        s = super().gen_host_and_identity_ssh_keys(jc, "host", encrypt_identity=True)
+        s = super().gen_identity_and_host_ssh_keys(jc, "host", encrypt_identity=True)
         self.secrets = PKDict({k: s[k] for k in ("host_key_f", "identity_pub_f")})
 
     def _network(self, jc, z):
