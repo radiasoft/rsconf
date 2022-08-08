@@ -9,7 +9,6 @@ from pykern.pkdebug import pkdp
 from pykern import pkcollections
 from pykern import pkio
 from rsconf import component
-import subprocess
 
 
 class T(component.T):
@@ -23,7 +22,7 @@ class T(component.T):
         self._find_cluster(jc, z)
         z.host_d = z.host_root_d.join(z.user)
         z.setdefault("volumes", {})
-        z.secrets = self._gen_keys(jc, z, jc.rsconf_db.host)
+        z.secrets = self._gen_secrets(jc)
         for x in "guest", "host":
             z[x] = self._gen_paths(jc, z, z.get(x + "_d"))
         z.run_u = jc.rsconf_db.run_u
@@ -85,47 +84,13 @@ class T(component.T):
                     u,
                     z.user,
                 )
+                self.user_name = u
                 z.update(
                     user=u,
                     hosts=hosts[:],
                     is_first=hosts[0] == h,
                 )
         assert "user" in z, "host={} not found in clusters".format(h)
-
-    def _gen_keys(self, jc, z, host):
-        from rsconf import db
-
-        res = pkcollections.Dict()
-        b = db.secret_path(
-            jc,
-            self.name + "/" + z.user,
-            visibility="channel",
-        )
-        pkio.mkdir_parent(b)
-        res.host_key_f = b.join("host_key")
-        res.host_key_pub_f = res.host_key_f + ".pub"
-        res.identity_f = b.join("identity")
-        res.identity_pub_f = b.join("identity") + ".pub"
-        for f in res.host_key_f, res.identity_f:
-            if f.exists():
-                continue
-            subprocess.check_call(
-                [
-                    "ssh-keygen",
-                    "-q",
-                    "-t",
-                    "ed25519",
-                    "-N",
-                    "",
-                    "-C",
-                    jc.rsconf_db.host,
-                    "-f",
-                    str(f),
-                ],
-                stderr=subprocess.STDOUT,
-                shell=False,
-            )
-        return res
 
     def _gen_paths(self, jc, z, d):
         res = pkcollections.Dict()
@@ -140,6 +105,9 @@ class T(component.T):
         for k, v in z.secrets.items():
             res[k] = d.join(v.basename)
         return res
+
+    def _gen_secrets(self, jc):
+        return self.gen_identity_and_host_ssh_keys(jc, visibility="channel")
 
     def _prepare_hosts(self, jc, z):
         nc = self.buildt.get_component("network")
@@ -157,7 +125,7 @@ class T(component.T):
                 )
             else:
                 z.net = net
-            s = self._gen_keys(jc, z, h)
+            s = self._gen_secrets(jc)
             res.append(
                 pkcollections.Dict(
                     host=h,

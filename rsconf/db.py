@@ -312,7 +312,7 @@ def resource_path(hdb, filename):
     return pkresource.filename(filename)
 
 
-def secret_path(hdb, filename, visibility=None, qualifier=None):
+def secret_path(hdb, filename, visibility=None, qualifier=None, directory=False):
     if visibility:
         assert (
             visibility in VISIBILITY_LIST
@@ -329,7 +329,7 @@ def secret_path(hdb, filename, visibility=None, qualifier=None):
     )
     p.append(filename)
     res = hdb.rsconf_db.secret_d.join(*p)
-    pkio.mkdir_parent_only(res)
+    pkio.mkdir_parent(res) if directory else pkio.mkdir_parent_only(res)
     return res
 
 

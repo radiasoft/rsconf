@@ -5,11 +5,12 @@
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
-from pykern.pkcollections import PKDict
 from pykern import pkcompat
-from pykern import pkconfig
 from pykern import pkio
+from pykern import pkjson
+from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp, pkdc, pkdlog
+from rsconf import db
 import hashlib
 import re
 import subprocess
@@ -23,12 +24,14 @@ _WILDCARD_TLS = "star"
 
 
 class T(PKDict):
-    def __init__(self, name, buildt):
+    def __init__(self, name, buildt, module_name=None, **kwargs):
         super(T, self).__init__(
             buildt=buildt,
             hdb=buildt.hdb,
             name=name,
             state=_START,
+            module_name=module_name or name,
+            **kwargs,
         )
 
     def append_root_bash(self, *line):
@@ -79,6 +82,50 @@ class T(PKDict):
         self.append_root_bash("}")
         self._root_bash.extend(self._root_bash_aux)
         self.buildt.write_root_bash(self.name, self._root_bash)
+
+    def gen_identity_and_host_ssh_keys(
+        self, j2_ctx, visibility, encrypt_identity=False
+    ):
+        def _pass():
+            s = db.secret_path(
+                j2_ctx, f"{self.module_name}_ssh_passphrase.json", visibility=visibility
+            )
+            o = pkjson.load_any(s) if s.exists() else PKDict()
+            p = o.get(self.user_name)
+            if p is None:
+                o[self.user_name] = p = db.random_string()
+                pkjson.dump_pretty(o, filename=s)
+            return p
+
+        res = PKDict()
+        b = db.secret_path(
+            j2_ctx,
+            f"{self.module_name}/{self.user_name}",
+            visibility=visibility,
+            directory=True,
+        )
+        for x in "host_key", "identity":
+            y = tuple((f"{x}{s}_f", b.join(x).new(ext=s[1:])) for s in ("", "_pub"))
+            res.update(y)
+            f = y[0][1]
+            if not f.exists():
+                subprocess.check_call(
+                    [
+                        "ssh-keygen",
+                        "-q",
+                        "-t",
+                        "ed25519",
+                        "-N",
+                        _pass() if encrypt_identity and f == res.identity_f else "",
+                        "-C",
+                        j2_ctx.rsconf_db.host,
+                        "-f",
+                        str(f),
+                    ],
+                    stderr=subprocess.STDOUT,
+                    shell=False,
+                )
+        return res
 
     def has_tls(self, j2_ctx, domain):
         try:
@@ -157,7 +204,7 @@ class T(PKDict):
             host_path = name
             if host_path.ext == ".sh":
                 host_path = host_path.new(ext="")
-            name = self.name + "/" + name.basename
+            name = self.module_name + "/" + name.basename
         self._bash_append_and_dst(
             host_path,
             file_contents=self._render_resource(name, j2_ctx),
@@ -270,8 +317,6 @@ class T(PKDict):
         )
 
     def secret_path_value(self, filename, gen_secret=None, visibility=None):
-        from rsconf import db
-
         src = db.secret_path(self.hdb, filename, visibility=visibility)
         if src.check():
             return pkio.read_text(src), src
@@ -290,8 +335,6 @@ class T(PKDict):
         )
 
     def tmp_path(self):
-        from rsconf import db
-
         return self.hdb.rsconf_db.tmp_d.join(db.random_string())
 
     def _bash_append(self, host_path, is_file=True, ensure_exists=False, md5=None):
@@ -343,7 +386,6 @@ class T(PKDict):
 
     def _render_resource(self, name, j2_ctx):
         from pykern import pkjinja
-        from rsconf import db
 
         return self._render_file(
             db.resource_path(j2_ctx, name + pkjinja.RESOURCE_SUFFIX),
@@ -384,7 +426,6 @@ def create_t(name, buildt):
 
 def tls_key_and_crt(j2_ctx, domain):
     from rsconf.pkcli import tls
-    from rsconf import db
 
     src, domains = _find_tls_crt(j2_ctx, domain)
     src_key = src + tls.KEY_EXT
@@ -409,7 +450,6 @@ def _assert_host_path(host_path):
 
 def _find_tls_crt(j2_ctx, domain):
     from rsconf.pkcli import tls
-    from rsconf import db
 
     d = db.secret_path(j2_ctx, TLS_SECRET_SUBDIR, visibility="global")
     for crt, domains in j2_ctx.component.tls_crt.items():
