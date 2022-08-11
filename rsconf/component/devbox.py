@@ -60,8 +60,8 @@ class T(component.T):
             volumes=v,
             cmd="/usr/sbin/sshd -D -f '{}'".format(z.guest.ssh_d.join("sshd_config")),
         )
-        self.install_access(mode="700", owner=z.run_u)
         for d in map(lambda x: x[0], v):
+            self.install_access(mode="700", owner=z.run_u)
             self.install_directory(d)
             if "src" in str(d):
                 r = ""
@@ -74,10 +74,10 @@ class T(component.T):
                     f"rsconf_clone_repo https://github.com{r}.git {p} {jc.rsconf_db.run_u}"
                 )
             if "jupyter" in str(d):
-                with self.install_access_temp(mode="644"):
-                    self.install_resource(
-                        "devbox/jupyter_bashrc", jc, host_path=d.join("bashrc")
-                    )
+                self.install_access(mode="644")
+                self.install_resource(
+                    "devbox/jupyter_bashrc", jc, host_path=d.join("bashrc")
+                )
 
         self.install_access(mode="400")
         self.install_resource(z.host.sshd_config, jc)
@@ -102,5 +102,5 @@ class T(component.T):
         z.ip = n.unchecked_public_ip()
         z.ssh_port = jc.devbox.users[self.user_name]
         n.add_public_tcp_ports([str(z.ssh_port)])
-        z.flask_port = z.ssh_port + 1000
+        z.flask_port = z.ssh_port + z.ssh_service_port_difference
         z.supervisor_port = z.flask_port + 1
