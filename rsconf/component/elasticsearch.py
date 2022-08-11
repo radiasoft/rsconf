@@ -53,7 +53,7 @@ class T(component.T):
         
         # TODO: trim super-user password file
         
-        # replace elasticsearch config
+        # TODO: replace elasticsearch config with one generated from template
         self.append_root_bash('cat /copy/file/name /target/file/name')
 
 # Edit/replace elasticsearch.yml config
