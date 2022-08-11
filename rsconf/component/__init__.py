@@ -11,6 +11,7 @@ from pykern import pkjson
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp, pkdc, pkdlog
 from rsconf import db
+import contextlib
 import hashlib
 import re
 import subprocess
@@ -161,6 +162,14 @@ class T(PKDict):
                 **self._install_access
             ),
         )
+
+    @contextlib.contextmanager
+    def install_access_temp(self, **kwargs):
+        p = self._install_access.copy()
+        self.install_access(**kwargs)
+        yield
+        self._install_access = p
+        self.install_access(**self._install_access)
 
     def install_directory(self, host_path):
         assert (

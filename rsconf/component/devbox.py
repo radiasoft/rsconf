@@ -73,6 +73,12 @@ class T(component.T):
                 self.append_root_bash(
                     f"rsconf_clone_repo https://github.com{r}.git {p} {jc.rsconf_db.run_u}"
                 )
+            if "jupyter" in str(d):
+                with self.install_access_temp(mode="644"):
+                    self.install_resource(
+                        "devbox/jupyter_bashrc", jc, host_path=d.join("bashrc")
+                    )
+
         self.install_access(mode="400")
         self.install_resource(z.host.sshd_config, jc)
         for k, v in self.secrets.items():
@@ -96,3 +102,5 @@ class T(component.T):
         z.ip = n.unchecked_public_ip()
         z.ssh_port = jc.devbox.users[self.user_name]
         n.add_public_tcp_ports([str(z.ssh_port)])
+        z.flask_port = z.ssh_port + 1000
+        z.supervisor_port = z.flask_port + 1

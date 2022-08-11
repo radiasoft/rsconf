@@ -1,0 +1,13 @@
+#! /bin/bash
+set -euo pipefail
+
+{% if devbox.get('sirepo_packages')}
+export SIREPO_FEATURE_CONFIG_PACKAGE_PATH='{{ devbox.sirepo_packages | join(':') }}'
+{% endif %}
+{% if devbox.get('sirepo_sim_types')}
+export SIREPO_FEATURE_CONFIG_SIM_TYPES='{{ devbox.sirepo_sim_types | join(':') }}'
+{% endif %}
+export SIREPO_PKCLI_SERVICE_PORT={{ devbox.flask_port }}
+export SIREPO_PKCLI_JOB_SUPERVISOR_PORT={{ devbox.supervisor_port }}
+export SIREPO_JOB_DRIVER_LOCAL_SUPERVISOR_URI=http://127.0.0.1:{{ devbox.supervisor_port }}
+export SIREPO_JOB_API_SUPERVISOR_URI=http://127.0.0.1:{{ devbox.supervisor_port }}
