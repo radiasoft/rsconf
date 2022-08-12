@@ -60,6 +60,7 @@ class T(component.T):
             volumes=v,
             cmd="/usr/sbin/sshd -D -f '{}'".format(z.guest.ssh_d.join("sshd_config")),
         )
+        j = None
         for d in map(lambda x: x[0], v):
             self.install_access(mode="700", owner=z.run_u)
             self.install_directory(d)
@@ -75,10 +76,10 @@ class T(component.T):
                 )
             if "jupyter" in str(d):
                 self.install_access(mode="644")
-                self.install_resource(
+                j = self.install_resource(
                     "devbox/jupyter_bashrc", jc, host_path=d.join("bashrc")
                 )
-
+        self._jupyter(z, j)
         self.install_access(mode="400")
         self.install_resource(z.host.sshd_config, jc)
         for k, v in self.secrets.items():
@@ -97,10 +98,27 @@ class T(component.T):
         s = super().gen_identity_and_host_ssh_keys(jc, "host", encrypt_identity=True)
         self.secrets = PKDict({k: s[k] for k in ("host_key_f", "identity_pub_f")})
 
+    def _jupyter(self, z, jupyter_bashrc_path):
+        for n in ("package_path", "sim_types"):
+            if n in z:
+                self.rsconf_append(
+                    jupyter_bashrc_path,
+                    f"export SIREPO_FEATURE_CONFIG_{n.upper()}={':'.join(z[n])}",
+                )
+        z.service_port = z.ssh_port + z.ssh_service_port_difference
+        z.job_supervisor_port = z.service_port + 1
+        for n in ("service_port", "job_supervisor_port"):
+            self.rsconf_append(
+                jupyter_bashrc_path, f"export SIREPO_PKCLI_{n.upper()}={z[n]}"
+            )
+        for n in ("driver_local", "api"):
+            self.rsconf_append(
+                jupyter_bashrc_path,
+                f"export SIREPO_JOB_{n.upper()}_SUPERVISOR_URI=http://127.0.0.1:{z.job_supervisor_port}",
+            )
+
     def _network(self, jc, z):
         n = self.buildt.get_component("network")
-        z.ip = n.unchecked_public_ip()
+        z.ip = n.unchecked_public_ip() or n.ip_and_net_for_host(jc.rsconf_db.host)[0]
         z.ssh_port = jc.devbox.users[self.user_name]
         n.add_public_tcp_ports([str(z.ssh_port)])
-        z.flask_port = z.ssh_port + z.ssh_service_port_difference
-        z.supervisor_port = z.flask_port + 1
