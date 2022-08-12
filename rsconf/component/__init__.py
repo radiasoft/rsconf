@@ -211,6 +211,7 @@ class T(PKDict):
             host_path,
             file_contents=self._render_resource(name, j2_ctx),
         )
+        return host_path
 
     def install_secret_path(
         self, filename, host_path, gen_secret=None, visibility=None
