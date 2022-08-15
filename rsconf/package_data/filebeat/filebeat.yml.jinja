@@ -132,24 +132,22 @@ setup.kibana:
 # Configure what output to use when sending the data collected by the beat.
 
 # ---------------------------- Elasticsearch Output ----------------------------
-# !!! TODO: ADD SECRET INFO TO RSCONF AND REFERENCE HERE
-# ------------------------------------------------------------------------------
 output.elasticsearch:
-  # Array of hosts to connect to, format: ["0.0.0.0:8080"]
-  hosts: {{ filebeat.hosts }}
+  # Array of hosts to connect to (ex. ["0.0.0.0:8080"])
+  hosts: ["{{ hosts }}"]
   ssl:
     enabled: true
-    # ca fingerprint format: "fingerprint"
-    ca_trusted_fingerprint: {{ filebeat.ca_fingerprint }}
+    # ca fingerprint format (ex. "fingerprint")
+    ca_trusted_fingerprint: "{{ ca_fingerprint }}"
 
-  # Protocol - either `http` (default) or `https`, format: "https"
-  protocol: {{ filebeat.protocol }}
+  # Protocol - either `http` (default) or `https` (ex. "https")
+  protocol: "{{ protocol }}"
 
   # Authentication credentials - either API key or username/password.
   #api_key: "id:api_key"
-  # username and password format: "user/pass"
-  username: {{ filebeat.username }}
-  password: {{ filebeat.password }}
+  # username and password format (ex. "username/password")
+  username: "{{ username }}"
+  password: "{{ password }}"
 # ------------------------------ Logstash Output -------------------------------
 #output.logstash:
   # The Logstash hosts

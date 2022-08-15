@@ -87,10 +87,10 @@ path.logs: /var/log/elasticsearch
 #
 #action.destructive_requires_name: false
 
-#----------------------- BEGIN SECURITY AUTO CONFIGURATION -----------------------
+#----------------------- BEGIN GENERATED SECURITY CONFIGURATION -----------------------
 #
 # The following settings, TLS certificates, and keys have been automatically
-# generated to configure Elasticsearch security features on 09-08-2022 20:37:20
+# generated to configure Elasticsearch security features
 #
 # --------------------------------------------------------------------------------
 
@@ -113,12 +113,19 @@ xpack.security.transport.ssl:
 # Create a new cluster with the current node only
 # Additional nodes can still join the cluster later
 # Master node name must be in bracketed quotes: ["name"]
-cluster.initial_master_nodes: {{ elasticsearch.host_name }}
+cluster.initial_master_nodes: ["{{ host_name }}"]
+
+# By default Elasticsearch is only accessible on localhost. Set a different address here to expose this node on the network
+# Unquoted ip address (ex. 0.0.0.0)
+network.host: {{ host_ip }}
+
+# By default Elasticsearch listens for HTTP traffic on the first free port it finds starting at 9200. Set a specific HTTP port here
+# Unquoted port (ex. 9200)
+http.port: 
 
 # Allow HTTP API connections from anywhere
 # Connections are encrypted and require user authentication
-# host IP must be unquoted: 0.0.0.0
-http.host: {{ elasticsearch.host_ip }}
+http.host: 0.0.0.0
 
 # Allow other nodes to join the cluster from anywhere
 # Connections are encrypted and mutually authenticated

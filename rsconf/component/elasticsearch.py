@@ -3,12 +3,27 @@ u"""create elasticsearch configuration
 :copyright: NA
 :license: NA
 """
-
+import os
 from __future__ import absolute_import, division, print_function
 from pykern.pkcollections import PKDict
 from rsconf import component
 from pykern import pkio
 from pathlib import Path
+from jinja2 import FileSystemLoader, Environment
+
+# helper function for rendering elasticsearch config
+def render_config(host_name, host_ip, host_port):
+    template_dir = "/home/vagrant/src/radiasoft/rsconf/rsconf/package_data/elasticsearch"
+    env = Environment(loader=FileSystemLoader(template_dir))
+    template = env.get_template("elasticsearch.yml.jinja")
+    return template.render(host_name=host_name, host_ip=host_ip, host_port=host_port)
+    
+# helper function for creating elasticsearch API command for creating a user
+def create_user(username, password, roles, full_name, email):
+    template_dir = "/home/vagrant/src/radiasoft/rsconf/rsconf/package_data/elasticsearch"
+    env = Environment(loader=FileSystemLoader(template_dir))
+    template = env.get_template("user_request.txt.jinja")
+    return template.render(username=username, password=password, roles=roles, full_name=full_name, email=email)
 
 class T(component.T):
 
@@ -25,7 +40,7 @@ class T(component.T):
         self.append_root_bash('sudo rpm --import https://packages.elastic.co/GPG-KEY-elasticsearch')
         
         # move elastic.repo file into /etc/yum.repos.d
-        path = Path('/etc/yum.repos.d/elastic.repo') # should check for repo in python or bash script ??
+        path = Path('/etc/yum.repos.d/elastic.repo')
         if path.is_file():
             self.append_root_bash('echo Elastic Yum Repo: Found by Elasticsearch')
         else: 
@@ -45,17 +60,19 @@ class T(component.T):
         # print finished initial install
         self.append_root_bash('echo "Elasticsearch P1 Complete: Initial Install"')
         
-        # Start Elasticsearch service
+        # start Elasticsearch service
         self.append_root_bash('sudo service elasticsearch start')
         
-        # generate new super-user password and save to 'secret'
+        # TODO: generate new super-user password and save to 'secret', still need to trim file
         self.append_root_bash('sudo /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic > /home/vagrant/src/radiasoft/rsconf/rsconf/package_data/elasticsearch/master_password.txt')
         
-        # TODO: trim super-user password file
+        # generate bash command for ship-only Filebeat user and run
+        generate_user = create_user("shipperNode", "very-secure-password", "beats_system", "Filebeat Shipper", "bernerakownt@gmail.com")
+        self.append_root_bash(generate_user)
         
-        # TODO: replace elasticsearch config with one generated from template
-        self.append_root_bash('cat /copy/file/name /target/file/name')
-
-# Edit/replace elasticsearch.yml config
-# - Change network host
-# - Change http port
+        # generate new elasticsearch config and write it to package_data before replacing existing YAML
+        generated_config = render_config(host_name="NAME", host_ip="ADDRESS", host_port="PORT")
+        file = open("/home/vagrant/src/radiasoft/rsconf/rsconf/package_data/elasticsearch/elasticsearch.yml", "w")
+        file.write(generated_config)
+        file.close()
+        self.append_root_bash("sudo cat /home/vagrant/src/radiasoft/rsconf/rsconf/package_data/elasticsearch/elasticsearch.yml > /etc/elasticsearch/elasticsearch.yml")

@@ -1,0 +1,9 @@
+curl -X POST "localhost:9200/_security/user/{{ username }}?pretty" -H 'Content-Type: application/json' -d'
+{
+  "password" : "{{ password }}",
+  "roles" : [ "{{ roles }}" ],
+  "full_name" : "{{ full_name }}",
+  "email" : "{{ email }}",
+  "metadata" : {}
+}
+'
