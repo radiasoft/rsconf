@@ -429,6 +429,18 @@ host:
         on_calendar: "1 17"
         secondary_copy_d: /bkp_copy
         secondary_setup_f: etc/secondary_setup.sh
+      devbox:
+        docker_image: radiasoft/beamsim-jupyter
+        guest_d: /home/vagrant/
+        package_path:
+          - sirepo
+        sim_types:
+          - elegant
+          - srw
+        ssh_service_port_difference: 100
+        users:
+          devtech3: 3100
+          fullstackdude: 3101
       jupyterhub:
         jupyter_docker_image: radiasoft/custom-jupyter:latest
         jupyter_docker_image_is_local: true
@@ -479,6 +491,7 @@ host:
         myhostname: 'v4.radia.run'
       rsconf_db:
         components:
+          - devbox
           - nfs_client
           - nfs_server
           - bkp

@@ -5,12 +5,15 @@ rsconf_require network
 rsconf_require base_users
 rsconf_require logrotate
 rsconf_require base_all
+rsconf_require db_bkp
+rsconf_require docker
+rsconf_require devbox_devtech3
+rsconf_require devbox_fullstackdude
+rsconf_require devbox
 rsconf_require nfs_client
 rsconf_require nfs_server
 rsconf_require bkp
-rsconf_require db_bkp
 rsconf_require comsol
-rsconf_require docker
 rsconf_require nginx
 rsconf_require sirepo_jupyterhub
 rsconf_require sirepo_job_supervisor

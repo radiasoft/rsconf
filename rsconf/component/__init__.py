@@ -295,19 +295,26 @@ class T(PKDict):
         self.service_prepare(watch_files, name="reboot")
 
     def rsconf_append(self, path, line_or_grep, line=None):
-        l = "rsconf_edit_no_change_res=0 rsconf_append '{}' '{}'".format(
-            path, line_or_grep
+        l = " ".join(
+            (
+                "rsconf_edit_no_change_res=0 rsconf_append",
+                _bash_quote(path),
+                _bash_quote(line_or_grep),
+            )
         )
-        if not line is None:
-            l += " '{}'".format(line)
+        if line is not None:
+            l += " " + _bash_quote(line)
         self.append_root_bash(l)
 
     def rsconf_edit(self, path, egrep, perl):
         self.append_root_bash(
-            "rsconf_edit_no_change_res=0 rsconf_edit '{}' '{}' '{}'".format(
-                path,
-                egrep,
-                perl,
+            " ".join(
+                (
+                    "rsconf_edit_no_change_res=0 rsconf_edit",
+                    _bash_quote(path),
+                    _bash_quote(egrep),
+                    _bash_quote(perl),
+                )
             ),
         )
 
@@ -449,6 +456,11 @@ def _assert_host_path(host_path):
     assert not "'" in str(host_path), "{}: host_path contains single quote (')".format(
         host_path
     )
+
+
+def _bash_quote(value):
+    v = str(value).replace("\\", r"\\").replace("'", r"\'")
+    return f"$'{v}'"
 
 
 def _find_tls_crt(j2_ctx, domain):
