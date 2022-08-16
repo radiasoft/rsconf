@@ -114,7 +114,7 @@ class T(component.T):
             if n in z:
                 _env(f"SIREPO_FEATURE_CONFIG_{n.upper()}", ":".join(z[n]))
         z.service_port = z.ssh_port + z.ssh_service_port_difference
-        z.job_supervisor_port = z.service_port + 1
+        z.job_supervisor_port = z.service_port + z.ssh_service_port_difference
         for n in ("service_port", "job_supervisor_port"):
             _env(f"SIREPO_PKCLI_{n.upper()}", z[n])
         for n in ("DRIVER_LOCAL", "API"):
