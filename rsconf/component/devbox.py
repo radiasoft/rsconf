@@ -109,7 +109,6 @@ class T(component.T):
             )
 
         self.install_access(mode="600")
-        pkdp(path)
         self.install_ensure_file_exists(path)
         for n in ("package_path", "sim_types"):
             if n in z:
