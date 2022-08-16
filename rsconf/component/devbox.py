@@ -74,12 +74,9 @@ class T(component.T):
                 self.append_root_bash(
                     f"rsconf_clone_repo https://github.com{r}.git {p} {jc.rsconf_db.run_u}"
                 )
-            if "jupyter" in str(d):
-                self.install_access(mode="644")
-                j = self.install_resource(
-                    "devbox/jupyter_bashrc", jc, host_path=d.join("bashrc")
-                )
-        self._jupyter(z, j)
+                if "jupyter" in str(d):
+                    j = d.join("bashrc")
+        self._jupyter_bashrc(z, j)
         self.install_access(mode="400")
         self.install_resource(z.host.sshd_config, jc)
         for k, v in self.secrets.items():
@@ -98,23 +95,30 @@ class T(component.T):
         s = super().gen_identity_and_host_ssh_keys(jc, "host", encrypt_identity=True)
         self.secrets = PKDict({k: s[k] for k in ("host_key_f", "identity_pub_f")})
 
-    def _jupyter(self, z, jupyter_bashrc_path):
+    def _jupyter_bashrc(self, z, path):
+        def _env(name, value):
+            if "'" in value:
+                raise ValueError(
+                    f"single quote in value={value} of bash variable name={name}"
+                )
+            self.rsconf_append(
+                path,
+                f"export {name}='{value}'",
+            )
+
+        self.install_access(mode="600")
+        self.install_ensure_file_exists(path)
         for n in ("package_path", "sim_types"):
             if n in z:
-                self.rsconf_append(
-                    jupyter_bashrc_path,
-                    f"export SIREPO_FEATURE_CONFIG_{n.upper()}={':'.join(z[n])}",
-                )
+                _env(f"SIREPO_FEATURE_CONFIG_{n.upper()}", ":".join(z[n]))
         z.service_port = z.ssh_port + z.ssh_service_port_difference
         z.job_supervisor_port = z.service_port + 1
         for n in ("service_port", "job_supervisor_port"):
-            self.rsconf_append(
-                jupyter_bashrc_path, f"export SIREPO_PKCLI_{n.upper()}={z[n]}"
-            )
-        for n in ("driver_local", "api"):
-            self.rsconf_append(
-                jupyter_bashrc_path,
-                f"export SIREPO_JOB_{n.upper()}_SUPERVISOR_URI=http://127.0.0.1:{z.job_supervisor_port}",
+            _env(f"SIREPO_PKCLI_{n.upper()}", z[n])
+        for n in ("DRIVER_LOCAL", "API"):
+            _env(
+                f"SIREPO_JOB_{n}_SUPERVISOR_URI",
+                f"http://127.0.0.1:{z.job_supervisor_port}",
             )
 
     def _network(self, jc, z):
