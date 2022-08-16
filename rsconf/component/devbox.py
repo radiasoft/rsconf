@@ -74,8 +74,8 @@ class T(component.T):
                 self.append_root_bash(
                     f"rsconf_clone_repo https://github.com{r}.git {p} {jc.rsconf_db.run_u}"
                 )
-                if "jupyter" in str(d):
-                    j = d.join("bashrc")
+            if "jupyter" in str(d):
+                j = d.join("bashrc")
         self._jupyter_bashrc(z, j)
         self.install_access(mode="400")
         self.install_resource(z.host.sshd_config, jc)
@@ -97,16 +97,19 @@ class T(component.T):
 
     def _jupyter_bashrc(self, z, path):
         def _env(name, value):
-            if "'" in value:
+            v = str(value)
+            # TODO probably could recursively quote
+            if "'" in v:
                 raise ValueError(
-                    f"single quote in value={value} of bash variable name={name}"
+                    f"single quote in value={v} of bash variable name={name}"
                 )
             self.rsconf_append(
                 path,
-                f"export {name}='{value}'",
+                f"export {name}='{v}'",
             )
 
         self.install_access(mode="600")
+        pkdp(path)
         self.install_ensure_file_exists(path)
         for n in ("package_path", "sim_types"):
             if n in z:

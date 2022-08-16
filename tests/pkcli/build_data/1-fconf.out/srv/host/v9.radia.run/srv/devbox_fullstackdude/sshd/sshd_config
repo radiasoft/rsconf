@@ -1,0 +1,6 @@
+AuthorizedKeysFile /home/vagrant/.ssh/identity.pub
+HostKey /home/vagrant/.ssh/host_key
+ListenAddress 216.17.132.33:3101
+PasswordAuthentication no
+PrintLastLog no
+Protocol 2
