@@ -4,3 +4,4 @@ ListenAddress 216.17.132.33:3100
 PasswordAuthentication no
 PrintLastLog no
 Protocol 2
+X11Forwarding yes

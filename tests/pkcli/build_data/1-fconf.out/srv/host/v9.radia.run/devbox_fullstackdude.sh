@@ -4,7 +4,7 @@ rsconf_service_prepare 'devbox_fullstackdude' '/etc/systemd/system/devbox_fullst
 rsconf_install_access '700' 'vagrant' 'vagrant'
 rsconf_install_directory '/srv/devbox_fullstackdude'
 rsconf_install_access '500' 'vagrant' 'vagrant'
-rsconf_install_file '/srv/devbox_fullstackdude/cmd' '7303e61dd1dd1c35b04db8d1c4a1c013'
+rsconf_install_file '/srv/devbox_fullstackdude/cmd' 'cdcf85170cfe88770e11b1fdb2062550'
 rsconf_install_file '/srv/devbox_fullstackdude/env' '22e03a134cc868bb12094d8dc118a6c4'
 rsconf_install_file '/srv/devbox_fullstackdude/remove' '6bd04616c98ad5b8a6c51ed243001c78'
 rsconf_install_file '/srv/devbox_fullstackdude/start' '506cca4b3e984ee51359a99ad0c3a684'
@@ -32,7 +32,7 @@ rsconf_edit_no_change_res=0 rsconf_append $'/srv/devbox_fullstackdude/jupyter/ba
 rsconf_edit_no_change_res=0 rsconf_append $'/srv/devbox_fullstackdude/jupyter/bashrc' $'export SIREPO_JOB_DRIVER_LOCAL_SUPERVISOR_URI=\'http://127.0.0.1:3301\''
 rsconf_edit_no_change_res=0 rsconf_append $'/srv/devbox_fullstackdude/jupyter/bashrc' $'export SIREPO_JOB_API_SUPERVISOR_URI=\'http://127.0.0.1:3301\''
 rsconf_install_access '400' 'vagrant' 'vagrant'
-rsconf_install_file '/srv/devbox_fullstackdude/sshd/sshd_config' '179121469e4dd3aed49a05c979f6c26b'
+rsconf_install_file '/srv/devbox_fullstackdude/sshd/sshd_config' 'f432400feaa235ff0e4675c059e453de'
 rsconf_install_file '/srv/devbox_fullstackdude/sshd/host_key' '51239a03b3421de7b20b9fb5f8c0f632'
 rsconf_install_file '/srv/devbox_fullstackdude/sshd/identity.pub' 'c3d2bac784399f08153d897c5d38dd84'
 }

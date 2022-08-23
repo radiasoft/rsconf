@@ -8,4 +8,4 @@ source ./env
 if [[ $@ ]]; then
     exec "$@"
 fi
-exec /usr/sbin/sshd -D -f '/home/vagrant/.ssh/sshd_config'
+exec /usr/sbin/sshd -e -D -f '/home/vagrant/.ssh/sshd_config'
