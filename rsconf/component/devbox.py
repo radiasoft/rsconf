@@ -58,7 +58,9 @@ class T(component.T):
             jc,
             image=jc.devbox.docker_image,
             volumes=v,
-            cmd="/usr/sbin/sshd -D -f '{}'".format(z.guest.ssh_d.join("sshd_config")),
+            cmd="/usr/sbin/sshd -e -D -f '{}'".format(
+                z.guest.ssh_d.join("sshd_config")
+            ),
         )
         j = None
         for d in map(lambda x: x[0], v):
