@@ -6,6 +6,10 @@
     -A INPUT -s 99.99.99.0/24 -j DROP
 -A INPUT -p icmp --icmp-type timestamp-request -j DROP
 -A INPUT -p icmp -j ACCEPT
+    -A INPUT -i em2 -p tcp -m state --state NEW -m tcp -s 192.168.1.1/24,127.0.0.1 --dport https -j ACCEPT
+    -A INPUT -i em2 -p tcp -m state --state NEW -m tcp --dport https -j DROP
+    -A INPUT -i em2 -p tcp -m state --state NEW -m tcp -s 192.168.1.1/24,127.0.0.1 --dport http -j ACCEPT
+    -A INPUT -i em2 -p tcp -m state --state NEW -m tcp --dport http -j DROP
     -A INPUT -i lo -j ACCEPT
     -A INPUT -i em1 -j ACCEPT
     -A INPUT -i em2 -p tcp -m state --state NEW -m tcp --match multiport --dports 3100,3101,9999,http,https,pop3s,smtp,submission -j ACCEPT

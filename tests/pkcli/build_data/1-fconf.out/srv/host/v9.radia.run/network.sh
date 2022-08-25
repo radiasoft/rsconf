@@ -6,7 +6,7 @@ rsconf_install_access '444' 'root' 'root'
 rsconf_install_file '/etc/resolv.conf' 'c333a7a816c03062d4e61effd6d2a8ce'
 rsconf_install_file '/etc/sysconfig/network-scripts/ifcfg-em1' 'e225a3f7b4b071e5c204b1182c17ab94'
 rsconf_install_file '/etc/sysconfig/network-scripts/ifcfg-em2' '4f8c01335a3bf1a8a89ba5d09fdf28df'
-rsconf_install_file '/etc/sysconfig/iptables' 'e6a7ca3e9d9189c42a9bbb729f2a122f'
+rsconf_install_file '/etc/sysconfig/iptables' '172b0e72159bef4fa3146ffc9a8c7a16'
 network_main
 }
 #!/bin/bash

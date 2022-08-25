@@ -43,6 +43,7 @@ class T(component.T):
         self.j2_ctx = self.hdb.j2_ctx_copy()
         jc = self.j2_ctx
         z = jc.network
+        self._check_restricted_ports(z)
         z.trusted_nets = tuple(sorted(z.trusted.keys()))
         z.pksetdefault(
             blocked_ips=[],
@@ -150,6 +151,19 @@ class T(component.T):
             for w in check:
                 assert not p in z[w], "port {} already in {}".format(p, w)
             z[which].append(p)
+
+    def _check_restricted_ports(self, z):
+        if "restrict_ports" not in z:
+            return
+        assert (
+            "443" not in z.restrict_ports
+        ), f"use https instead of 443 in restrict_ports={z.restrict_ports}"
+        assert (
+            "http" not in z.restrict_ports and "80" not in z.restrict_ports
+        ), f"only define https not http or 80 in restrict_ports={z.restrict_ports}"
+        if "https" not in z.restrict_ports:
+            return
+        z.restrict_ports["http"] = z.restrict_ports.https
 
     def _defroute(self, routes):
         defroute = None

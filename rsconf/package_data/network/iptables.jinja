@@ -22,6 +22,10 @@
  #
  # robnagler: I figure it easier to stick with state.
  #}
+{% for p, n in network.get("restrict_ports", {}).items() %}
+    -A INPUT -i {{ network.inet_dev.name }} -p tcp -m state --state NEW -m tcp -s {{ n | join(',') }} --dport {{ p }} -j ACCEPT
+    -A INPUT -i {{ network.inet_dev.name }} -p tcp -m state --state NEW -m tcp --dport {{ p }} -j DROP
+{% endfor %}
 {% for d in network.private_devs %}
     -A INPUT -i {{ d }} -j ACCEPT
 {% endfor %}
