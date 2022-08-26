@@ -458,8 +458,8 @@ host:
       jupyterhub_proxy:
         listen_any: True
       network:
-        restrict_ports:
-          https: [ 192.168.1.1/24, 127.0.0.1 ]
+        restricted_public_tcp_ports:
+          https: [ 192.168.1.0/24, 127.0.0.1 ]
         public_ssh_ports: [ 5555, 6666 ]
         public_tcp_ports: [ 9999 ]
         devices:
