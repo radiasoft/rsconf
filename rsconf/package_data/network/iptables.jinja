@@ -1,3 +1,8 @@
+{# iptables is a program run very every packet so put the rules for
+ # the earliest success first and the rules that give the latest failure
+ # last. This way an attacker does comsume more cpu, but that is more rare than
+ # making sure ESTABLISHED connections are recognized first.
+ #}
 *filter
 :INPUT ACCEPT [0:0]
 :FORWARD ACCEPT [0:0]
@@ -19,12 +24,11 @@
  # discussions, titled: state match is obsolete 1.4.17, which pretty much
  # says that state is just an alias to conntrack so it doesn't really
  # matter which you use, in both circumstances you're using conntrack.
- #
- # robnagler: I figure it easier to stick with state.
  #}
 {% for d in network.private_devs %}
     -A INPUT -i {{ d }} -j ACCEPT
 {% endfor %}
+-A INPUT -i {{ network.inet_dev.name }} -m state --state RELATED,ESTABLISHED -j ACCEPT
 {% if network.public_tcp_ports %}
     -A INPUT -i {{ network.inet_dev.name }} -p tcp -m state --state NEW -m tcp --match multiport --dports {{ network.public_tcp_ports | join(',') }} -j ACCEPT
 {% endif %}
@@ -36,7 +40,11 @@
 {% if network.public_udp_ports %}
     -A INPUT -i {{ network.inet_dev.name }} -p udp --match multiport --dports {{ network.public_udp_ports | join (',') }} -j ACCEPT
 {% endif %}
--A INPUT -i {{ network.inet_dev.name }} -m state --state RELATED,ESTABLISHED -j ACCEPT
+{% for p in network.restricted_public_tcp_ports %}
+    {% for n in network.restricted_public_tcp_ports[p] %}
+        -A INPUT -i {{ network.inet_dev.name }} -s {{ n }} -p tcp -m state --state NEW -m tcp --dport {{ p }}  -j ACCEPT
+    {% endfor %}
+{% endfor %}
 -A INPUT -i {{ network.inet_dev.name }} -m state --state INVALID -j REJECT --reject-with icmp-port-unreachable
 -A INPUT -i {{ network.inet_dev.name }} -p tcp -m tcp --tcp-flags SYN,RST,ACK ACK -m state --state NEW -j REJECT --reject-with tcp-reset
 -A INPUT -i {{ network.inet_dev.name }} -p tcp -m tcp ! --tcp-flags FIN,SYN,RST,ACK SYN -m state --state NEW -j REJECT --reject-with icmp-port-unreachable

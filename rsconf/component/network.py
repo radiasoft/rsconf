@@ -1,19 +1,18 @@
-# -*- coding: utf-8 -*-
 """create network config
 
 We disable NetworkManager, because we are managing the network now.
 It's unnecessary complexity. NetworkManager (NM) create
 ``network-scripts`` files.
 
-:copyright: Copyright (c) 2018 RadiaSoft LLC.  All Rights Reserved.
+:copyright: Copyright (c) 2018-2022 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from __future__ import absolute_import, division, print_function
-from rsconf import component
 from pykern import pkcollections
-from pykern.pkdebug import pkdp
-from pykern import pkio
 from pykern import pkcompat
+from pykern import pkio
+from pykern.pkcollections import PKDict
+from pykern.pkdebug import pkdp
+import rsconf
 import copy
 import ipaddress
 import socket
@@ -24,7 +23,7 @@ _RESOLV_CONF = pkio.py_path("/etc/resolv.conf")
 _IPTABLES = pkio.py_path("/etc/sysconfig/iptables")
 
 
-class T(component.T):
+class T(rsconf.component.T):
     def add_public_tcp_ports(self, ports):
         self._add_ports("public_tcp_ports", ports)
 
@@ -51,6 +50,7 @@ class T(component.T):
             public_ssh_ports=[],
             public_tcp_ports=[],
             public_udp_ports=[],
+            restricted_public_tcp_ports=PKDict,
             trusted_tcp_ports=[],
         )
         self.__trusted_nets = self._nets(jc, z.trusted)
@@ -100,6 +100,9 @@ class T(component.T):
         jc = self.j2_ctx
         jc = self.j2_ctx
         z = jc.network
+        # Order matters: _restricted_public_tcp_ports modifed public_tcp_ports
+        # to remove ports that that in the restricted set.
+        self._restricted_public_tcp_ports(z)
         if not "_devs" in z:
             # no devices, no network config
             self.append_root_bash(": nothing to do")
@@ -141,15 +144,32 @@ class T(component.T):
     def _add_ports(self, which, ports):
         assert len(ports[0]) > 2, "invalid ports: {}".format(ports)
         z = self.j2_ctx.network
-        check = (
+        c = (
             ("trusted_tcp_ports", "public_tcp_ports")
             if "tcp" in which
             else ("public_udp_ports",)
         )
         for p in ports:
-            for w in check:
+            for w in c:
                 assert not p in z[w], "port {} already in {}".format(p, w)
             z[which].append(p)
+
+    def _restricted_public_tcp_ports(self, z):
+        if not z.restricted_public_tcp_ports:
+            return
+        assert (
+            z.iptables_enable
+        ), f"iptables must be configured for restricted_public_tcp_ports={z.restricted_public_tcp_ports}"
+        r = PKDict()
+        for k in sorted(z.restricted_public_tcp_ports.keys()):
+            assert (
+                k in z.public_tcp_ports
+            ), f"restricted_public_tcp_ports={k} must be in public_tcp_ports"
+            z.public_tcp_ports.remove(k)
+            r[k] = sorted(
+                str(self._net_or_ip(v)) for v in z.restricted_public_tcp_ports[k]
+            )
+        self.restricted_public_tcp_ports = r
 
     def _defroute(self, routes):
         defroute = None
@@ -202,9 +222,7 @@ class T(component.T):
         nets = pkcollections.Dict()
         for n, v in spec.items():
             v = copy.deepcopy(v)
-            # Avoid this error:
-            # Did you pass in a bytes (str in Python 2) instead of a unicode object?
-            n = ipaddress.ip_network(pkcompat.locale_str(n))
+            n = ipaddress.ip_network(n)
             v.name = n
             v.ip = str(n.network_address)
             v.netmask = str(n.netmask)
@@ -215,9 +233,9 @@ class T(component.T):
             )
             v.pksetdefault(is_private=lambda: not v.is_global and n.is_private)
             if v.gateway:
-                assert ipaddress.ip_network(
-                    pkcompat.locale_str(v.gateway + "/32")
-                ).subnet_of(n), "{}: gateway is not subnet of {}".format(v.gateway, n)
+                assert ipaddress.ip_network(v.gateway + "/32",).subnet_of(
+                    n
+                ), "{}: gateway is not subnet of {}".format(v.gateway, n)
             if "nameservers" in v:
                 v.nameservers = sorted([ipaddress.ip_address(x) for x in v.nameservers])
             nets[n] = v
@@ -225,7 +243,7 @@ class T(component.T):
 
     # TODO(robnagler) sanity check nets don't overlap?
     def _net_check(self, ip):
-        nip = ipaddress.ip_network(pkcompat.locale_str(ip + "/32"))
+        nip = ipaddress.ip_network(ip + "/32")
         # TODO(robnagler) untrusted networks are supernets of potentially trusted_nets
         # the only reason to add them is to find them for devices
         for nets in self.__untrusted_nets, self.__trusted_nets:
@@ -233,3 +251,6 @@ class T(component.T):
                 if nip.subnet_of(n):
                     return nets[n]
         raise AssertionError("{}: ip not found in un/trusted_networks".format(nip))
+
+    def _net_or_ip(self, val):
+        return ipaddress.ip_network(val) if "/" in val else ipaddress.ip_address(val)
