@@ -1,3 +1,8 @@
+{# iptables is a program run very every packet so put the rules for
+ # the earliest success first and the rules that give the latest failure
+ # last. This way an attacker does comsume more cpu, but that is more rare than
+ # making sure ESTABLISHED connections are recognized first.
+ #}
 *filter
 :INPUT ACCEPT [0:0]
 :FORWARD ACCEPT [0:0]
