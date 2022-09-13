@@ -1,0 +1,11 @@
+#!/bin/bash
+if [[ -r ~/.bashrc ]]; then
+    source ~/.bashrc
+fi
+set -euo pipefail
+cd '/srv/sirepo_job_supervisor'
+source ./env
+if [[ $@ ]]; then
+    exec "$@"
+fi
+exec sirepo job_supervisor

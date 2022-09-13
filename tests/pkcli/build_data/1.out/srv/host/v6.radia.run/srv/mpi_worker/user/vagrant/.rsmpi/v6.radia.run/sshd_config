@@ -1,0 +1,10 @@
+AuthorizedKeysFile /home/vagrant/jupyter/.rsmpi/v6.radia.run/identity.pub
+HostKey /home/vagrant/jupyter/.rsmpi/v6.radia.run/host_key
+ListenAddress 10.10.10.60:8022
+PasswordAuthentication no
+PermitTunnel no
+PermitUserEnvironment no
+PrintLastLog no
+PrintMotd no
+Protocol 2
+UseDNS no

@@ -1,0 +1,9 @@
+Host 10.10.10.40 v4.radia.run
+    Port 8022
+    IdentityFile /home/vagrant/jupyter/.rsmpi/v4.radia.run/identity
+Host 10.10.10.50 v5.radia.run
+    Port 8022
+    IdentityFile /home/vagrant/jupyter/.rsmpi/v5.radia.run/identity
+Host 10.10.10.60 v6.radia.run
+    Port 8022
+    IdentityFile /home/vagrant/jupyter/.rsmpi/v6.radia.run/identity

@@ -1,0 +1,39 @@
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+    -A INPUT -s 1.2.3.4/32 -j DROP
+    -A INPUT -s 99.99.99.0/24 -j DROP
+-A INPUT -p icmp --icmp-type timestamp-request -j DROP
+-A INPUT -p icmp -j ACCEPT
+    -A INPUT -i lo -j ACCEPT
+    -A INPUT -i em1 -j ACCEPT
+-A INPUT -i em2 -m state --state RELATED,ESTABLISHED -j ACCEPT
+    -A INPUT -i em2 -p tcp -m state --state NEW -m tcp --match multiport --dports 3100,3101,9999,http,pop3s,smtp,submission -j ACCEPT
+        -A INPUT -i em2 -s 192.168.1.0/24 -p tcp -m state --state NEW -m tcp --dport https  -j ACCEPT
+        -A INPUT -i em2 -s 127.0.0.1 -p tcp -m state --state NEW -m tcp --dport https  -j ACCEPT
+-A INPUT -i em2 -m state --state INVALID -j REJECT --reject-with icmp-port-unreachable
+-A INPUT -i em2 -p tcp -m tcp --tcp-flags SYN,RST,ACK ACK -m state --state NEW -j REJECT --reject-with tcp-reset
+-A INPUT -i em2 -p tcp -m tcp ! --tcp-flags FIN,SYN,RST,ACK SYN -m state --state NEW -j REJECT --reject-with icmp-port-unreachable
+-A INPUT -i em2 -p tcp -m tcp --tcp-option 128 -j REJECT --reject-with icmp-port-unreachable
+
+    -A INPUT -i em2 -s 104.237.137.251/32 -p tcp -m tcp --match multiport --dports 22,5555,6666 -j ACCEPT
+    -A INPUT -i em2 -s 216.17.132.32/27 -p tcp -m tcp --match multiport --dports 22,5555,6666 -j ACCEPT
+    -A INPUT -i em2 -p tcp -m state --state NEW -m tcp --match multiport --dports 5555,6666 -m recent --set --name SSHPROBES --mask 255.255.255.0 --rsource
+    -A INPUT -i em2 -p tcp -m state --state NEW -m tcp --match multiport --dports 5555,6666 -m recent --update --seconds 180 --hitcount 6 --name SSHPROBES --mask 255.255.255.0 --rsource -j DROP
+    -A INPUT -i em2 -p tcp -m state --state NEW -m tcp --match multiport --dports 5555,6666 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-port-unreachable
+
+    -A FORWARD -i em2 -m state --state INVALID -j REJECT --reject-with icmp-port-unreachable
+    -A FORWARD -i em2 -o em1 -m state --state RELATED,ESTABLISHED -j ACCEPT
+    -A FORWARD -i em2 -j REJECT --reject-with icmp-host-prohibited
+    -A FORWARD -i em1 -o em2 -j ACCEPT
+    -A FORWARD -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+*nat
+:PREROUTING ACCEPT [0:0]
+:INPUT ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+:POSTROUTING ACCEPT [0:0]
+    -A POSTROUTING -s 10.10.10.0/24 -o em2 -j MASQUERADE
+COMMIT

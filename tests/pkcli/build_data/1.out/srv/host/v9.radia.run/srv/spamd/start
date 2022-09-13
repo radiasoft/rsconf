@@ -1,0 +1,9 @@
+#!/bin/bash
+# Pyzor, etc. need a $HOME so --helper-home-dir
+exec /bin/spamd \
+    --daemonize \
+    --helper-home-dir='/srv/spamd' \
+    --max-children=3 \
+    --nouser-config \
+    --pidfile='/run/spamd/spamd.pid' \
+    --socketpath='/run/spamd/spamd.sock'

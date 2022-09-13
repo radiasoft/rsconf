@@ -1,0 +1,4 @@
+#!/bin/bash
+docker stop -t 2 jupyterhub >& /dev/null || true
+#TODO(robnagler) should really just wait for container to be stopped
+sleep 2

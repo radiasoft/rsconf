@@ -1,0 +1,36 @@
+#!/bin/bash
+set -eu -o pipefail
+local_cf="$( (ls /var/lib/spamassassin/[1-9]*/updates_spamassassin_org/local.cf || true) | tail -1)"
+if [[ -z $local_cf ]]; then
+    echo 'Unable to find or write /var/lib/spamassassin/[1-9]*/updates_spamassassin_org/local.cf' 1>&2
+    exit 1
+fi
+install -m 644 /dev/stdin "$local_cf" <<'EOF'
+report_safe 0
+use_bayes 0
+skip_rbl_checks 0
+skip_uribl_checks 1
+score FH_DATE_PAST_20XX 0
+score FREEMAIL_FORGED_REPLYTO 0
+score RDNS_NONE 0
+internal_networks 10.10.10.0/24 104.237.137.251/32 216.17.132.32/27
+trusted_networks 10.10.10.0/24 104.237.137.251/32 216.17.132.32/27
+score __RCVD_IN_ZEN 0
+score RCVD_IN_SBL 0
+score RCVD_IN_XBL 0
+score RCVD_IN_PBL 0
+score RCVD_IN_SBL_CSS 0
+score URIBL_SBL 0
+score URIBL_DBL_SPAM 0
+score URIBL_DBL_REDIR 0
+score URIBL_DBL_PHISH 0
+score URIBL_DBL_MALWARE 0
+score URnIBL_DBL_BOTNETCC 0
+score URIBL_DBL_ABUSE_SPAM 0
+score URIBL_DBL_ABUSE_REDIR 0
+score URIBL_DBL_ABUSE_PHISH 0
+score URIBL_DBL_ABUSE_MALW 0
+score URIBL_DBL_ABUSE_BOTCC 0
+score URIBL_DBL_ERROR 0
+EOF
+systemctl restart spamd

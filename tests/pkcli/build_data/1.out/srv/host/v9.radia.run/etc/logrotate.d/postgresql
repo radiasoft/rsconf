@@ -1,0 +1,7 @@
+/var/log/postgresql/postgresql.log
+{
+    create 0600 postgres postgres
+    missingok
+    notifempty
+    copytruncate
+}

@@ -1,0 +1,13 @@
+[Unit]
+Description=btest
+
+[Service]
+Environment=TZ=:/etc/localtime
+ExecStart=/srv/btest/start
+Group=vagrant
+SyslogIdentifier=btest
+Type=oneshot
+User=vagrant
+
+[Install]
+WantedBy=multi-user.target

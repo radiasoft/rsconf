@@ -1,0 +1,11 @@
+#!/bin/bash
+if [[ -r ~/.bashrc ]]; then
+    source ~/.bashrc
+fi
+set -euo pipefail
+cd '/srv/devbox_devtech3'
+source ./env
+if [[ $@ ]]; then
+    exec "$@"
+fi
+exec /usr/sbin/sshd -e -D -f '/home/vagrant/.ssh/sshd_config'

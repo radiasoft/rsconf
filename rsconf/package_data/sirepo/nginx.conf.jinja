@@ -39,9 +39,11 @@ server {
     location = /en/plans.html {
         return 301 /en/plans/;
     }
+{% if sirepo.activait_redirect %}
     location = /activait {
         return 301 /ml;
     }
+{% endif %}
     location ~ ^/(wp-login\.php$|(wp-(admin|content|includes)|en)/) {
         proxy_pass https://{{ sirepo.wordpress_host }};
     }
