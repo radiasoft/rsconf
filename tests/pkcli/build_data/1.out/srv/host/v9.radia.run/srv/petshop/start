@@ -1,0 +1,5 @@
+#!/bin/bash
+. ~/.bashrc
+set -eu -o pipefail
+/usr/sbin/httpd -d '/srv/petshop' -f '/srv/petshop/httpd.conf' -t
+exec /usr/sbin/httpd -d '/srv/petshop' -f '/srv/petshop/httpd.conf'

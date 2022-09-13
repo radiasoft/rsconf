@@ -1,0 +1,9 @@
+UMASK=07
+LOGFILE=/home/vagrant/procmail.log
+VERBOSE=yes
+UMASK=07
+:0 c
+/home/vagrant/btest-mail-copy/.
+
+:0
+/home/vagrant/btest-mail/.

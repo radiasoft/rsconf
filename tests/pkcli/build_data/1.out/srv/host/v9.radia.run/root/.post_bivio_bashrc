@@ -1,0 +1,20 @@
+export SYSTEMD_COLORS=0
+# --quit-if-one-screen --quit-on-intr --no-init
+export SYSTEMD_LESS=FKX
+rsc() {
+    local args=( "$@" )
+
+    if (( ! ${#args[@]} )); then
+        args=( "$(hostname -f)" setup_dev )
+    fi
+    curl http://v3.radia.run:2916 | install_server=http://v3.radia.run:2916 bash ${install_debug:+-x} -s rsconf.sh ${args+"${args[@]}"}
+}
+
+bivio() {
+    echo 'do not run bivio commands as root' 1>&2
+    return 1
+}
+
+: this will do nothing
+true
+

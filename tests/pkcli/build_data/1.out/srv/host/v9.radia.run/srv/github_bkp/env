@@ -1,0 +1,6 @@
+#!/bin/bash
+export 'PYKERN_PKCLI_GITHUB_EXCLUDE_RE='
+export 'PYKERN_PKCLI_GITHUB_PASSWORD=need-this'
+export 'PYKERN_PKCLI_GITHUB_TEST_MODE=True'
+export 'PYKERN_PKCLI_GITHUB_USER=need-this'
+export 'TZ=:/etc/localtime'

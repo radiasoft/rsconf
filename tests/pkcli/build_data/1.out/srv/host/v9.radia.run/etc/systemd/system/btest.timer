@@ -1,0 +1,8 @@
+[Unit]
+Description=btest
+
+[Timer]
+OnCalendar=*-*-* 18:0:0
+
+[Install]
+WantedBy=timers.target
