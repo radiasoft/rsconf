@@ -71,7 +71,7 @@ class T(PKDict):
         self.srv_d = self.root_d.join(SRV_SUBDIR)
         self.srv_host_d = self.srv_d.join(HOST_SUBDIR)
         pkio.mkdir_parent(self.tmp_d)
-        self.base = self._init_fconf() if cfg.fconf else self._init_jinja()
+        self.base = self._init_fconf()
 
     def channel_hosts(self):
         res = PKDict()
@@ -82,7 +82,7 @@ class T(PKDict):
         return res
 
     def host_db(self, *args):
-        return self._host_db_fconf(*args) if cfg.fconf else self._host_db_jinja(*args)
+        return self._host_db_fconf(*args)
 
     def _host_db_fconf(self, channel, host):
         c = PKDict(
@@ -138,59 +138,6 @@ class T(PKDict):
         pkjson.dump_pretty(res, filename=res.rsconf_db.tmp_d.join("db.json"))
         return res
 
-    def _host_db_jinja(self, channel, host):
-        c = PKDict(
-            channel=channel,
-            db_d=self.db_d,
-            host=host.lower(),
-        )
-        res = Host()
-        v = PKDict(
-            rsconf_db=PKDict(
-                # Common defaults we allow overrides for
-                host_run_d="/srv",
-                run_u="vagrant",
-                root_u="root",
-            ).pkupdate(c)
-        )
-        merge_dict(res, v)
-        for l in LEVELS:
-            v = self.base[l]
-            if l != LEVELS[0]:
-                v = v.get(channel)
-                if not v:
-                    continue
-                if l == LEVELS[2]:
-                    v = v.get(host)
-                    if not v:
-                        continue
-            merge_dict(res, v)
-        v = PKDict(
-            rsconf_db=PKDict(
-                db_d=self.db_d,
-                host=host,
-                local_files=_init_local_files(c),
-                proprietary_source_d=self.proprietary_source_d,
-                resource_paths=_init_resource_paths(c),
-                rpm_source_d=self.rpm_source_d,
-                secret_d=self.secret_d,
-                srv_d=self.srv_d,
-                srv_host_d=self.srv_host_d,
-                tmp_d=self.tmp_d.join(host),
-                # https://jnovy.fedorapeople.org/pxz/node1.html
-                # compression with 8 threads and max compression
-                # Useful (random) constants
-                compress_cmd="pxz -T8 -9",
-            ).pkupdate(c),
-        )
-        pkio.unchecked_remove(v.rsconf_db.tmp_d)
-        pkio.mkdir_parent(v.rsconf_db.tmp_d)
-        merge_dict(res, v)
-        _assert_no_rsconf_db_values(res)
-        _update_paths(res)
-        pkjson.dump_pretty(res, filename=res.rsconf_db.tmp_d.join("db.json"))
-        return res
-
     def _init_fconf(self):
         from pykern import fconf
         import itertools, functools
@@ -205,24 +152,6 @@ class T(PKDict):
                 [],
             ),
         ).result
-
-    def _init_jinja(self):
-        from pykern import pkjinja
-        from pykern import pkyaml
-
-        res = PKDict()
-        f = None
-        try:
-            for d in self.db_d, self.secret_d:
-                for f in pkio.sorted_glob(d.join(ZERO_YML)):
-                    v = pkjinja.render_file(f, res, strict_undefined=True)
-                    pkio.write_text(self.tmp_d.join(f.basename), str(v))
-                    v = pkyaml.load_str(v)
-                    merge_dict(res, v)
-        except Exception:
-            pkdlog("error rendering db={}", f)
-            raise
-        return res
 
 
 def root_d():
@@ -428,7 +357,6 @@ def _update_paths(base):
 
 
 cfg = pkconfig.init(
-    fconf=(True, bool, "Use pykern.fconf for reading db"),
     root_d=(None, _cfg_root, "Top of rsconf tree"),
     srv_group=(None, _cfg_srv_group, "Group id of files to srv directory"),
 )
