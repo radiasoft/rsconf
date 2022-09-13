@@ -510,7 +510,7 @@ host:
           - github_bkp
           - wordpress
       sirepo:
-        listen_any: True
+        activait_redirect: false
         auth:
           email:
             from_email: support@radisoft.net
@@ -533,6 +533,7 @@ host:
         job_driver:
           docker:
             hosts: [ v9.radia.run ]
+        listen_any: True
         wordpress_host: wordpress-home-page.sirepo.com
       sirepo_jupyterhub:
         pools:
