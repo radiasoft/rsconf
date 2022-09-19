@@ -76,7 +76,6 @@ class T(component.T):
                     ),
                     srdb=PKDict(root=d),
                     wordpress_host=None,
-                    activait_redirect=True,
                 ),
                 pykern=PKDict(
                     pkdebug=PKDict(
@@ -166,7 +165,7 @@ class T(component.T):
                 (k, v) for k, v in compt.j2_ctx.items() if k in ("sirepo", "pykern")
             ),
             # local only values
-            exclude_re=r"^sirepo(?:_docker_image|.*_vhost|.*_client_max_body|_activait_redirect)",
+            exclude_re=r"^sirepo(?:_docker_image|.*_vhost|.*_client_max_body)",
         )
         e.PYTHONUNBUFFERED = "1"
         return e
