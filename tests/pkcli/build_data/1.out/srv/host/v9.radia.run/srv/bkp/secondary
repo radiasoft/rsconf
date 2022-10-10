@@ -54,16 +54,15 @@ secondary_main() {
         copy_d=$secondary_copy_d/$base_d
         copy_txz=$copy_d/0.txz
         copy_tmp=$copy_txz.tmp
-        if [[ $base_d =~ srv/github_bkp/db/(.+)$ ]]; then
-            if [[ ${BASH_REMATCH[1]} =~ / ]]; then
-                # the rsync does all the work for sub directories.
-                # Paren (github_bkp/db) falls through below as an empty directory
-                continue
-            fi
+        if [[ $base_d =~ srv/github_bkp/db/ ]]; then
+            # the rsync (below) does all the work for sub directories
+            continue
+        elif [[ $base_d =~ srv/github_bkp/db$ ]]; then
             # github_bkp is already compressed so just copy
+            # must be at this level to copy hard-links
             secondary_msg "Simple copy: $base_d"
             # handles restarts properly
-            rsync -a "$snap_d" "$copy_d"
+            rsync -a --hard-links --sparse "$snap_d" "$(dirname "$copy_d")"
             continue
         fi
         mkdir -p "$copy_d"
