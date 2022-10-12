@@ -1,0 +1,19 @@
+# for documentation of all options, see:
+#   http://docs.mongodb.org/manual/reference/configuration-options/
+net:
+  port: {{ mongod.port }}
+  bindIp: {{ mongod.ip }}
+processManagement:
+  fork: true
+  pidFilePath: /var/run/mongodb/mongod.pid
+  timeZoneInfo: /usr/share/zoneinfo
+security:
+  authorization: enabled
+storage:
+  dbPath: {{ mongod.data_d }}
+  journal:
+    enabled: true
+systemLog:
+  destination: file
+  logAppend: true
+  path: /var/log/mongodb/mongod.log
