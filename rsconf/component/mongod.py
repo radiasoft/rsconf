@@ -22,7 +22,6 @@ class T(component.T):
 
         self.buildt.require_component("base_all")
         self.j2_ctx, z = self.j2_ctx_init()
-        z.run_d = systemd.custom_unit_prepare(self, self.j2_ctx)
         z.run_u = "mongod"
         z.data_d = z.run_d.join(_DATA_DIR)
         z.log_d = z.run_d.join(_LOG_DIR)
