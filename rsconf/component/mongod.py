@@ -22,23 +22,19 @@ class T(component.T):
 
         self.buildt.require_component("base_all")
         self.j2_ctx, z = self.j2_ctx_init()
-        # TODO(e-carlin): this is a goofy catch 22
-        z.mongo_conf_path = self.j2_ctx.rsconf_db.host_run_d.join(self.name).join(
-            _MONGO_CONF_F
-        )
-        z.run_d = systemd.custom_unit_prepare(self, self.j2_ctx, (z.mongo_conf_path,))
+        z.run_d = systemd.custom_unit_prepare(self, self.j2_ctx)
+        z.run_u = "mongod"
+        z.data_d = z.run_d.join(_DATA_DIR)
+        z.log_d = z.run_d.join(_LOG_DIR)
+        z.pid_d = pkio.py_path("/run/mongod")
+        z.pid_file_path = z.pid_d.join("mongod.pid")
+        z.conf_f = z.run_d.join(_MONGO_CONF_F)
 
     def internal_build_write(self):
         from rsconf import systemd
         from rsconf.component import logrotate
 
         z = self.j2_ctx.mongod
-        z.run_u = "mongod"
-        z.data_d = z.run_d.join(_DATA_DIR)
-        z.log_d = z.run_d.join(_LOG_DIR)
-        z.pid_d = pkio.py_path("/run/mongod")
-        z.pid_file_path = z.pid_d.join("mongod.pid")
-        z.mongo_conf_path = z.run_d.join(_MONGO_CONF_F)
         self.install_access(mode="700", owner=z.run_u)
         for d in "run_d", "data_d", "log_d", "pid_d":
             self.install_directory(z[f"{d}"])
@@ -46,7 +42,7 @@ class T(component.T):
         self.install_resource(
             self.name + f"/{_MONGO_CONF_F}",
             self.j2_ctx,
-            host_path=z.mongo_conf_path,
+            host_path=z.conf_f,
         )
         logrotate.install_conf(self, self.j2_ctx)
         systemd.install_unit_override(self, self.j2_ctx)
