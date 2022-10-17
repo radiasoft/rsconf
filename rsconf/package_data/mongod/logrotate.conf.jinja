@@ -1,0 +1,10 @@
+{{ mongod.log_d }}/*.log
+/var/log/mongodb/mongod.log {
+    missingok
+    notifempty
+    postrotate
+        kill -SIGUSR1 $(cat {{ mongod.pid_file_path }}) &> /dev/null
+    endscript
+    # Ensure postrotate only runs once for all logs
+    sharedscripts
+}

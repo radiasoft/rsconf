@@ -5,7 +5,6 @@ mongod_main() {
     declare v=6.0
     declare f=/etc/yum.repos.d/mongodb-org-"$v".repo
     if [[ -e $f ]]; then
-        install_info "repo file $f exists, mongo already installed"
         return
     fi
     install -m 644 /dev/stdin "$f" <<EOF
