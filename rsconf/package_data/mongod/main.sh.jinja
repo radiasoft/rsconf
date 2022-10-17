@@ -1,0 +1,45 @@
+#!/bin/bash
+
+
+mongod_main() {
+    declare v=6.0
+    declare f=/etc/yum.repos.d/mongodb-org-"$v".repo
+    if [[ -e $f ]]; then
+        return
+    fi
+    install -m 644 /dev/stdin "$f" <<EOF
+[mongodb-org-$v]
+name=MongoDB Repository
+baseurl=https://repo.mongodb.org/yum/redhat/7/mongodb-org/$v/x86_64/
+gpgcheck=1
+enabled=1
+gpgkey=https://www.mongodb.org/static/pgp/server-$v.asc
+EOF
+    rsconf_yum_install mongodb-org
+    systemctl daemon-reload
+    systemctl restart mongod
+    mongosh --port 27018 <<EOF
+use admin
+db.createUser(
+  {
+    user: "{{ mongod.admin.username }}",
+    pwd: "{{ mongod.admin.password }}",
+    roles: [
+      { role: "userAdminAnyDatabase", db: "admin" },
+      { role: "readWriteAnyDatabase", db: "admin" }
+
+    ]
+  }
+)
+db.auth("{{ mongod.admin.username }}", "{{ mongod.admin.password }}")
+use {{ mongod.database.name }}
+db.createUser(
+  {
+    user: "{{ mongod.database.username }}",
+    pwd: "{{ mongod.database.password }}",
+    roles: [{role: "readWrite", db: "{{ mongod.database.name }}"}]
+  }
+)
+EOF
+    systemctl restart mongod
+}
