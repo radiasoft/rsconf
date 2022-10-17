@@ -40,7 +40,7 @@ class T(component.T):
             self.install_directory(z[f"{d}"])
         self.install_access(mode="400", owner=z.run_u)
         self.install_resource(
-            self.name + f"/{_MONGO_CONF_F}",
+            f"{self.name}/{_MONGO_CONF_F}",
             self.j2_ctx,
             host_path=z.conf_f,
         )
