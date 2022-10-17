@@ -459,6 +459,11 @@ host:
           {{ all_host }}: jupyter.{{ all_host }}
       jupyterhub_proxy:
         listen_any: True
+      mongod:
+        port: 27018
+        ip: 127.0.0.1
+        database:
+          name: databroker
       network:
         public_ssh_ports: [ 5555, 6666 ]
         public_tcp_ports: [ 9999 ]
@@ -492,6 +497,7 @@ host:
         myhostname: '{{ host }}'
       rsconf_db:
         components:
+          - mongod
           - nfs_client
           - nfs_server
           - bkp
