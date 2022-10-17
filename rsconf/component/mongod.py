@@ -34,7 +34,6 @@ class T(component.T):
 
         z = self.j2_ctx.mongod
         z.run_u = "mongod"
-        z.run_d = self.j2_ctx.rsconf_db.host_run_d.join(self.name)
         z.data_d = z.run_d.join(_DATA_DIR)
         z.log_d = z.run_d.join(_LOG_DIR)
         z.pid_d = pkio.py_path("/run/mongod")
