@@ -27,7 +27,7 @@ class T(component.T):
         z.data_d = z.run_d.join(_DATA_DIR)
         z.log_d = z.run_d.join(_LOG_DIR)
         z.pid_d = pkio.py_path("/run/mongod")
-        z.pid_file_path = z.pid_d.join("mongod.pid")
+        z.pid_f = z.pid_d.join("mongod.pid")
         z.conf_f = z.run_d.join(_MONGO_CONF_F)
 
     def internal_build_write(self):

@@ -2,7 +2,7 @@
     missingok
     notifempty
     postrotate
-        kill -SIGUSR1 $(cat {{ mongod.pid_file_path }}) &> /dev/null
+        kill -SIGUSR1 $(cat {{ mongod.pid_f }}) &> /dev/null
     endscript
     # Ensure postrotate only runs once for all logs
     sharedscripts
