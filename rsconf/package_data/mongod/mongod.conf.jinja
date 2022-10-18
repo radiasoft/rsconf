@@ -5,7 +5,7 @@ net:
   bindIp: {{ mongod.ip }}
 processManagement:
   fork: true
-  pidFilePath: {{ mongod.pid_f }}
+  pidFilePath: {{ systemd.pid_file }}
   timeZoneInfo: /usr/share/zoneinfo
 security:
   authorization: enabled

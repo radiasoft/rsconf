@@ -8,6 +8,7 @@ from pykern import pkio
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from rsconf import component
+from rsconf import systemd
 
 _DATA_DIR = "db"
 
@@ -23,19 +24,20 @@ class T(component.T):
         self.buildt.require_component("base_all")
         self.j2_ctx, z = self.j2_ctx_init()
         z.run_u = "mongod"
-        z.data_d = z.run_d.join(_DATA_DIR)
-        z.log_d = z.run_d.join(_LOG_DIR)
-        z.pid_d = pkio.py_path("/run/mongod")
-        z.pid_f = z.pid_d.join("mongod.pid")
-        z.conf_f = z.run_d.join(_MONGO_CONF_F)
+        d = systemd.custom_unit_prepare(self, self.j2_ctx)
+        z.data_d = d.join(_DATA_DIR)
+        z.log_d = d.join(_LOG_DIR)
+        z.conf_f = d.join(_MONGO_CONF_F)
 
     def internal_build_write(self):
-        from rsconf import systemd
         from rsconf.component import logrotate
 
         z = self.j2_ctx.mongod
+        logrotate.install_conf(self, self.j2_ctx)
+        systemd.install_unit_override(self, self.j2_ctx)
+        systemd.custom_unit_enable(self, self.j2_ctx, run_u=z.run_u, run_group=z.run_u)
         self.install_access(mode="700", owner=z.run_u)
-        for d in "run_d", "data_d", "log_d", "pid_d":
+        for d in "data_d", "log_d":
             self.install_directory(z[f"{d}"])
         self.install_access(mode="400", owner=z.run_u)
         self.install_resource(
@@ -43,8 +45,5 @@ class T(component.T):
             self.j2_ctx,
             host_path=z.conf_f,
         )
-        logrotate.install_conf(self, self.j2_ctx)
-        systemd.install_unit_override(self, self.j2_ctx)
         self.append_root_bash_with_main(self.j2_ctx)
-        systemd.custom_unit_enable(self, self.j2_ctx, run_u=z.run_u, run_group=z.run_u)
         self.rsconf_service_restart()
