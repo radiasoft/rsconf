@@ -9,6 +9,7 @@ from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from rsconf import component
 from rsconf import systemd
+import copy
 import rsconf.db
 
 _DB_SUBDIR = "db"
@@ -49,5 +50,8 @@ class T(component.T):
 
     def _unit_env(self, z):
         return pkconfig.to_environ(
-            ["raydata.pkcli.*"], values={"raydata.pkcli.scan_monitor.db_dir": z.db_d}
+            ["raydata.pkcli.*"],
+            values=PKDict(copy.deepcopy(z)).pkupdate(
+                {"raydata.pkcli.scan_monitor.db_dir": z.db_d}
+            ),
         )
