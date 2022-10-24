@@ -33,6 +33,7 @@ class T(component.T):
         from rsconf.component import logrotate
 
         z = self.j2_ctx.mongod
+        self.append_root_bash_with_main(self.j2_ctx)
         logrotate.install_conf(self, self.j2_ctx)
         systemd.install_unit_override(self, self.j2_ctx)
         systemd.custom_unit_enable(self, self.j2_ctx, run_u=z.run_u, run_group=z.run_u)
@@ -45,5 +46,4 @@ class T(component.T):
             self.j2_ctx,
             host_path=z.conf_f,
         )
-        self.append_root_bash_with_main(self.j2_ctx)
         self.rsconf_service_restart()
