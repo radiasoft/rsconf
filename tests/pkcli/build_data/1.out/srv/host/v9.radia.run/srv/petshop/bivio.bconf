@@ -50,6 +50,7 @@ Bivio::PetShop::BConf->merge_dir({
     },
         'Bivio::Test::Language::HTTP' => {
             email_user => 'vagrant',
+            home_page_uri => 'https://petshop.v4.radia.run',
             local_mail_host => 'v6.radia.run',
         },
     'Bivio::Type::Secret' => {
