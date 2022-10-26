@@ -58,6 +58,7 @@ my($env_bool) = sub {
     {% if bop.is_test %}
         'Bivio::Test::Language::HTTP' => {
             email_user => '{{ btest.email_user }}',
+            home_page_uri => '{{ bop.home_page_uri }}',
             local_mail_host => '{{ btest.client_host }}',
         },
     {% endif %}

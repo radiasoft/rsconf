@@ -184,6 +184,7 @@ def merge_app_vars(j2_ctx, app_name):
     if z.is_test:
         z.http_host = _domain(j2_ctx, z.vhosts[0])[0]
         z.mail_host = z.http_host
+        z.home_page_uri = "https://" + z.http_host
     z.run_d = systemd.unit_run_d(j2_ctx, app_name)
     z.conf_f = z.run_d.join("httpd.conf")
     z.bconf_f = z.run_d.join("bivio.bconf")
