@@ -2,7 +2,7 @@
     missingok
     notifempty
     postrotate
-        kill -s USR1 $(cat {{ systemd.pid_file }}) &> /dev/null
+        kill -s USR1 `cat {{ systemd.pid_file }} 2>/dev/null` 2>/dev/null || true
     endscript
     # Ensure postrotate only runs once for all logs
     sharedscripts
