@@ -19,4 +19,7 @@
     "storage-opts": [
         "overlay2.override_kernel_check=true"
     ]
+    {% for k in docker.get('daemon_aux', [])  %}
+    "{{ k }}": {{ docker.daemon_aux[k] | tojson }},
+    {% endfor %}
 }
