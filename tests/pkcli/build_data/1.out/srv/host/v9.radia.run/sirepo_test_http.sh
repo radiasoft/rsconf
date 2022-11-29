@@ -10,7 +10,7 @@ rsconf_install_file '/srv/sirepo_test_http/remove' 'c82b28125aa7032a88b7014d5c37
 rsconf_install_file '/srv/sirepo_test_http/start' '7eaa584b48aa78f6fa834279e2ac3378'
 rsconf_install_file '/srv/sirepo_test_http/stop' 'c8fe54e779f0d1f322182ba82f7e102e'
 rsconf_install_access '444' 'root' 'root'
-rsconf_install_file '/etc/systemd/system/sirepo_test_http.timer' '5e346f09f4c3243abf06c7346f724422'
+rsconf_install_file '/etc/systemd/system/sirepo_test_http.timer' 'd3e913a370c879e26ebf554d2a28bd3f'
 rsconf_install_file '/etc/systemd/system/sirepo_test_http.service' 'aaa5ab624e2280ab31c0e54414c685c4'
 rsconf_service_docker_pull 'v3.radia.run:5000/radiasoft/sirepo:dev' 'sirepo_test_http'
 }

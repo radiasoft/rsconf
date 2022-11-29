@@ -2,7 +2,7 @@
 Description=github_bkp
 
 [Timer]
-OnCalendar=*-*-* 9:0:0
+OnCalendar=*-*-* 10:0:0
 
 [Install]
 WantedBy=timers.target

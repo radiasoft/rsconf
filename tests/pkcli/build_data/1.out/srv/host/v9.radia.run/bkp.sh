@@ -9,6 +9,6 @@ rsconf_install_directory '/srv/bkp'
 rsconf_install_access '500' 'root' 'root'
 rsconf_install_file '/srv/bkp/start' '845d92f865b14e8d26fb7259608f78ba'
 rsconf_install_access '444' 'root' 'root'
-rsconf_install_file '/etc/systemd/system/bkp.timer' '86da49a590261951acbdd39714a10efd'
+rsconf_install_file '/etc/systemd/system/bkp.timer' '97d463b79906d1e9b794937d3a9c4993'
 rsconf_install_file '/etc/systemd/system/bkp.service' '443c9c34df3eddec3268f081e7dead77'
 }
