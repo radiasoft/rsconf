@@ -2,7 +2,7 @@
 Description=bkp
 
 [Timer]
-OnCalendar=*-*-1 23:0:0
+OnCalendar=*-*-1 23:59:0
 
 [Install]
 WantedBy=timers.target
