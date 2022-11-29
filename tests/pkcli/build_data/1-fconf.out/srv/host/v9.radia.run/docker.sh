@@ -10,7 +10,7 @@ rsconf_install_file '/etc/docker/tls/cert.pem' 'a5d1a82aaade1867776cbceb952aaf0c
 rsconf_install_file '/etc/docker/tls/key.pem' '20dc02d9a345e49f531fa49bc5229739'
 rsconf_install_file '/etc/docker/tls/cacert.pem' '4b670b08c82a17b5bfbdfc470b444ad5'
 rsconf_install_access '400' 'root' 'root'
-rsconf_install_file '/etc/docker/daemon.json' 'db86acdf11694948a10a53d4302c19d3'
+rsconf_install_file '/etc/docker/daemon.json' '917456bf584e689d1e4e6fc525f30eb9'
 docker_main
 rsconf_install_access '700' 'root' 'root'
 rsconf_install_directory '/etc/docker/certs.d'
