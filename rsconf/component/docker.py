@@ -81,20 +81,20 @@ class T(component.T):
     def _install_daemon_json(self, z):
         p = self.tmp_path()
         d = PKDict(
-            hosts=z.daemon_hosts,
-            iptables=z.iptables,
-            **{
+            {
+                "hosts": z.daemon_hosts,
+                "iptables": z.iptables,
                 "data-root": z.data_d,
-                "live-resource": True,
+                "live-restore": True,
                 "log-driver": "journald",
                 "storage-driver": "overlay2",
                 "storage-opts": ["overlay2.override_kernel_check=true"],
             }
-        ).pkupdate(**z.get("daemon_aux", {}))
+        ).pkupdate(z.get("daemon_aux", {}))
         if "http_host" in z:
-            d.pkupdate({"registry-mirrors": [z.http_host]})
+            d.update({"registry-mirrors": [z.http_host]})
         if "tls" in z:
-            d.pkupdate(
+            d.update(
                 tls=True,
                 tlscacert=z.tls.ca_crt,
                 tlscert=z.tls.crt,
