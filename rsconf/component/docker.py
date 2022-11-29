@@ -4,10 +4,10 @@
 :copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from __future__ import absolute_import, division, print_function
-from pykern import pkcollections
+from pykern.pkcollections import PKDict
 from pykern import pkcompat
 from pykern import pkio
+from pykern import pkjson
 from pykern.pkdebug import pkdp
 from rsconf import component
 
@@ -49,14 +49,9 @@ class T(component.T):
         self.install_directory(_CONF_DIR)
         if z.setdefault("tls_host", j2_ctx.rsconf_db.host):
             self._setup_tls_host(j2_ctx, z)
-        self.install_access(mode="400")
-        self.install_resource(
-            "docker/daemon.json",
-            j2_ctx,
-            _DAEMON_JSON,
-        )
+        self._install_daemon_json(z)
         self.append_root_bash_with_main(j2_ctx)
-        j2_ctx.docker.setdefault("auths", pkcollections.Dict())
+        j2_ctx.docker.setdefault("auths", PKDict())
         # Must be after everything else related to daemon
         docker_registry.install_crt_and_login(self, j2_ctx)
         docker_cache.install_crt(self, j2_ctx)
@@ -83,6 +78,33 @@ class T(component.T):
             run_d=z.run_d,
         )
 
+    def _install_daemon_json(self, z):
+        p = self.tmp_path()
+        d = PKDict(
+            hosts=z.daemon_hosts,
+            iptables=z.iptables,
+            **{
+                "data-root": z.data_d,
+                "live-resource": True,
+                "log-driver": "journald",
+                "storage-driver": "overlay2",
+                "storage-opts": ["overlay2.override_kernel_check=true"],
+            }
+        ).pkupdate(**z.get("daemon_aux", {}))
+        if "http_host" in z:
+            d.pkupdate({"registry-mirrors": [z.http_host]})
+        if "tls" in z:
+            d.pkupdate(
+                tls=True,
+                tlscacert=z.tls.ca_crt,
+                tlscert=z.tls.crt,
+                tlskey=z.tls.key,
+                tlsverify=True,
+            )
+        pkjson.dump_pretty(d, p)
+        self.install_access(mode="400")
+        self.install_abspath(p, _DAEMON_JSON)
+
     def _setup_tls_host(self, j2_ctx, z):
         import socket
         import ipaddress
@@ -91,7 +113,7 @@ class T(component.T):
         self.install_access(mode="700", owner=z.run_u)
         self.install_directory(_TLS_DIR)
         self.install_access(mode="400", owner=z.run_u)
-        z.tls = pkcollections.Dict()
+        z.tls = PKDict()
         # just to match docker's documentation, not really important
         for k, b in ("crt", "cert"), ("key", "key"):
             z.tls[k] = _TLS_DIR.join(b + ".pem")
@@ -127,7 +149,7 @@ def setup_cluster(compt, hosts, tls_d, run_u, j2_ctx):
 def _crt_create(basename, op):
     from rsconf.pkcli import tls
 
-    res = pkcollections.Dict(
+    res = PKDict(
         key=basename + tls.KEY_EXT,
         crt=basename + tls.CRT_EXT,
     )
@@ -138,7 +160,7 @@ def _crt_create(basename, op):
 
 
 def _dict(value):
-    # may be pkcollections.Dict which is subclass of dict
+    # may be PKDict which is subclass of dict
     if not isinstance(value, dict):
         return value
     res = {}
