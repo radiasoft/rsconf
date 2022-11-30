@@ -443,6 +443,14 @@ host:
         on_calendar: "1 17"
         secondary_copy_d: /bkp_copy
         secondary_setup_f: {{ root_d }}/etc/secondary_setup.sh
+      docker:
+        daemon_aux:
+          experimental: true
+          nested:
+            a_key:
+              - 1
+              - 2
+              - 3
       jupyterhub:
         jupyter_docker_image: radiasoft/custom-jupyter:latest
         jupyter_docker_image_is_local: true
