@@ -38,6 +38,25 @@ class T(component.T):
 
         jc = self.j2_ctx
         z = jc.mpi_worker
+
+        def _volume(host, guest):
+            r = [host.format(username=z.user), None]
+            if isinstance(guest, dict):
+                g = guest.get("bind")
+                m = guest.get("mode")
+                if m:
+                    assert m == "ro", f"mode={m} only 'ro' supported host={host}"
+                    r.append(m)
+            else:
+                assert isinstance(guest, str), f"guest={guest} not a string or dict"
+                g = guest
+            g = str(g).format(username=z.user)
+            assert g.startswith(
+                str(z.guest_d) + "/"
+            ), "mount={} must start with guest_d={}".format(g, z.guest_d)
+            r[1] = g
+            return r
+
         self.install_access(mode="700", owner=z.run_u)
         # Need to make sure host_d exists, even though it isn't ours
         for d in z.host_d, z.host.conf_d, z.host.ssh_d:
@@ -58,13 +77,9 @@ class T(component.T):
             # SECURITY: no modifications to run_d
             [z.run_d, z.run_d, "ro"],
         ]
+
         for k in sorted(z.volumes.keys()):
-            g = str(z.volumes[k]).format(username=z.user)
-            assert g.startswith(
-                str(z.guest_d) + "/"
-            ), "mount={} must start with guest_d={}".format(g, z.guest_d)
-            k = k.format(username=z.user)
-            x.append([k, g])
+            x.append(_volume(k, z.volumes[k]))
         systemd.docker_unit_enable(
             self,
             jc,
