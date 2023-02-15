@@ -15,3 +15,4 @@ rsconf_require nginx
 rsconf_require sirepo_jupyterhub
 rsconf_require sirepo_job_supervisor
 rsconf_require sirepo
+rsconf_require script
