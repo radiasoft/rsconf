@@ -354,7 +354,11 @@ host:
         #components: [ rsconf, docker_registry, btest ]
 #        components: [ bop ]
         #components: [ bkp, jupyterhub, jupyterhub_proxy ]
-        components: [ postfix, nfs_server, sirepo ]
+        components: [ postfix, nfs_server, sirepo, script ]
+      script:
+        bash: |
+          echo hello
+
       sirepo:
         auth:
           methods:
