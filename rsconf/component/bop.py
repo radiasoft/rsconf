@@ -159,6 +159,7 @@ def install_perl_rpms(compt, j2_ctx, perl_root=None):
     todo = list(COMMON_RPMS)
     if perl_root and perl_root != PETSHOP_ROOT:
         todo.append("perl-{}".format(perl_root))
+    todo.extend(j2_ctx[compt.name].get("aux_perl_rpms", []))
     watch = []
     c = j2_ctx.bop.setdefault("perl_rpm_channel", j2_ctx.rsconf_db.channel)
     for r in todo:

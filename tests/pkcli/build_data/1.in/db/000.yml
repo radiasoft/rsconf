@@ -130,6 +130,7 @@ default:
   nginx:
     worker_processes: 1
   petshop:
+    aux_perl_rpms: [ special-perl ]
     cookie_tag: PSD
     filter_out_of_office: true
     http_host: petshop.v4.radia.run
