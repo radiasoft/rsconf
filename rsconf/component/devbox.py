@@ -36,11 +36,11 @@ class T(component.T):
         # Only additional config for the server is the sshd config.
         z.run_d = systemd.custom_unit_prepare(self, jc, watch_files=[z.host.ssh_d])
         u = jc.devbox.users[self.user_name]
-        self._docker_image = jc.devbox.docker_image
-        z.ssh_port = u
-        if isinstance(u, dict):
-            self._docker_image = u.docker_image
+        if isinstance(u, PKDict):
+            z.docker_image = u.get("docker_image", z.docker_image)
             z.ssh_port = u.ssh_port
+        else:
+            z.ssh_port = u
         self._network(jc, z)
 
     def internal_build_write(self):
@@ -62,7 +62,7 @@ class T(component.T):
         systemd.docker_unit_enable(
             self,
             jc,
-            image=self._docker_image,
+            image=z.docker_image,
             volumes=v,
             cmd="/usr/sbin/sshd -e -D -f '{}'".format(
                 z.guest.ssh_d.join("sshd_config")
