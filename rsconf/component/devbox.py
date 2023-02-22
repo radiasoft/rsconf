@@ -35,6 +35,12 @@ class T(component.T):
         z.run_u = jc.rsconf_db.run_u
         # Only additional config for the server is the sshd config.
         z.run_d = systemd.custom_unit_prepare(self, jc, watch_files=[z.host.ssh_d])
+        u = jc.devbox.users[self.user_name]
+        self._docker_image = jc.devbox.docker_image
+        z.ssh_port = u
+        if isinstance(u, dict):
+            self._docker_image = u.docker_image
+            z.ssh_port = u.ssh_port
         self._network(jc, z)
 
     def internal_build_write(self):
@@ -53,11 +59,10 @@ class T(component.T):
                 [z.run_d, z.run_d, "ro"],
             ],
         )
-        u = jc.devbox.users[self.user_name]
         systemd.docker_unit_enable(
             self,
             jc,
-            image=u.docker_image if isinstance(u, dict) else jc.devbox.docker_image,
+            image=self._docker_image,
             volumes=v,
             cmd="/usr/sbin/sshd -e -D -f '{}'".format(
                 z.guest.ssh_d.join("sshd_config")
@@ -129,6 +134,4 @@ class T(component.T):
     def _network(self, jc, z):
         n = self.buildt.get_component("network")
         z.ip = n.unchecked_public_ip() or n.ip_and_net_for_host(jc.rsconf_db.host)[0]
-        u = jc.devbox.users[self.user_name]
-        z.ssh_port = u.ssh_port if isinstance(u, dict) else u
         n.add_public_tcp_ports([str(z.ssh_port)])

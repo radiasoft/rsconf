@@ -446,7 +446,7 @@ host:
         users:
           devtech3: 3100
           fullstackdude: 3101
-          user_w_custom_image:
+          custom_image:
             docker_image: radiasoft/custom-image
             ssh_port: 3102
       jupyterhub:
