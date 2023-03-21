@@ -28,12 +28,14 @@ server {
         allow all;
         proxy_pass http://sirepo_api;
     }
-    location ^~ /static/ {
-        root /var/www;
-    }
-    location = /favicon.ico {
-        rewrite (.*) /static/img/favicon.ico;
-    }
+# TODO(robnagler) dump static files into /srv/sirepo/srv/static
+# Create a command that generates static/robots.txt and favicon.ico 
+#    location ^~ /static/ {
+#        root /var/www;
+#    }
+#    location = /favicon.ico {
+#        rewrite (.*) /static/img/favicon.ico;
+#    }
 #TODO(robnagler) needs to be dynamic based on symtypes
 #    location = /robots.txt {
 #        rewrite (.*) /static/robots.txt;
