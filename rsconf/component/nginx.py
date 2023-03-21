@@ -54,7 +54,13 @@ def install_auth(compt, filename, host_path, visibility, j2_ctx):
 
 
 def install_vhost(
-    compt, vhost, backend_host=None, backend_port=None, resource_d=None, j2_ctx=None
+    compt,
+    vhost,
+    backend_host=None,
+    backend_port=None,
+    resource_d=None,
+    j2_ctx=None,
+    resource_f=None,
 ):
     update_j2_ctx_and_install_access(compt, j2_ctx)
     kc = compt.install_tls_key_and_crt(vhost, CONF_D)
@@ -73,7 +79,7 @@ def install_vhost(
         j2_ctx.nginx.listen_any = a
     j2_ctx.nginx.listen_ip = "0.0.0.0" if j2_ctx.nginx.listen_any else vhost
     compt.install_resource(
-        (resource_d or compt.name) + "/nginx.conf",
+        resource_f or (resource_d or compt.name) + "/nginx.conf",
         j2_ctx,
         CONF_D.join(vhost + ".conf"),
     )
