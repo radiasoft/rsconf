@@ -34,85 +34,104 @@ class T(component.T):
         from rsconf.component import docker_registry
         from rsconf import db
 
-        self.__docker_unit_enable_after = []
-        self.__uwsgi_docker_vols = []
+        def _defaults_1(jc):
+            self.j2_ctx_pksetdefault(
+                PKDict(
+                    sirepo=PKDict(
+                        cookie=PKDict(
+                            http_name=lambda: "sirepo_{}".format(jc.rsconf_db.channel),
+                            private_key=lambda: self.secret_path_value(
+                                _COOKIE_PRIVATE_KEY,
+                                gen_secret=lambda: pkcompat.from_bytes(
+                                    base64.urlsafe_b64encode(os.urandom(32)),
+                                ),
+                                visibility="channel",
+                            )[0],
+                        ),
+                        docker_image=docker_registry.absolute_image(self),
+                        feature_config=PKDict(
+                            api_modules=[],
+                            job=True,
+                            # TODO(e-carlin): Remove and use only moderated_sim_types once
+                            # git.radiasoft.org/sirepo/pull/4211 is in prod.
+                            default_proprietary_sim_types=tuple(),
+                            moderated_sim_types=tuple(),
+                            proprietary_sim_types=tuple(),
+                            proprietary_code_tarballs=tuple(),
+                        ),
+                        job=PKDict(
+                            max_message_bytes="200m",
+                        ),
+                        pkcli=PKDict(
+                            service=PKDict(
+                                ip=db.LOCAL_IP if self.__tornado else db.ANY_IP,
+                                run_dir=self.__run_d,
+                                tornado=False,
+                            ),
+                        ),
+                        srdb=PKDict(root=self.__run_d.join(_DB_SUBDIR)),
+                        wordpress_host=None,
+                    ),
+                    pykern=PKDict(
+                        pkdebug=PKDict(
+                            redirect_logging=True,
+                            want_pid_time=True,
+                        ),
+                        pkconfig=PKDict(channel=jc.rsconf_db.channel),
+                    ),
+                )
+            )
 
+        def _defaults_2(jc):
+            self.j2_ctx_pksetdefault(
+                PKDict(
+                    sirepo=PKDict(
+                        client_max_body_size=pkconfig.parse_bytes(
+                            jc.sirepo.job.max_message_bytes
+                        ),
+                        job_api=PKDict,
+                        job_driver=PKDict(modules=["docker"]),
+                        job=PKDict(
+                            server_secret=lambda: self.secret_path_value(
+                                _SERVER_SECRET,
+                                gen_secret=lambda: pkcompat.from_bytes(
+                                    base64.urlsafe_b64encode(os.urandom(32)),
+                                ),
+                                visibility="channel",
+                            )[0],
+                            verify_tls=lambda: jc.pykern.pkconfig.channel != "dev",
+                        ),
+                        pkcli=PKDict(
+                            job_supervisor=PKDict(
+                                ip=db.local_IP,
+                                port=8001,
+                            ),
+                        ),
+                    ),
+                )
+            )
+
+        def _tornado(jc, z):
+            self.__tornado = bool(z.pkunchecked_nested_get("pkcli.service.tornado"))
+            z._first_port = int(z.pkunchecked_nested_get("pkcli.service.tornado"))
+            z._last_port
+            pkcli.port
+            instances
+            self.__run_d = systemd.docker_unit_prepare(self, jc)
+
+        self.__docker_unit_enable_after = []
+        self.__docker_vols = []
         self.buildt.require_component("docker", "nginx", "db_bkp")
         jc, z = self.j2_ctx_init()
-        self.__run_d = systemd.docker_unit_prepare(self, jc)
-        d = self.__run_d.join(_DB_SUBDIR)
-        self.j2_ctx_pksetdefault(
-            PKDict(
-                sirepo=PKDict(
-                    cookie=PKDict(
-                        http_name=lambda: "sirepo_{}".format(jc.rsconf_db.channel),
-                        private_key=lambda: self.secret_path_value(
-                            _COOKIE_PRIVATE_KEY,
-                            gen_secret=lambda: pkcompat.from_bytes(
-                                base64.urlsafe_b64encode(os.urandom(32)),
-                            ),
-                            visibility="channel",
-                        )[0],
-                    ),
-                    docker_image=docker_registry.absolute_image(self),
-                    feature_config=PKDict(
-                        api_modules=[],
-                        job=True,
-                        # TODO(e-carlin): Remove and use only moderated_sim_types once
-                        # git.radiasoft.org/sirepo/pull/4211 is in prod.
-                        default_proprietary_sim_types=tuple(),
-                        moderated_sim_types=tuple(),
-                        proprietary_sim_types=tuple(),
-                        proprietary_code_tarballs=tuple(),
-                    ),
-                    job=PKDict(
-                        max_message_bytes="200m",
-                    ),
-                    pkcli=PKDict(
-                        service=PKDict(
-                            ip="0.0.0.0",
-                            run_dir=self.__run_d,
-                        ),
-                    ),
-                    srdb=PKDict(root=d),
-                    wordpress_host=None,
-                ),
-                pykern=PKDict(
-                    pkdebug=PKDict(
-                        redirect_logging=True,
-                        want_pid_time=True,
-                    ),
-                    pkconfig=PKDict(channel=jc.rsconf_db.channel),
-                ),
-            )
-        )
+        self.__tornado = bool(z.pkunchecked_nested_get("pkcli.service.tornado"))
+        if self.__tornado:
+            _tornado(jc, z)
+        else:
+            self.__run_d = systemd.docker_unit_prepare(self, jc)
+        _defaults_1(jc)
         self._comsol(z)
         self._jupyterhublogin(z)
-        self.j2_ctx_pksetdefault(
-            PKDict(
-                sirepo=PKDict(
-                    client_max_body_size=pkconfig.parse_bytes(z.job.max_message_bytes),
-                    job_api=PKDict,
-                    job_driver=PKDict(modules=["docker"]),
-                    job=PKDict(
-                        server_secret=lambda: self.secret_path_value(
-                            _SERVER_SECRET,
-                            gen_secret=lambda: pkcompat.from_bytes(
-                                base64.urlsafe_b64encode(os.urandom(32)),
-                            ),
-                            visibility="channel",
-                        )[0],
-                        verify_tls=lambda: jc.pykern.pkconfig.channel != "dev",
-                    ),
-                    pkcli=PKDict(
-                        job_supervisor=PKDict(
-                            ip="127.0.0.1",
-                            port=8001,
-                        ),
-                    ),
-                ),
-            )
-        )
+        _defaults_2(jc)
         # server connects locally only so go direct to tornado.
         # supervisor has different uri to pass to agents.
         z.job_api.supervisor_uri = "http://{}:{}".format(
@@ -120,8 +139,6 @@ class T(component.T):
             z.pkcli.job_supervisor.port,
         )
         self._set_sirepo_config("sirepo_job_supervisor")
-        # TODO(robnagler) remove when deployed to alpha
-        z.job.supervisor_uri = z.job_api.supervisor_uri
 
     def internal_build_write(self):
         from rsconf.component import db_bkp
@@ -131,23 +148,42 @@ class T(component.T):
         jc = self.j2_ctx
         z = jc[self.name]
         self._install_dirs_and_files()
-        nginx.install_vhost(
-            self,
-            vhost=z.vhost,
-            backend_host=jc.rsconf_db.host,
-            backend_port=z.pkcli.service_port,
-            j2_ctx=jc,
-        )
-        systemd.docker_unit_enable(
-            self,
-            jc,
-            image=z.docker_image,
-            env=self.sirepo_unit_env(),
-            cmd="sirepo service uwsgi",
-            after=self.__docker_unit_enable_after,
-            # TODO(robnagler) wanted by nginx
-            volumes=self.__uwsgi_docker_vols,
-        )
+
+        def _uwsgi(z):
+            nginx.install_vhost(
+                self,
+                vhost=z.vhost,
+                backend_host=jc.rsconf_db.host,
+                backend_port=z.pkcli.service_port,
+                j2_ctx=jc,
+            )
+            systemd.docker_unit_enable(
+                self,
+                jc,
+                image=z.docker_image,
+                env=self.sirepo_unit_env(),
+                cmd="sirepo service uwsgi",
+                after=self.__docker_unit_enable_after,
+                volumes=self.__api_docker_vols,
+            )
+
+        def _tornado(z):
+            nginx.install_vhost(
+                self,
+                vhost=z.vhost,
+                resource_f="tornado_nginx.conf",
+                j2_ctx=jc,
+            )
+            systemd.docker_unit_enable(
+                self,
+                jc,
+                image=z.docker_image,
+                env=self.sirepo_unit_env(),
+                cmd="sirepo service uwsgi",
+                after=self.__docker_unit_enable_after,
+                volumes=self.__docker_vols,
+            )
+
         db_bkp.install_script_and_subdir(
             self,
             jc,
@@ -165,7 +201,7 @@ class T(component.T):
                 (k, v) for k, v in compt.j2_ctx.items() if k in ("sirepo", "pykern")
             ),
             # local only values
-            exclude_re=r"^sirepo(?:_docker_image|.*_vhost|.*_client_max_body)",
+            exclude_re=r"^sirepo(?:_docker_image|.*_vhost|.*_client_max_body|\.num_api_servers)",
         )
         e.PYTHONUNBUFFERED = "1"
         return e
@@ -208,7 +244,7 @@ class T(component.T):
         ).union(set(self.j2_ctx.sirepo.feature_config.get("moderated_sim_types", [])))
         if not z.jupyterhub_enabled:
             return
-        self.__uwsgi_docker_vols.append(z.sim_api.jupyterhublogin.user_db_root_d)
+        self.__docker_vols.append(z.sim_api.jupyterhublogin.user_db_root_d)
         self._set_sirepo_config("sirepo_jupyterhub")
 
     def _set_sirepo_config(self, component):
@@ -216,3 +252,7 @@ class T(component.T):
         c = self.buildt.get_component(component)
         c.sirepo_config(self)
         self.__docker_unit_enable_after.append(c.name)
+
+    def _tornado(self, z):
+        z._first_port =
+        z._last_port =

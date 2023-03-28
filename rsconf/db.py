@@ -26,6 +26,8 @@ ZERO_YML = "0*.yml"
 
 USER_HOME_ROOT_D = pkio.py_path("/home")
 
+LOCAL_IP = "127.0.0.1"
+ANY_IP = "0.0.0.0"
 SRV_SUBDIR = "srv"
 DEFAULT_ROOT_SUBDIR = "run"
 DB_SUBDIR = "db"
