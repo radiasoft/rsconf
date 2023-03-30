@@ -476,8 +476,32 @@ rsconf_service_restart() {
     done
 }
 
+rsconf_service_restart_at_end() {
+    declare s=$1
+    rsconf_service_restart_at_end[$s]=1
+}
+
+rsconf_service_trigger_restart() {
+    declare service=$1
+    if [[ $service == reboot ]]; then
+        rsconf_reboot
+        # does not return
+    fi
+    # Only trigger restart once
+    if [[ ! ${rsconf_service_status[$service]:-} =~ active|restart ]]; then
+        rsconf_service_status[$service]=restart
+    fi
+}
+
+rsconf_setup_dev() {
+    declare host=$1
+    export install_channel=dev
+    curl "$install_server/$host-netrc" > /root/.netrc
+    chmod 400 /root/.netrc
+}
+
 rsconf_systemctl() {
-#TODO(robnagler) this is awkward for
+    # Handles multi-instance services (sirepo{1..3}) and regular services
     declare op=$1
     declare service=$2
     declare s=$service
@@ -514,30 +538,6 @@ rsconf_systemctl() {
             install_err "unknown systemctl op=$op for service=$service"
             ;;
     esac
-}
-
-rsconf_service_restart_at_end() {
-    declare s=$1
-    rsconf_service_restart_at_end[$s]=1
-}
-
-rsconf_service_trigger_restart() {
-    declare service=$1
-    if [[ $service == reboot ]]; then
-        rsconf_reboot
-        # does not return
-    fi
-    # Only trigger restart once
-    if [[ ! ${rsconf_service_status[$service]:-} =~ active|restart ]]; then
-        rsconf_service_status[$service]=restart
-    fi
-}
-
-rsconf_setup_dev() {
-    declare host=$1
-    export install_channel=dev
-    curl "$install_server/$host-netrc" > /root/.netrc
-    chmod 400 /root/.netrc
 }
 
 rsconf_user() {
