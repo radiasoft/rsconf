@@ -44,6 +44,7 @@ class InstanceSpec(PKDict):
 
 
 _NULL_INSTANCE_SPEC = PKDict(
+    env_var=None,
     exclude_exports=lambda x: x,
     extra_run_flags=PKDict,
     is_null=True,
@@ -166,11 +167,12 @@ def docker_unit_enable(
         env["TZ"] = ":/etc/localtime"
     z.update(
         after=_after(after),
-        extra_run_flags=_extra_run_flags(),
-        service_exec=cmd,
         exports=_exports(env),
+        extra_run_flags=_extra_run_flags(),
         image=docker_registry.absolute_image(compt, j2_ctx, image),
+        instance_spec=instance_spec,
         run_u=run_u or j2_ctx.rsconf_db.run_u,
+        service_exec=cmd,
     )
     volumes = _tuple_arg(volumes)
     run_d_in_volumes = False

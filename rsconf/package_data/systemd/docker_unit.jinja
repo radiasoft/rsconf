@@ -7,13 +7,18 @@ Requires=docker.service
 ExecStart={{ systemd.start }}
 ExecStartPre={{ systemd.remove }}
 ExecStop=-{{ systemd.stop }}
+{% if systemd.instance_spec.env_var %}
+Environment="{{ systemd.instance_spec.env_var }}=%i"
+SyslogIdentifier={{ systemd.service_name }}@%i
+{% else %}
+SyslogIdentifier={{ systemd.service_name }}
+{% endif %}
 {% if systemd.is_timer %}
 Type=oneshot
 {% else %}
 Restart=on-failure
 RestartSec=10
 {% endif %}
-SyslogIdentifier={{ systemd.service_name }}
 
 [Install]
 WantedBy=multi-user.target
