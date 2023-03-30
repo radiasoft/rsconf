@@ -103,7 +103,7 @@ class T(component.T):
                         ),
                         pkcli=PKDict(
                             job_supervisor=PKDict(
-                                ip=db.local_IP,
+                                ip=db.LOCAL_IP,
                                 port=8001,
                             ),
                         ),
@@ -112,21 +112,26 @@ class T(component.T):
             )
 
         def _tornado(jc, z):
-            self.__tornado = True
             z._first_port = int(z.pkunchecked_nested_get("pkcli.service.port"))
-            z._last_port = z._first_port + int(z.pkunchecked_nested_get("num_api_servers")) - 1
+            z._last_port = (
+                z._first_port + int(z.pkunchecked_nested_get("num_api_servers")) - 1
+            )
+            assert z._first_port <= z._last_port
             self.__instance_spec = systemd.InstanceSpec(
-                env_var='SIREPO_PKCLI_SERVICE_PORT',
+                env_var="SIREPO_PKCLI_SERVICE_PORT",
                 first_port=z._first_port,
                 last_port=z._last_port,
             )
-            self.__run_d = systemd.docker_unit_prepare(self, jc, instance_spec=self.__instance_spec)
+            self.__run_d = systemd.docker_unit_prepare(
+                self, jc, instance_spec=self.__instance_spec
+            )
 
         self.__docker_unit_enable_after = []
         self.__docker_vols = []
         self.buildt.require_component("docker", "nginx", "db_bkp")
         jc, z = self.j2_ctx_init()
-        if z.pkunchecked_nested_get("num_api_servers"):
+        self.__tornado = bool(z.pkunchecked_nested_get("num_api_servers"))
+        if self.__tornado:
             _tornado(jc, z)
         else:
             self.__run_d = systemd.docker_unit_prepare(self, jc)
@@ -255,7 +260,3 @@ class T(component.T):
         c = self.buildt.get_component(component)
         c.sirepo_config(self)
         self.__docker_unit_enable_after.append(c.name)
-
-    def _tornado(self, z):
-        z._first_port =
-        z._last_port =

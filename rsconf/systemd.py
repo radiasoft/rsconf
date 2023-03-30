@@ -168,7 +168,7 @@ def docker_unit_enable(
     z.update(
         after=_after(after),
         exports=_exports(env),
-        extra_run_flags=_extra_run_flags(),
+        extra_run_flags=_extra_run_flags(instance_spec),
         image=docker_registry.absolute_image(compt, j2_ctx, image),
         instance_spec=instance_spec,
         run_u=run_u or j2_ctx.rsconf_db.run_u,
