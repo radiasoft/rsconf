@@ -66,7 +66,7 @@ class T(component.T):
                             service=PKDict(
                                 ip=db.LOCAL_IP if self.__tornado else db.ANY_IP,
                                 run_dir=self.__run_d,
-                                tornado=False,
+                                tornado=self.__tornado,
                             ),
                         ),
                         srdb=PKDict(root=self.__run_d.join(_DB_SUBDIR)),
@@ -112,19 +112,21 @@ class T(component.T):
             )
 
         def _tornado(jc, z):
-            self.__tornado = bool(z.pkunchecked_nested_get("pkcli.service.tornado"))
-            z._first_port = int(z.pkunchecked_nested_get("pkcli.service.tornado"))
-            z._last_port
-            pkcli.port
-            instances
-            self.__run_d = systemd.docker_unit_prepare(self, jc)
+            self.__tornado = True
+            z._first_port = int(z.pkunchecked_nested_get("pkcli.service.port"))
+            z._last_port = z._first_port + int(z.pkunchecked_nested_get("num_api_servers")) - 1
+            self.__instance_spec = systemd.InstanceSpec(
+                env_var='SIREPO_PKCLI_SERVICE_PORT',
+                first_port=z._first_port,
+                last_port=z._last_port,
+            )
+            self.__run_d = systemd.docker_unit_prepare(self, jc, instance_spec=self.__instance_spec)
 
         self.__docker_unit_enable_after = []
         self.__docker_vols = []
         self.buildt.require_component("docker", "nginx", "db_bkp")
         jc, z = self.j2_ctx_init()
-        self.__tornado = bool(z.pkunchecked_nested_get("pkcli.service.tornado"))
-        if self.__tornado:
+        if z.pkunchecked_nested_get("num_api_servers"):
             _tornado(jc, z)
         else:
             self.__run_d = systemd.docker_unit_prepare(self, jc)
@@ -155,6 +157,7 @@ class T(component.T):
                 vhost=z.vhost,
                 backend_host=jc.rsconf_db.host,
                 backend_port=z.pkcli.service_port,
+                resource_f="flask_nginx.conf",
                 j2_ctx=jc,
             )
             systemd.docker_unit_enable(
@@ -201,7 +204,7 @@ class T(component.T):
                 (k, v) for k, v in compt.j2_ctx.items() if k in ("sirepo", "pykern")
             ),
             # local only values
-            exclude_re=r"^sirepo(?:_docker_image|.*_vhost|.*_client_max_body|\.num_api_servers)",
+            exclude_re=r"^sirepo(?:_docker_image|.*_vhost|.*_client_max_body|\.num_api_servers|\._)",
         )
         e.PYTHONUNBUFFERED = "1"
         return e
