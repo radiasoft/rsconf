@@ -214,6 +214,7 @@ default:
     uri_root: 'jupyter'
   spamd: {}
   systemd:
+    timezone: America/Phoenix
     extra_run_flags:
       mpi_worker:
         shm-size: "1G"

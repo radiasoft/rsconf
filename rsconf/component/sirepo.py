@@ -152,34 +152,13 @@ class T(component.T):
         from rsconf.component import nginx
         from rsconf.component import docker
 
-        jc = self.j2_ctx
-        z = jc[self.name]
-        self._install_dirs_and_files()
-
         def _uwsgi(z):
             nginx.install_vhost(
                 self,
                 vhost=z.vhost,
                 backend_host=jc.rsconf_db.host,
                 backend_port=z.pkcli.service_port,
-                resource_f="flask_nginx.conf",
-                j2_ctx=jc,
-            )
-            systemd.docker_unit_enable(
-                self,
-                jc,
-                image=z.docker_image,
-                env=self.sirepo_unit_env(),
-                cmd="sirepo service uwsgi",
-                after=self.__docker_unit_enable_after,
-                volumes=self.__api_docker_vols,
-            )
-
-        def _tornado(z):
-            nginx.install_vhost(
-                self,
-                vhost=z.vhost,
-                resource_f="tornado_nginx.conf",
+                resource_f="sirepo/flask_nginx.conf",
                 j2_ctx=jc,
             )
             systemd.docker_unit_enable(
@@ -192,6 +171,30 @@ class T(component.T):
                 volumes=self.__docker_vols,
             )
 
+        def _tornado(z):
+            nginx.install_vhost(
+                self,
+                vhost=z.vhost,
+                resource_f="sirepo/tornado_nginx.conf",
+                j2_ctx=jc,
+            )
+            systemd.docker_unit_enable(
+                self,
+                jc,
+                image=z.docker_image,
+                env=self.sirepo_unit_env(),
+                cmd="sirepo service uwsgi",
+                after=self.__docker_unit_enable_after,
+                volumes=self.__docker_vols,
+            )
+
+        jc = self.j2_ctx
+        z = jc[self.name]
+        self._install_dirs_and_files()
+        if self.__tornado:
+            _tornado(z)
+        else:
+            _uwsgi(z)
         db_bkp.install_script_and_subdir(
             self,
             jc,

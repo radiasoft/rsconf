@@ -116,13 +116,13 @@ def custom_unit_prepare(
     z.run_d = run_d
     z.is_timer = False
     if instance_spec.is_null:
+        # systemd creates RuntimeDirectory in /run see custom_unit.service
+        z.runtime_d = pkio.py_path("/run").join(z.service_name)
+        z.pid_file = z.runtime_d.join(z.service_name + ".pid")
+    else:
         # Instances don't have pid_files. They are managed by systemd
         z.pkdel("pid_file")
         z.pkdel("runtime_d")
-    else:
-        # systemd creates RuntimeDirectory in /run see custom_unit.service
-        z.pid_file = z.runtime_d.join(z.service_name + ".pid")
-        z.runtime_d = pkio.py_path("/run").join(z.service_name)
     return run_d
 
 
