@@ -26,6 +26,6 @@ rsconf_install_file '/srv/mpi_worker/remove' 'ae6cf280d18f6d2a044d445cf0741b39'
 rsconf_install_file '/srv/mpi_worker/start' '08936453235e73fb2cfcdae630ae52ef'
 rsconf_install_file '/srv/mpi_worker/stop' 'ef3c936a00c84e41c57fdc040aa8810e'
 rsconf_install_access '444' 'root' 'root'
-rsconf_install_file '/etc/systemd/system/mpi_worker.service' 'adaeb3374470a30eb064ce0bd6b4990f'
+rsconf_install_file '/etc/systemd/system/mpi_worker.service' 'e3ed14348cf0c17d600357df25450abc'
 rsconf_service_docker_pull 'v3.radia.run:5000/radiasoft/beamsim-jupyter:dev' 'mpi_worker'
 }

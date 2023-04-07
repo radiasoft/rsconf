@@ -24,6 +24,6 @@ rsconf_install_file '/srv/jupyterhub/remove' 'fe59b6971e147bd641a8ec95d2f021a7'
 rsconf_install_file '/srv/jupyterhub/start' '91bcfd89a85275de9258c8e199ed29ec'
 rsconf_install_file '/srv/jupyterhub/stop' '52cdba91c58d9979b5ac5adf71887ce5'
 rsconf_install_access '444' 'root' 'root'
-rsconf_install_file '/etc/systemd/system/jupyterhub.service' 'ecb063902472a999f100adf353d5f297'
+rsconf_install_file '/etc/systemd/system/jupyterhub.service' 'cb213f604499026450bc1646a91868ae'
 rsconf_service_docker_pull 'v3.radia.run:5000/radiasoft/jupyterhub:dev' 'jupyterhub'
 }

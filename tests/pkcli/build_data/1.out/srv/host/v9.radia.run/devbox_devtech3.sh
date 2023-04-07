@@ -10,7 +10,7 @@ rsconf_install_file '/srv/devbox_devtech3/remove' '0d858f484cd79600d2fe2e62ac09b
 rsconf_install_file '/srv/devbox_devtech3/start' '0eee894d1ddb6545bd50573e5a2c19e4'
 rsconf_install_file '/srv/devbox_devtech3/stop' '91ce64afd45dcf8edf13e2e4b2e2269b'
 rsconf_install_access '444' 'root' 'root'
-rsconf_install_file '/etc/systemd/system/devbox_devtech3.service' '5fcc2fb10b69bb6fc0ee2b5d83dec73c'
+rsconf_install_file '/etc/systemd/system/devbox_devtech3.service' 'afdbd1365adaa419c07b302e20dff287'
 rsconf_service_docker_pull 'v3.radia.run:5000/radiasoft/beamsim-jupyter:dev' 'devbox_devtech3'
 rsconf_install_access '700' 'vagrant' 'vagrant'
 rsconf_install_directory '/srv/devbox_devtech3/jupyter'
