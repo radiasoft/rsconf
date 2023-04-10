@@ -34,7 +34,7 @@ class InstanceSpec(PKDict):
         return filter(lambda x: x != self.env_var, keys)
 
     def extra_run_flags(self):
-        return PKDict({self.env_var: "$" + self.env_var})
+        return [f'--env {self.env_var}="${self.env_var}"']
 
     def service_file(self, base):
         return f"{base}@.service"
@@ -46,7 +46,7 @@ class InstanceSpec(PKDict):
 _NULL_INSTANCE_SPEC = PKDict(
     env_var=None,
     exclude_exports=lambda x: x,
-    extra_run_flags=PKDict,
+    extra_run_flags=lambda: [],
     is_null=True,
     service_file=lambda x: f"{x}.service",
     service_name=lambda x: x,
@@ -150,11 +150,8 @@ def docker_unit_enable(
 
     def _extra_run_flags(instance_spec):
         c = z.pkunchecked_nested_get("extra_run_flags." + compt.name) or PKDict()
-        c.update(instance_spec.extra_run_flags())
-        if not c:
-            return ""
         return " ".join(
-            (f"--{k}={v}" for k, v in c.items()),
+            [f"--{k}='{v}'" for k, v in c.items()] + instance_spec.extra_run_flags(),
         )
 
     z = j2_ctx.systemd

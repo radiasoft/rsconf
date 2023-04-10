@@ -1,0 +1,2 @@
+#!/bin/bash
+docker rm -f sirepo-{7777..7786} >& /dev/null || true

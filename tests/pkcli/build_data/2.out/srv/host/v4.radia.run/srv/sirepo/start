@@ -5,7 +5,7 @@
 set -euo pipefail
 # Needed to allow for empty commands (e.g. docker_registry), bash will complain
 # if an variable is empty as unbound (set -u above)
-image_cmd=( 'v3.radia.run:5000/radiasoft/beamsim-jupyter:dev' )
+image_cmd=( 'docker.io/radiasoft/sirepo:dev' )
 user=vagrant
 if (( $# > 0 )); then
     # No name if called on the command line; called from command line so default log driver
@@ -14,7 +14,7 @@ if (( $# > 0 )); then
         # probably interactive debugging so allow strace
         flags+=( -t --cap-add SYS_PTRACE )
     fi
-    cmd=( /srv/mpi_worker/cmd )
+    cmd=( /srv/sirepo/cmd )
     if [[ ${cmd[@]} ]]; then
         image_cmd+=( "${cmd[@]}" )
     fi
@@ -25,8 +25,8 @@ if (( $# > 0 )); then
 else
     # Systemd logs output to journal so we don't need docker to log, too.
     # No core dumps in daemons
-    flags=( --name 'mpi_worker' --log-driver=none --ulimit core=0 )
-    image_cmd+=( /srv/mpi_worker/cmd )
+    flags=( --name 'sirepo@{7777..7786}' --log-driver=none --ulimit core=0 )
+    image_cmd+=( /srv/sirepo/cmd )
 fi
 # --init runs tini wrapper: https://github.com/krallin/tini
-exec docker run "${flags[@]}" --init --rm "--user=$user" --network=host -v '/srv/mpi_worker/user/vagrant:/home/vagrant/jupyter' -v '/srv/mpi_worker:/srv/mpi_worker:ro' -v '/srv/mpi_worker/tmp/:/home/vagrant/jupyter/tmp:ro' -v '/srv/mpi_worker/tmp/vagrant:/home/vagrant/jupyter/tmp/vagrant' --shm-size='1G' "${image_cmd[@]}"
+exec docker run "${flags[@]}" --init --rm "--user=$user" --network=host -v '/srv/sirepo:/srv/sirepo' --env SIREPO_PKCLI_SERVICE_PORT="$SIREPO_PKCLI_SERVICE_PORT" "${image_cmd[@]}"
