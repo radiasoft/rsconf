@@ -1,5 +1,4 @@
 #!/bin/bash
-NEEDS INSTANCE
 docker stop -t 2 "sirepo-$SIREPO_PKCLI_SERVICE_PORT" >& /dev/null || true
 #TODO(robnagler) should really just wait for container to be stopped
 sleep 2

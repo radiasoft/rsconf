@@ -1,2 +1,2 @@
 #!/bin/bash
-docker rm -f sirepo_jupyterhub >& /dev/null || true
+docker rm -f "sirepo_jupyterhub" >& /dev/null || true

@@ -1,2 +1,2 @@
 #!/bin/bash
-docker rm -f devbox_fullstackdude >& /dev/null || true
+docker rm -f "devbox_fullstackdude" >& /dev/null || true

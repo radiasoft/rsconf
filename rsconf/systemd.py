@@ -19,7 +19,9 @@ _SYSTEMD_DIR = pkio.py_path("/etc/systemd/system")
 # TODO(robnagler) when to download new version of docker container?
 # TODO(robnagler) docker pull happens explicitly, probably
 
+
 class _InstanceSpecBase(PKDict):
+    pass
 
 
 class InstanceSpec(_InstanceSpecBase):
@@ -30,13 +32,16 @@ class InstanceSpec(_InstanceSpecBase):
         first_port (int): first instance
         last_port (int): last instance
     """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        is_null = False
-        container_name = f'{self.base}-"${self.env_var}"'
-        extra_run_flags = [f'--env {self.env_var}="${self.env_var}"']
-        service_file = f"{self.base}@.service"
-        service_name = f"{self.base}@{{{self.first_port}..{self.last_port}}}"
+        self.update(
+            container_name=f"{self.base}-${self.env_var}",
+            extra_run_flags=[f'--env {self.env_var}="${self.env_var}"'],
+            is_null=False,
+            service_file=f"{self.base}@.service",
+            service_name=f"{self.base}@{{{self.first_port}..{self.last_port}}}",
+        )
 
     def exclude_exports(self, keys):
         return filter(lambda x: x != self.env_var, keys)
@@ -49,18 +54,19 @@ class _NullInstanceSpec(_InstanceSpecBase):
         first_port (int): first instance
         last_port (int): last instance
     """
+
     def __init__(self, base):
         super().__init__(
             base=base,
-            first_port=None,
+            container_name=base,
             env_var=None,
+            extra_run_flags=[],
+            first_port=None,
+            is_null=True,
             last_port=None,
+            service_file=f"{base}.service",
+            service_name=base,
         )
-        is_null = True
-        container_name = self.base
-        extra_run_flags = []
-        service_file = f"{self.base}.service"
-        service_name = self.base
 
     def exclude_exports(self, keys):
         return keys
@@ -223,7 +229,10 @@ def docker_unit_enable(
 
 
 def docker_unit_prepare(
-    compt, j2_ctx, watch_files=(), instance_spec=None,
+    compt,
+    j2_ctx,
+    watch_files=(),
+    instance_spec=None,
 ):
     """Must be first call"""
     return custom_unit_prepare(compt, j2_ctx, watch_files, instance_spec=instance_spec)
@@ -304,9 +313,9 @@ def unit_enable(compt, j2_ctx):
 def unit_prepare(compt, j2_ctx, watch_files=(), instance_spec=None):
     """Must be first call"""
     z = j2_ctx.pksetdefault(systemd=PKDict).systemd
-    z.service_name = instance_spec.service_name
-    z.instance_spec = instance_spec
-    f = _SYSTEMD_DIR.join(instance_spec.service_file)
+    z.instance_spec = instance_spec or _NullInstanceSpec(compt.name)
+    z.service_name = z.instance_spec.service_name
+    f = _SYSTEMD_DIR.join(z.instance_spec.service_file)
     d = pkio.py_path(str(f) + ".d")
     z.pkupdate(
         service_f=f,
