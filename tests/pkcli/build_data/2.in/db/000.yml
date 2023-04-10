@@ -59,6 +59,8 @@ channel:
 host:
   dev:
     v4.radia.run:
+      docker:
+        tls_host: v4.radia.run
       rsconf_db:
         components: [ sirepo ]
       sirepo:

@@ -37,7 +37,7 @@ class InstanceSpec(_InstanceSpecBase):
         super().__init__(**kwargs)
         self.update(
             container_name=f"{self.base}-${self.env_var}",
-            extra_run_flags=[f'--env {self.env_var}="${self.env_var}"'],
+            env_arg=f'--env {self.env_var}="${self.env_var}"',
             is_null=False,
             service_file=f"{self.base}@.service",
             service_name=f"{self.base}@{{{self.first_port}..{self.last_port}}}",
@@ -59,8 +59,8 @@ class _NullInstanceSpec(_InstanceSpecBase):
         super().__init__(
             base=base,
             container_name=base,
+            env_arg="",
             env_var=None,
-            extra_run_flags=[],
             first_port=None,
             is_null=True,
             last_port=None,
@@ -167,10 +167,10 @@ def docker_unit_enable(
         )
 
     def _extra_run_flags(instance_spec):
-        c = z.pkunchecked_nested_get("extra_run_flags." + compt.name) or PKDict()
-        return " ".join(
-            [f"--{k}='{v}'" for k, v in c.items()] + instance_spec.extra_run_flags,
-        )
+        c = z.pkunchecked_nested_get("extra_run_flags." + compt.name)
+        if not c:
+            return ""
+        return " ".join([f"--{k}='{v}'" for k, v in c.items()])
 
     z = j2_ctx.systemd
     if env is None:

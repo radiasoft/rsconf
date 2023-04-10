@@ -25,7 +25,7 @@ if (( $# > 0 )); then
 else
     # Systemd logs output to journal so we don't need docker to log, too.
     # No core dumps in daemons
-    flags=( --name "sirepo_job_supervisor" --log-driver=none --ulimit core=0 )
+    flags=( --name "sirepo_job_supervisor"  --log-driver=none --ulimit core=0 )
     image_cmd+=( /srv/sirepo_job_supervisor/cmd )
 fi
 # --init runs tini wrapper: https://github.com/krallin/tini
