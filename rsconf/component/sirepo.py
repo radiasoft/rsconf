@@ -118,6 +118,7 @@ class T(component.T):
             )
             assert z._first_port <= z._last_port
             self.__instance_spec = systemd.InstanceSpec(
+                base=self.name,
                 env_var="SIREPO_PKCLI_SERVICE_PORT",
                 first_port=z._first_port,
                 last_port=z._last_port,

@@ -9,7 +9,7 @@ ExecStartPre={{ systemd.remove }}
 ExecStop=-{{ systemd.stop }}
 {% if systemd.instance_spec.env_var %}
 Environment="{{ systemd.instance_spec.env_var }}=%i"
-SyslogIdentifier={{ systemd.service_name }}@%i
+SyslogIdentifier={{ systemd.instance.base }}@%i
 {% else %}
 SyslogIdentifier={{ systemd.service_name }}
 {% endif %}

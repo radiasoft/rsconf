@@ -19,38 +19,51 @@ _SYSTEMD_DIR = pkio.py_path("/etc/systemd/system")
 # TODO(robnagler) when to download new version of docker container?
 # TODO(robnagler) docker pull happens explicitly, probably
 
+class _InstanceSpecBase(PKDict):
 
-class InstanceSpec(PKDict):
+
+class InstanceSpec(_InstanceSpecBase):
+    """For systemd instances, e.g. ``sirepo@.service``.
+    Args:
+        base (str): base name of service
+        env_var (str): name of environment variable to cascade
+        first_port (int): first instance
+        last_port (int): last instance
     """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        is_null = False
+        container_name = f'{self.base}-"${self.env_var}"'
+        extra_run_flags = [f'--env {self.env_var}="${self.env_var}"']
+        service_file = f"{self.base}@.service"
+        service_name = f"{self.base}@{{{self.first_port}..{self.last_port}}}"
+
+    def exclude_exports(self, keys):
+        return filter(lambda x: x != self.env_var, keys)
+
+
+class _NullInstanceSpec(_InstanceSpecBase):
+    """For units that don't have instances (the default)
     Args:
         env_var (str): name of environment variable to cascade
         first_port (int): first instance
         last_port (int): last instance
     """
-
-    is_null = False
+    def __init__(self, base):
+        super().__init__(
+            base=base,
+            first_port=None,
+            env_var=None,
+            last_port=None,
+        )
+        is_null = True
+        container_name = self.base
+        extra_run_flags = []
+        service_file = f"{self.base}.service"
+        service_name = self.base
 
     def exclude_exports(self, keys):
-        return filter(lambda x: x != self.env_var, keys)
-
-    def extra_run_flags(self):
-        return [f'--env {self.env_var}="${self.env_var}"']
-
-    def service_file(self, base):
-        return f"{base}@.service"
-
-    def service_name(self, base):
-        return f"{base}@{{{self.first_port}..{self.last_port}}}"
-
-
-_NULL_INSTANCE_SPEC = PKDict(
-    env_var=None,
-    exclude_exports=lambda x: x,
-    extra_run_flags=lambda: [],
-    is_null=True,
-    service_file=lambda x: f"{x}.service",
-    service_name=lambda x: x,
-)
+        return keys
 
 
 def custom_unit_enable(
@@ -104,9 +117,7 @@ def custom_unit_enable(
     unit_enable(compt, j2_ctx)
 
 
-def custom_unit_prepare(
-    compt, j2_ctx, watch_files=(), instance_spec=_NULL_INSTANCE_SPEC
-):
+def custom_unit_prepare(compt, j2_ctx, watch_files=(), instance_spec=None):
     """Must be first call"""
     run_d = unit_run_d(j2_ctx, compt.name)
     unit_prepare(
@@ -115,7 +126,8 @@ def custom_unit_prepare(
     z = j2_ctx.systemd
     z.run_d = run_d
     z.is_timer = False
-    if instance_spec.is_null:
+    z.is_docker = False
+    if z.instance_spec.is_null:
         # systemd creates RuntimeDirectory in /run see custom_unit.service
         z.runtime_d = pkio.py_path("/run").join(z.service_name)
         z.pid_file = z.runtime_d.join(z.service_name + ".pid")
@@ -151,7 +163,7 @@ def docker_unit_enable(
     def _extra_run_flags(instance_spec):
         c = z.pkunchecked_nested_get("extra_run_flags." + compt.name) or PKDict()
         return " ".join(
-            [f"--{k}='{v}'" for k, v in c.items()] + instance_spec.extra_run_flags(),
+            [f"--{k}='{v}'" for k, v in c.items()] + instance_spec.extra_run_flags,
         )
 
     z = j2_ctx.systemd
@@ -211,7 +223,7 @@ def docker_unit_enable(
 
 
 def docker_unit_prepare(
-    compt, j2_ctx, watch_files=(), instance_spec=_NULL_INSTANCE_SPEC
+    compt, j2_ctx, watch_files=(), instance_spec=None,
 ):
     """Must be first call"""
     return custom_unit_prepare(compt, j2_ctx, watch_files, instance_spec=instance_spec)
@@ -266,7 +278,7 @@ def timer_prepare(compt, j2_ctx, on_calendar, watch_files=(), service_name=None)
     z = j2_ctx.pksetdefault(systemd=PKDict).systemd
     z.pksetdefault(timezone="America/Denver")
     z.pkupdate(
-        instance_spec=_NULL_INSTANCE_SPEC,
+        instance_spec=_NullInstanceSpec(n),
         is_timer=True,
         on_calendar=_on_calendar(on_calendar, z.timezone),
         run_d=run_d,
@@ -289,12 +301,12 @@ def unit_enable(compt, j2_ctx):
     pass
 
 
-def unit_prepare(compt, j2_ctx, watch_files=(), instance_spec=_NULL_INSTANCE_SPEC):
+def unit_prepare(compt, j2_ctx, watch_files=(), instance_spec=None):
     """Must be first call"""
     z = j2_ctx.pksetdefault(systemd=PKDict).systemd
-    z.service_name = instance_spec.service_name(compt.name)
+    z.service_name = instance_spec.service_name
     z.instance_spec = instance_spec
-    f = _SYSTEMD_DIR.join(instance_spec.service_file(compt.name))
+    f = _SYSTEMD_DIR.join(instance_spec.service_file)
     d = pkio.py_path(str(f) + ".d")
     z.pkupdate(
         service_f=f,
