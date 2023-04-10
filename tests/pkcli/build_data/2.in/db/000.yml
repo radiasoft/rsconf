@@ -11,6 +11,8 @@ default:
         uid: 1000
         email: vagrant@v4.radia.run
         want_shell: true
+  bkp:
+    ssh_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIB3mhGsrxFV4KnHjDtBaaU7ZdlNhwxIEPZ3/+Bv1xZY v3.radia.run"
   db_bkp:
     on_calendar: "7:30"
   docker_cache:
@@ -18,6 +20,7 @@ default:
   docker_registry:
     host: ""
   component:
+    tls_crt: {}
     tls_crt_create: true
   docker:
     iptables: false
@@ -59,10 +62,13 @@ host:
       rsconf_db:
         components: [ sirepo ]
       sirepo:
+        job_driver:
+          docker:
+            hosts: [ v4.radia.run ]
+        num_api_servers: 10
         pkcli:
           service:
             port: 7777
-        num_api_servers: 10
 #Local Variables:
 #mode:yaml
 #End:

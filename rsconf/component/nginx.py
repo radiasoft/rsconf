@@ -123,6 +123,7 @@ class T(component.T):
         # render_redirects installs tls certs
         self.install_access(mode="400", owner=self.hdb.rsconf_db.root_u)
         z.rendered_redirects = self._render_redirects(jc)
+        z.pksetdefault(worker_processes=1)
         nc = self.buildt.get_component("network")
         z.public_ip = nc.unchecked_public_ip()
         if z.public_ip:
