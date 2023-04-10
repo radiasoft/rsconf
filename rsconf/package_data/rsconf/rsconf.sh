@@ -531,6 +531,7 @@ rsconf_systemctl() {
         restart)
             systemctl stop "$s" "$s@*" &> /dev/null || true
             # fall through
+            ;&
         start)
             eval systemctl start $service
             ;;

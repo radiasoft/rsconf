@@ -4,6 +4,12 @@ server {
     return 301 https://{{ nginx.vhost }}$request_uri;
 }
 
+upstream sirepo_api {
+    {% for p in range(sirepo._first_port, sirepo._last_port) %}
+    server {{ sirepo.pkcli.service.ip }}:{{ p }};
+    {% endfor %}
+}
+
 server {
     listen {{ nginx.listen_ip }}:443 ssl;
     server_name {{ nginx.vhost }};
@@ -12,14 +18,6 @@ server {
     ssl_certificate_key {{ nginx.tls_key }};
     client_max_body_size {{ sirepo.client_max_body_size }};
 
-    # Enumerate all the Tornado servers here
-    upstream sirepo_api {
-        {% for p in range(sirepo._first_port, sirepo._last_port) %}
-        server {{ sirepo.pkcli.service.ip }}:{{ p }};
-        {% endfor %}
-
-    }
-
     # Only one try on requests. The servers are either busy or not.
     proxy_next_upstream off;
 
@@ -27,7 +25,7 @@ server {
         allow all;
         proxy_pass http://sirepo_api;
     }
-# TODO(robnagler) dump static files into /srv/sirepo/srv/static
+{# TODO(robnagler) dump static files into /srv/sirepo/srv/static
 # Create a command that generates static/robots.txt and favicon.ico
 #    location ^~ /static/ {
 #        root /var/www;
@@ -39,6 +37,7 @@ server {
 #    location = /robots.txt {
 #        rewrite (.*) /static/robots.txt;
 #    }
+#}
 {% if sirepo.wordpress_host %}
 {# legacy redirects #}
     location = /en/xray-beamlines.html {
