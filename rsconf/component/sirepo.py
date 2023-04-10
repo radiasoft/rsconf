@@ -184,7 +184,7 @@ class T(component.T):
                 jc,
                 image=z.docker_image,
                 env=self.sirepo_unit_env(),
-                cmd="sirepo service uwsgi",
+                cmd="sirepo service tornado",
                 after=self.__docker_unit_enable_after,
                 volumes=self.__docker_vols,
             )
