@@ -136,12 +136,11 @@ def docker_unit_enable(
     after=None,
     run_u=None,
     ports=None,
-    instance_spec=_NULL_INSTANCE_SPEC,
 ):
     """Must be last call"""
     from rsconf.component import docker_registry
 
-    def _exports(env):
+    def _exports(instance_spec, env):
         return "\n".join(
             [
                 f"export '{k}={env[k]}'"
@@ -167,10 +166,9 @@ def docker_unit_enable(
         env["TZ"] = ":/etc/localtime"
     z.update(
         after=_after(after),
-        exports=_exports(env),
-        extra_run_flags=_extra_run_flags(instance_spec),
+        exports=_exports(z.instance_spec, env),
+        extra_run_flags=_extra_run_flags(z.instance_spec),
         image=docker_registry.absolute_image(compt, j2_ctx, image),
-        instance_spec=instance_spec,
         run_u=run_u or j2_ctx.rsconf_db.run_u,
         service_exec=cmd,
     )
@@ -201,7 +199,7 @@ def docker_unit_enable(
     # These files should be 400, since there's no value in making them public.
     compt.install_access(mode="444", owner=j2_ctx.rsconf_db.root_u)
     if z.is_timer:
-        assert instance_spec.is_null
+        assert z.instance_spec.is_null
         compt.install_resource(
             "systemd/timer_unit",
             j2_ctx,
@@ -271,6 +269,7 @@ def timer_prepare(compt, j2_ctx, on_calendar, watch_files=(), service_name=None)
     z = j2_ctx.pksetdefault(systemd=PKDict).systemd
     z.pksetdefault(timezone="America/Denver")
     z.pkupdate(
+        instance_spec=_NULL_INSTANCE_SPEC,
         is_timer=True,
         on_calendar=_on_calendar(on_calendar, z.timezone),
         run_d=run_d,
@@ -297,6 +296,7 @@ def unit_prepare(compt, j2_ctx, watch_files=(), instance_spec=_NULL_INSTANCE_SPE
     """Must be first call"""
     z = j2_ctx.pksetdefault(systemd=PKDict).systemd
     z.service_name = instance_spec.service_name(compt.name)
+    z.instance_spec = instance_spec
     f = _SYSTEMD_DIR.join(instance_spec.service_file(compt.name))
     d = pkio.py_path(str(f) + ".d")
     z.pkupdate(
