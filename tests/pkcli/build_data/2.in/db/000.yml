@@ -69,8 +69,7 @@ host:
             hosts: [ v4.radia.run ]
         num_api_servers: 10
         pkcli:
-          service:
-            port: 7777
+          service_port: 7777
 #Local Variables:
 #mode:yaml
 #End:

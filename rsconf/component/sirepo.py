@@ -112,10 +112,8 @@ class T(component.T):
             )
 
         def _tornado(jc, z):
-            z._first_port = int(z.pkunchecked_nested_get("pkcli.service.port"))
-            z._last_port = (
-                z._first_port + int(z.pkunchecked_nested_get("num_api_servers")) - 1
-            )
+            z._first_port = int(z.pknested_get("pkcli.service_port"))
+            z._last_port = z._first_port + int(z.pknested_get("num_api_servers")) - 1
             assert z._first_port <= z._last_port
             self.__instance_spec = systemd.InstanceSpec(
                 base=self.name,
