@@ -1,8 +1,0 @@
-[Unit]
-Description=logrotate
-
-[Timer]
-OnCalendar=*-*-* 14:30:0
-
-[Install]
-WantedBy=timers.target

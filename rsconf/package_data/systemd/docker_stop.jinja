@@ -1,4 +1,4 @@
 #!/bin/bash
-docker stop -t 2 {{ systemd.service_name }} >& /dev/null || true
+docker stop -t 2 "{{ systemd.instance_spec.container_name }}" >& /dev/null || true
 #TODO(robnagler) should really just wait for container to be stopped
 sleep 2

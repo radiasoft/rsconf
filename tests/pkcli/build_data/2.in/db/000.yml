@@ -1,0 +1,75 @@
+---
+default:
+  base_os:
+    ip_forward: false
+    volume_groups: {}
+  base_users:
+    add:
+      - vagrant
+    spec:
+      vagrant:
+        uid: 1000
+        email: vagrant@v4.radia.run
+        want_shell: true
+  bkp:
+    ssh_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIB3mhGsrxFV4KnHjDtBaaU7ZdlNhwxIEPZ3/+Bv1xZY v3.radia.run"
+  db_bkp:
+    on_calendar: "7:30"
+  docker_cache:
+    host: ""
+  docker_registry:
+    host: ""
+  component:
+    tls_crt: {}
+    tls_crt_create: true
+  docker:
+    iptables: false
+  logrotate:
+    on_calendar: "7:30"
+  network:
+    devices: {}
+    trusted: {}
+  nginx: {}
+  rsconf: {}
+  rsconf_db:
+    #TODO(robnagler) POSIT dev/nginx/nginx.conf.jinja
+    # defunct elvin_server https://en.wikipedia.org/wiki/Elvin
+    http_host: http://v3.radia.run:2916
+    host_run_d: /srv
+    root_u: root
+    run_u: vagrant
+    run_uid: 1000
+  sirepo:
+    docker_image: radiasoft/sirepo
+  systemd:
+    timezone: America/Phoenix
+
+channel:
+  dev:
+    network:
+      trusted:
+        # v*.radia.run private network
+        10.10.10.0/24:
+          gateway: 10.10.10.2
+      untrusted: {}
+    sirepo:
+      mpi_cores: 4
+      vhost: sirepo.v4.radia.run
+
+host:
+  dev:
+    v4.radia.run:
+      docker:
+        tls_host: v4.radia.run
+      rsconf_db:
+        components: [ sirepo ]
+      sirepo:
+        job_driver:
+          docker:
+            hosts: [ v4.radia.run ]
+        num_api_servers: 10
+        pkcli:
+          service_port: 7777
+#Local Variables:
+#mode:yaml
+#End:

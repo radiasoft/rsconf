@@ -322,6 +322,7 @@ class T(PKDict):
         self.append_root_bash("rsconf_service_restart")
 
     def rsconf_service_restart_at_end(self):
+        # TODO(robnagler) support instances
         self.append_root_bash(
             "rsconf_service_restart_at_end '{}'".format(self.name),
         )

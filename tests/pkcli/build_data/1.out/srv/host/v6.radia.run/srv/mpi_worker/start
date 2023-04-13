@@ -25,8 +25,8 @@ if (( $# > 0 )); then
 else
     # Systemd logs output to journal so we don't need docker to log, too.
     # No core dumps in daemons
-    flags=( --name 'mpi_worker' --log-driver=none --ulimit core=0 )
+    flags=( --name "mpi_worker"  --log-driver=none --ulimit core=0 )
     image_cmd+=( /srv/mpi_worker/cmd )
 fi
 # --init runs tini wrapper: https://github.com/krallin/tini
-exec docker run "${flags[@]}" --init --rm "--user=$user" --network=host -v '/srv/mpi_worker/user/vagrant:/home/vagrant/jupyter' -v '/srv/mpi_worker:/srv/mpi_worker:ro' -v '/srv/mpi_worker/tmp/vagrant:/home/vagrant/jupyter/tmp/vagrant' --shm-size=1G "${image_cmd[@]}"
+exec docker run "${flags[@]}" --init --rm "--user=$user" --network=host -v '/srv/mpi_worker/user/vagrant:/home/vagrant/jupyter' -v '/srv/mpi_worker:/srv/mpi_worker:ro' -v '/srv/mpi_worker/tmp/:/home/vagrant/jupyter/tmp:ro' -v '/srv/mpi_worker/tmp/vagrant:/home/vagrant/jupyter/tmp/vagrant' --shm-size='1G' "${image_cmd[@]}"

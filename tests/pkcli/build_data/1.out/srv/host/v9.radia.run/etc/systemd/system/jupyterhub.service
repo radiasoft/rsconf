@@ -7,9 +7,9 @@ Requires=docker.service
 ExecStart=/srv/jupyterhub/start
 ExecStartPre=/srv/jupyterhub/remove
 ExecStop=-/srv/jupyterhub/stop
+SyslogIdentifier=jupyterhub
 Restart=on-failure
 RestartSec=10
-SyslogIdentifier=jupyterhub
 
 [Install]
 WantedBy=multi-user.target

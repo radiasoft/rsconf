@@ -54,7 +54,13 @@ def install_auth(compt, filename, host_path, visibility, j2_ctx):
 
 
 def install_vhost(
-    compt, vhost, backend_host=None, backend_port=None, resource_d=None, j2_ctx=None
+    compt,
+    vhost,
+    backend_host=None,
+    backend_port=None,
+    resource_d=None,
+    j2_ctx=None,
+    resource_f=None,
 ):
     update_j2_ctx_and_install_access(compt, j2_ctx)
     kc = compt.install_tls_key_and_crt(vhost, CONF_D)
@@ -73,7 +79,7 @@ def install_vhost(
         j2_ctx.nginx.listen_any = a
     j2_ctx.nginx.listen_ip = "0.0.0.0" if j2_ctx.nginx.listen_any else vhost
     compt.install_resource(
-        (resource_d or compt.name) + "/nginx.conf",
+        resource_f or (resource_d or compt.name) + "/nginx.conf",
         j2_ctx,
         CONF_D.join(vhost + ".conf"),
     )
@@ -117,6 +123,7 @@ class T(component.T):
         # render_redirects installs tls certs
         self.install_access(mode="400", owner=self.hdb.rsconf_db.root_u)
         z.rendered_redirects = self._render_redirects(jc)
+        z.pksetdefault(worker_processes=1)
         nc = self.buildt.get_component("network")
         z.public_ip = nc.unchecked_public_ip()
         if z.public_ip:
