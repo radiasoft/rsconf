@@ -70,6 +70,7 @@ def default_command():
     for h in hosts:
         _add_host(j2_ctx, srv, h)
     _sym("~/src/radiasoft/download/bin/install.sh", "index.html")
+    _sym("~/src/radiasoft/download/bin/install.sh", "index.sh")
     _sym(pkresource.filename("rsconf/rsconf.sh"), "rsconf.sh")
     dev_d = pkio.py_path(pkresource.filename("dev"))
     for f in pkio.walk_tree(dev_d):
