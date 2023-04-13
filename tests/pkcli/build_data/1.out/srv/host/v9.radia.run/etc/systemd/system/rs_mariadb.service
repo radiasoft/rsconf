@@ -7,9 +7,9 @@ Requires=docker.service
 ExecStart=/srv/rs_mariadb/start
 ExecStartPre=/srv/rs_mariadb/remove
 ExecStop=-/srv/rs_mariadb/stop
+SyslogIdentifier=rs_mariadb
 Restart=on-failure
 RestartSec=10
-SyslogIdentifier=rs_mariadb
 
 [Install]
 WantedBy=multi-user.target

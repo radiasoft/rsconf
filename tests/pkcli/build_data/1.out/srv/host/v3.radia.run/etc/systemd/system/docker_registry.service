@@ -7,9 +7,9 @@ Requires=docker.service
 ExecStart=/srv/docker_registry/start
 ExecStartPre=/srv/docker_registry/remove
 ExecStop=-/srv/docker_registry/stop
+SyslogIdentifier=docker_registry
 Restart=on-failure
 RestartSec=10
-SyslogIdentifier=docker_registry
 
 [Install]
 WantedBy=multi-user.target

@@ -1,2 +1,2 @@
 #!/bin/bash
-docker rm -f docker_registry >& /dev/null || true
+docker rm -f "docker_registry" >& /dev/null || true

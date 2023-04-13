@@ -7,9 +7,9 @@ Requires=docker.service
 ExecStart=/srv/sirepo_job_supervisor/start
 ExecStartPre=/srv/sirepo_job_supervisor/remove
 ExecStop=-/srv/sirepo_job_supervisor/stop
+SyslogIdentifier=sirepo_job_supervisor
 Restart=on-failure
 RestartSec=10
-SyslogIdentifier=sirepo_job_supervisor
 
 [Install]
 WantedBy=multi-user.target

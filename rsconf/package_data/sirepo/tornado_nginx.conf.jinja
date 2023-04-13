@@ -1,0 +1,73 @@
+server {
+    listen {{ nginx.listen_ip }}:80;
+    server_name {{ nginx.vhost }};
+    return 301 https://{{ nginx.vhost }}$request_uri;
+}
+
+upstream sirepo_api {
+    {% for p in range(sirepo._first_port, sirepo._last_port) %}
+    server {{ sirepo.pkcli.service.ip }}:{{ p }};
+    {% endfor %}
+}
+
+server {
+    listen {{ nginx.listen_ip }}:443 ssl;
+    server_name {{ nginx.vhost }};
+    root {{ nginx.default_root }};
+    ssl_certificate {{ nginx.tls_crt }};
+    ssl_certificate_key {{ nginx.tls_key }};
+    client_max_body_size {{ sirepo.client_max_body_size }};
+
+    # Only one try on requests. The servers are either busy or not.
+    proxy_next_upstream off;
+
+    location / {
+        allow all;
+        proxy_pass http://sirepo_api;
+    }
+{# TODO(robnagler) dump static files into /srv/sirepo/srv/static
+# Create a command that generates static/robots.txt and favicon.ico
+#    location ^~ /static/ {
+#        root /var/www;
+#    }
+#    location = /favicon.ico {
+#        rewrite (.*) /static/img/favicon.ico;
+#    }
+#TODO(robnagler) needs to be dynamic based on symtypes
+#    location = /robots.txt {
+#        rewrite (.*) /static/robots.txt;
+#    }
+#}
+{% if sirepo.wordpress_host %}
+{# legacy redirects #}
+    location = /en/xray-beamlines.html {
+        return 301 /en/apps/x-ray-beamlines/;
+    }
+    location = /en/particle-accelerators.html {
+        return 301 /en/apps/particle-accelerators/;
+    }
+    location = /en/landing.html {
+        return 301 /en/;
+    }
+    location = /en/terms.html {
+        return 301 /en/terms/;
+    }
+    location = /en/privacy.html {
+        return 301 /en/privacy/;
+    }
+    location = /en/plans.html {
+        return 301 /en/plans/;
+    }
+    location ~ ^/(wp-login\.php$|(wp-(admin|content|includes)|en)/) {
+        proxy_pass https://{{ sirepo.wordpress_host }};
+    }
+{% endif %}
+{% if sirepo.jupyterhub_enabled %}
+    location = /{{ sirepo_jupyterhub.uri_root }}/hub/logout {
+        return 302 /auth-logout;
+    }
+    location /{{ sirepo_jupyterhub.uri_root }}/ {
+        proxy_pass http://{{ sirepo_jupyterhub.hub_ip }}:{{ sirepo_jupyterhub.configurable_http_proxy_port }};
+    }
+{% endif %}
+}

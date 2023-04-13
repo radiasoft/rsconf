@@ -456,7 +456,7 @@ rsconf_service_restart() {
         if [[ ${rsconf_service_status[$s]} == restart ]]; then
             # Just restart, most daemons are fast
             install_info "$s: restarting"
-            systemctl restart "$s"
+            rsconf_systemctl restart "$s"
             rsconf_service_status[$s]=active
         elif [[ ${rsconf_service_status[$s]} == active ]]; then
             # Only one re/start per install
@@ -466,13 +466,13 @@ rsconf_service_restart() {
             # https://askubuntu.com/a/836155
             # don't use "status", b/c reports "bad" for sysv init
             # scripts (e.g. network)
-            if ! systemctl is-active "$s" >&/dev/null; then
+            if ! rsconf_systemctl is-active "$s"; then
                 install_info "$s: starting"
-                systemctl start "$s"
+                rsconf_systemctl start "$s"
             fi
             rsconf_service_status[$s]=active
         fi
-        systemctl enable "$s"
+        rsconf_systemctl enable "$s"
     done
 }
 
@@ -498,6 +498,47 @@ rsconf_setup_dev() {
     export install_channel=dev
     curl "$install_server/$host-netrc" > /root/.netrc
     chmod 400 /root/.netrc
+}
+
+rsconf_systemctl() {
+    # Handles multi-instance services (sirepo{1..3}) and regular services
+    declare op=$1
+    declare service=$2
+    declare s=$service
+    if [[ $service =~ (.*)@ ]]; then
+        s=${BASH_REMATCH[1]}
+    fi
+    # systemctl makes managing instances pretty awkward.
+    # No commands understand brace expansion although that's the
+    # recommended syntax (implying shell expansion).
+    # "$s@*" expansion doesn't work for enable/disable.
+    # This handles switching from single instance to several instances (and back).
+    case $op in
+        enable)
+            systemctl disable "$s" /etc/systemd/system/multi-user.target.wants/"$s"@* &> /dev/null || true
+            eval systemctl enable $service
+            ;;
+        is-active)
+            # is-active doesn't do the right thing so test individually
+            declare x
+            for x in $(eval echo $service); do
+                if ! systemctl is-active $x &> /dev/null; then
+                    return 1
+                fi
+            done
+            return 0
+            ;;
+        restart)
+            systemctl stop "$s" "$s@*" &> /dev/null || true
+            # fall through
+            ;&
+        start)
+            eval systemctl start $service
+            ;;
+        *)
+            install_err "unknown systemctl op=$op for service=$service"
+            ;;
+    esac
 }
 
 rsconf_user() {

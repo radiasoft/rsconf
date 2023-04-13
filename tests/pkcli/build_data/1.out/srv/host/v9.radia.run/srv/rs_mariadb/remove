@@ -1,2 +1,2 @@
 #!/bin/bash
-docker rm -f rs_mariadb >& /dev/null || true
+docker rm -f "rs_mariadb" >& /dev/null || true

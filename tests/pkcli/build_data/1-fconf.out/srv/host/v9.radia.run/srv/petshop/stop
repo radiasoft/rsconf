@@ -1,3 +1,0 @@
-#!/bin/bash
-set -eu -o pipefail
-/usr/sbin/httpd -d '/srv/petshop' -f '/srv/petshop/httpd.conf' -k graceful-stop
