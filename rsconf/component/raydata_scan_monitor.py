@@ -26,13 +26,28 @@ class T(component.T):
         z.intake_d = jc.systemd.run_d.join(_INTAKE_D)
 
     def internal_build_write(self):
+        def _env_ok(item):
+            for p in (
+                "SIREPO_RAYDATA",
+                "PYKERN",
+                "PYTHON",
+            ):
+                if item[0].startswith(f"{p}"):
+                    return True
+            return False
+
         jc = self.j2_ctx
         z = jc[self.name]
         systemd.docker_unit_enable(
             self,
             jc,
             image=z.docker_image,
-            env=self._unit_env(z),
+            env=PKDict(
+                filter(
+                    _env_ok,
+                    self.buildt.get_component("sirepo").sirepo_unit_env(self).items(),
+                ),
+            ),
             cmd="sirepo raydata scan_monitor",
             volumes=[
                 z.db_d,
@@ -48,10 +63,5 @@ class T(component.T):
         self.install_directory(z.db_d)
         self.install_directory(z.intake_d)
 
-    def _unit_env(self, z):
-        return pkconfig.to_environ(
-            ["raydata.pkcli.*"],
-            values=PKDict(copy.deepcopy(z)).pkupdate(
-                {"raydata.pkcli.scan_monitor.db_dir": z.db_d}
-            ),
-        )
+    def sirepo_config(self, sirepo):
+        self.j2_ctx_pksetdefault(sirepo.j2_ctx)

@@ -88,6 +88,7 @@ class T(component.T):
         )
         self._comsol(z)
         self._jupyterhublogin(z)
+        self._raydata()
         self.j2_ctx_pksetdefault(
             PKDict(
                 sirepo=PKDict(
@@ -210,6 +211,12 @@ class T(component.T):
             return
         self.__uwsgi_docker_vols.append(z.sim_api.jupyterhublogin.user_db_root_d)
         self._set_sirepo_config("sirepo_jupyterhub")
+
+    def _raydata(self):
+        if "raydata" in set(
+            self.j2_ctx.sirepo.feature_config.get("sim_types", []),
+        ).union(set(self.j2_ctx.sirepo.feature_config.get("moderated_sim_types", []))):
+            self._set_sirepo_config("raydata_scan_monitor")
 
     def _set_sirepo_config(self, component):
         self.buildt.require_component(component)
