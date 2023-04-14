@@ -8,12 +8,12 @@ docker_update() {
     yum makecache fast
     rsconf_yum update "$_docker_pkg" "$_docker_pkg"-cli
     if docker_should_update; then
-        install_err "Installed docker=$(docker --version) is still < min_version={{ docker.min_version }} after update."
+        install_err "Installed docker=$(docker --version) is still < min_software_version={{ docker.min_software_version }} after update."
     fi
 }
 
 docker_install() {
-    local dir={{ docker.data_d }}/volumes
+    declare dir={{ docker.data_d }}/volumes
     if [[ -e $dir && $(type -t docker) != '' ]]; then
         docker_update
         install_info "$dir: exists, docker already installed"
@@ -55,7 +55,7 @@ Then re-run rsconf
         usermod -aG docker vagrant
     {% endif %}
     if docker_should_update; then
-        install_err "Installed docker=$(docker version) is < min_version={{ docker.min_version }} after install."
+        install_err "Installed docker=$(docker version) is < min_software_version={{ docker.min_software_version }} after install."
     fi
 }
 
@@ -64,21 +64,17 @@ docker_main() {
 }
 
 docker_should_update() {
-    docker_should_update_helper Client || docker_should_update_helper Server
+    docker_should_update_do Client || docker_should_update_do Server
 }
 
-docker_should_update_helper() {
-    declare docker_type="$1"
-    declare s="$(docker version --format="{{ '{{ json . }}' }}" | jq --raw-output ".$docker_type.Version")"
-    declare -a v=( ${s//./ } )
-    declare -a d=( {{ docker.min_version[0] }} {{ docker.min_version[1] }} {{ docker.min_version[2] }} )
-    for i in "${!d[@]}"; do
-        if (( "${v[i]}" > "${d[i]}" )); then
-            return 1
-        fi
-        if (( "${v[i]}" < "${d[i]}" )); then
-            return 0
-        fi
-    done
-    return 1
+docker_should_update_do() {
+    declare docker_component=$1
+    declare i=$(docker version --format="{{ '{{ json . }}' }}" | jq --raw-output ".$docker_component.Version")
+    (( $(docker_version_num "$i") < $(docker_version_num '{{ docker.min_software_version }}') ))
+}
+
+docker_version_num() {
+    declare str=$1
+    printf '%d%06d%06d' ${str//./ }
+
 }
