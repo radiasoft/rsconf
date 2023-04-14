@@ -300,7 +300,7 @@ def _cfg_root(value):
         value = pkio.py_path(value)
         assert value.check(dir=1), "{}: must be a directory and exist".format(value)
     else:
-        assert pkconfig.channel_in("dev"), "must be configured except in DEV"
+        assert pkconfig.in_dev_mode(), "must be configured except in DEV"
         if pkunit.is_test_run():
             return _UNIT_TEST_ROOT_D
         fn = pkio.py_path(sys.modules[pkinspect.root_package(_cfg_root)].__file__)
@@ -322,7 +322,7 @@ def _cfg_srv_group(value):
 
     if value:
         return grp.getgrnam(value).gr_name
-    assert pkconfig.channel_in("dev"), "must be configured except in DEV"
+    assert pkconfig.in_dev_mode(), "must be configured except in DEV"
     return grp.getgrgid(os.getgid()).gr_name
 
 
