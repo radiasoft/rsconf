@@ -392,14 +392,16 @@ rsconf_service_docker_pull() {
     fi
     install_info "docker pull $image (may take awhile)..."
     install_exec docker pull "$image"
+    declare f=
     if [[ $service ]]; then
         declare curr_id=$(docker inspect --format='{{.Id}}' "$image" 2>/dev/null || true)
         if [[ $prev_id != $curr_id || $container_image_id && $container_image_id != $curr_id ]]; then
             install_info "$image: new image, restart $service required"
-            "$static_files_gen"
             rsconf_service_trigger_restart "$service"
+            f=1
         fi
     fi
+    static_files_gen_force=$f "$static_files_gen"
 }
 
 rsconf_service_file_changed() {

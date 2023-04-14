@@ -1,6 +1,32 @@
 #!/bin/bash
 set -eou pipefail
-install -d -u vagrant /srv/sirepo/static-
+
+static_files_gen_do() {
+    declare nginx_d={{ sirepo._nginx_static_files_d }}
+    # POSIT: mounted inside the countainer
+    declare gen_d={{ sirepo._gen_static_files_d }}
+    declare nginx_tmp_d=$nginx_d
+    rm -rf "$gen_d"
+    mkdir -p "$gen_d"
+    {{ systemd.start }} sirepo static_files_gen "$gen_d"
+
+    if
+    declare nginx_tmp_d=$nginx_tmp_d.tmp
+    declare
+
+}
+
+static_files_gen_main() {
+    declare nginx_d={{ sirepo._nginx_static_files_d }}
+    if [[ ! ${static_files_gen_force:+1} && -d $nginx_d ]]; then
+        return
+    fi
+}
+
+static_files_gen_main "$@"
+
+install -d -u /srv/sirepo/static-files-<version>
+
 /srv/sirepo/start sirepo static_files gen /var/www/sirepo -- needs to mount /var/www/sirepo.new
 find /var/www/sirepo.new -type d -print0 | xargs -0 chmod 711
 find /var/www/sirepo.new -type f -print0 | xargs chmod 444
