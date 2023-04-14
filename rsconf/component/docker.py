@@ -32,6 +32,7 @@ class T(component.T):
         self.buildt.require_component("base_all", "db_bkp")
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.docker
+        self._check_min_version(z)
         systemd.unit_prepare(
             self,
             j2_ctx,
@@ -77,6 +78,13 @@ class T(component.T):
             run_u=z.run_u,
             run_d=z.run_d,
         )
+
+    def _check_min_version(self, z):
+        z.setdefault("min_version", "0.0.0")
+        p = [int(v) for v in z.min_version.split(".")]
+        if len(p) != 3:
+            raise ValueError(f"min_version={z.min_version} needs to be in X.X.X format")
+        z.min_version = p
 
     def _install_daemon_json(self, z):
         p = self.tmp_path()

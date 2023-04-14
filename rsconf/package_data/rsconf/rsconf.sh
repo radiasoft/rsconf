@@ -572,8 +572,15 @@ rsconf_yum_install() {
         cmd=reinstall
     fi
     if (( ${#todo[@]} > 0 )); then
-        yum "$cmd" --color=never -y -q "${todo[@]}"
+        rsconf_yum "$cmd" "${todo[@]}"
     fi
+}
+
+
+rsconf_yum() {
+    declare cmd="$1"
+    shift
+    yum "$cmd" --color=never -y -q "$@"
 }
 
 rsconf_main ${install_extra_args[@]+"${install_extra_args[@]}"}

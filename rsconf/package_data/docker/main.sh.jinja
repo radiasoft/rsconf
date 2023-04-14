@@ -1,9 +1,21 @@
 #!/bin/bash
+_docker_pkg=docker-ce
+
+docker_update() {
+    if ! docker_should_update; then
+        return;
+    fi
+    yum makecache fast
+    rsconf_yum update "$_docker_pkg" "$_docker_pkg"-cli
+    if docker_should_update; then
+        install_err "Installed docker=$(docker --version) is still < min_version={{ docker.min_version }} after update."
+    fi
+}
 
 docker_install() {
     local dir={{ docker.data_d }}/volumes
     if [[ -e $dir && $(type -t docker) != '' ]]; then
-#TODO(robnagler) update docker rpm?
+        docker_update
         install_info "$dir: exists, docker already installed"
         return
     fi
@@ -28,23 +40,45 @@ Then re-run rsconf
         dnf -y install dnf-plugins-core
         dnf config-manager \
             --add-repo \
-            https://download.docker.com/linux/fedora/docker-ce.repo
+            https://download.docker.com/linux/fedora/"$_docker_pkg".repo
     else
         yum-config-manager \
-            --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+            --add-repo https://download.docker.com/linux/centos/"$_docker_pkg".repo
         yum makecache fast
         # yum-plugin-ovl required for overlay2 on centos7
         # https://github.com/docker-library/official-images/issues/1291
         rsconf_yum_install yum-plugin-ovl
     fi
-#TODO(robnagler) how to update?
-    rsconf_yum_install docker-ce
+    rsconf_yum_install "$_docker_pkg"
     {% if rsconf_db.channel == "dev" %}
         # Give vagrant user access in dev mode only
         usermod -aG docker vagrant
     {% endif %}
+    if docker_should_update; then
+        install_err "Installed docker=$(docker version) is < min_version={{ docker.min_version }} after install."
+    fi
 }
 
 docker_main() {
     docker_install
+}
+
+docker_should_update() {
+    docker_should_update_helper Client || docker_should_update_helper Server
+}
+
+docker_should_update_helper() {
+    declare docker_type="$1"
+    declare s="$(docker version --format="{{ '{{ json . }}' }}" | jq --raw-output ".$docker_type.Version")"
+    declare -a v=( ${s//./ } )
+    declare -a d=( {{ docker.min_version[0] }} {{ docker.min_version[1] }} {{ docker.min_version[2] }} )
+    for i in "${!d[@]}"; do
+        if (( "${v[i]}" > "${d[i]}" )); then
+            return 1
+        fi
+        if (( "${v[i]}" < "${d[i]}" )); then
+            return 0
+        fi
+    done
+    return 1
 }
