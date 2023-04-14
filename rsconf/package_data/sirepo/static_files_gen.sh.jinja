@@ -1,0 +1,8 @@
+#!/bin/bash
+set -eou pipefail
+install -d -u vagrant /srv/sirepo/static-
+/srv/sirepo/start sirepo static_files gen /var/www/sirepo -- needs to mount /var/www/sirepo.new
+find /var/www/sirepo.new -type d -print0 | xargs -0 chmod 711
+find /var/www/sirepo.new -type f -print0 | xargs chmod 444
+mv /var/www/sirepo /var/sirepo.old
+mv /var/www/sirepo.new var/sirepo

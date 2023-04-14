@@ -38,6 +38,7 @@ class InstanceSpec(_InstanceSpecBase):
         self.update(
             container_name=f"{self.base}-${self.env_var}",
             env_arg=f'--env {self.env_var}="${self.env_var}"',
+            first_container_name=f"{self.base}-${self.first_port}",
             is_null=False,
             service_file=f"{self.base}@.service",
             service_name=f"{self.base}@{{{self.first_port}..{self.last_port}}}",
@@ -61,6 +62,7 @@ class _NullInstanceSpec(_InstanceSpecBase):
             container_name=base,
             env_arg="",
             env_var=None,
+            first_container_name=base,
             first_port=None,
             is_null=True,
             last_port=None,
@@ -154,6 +156,7 @@ def docker_unit_enable(
     after=None,
     run_u=None,
     ports=None,
+    static_files_gen="",
 ):
     """Must be last call"""
     from rsconf.component import docker_registry
@@ -223,7 +226,7 @@ def docker_unit_enable(
     compt.install_resource("systemd/docker_unit", j2_ctx, z.service_f)
     if not docker_registry.image_is_local(compt, j2_ctx, z.image):
         compt.append_root_bash(
-            f"rsconf_service_docker_pull '{z.image}' '{z.service_name}'"
+            f"rsconf_service_docker_pull '{z.image}' '{z.service_name}' '{z.instance_spec.first_container_name}' '{static_files_gen}'"
         )
     unit_enable(compt, j2_ctx)
 

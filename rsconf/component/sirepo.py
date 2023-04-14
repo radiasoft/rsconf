@@ -124,6 +124,7 @@ class T(component.T):
             self.__run_d = systemd.docker_unit_prepare(
                 self, jc, instance_spec=self.__instance_spec
             )
+            self.__static_files_gen_f = self.__run_d.join("static_files_gen")
 
         self.__docker_unit_enable_after = []
         self.__docker_vols = []
@@ -133,6 +134,7 @@ class T(component.T):
         if self.__tornado:
             _tornado(jc, z)
         else:
+            self.__static_files_gen_f = None
             self.__run_d = systemd.docker_unit_prepare(self, jc)
         _defaults_1(jc)
         self._comsol(z)
@@ -151,7 +153,7 @@ class T(component.T):
         from rsconf.component import nginx
         from rsconf.component import docker
 
-        def _uwsgi(z):
+        def _uwsgi(jc, z):
             nginx.install_vhost(
                 self,
                 vhost=z.vhost,
@@ -170,7 +172,7 @@ class T(component.T):
                 volumes=self.__docker_vols,
             )
 
-        def _tornado(z):
+        def _tornado(jc, z):
             nginx.install_vhost(
                 self,
                 vhost=z.vhost,
@@ -185,15 +187,16 @@ class T(component.T):
                 cmd="sirepo service tornado",
                 after=self.__docker_unit_enable_after,
                 volumes=self.__docker_vols,
+                static_files_gen=self.__static_files_gen_f,
             )
 
         jc = self.j2_ctx
         z = jc[self.name]
         self._install_dirs_and_files()
         if self.__tornado:
-            _tornado(z)
+            _tornado(jc, z)
         else:
-            _uwsgi(z)
+            _uwsgi(jc, z)
         db_bkp.install_script_and_subdir(
             self,
             jc,
@@ -235,6 +238,12 @@ class T(component.T):
         d = self.__run_d.join(_DB_SUBDIR)
         self.install_directory(d)
         self.install_directory(d.join(_USER_SUBDIR))
+        if self.__static_files_gen_f:
+            self.install_resource(
+                "sirepo/static_files_gen.sh",
+                jc,
+                self.__static_files_gen_f,
+            )
         if not z.feature_config.proprietary_code_tarballs:
             return
         p = d.join(_PROPRIETARY_CODE_SUBDIR)
