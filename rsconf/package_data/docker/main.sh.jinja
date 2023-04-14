@@ -6,7 +6,7 @@ docker_update() {
         return;
     fi
     yum makecache fast
-    rsconf_yum update "$_docker_pkg" "$_docker_pkg"-cli
+    install_yum update "$_docker_pkg" "$_docker_pkg"-cli
     if docker_should_update; then
         install_err "Installed docker=$(docker --version) is still < min_software_version={{ docker.min_software_version }} after update."
     fi
