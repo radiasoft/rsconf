@@ -33,7 +33,7 @@ class T(component.T):
             jc,
             image=z.docker_image,
             env=self._unit_env(z),
-            cmd="raydata scan_monitor",
+            cmd="sirepo raydata scan_monitor",
             volumes=[
                 z.db_d,
                 [
