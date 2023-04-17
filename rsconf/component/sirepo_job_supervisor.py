@@ -84,8 +84,6 @@ class T(component.T):
                 ),
             }
         )
-        if jc.rsconf_db.channel == "dev":
-            self.j2_ctx.sirepo.job_driver.docker.pksetdefault(dev_volumes=0)
 
     def _module_local(self, jc):
         self.j2_ctx_pksetdefault(
