@@ -10,7 +10,7 @@ rsconf_install_file '/srv/docker_registry/start' '0d24513fa754740e7fe20336060a49
 rsconf_install_file '/srv/docker_registry/stop' '78ea090d8b963408ca683091ade53231'
 rsconf_install_access '444' 'root' 'root'
 rsconf_install_file '/etc/systemd/system/docker_registry.service' '5bc346a86839fbdb22b4a2fea4acb425'
-rsconf_service_docker_pull 'docker.io/library/registry:2' 'docker_registry'
+rsconf_service_docker_pull 'docker.io/library/registry:2' 'docker_registry' 'docker_registry' ''
 rsconf_install_file '/srv/docker_registry/v3.radia.run.key' 'b98bb61f3b76969ee1a259d5a1afd5f1'
 rsconf_install_file '/srv/docker_registry/v3.radia.run.crt' '71151618f3ca16bad2d73ef5a6683c1c'
 rsconf_install_file '/srv/docker_registry/passwd' 'a84a84a3439553d304e483bbffdca67d'

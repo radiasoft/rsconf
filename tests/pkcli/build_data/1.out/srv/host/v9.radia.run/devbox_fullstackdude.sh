@@ -11,7 +11,7 @@ rsconf_install_file '/srv/devbox_fullstackdude/start' '3e0c1a0ebcdb36663f3548546
 rsconf_install_file '/srv/devbox_fullstackdude/stop' 'b9d49c0e7995043a88d9602b0cf6e284'
 rsconf_install_access '444' 'root' 'root'
 rsconf_install_file '/etc/systemd/system/devbox_fullstackdude.service' 'e8e49c2404fb1c49825f03be1ab333fe'
-rsconf_service_docker_pull 'v3.radia.run:5000/radiasoft/beamsim-jupyter:dev' 'devbox_fullstackdude'
+rsconf_service_docker_pull 'v3.radia.run:5000/radiasoft/beamsim-jupyter:dev' 'devbox_fullstackdude' 'devbox_fullstackdude' ''
 rsconf_install_access '700' 'vagrant' 'vagrant'
 rsconf_install_directory '/srv/devbox_fullstackdude/jupyter'
 rsconf_install_access '700' 'vagrant' 'vagrant'

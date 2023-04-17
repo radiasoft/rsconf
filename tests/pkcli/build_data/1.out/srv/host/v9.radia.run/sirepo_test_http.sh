@@ -12,5 +12,5 @@ rsconf_install_file '/srv/sirepo_test_http/stop' '5f62d31d91595ef45358da63e97325
 rsconf_install_access '444' 'root' 'root'
 rsconf_install_file '/etc/systemd/system/sirepo_test_http.timer' 'd3e913a370c879e26ebf554d2a28bd3f'
 rsconf_install_file '/etc/systemd/system/sirepo_test_http.service' '588fa9f65804bbcb21b9b4f4ec8e97e5'
-rsconf_service_docker_pull 'v3.radia.run:5000/radiasoft/sirepo:dev' 'sirepo_test_http'
+rsconf_service_docker_pull 'v3.radia.run:5000/radiasoft/sirepo:dev' 'sirepo_test_http' 'sirepo_test_http' ''
 }

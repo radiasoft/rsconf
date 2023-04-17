@@ -25,5 +25,5 @@ rsconf_install_file '/srv/jupyterhub/start' 'bdc43f841085efa18077eecd3b6e3685'
 rsconf_install_file '/srv/jupyterhub/stop' '27680beab256838b6f52d50291d3a5bd'
 rsconf_install_access '444' 'root' 'root'
 rsconf_install_file '/etc/systemd/system/jupyterhub.service' 'cb213f604499026450bc1646a91868ae'
-rsconf_service_docker_pull 'v3.radia.run:5000/radiasoft/jupyterhub:dev' 'jupyterhub'
+rsconf_service_docker_pull 'v3.radia.run:5000/radiasoft/jupyterhub:dev' 'jupyterhub' 'jupyterhub' ''
 }

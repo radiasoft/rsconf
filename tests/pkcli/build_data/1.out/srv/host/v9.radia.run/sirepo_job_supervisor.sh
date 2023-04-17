@@ -11,7 +11,7 @@ rsconf_install_file '/srv/sirepo_job_supervisor/start' 'c62a7cbf3d5ba3125f9517a0
 rsconf_install_file '/srv/sirepo_job_supervisor/stop' 'e9c30ba96db25b8babf1c9c281087fbb'
 rsconf_install_access '444' 'root' 'root'
 rsconf_install_file '/etc/systemd/system/sirepo_job_supervisor.service' '1953774ea62c5c1a091580374385870b'
-rsconf_service_docker_pull 'v3.radia.run:5000/radiasoft/sirepo:dev' 'sirepo_job_supervisor'
+rsconf_service_docker_pull 'v3.radia.run:5000/radiasoft/sirepo:dev' 'sirepo_job_supervisor' 'sirepo_job_supervisor' ''
 rsconf_install_access '700' 'vagrant' 'vagrant'
 rsconf_install_directory '/srv/sirepo_job_supervisor/docker_tls'
 rsconf_install_access '700' 'vagrant' 'vagrant'

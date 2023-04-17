@@ -40,5 +40,5 @@ rsconf_install_file '/srv/sirepo_jupyterhub/start' '737e537de0212793b3fbc9cfa372
 rsconf_install_file '/srv/sirepo_jupyterhub/stop' 'af5da1fe24d5f3275dc87735659461ff'
 rsconf_install_access '444' 'root' 'root'
 rsconf_install_file '/etc/systemd/system/sirepo_jupyterhub.service' '84f6e6fa42dcb7f829ead0f207eac8a4'
-rsconf_service_docker_pull 'v3.radia.run:5000/radiasoft/jupyterhub:dev' 'sirepo_jupyterhub'
+rsconf_service_docker_pull 'v3.radia.run:5000/radiasoft/jupyterhub:dev' 'sirepo_jupyterhub' 'sirepo_jupyterhub' ''
 }
