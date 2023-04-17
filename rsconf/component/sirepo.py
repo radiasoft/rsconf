@@ -81,7 +81,7 @@ class T(component.T):
                     ),
                 )
             )
-        )
+
         self._comsol(z)
         self._jupyterhublogin(z)
         self._raydata()
@@ -96,6 +96,12 @@ class T(component.T):
                             _SERVER_SECRET,
                             gen_secret=lambda: pkcompat.from_bytes(
                                 base64.urlsafe_b64encode(os.urandom(32)),
+                            ),
+                        )
+                    ),
+                )
+            )
+        )
 
         def _defaults_2(jc):
             self.j2_ctx_pksetdefault(
