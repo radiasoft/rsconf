@@ -9,6 +9,8 @@ from pykern.pkcollections import PKDict
 from rsconf import component
 from pykern import pkio
 
+STATIC_FILES_ROOT_D = pkio.py_path("/var/www")
+
 _CONF_ROOT_D = pkio.py_path("/etc/nginx")
 
 CONF_D = _CONF_ROOT_D.join("conf.d")

@@ -5,7 +5,6 @@ static_files_gen_do() {
     declare nginx_d={{ sirepo._nginx_static_files_d }}
     # POSIT: mounted inside the countainer
     declare gen_d={{ sirepo._gen_static_files_d }}
-    declare nginx_tmp_d=$nginx_d
     rm -rf "$gen_d"
     mkdir -p "$gen_d"
     {{ systemd.start }} sirepo static_files_gen "$gen_d"

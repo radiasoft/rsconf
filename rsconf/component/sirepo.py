@@ -231,6 +231,8 @@ class T(component.T):
         z.pknested_get("feature_config.api_modules").append("comsol_register")
 
     def _install_dirs_and_files(self):
+        from rsconf.component import nginx
+
         jc = self.j2_ctx
         z = jc[self.name]
         self.install_access(mode="700", owner=jc.rsconf_db.run_u)
@@ -239,6 +241,8 @@ class T(component.T):
         self.install_directory(d)
         self.install_directory(d.join(_USER_SUBDIR))
         if self.__static_files_gen_f:
+            z._nginx_static_files_d = nginx.STATIC_FILES_ROOT_D.join(self.name)
+            z._static_files_gen_d = self.__run_d.join("static_files_gen_tmp")
             self.install_resource(
                 "sirepo/static_files_gen.sh",
                 jc,
