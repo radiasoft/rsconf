@@ -1,2 +1,2 @@
 #!/bin/bash
-docker rm -f sirepo_job_supervisor >& /dev/null || true
+docker rm -f "sirepo_job_supervisor" >& /dev/null || true

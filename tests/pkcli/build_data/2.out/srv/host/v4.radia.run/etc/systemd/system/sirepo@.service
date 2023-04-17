@@ -1,0 +1,16 @@
+[Unit]
+After=docker.service sirepo_job_supervisor.service
+Description=sirepo@{7777..7786}
+Requires=docker.service
+
+[Service]
+ExecStart=/srv/sirepo/start
+ExecStartPre=/srv/sirepo/remove
+ExecStop=-/srv/sirepo/stop
+Environment="SIREPO_PKCLI_SERVICE_PORT=%i"
+SyslogIdentifier=sirepo-%i
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

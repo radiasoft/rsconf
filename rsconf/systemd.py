@@ -20,6 +20,58 @@ _SYSTEMD_DIR = pkio.py_path("/etc/systemd/system")
 # TODO(robnagler) docker pull happens explicitly, probably
 
 
+class _InstanceSpecBase(PKDict):
+    pass
+
+
+class InstanceSpec(_InstanceSpecBase):
+    """For systemd instances, e.g. ``sirepo@.service``.
+    Args:
+        base (str): base name of service
+        env_var (str): name of environment variable to cascade
+        first_port (int): first instance
+        last_port (int): last instance
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.update(
+            container_name=f"{self.base}-${self.env_var}",
+            env_arg=f'--env {self.env_var}="${self.env_var}"',
+            is_null=False,
+            service_file=f"{self.base}@.service",
+            service_name=f"{self.base}@{{{self.first_port}..{self.last_port}}}",
+        )
+
+    def exclude_exports(self, keys):
+        return filter(lambda x: x != self.env_var, keys)
+
+
+class _NullInstanceSpec(_InstanceSpecBase):
+    """For units that don't have instances (the default)
+    Args:
+        env_var (str): name of environment variable to cascade
+        first_port (int): first instance
+        last_port (int): last instance
+    """
+
+    def __init__(self, base):
+        super().__init__(
+            base=base,
+            container_name=base,
+            env_arg="",
+            env_var=None,
+            first_port=None,
+            is_null=True,
+            last_port=None,
+            service_file=f"{base}.service",
+            service_name=base,
+        )
+
+    def exclude_exports(self, keys):
+        return keys
+
+
 def custom_unit_enable(
     compt,
     j2_ctx,
@@ -71,16 +123,24 @@ def custom_unit_enable(
     unit_enable(compt, j2_ctx)
 
 
-def custom_unit_prepare(compt, j2_ctx, watch_files=()):
+def custom_unit_prepare(compt, j2_ctx, watch_files=(), instance_spec=None):
     """Must be first call"""
     run_d = unit_run_d(j2_ctx, compt.name)
-    unit_prepare(compt, j2_ctx, [run_d] + list(watch_files))
+    unit_prepare(
+        compt, j2_ctx, [run_d] + list(watch_files), instance_spec=instance_spec
+    )
     z = j2_ctx.systemd
     z.run_d = run_d
     z.is_timer = False
-    z.runtime_d = pkio.py_path("/run").join(z.service_name)
-    # systemd creates RuntimeDirectory in /run see custom_unit.servicea
-    z.pid_file = z.runtime_d.join(z.service_name + ".pid")
+    z.is_docker = False
+    if z.instance_spec.is_null:
+        # systemd creates RuntimeDirectory in /run see custom_unit.service
+        z.runtime_d = pkio.py_path("/run").join(z.service_name)
+        z.pid_file = z.runtime_d.join(z.service_name + ".pid")
+    else:
+        # Instances don't have pid_files. They are managed by systemd
+        z.pkdel("pid_file")
+        z.pkdel("runtime_d")
     return run_d
 
 
@@ -98,13 +158,19 @@ def docker_unit_enable(
     """Must be last call"""
     from rsconf.component import docker_registry
 
-    def _extra_run_flags():
+    def _exports(instance_spec, env):
+        return "\n".join(
+            [
+                f"export '{k}={env[k]}'"
+                for k in instance_spec.exclude_exports(sorted(env.keys()))
+            ],
+        )
+
+    def _extra_run_flags(instance_spec):
         c = z.pkunchecked_nested_get("extra_run_flags." + compt.name)
         if not c:
             return ""
-        return " ".join(
-            (f"--{k}={v}" for k, v in c.items()),
-        )
+        return " ".join([f"--{k}='{v}'" for k, v in c.items()])
 
     z = j2_ctx.systemd
     if env is None:
@@ -115,13 +181,11 @@ def docker_unit_enable(
         env["TZ"] = ":/etc/localtime"
     z.update(
         after=_after(after),
-        extra_run_flags=_extra_run_flags(),
-        service_exec=cmd,
-        exports="\n".join(
-            ["export '{}={}'".format(k, env[k]) for k in sorted(env.keys())],
-        ),
+        exports=_exports(z.instance_spec, env),
+        extra_run_flags=_extra_run_flags(z.instance_spec),
         image=docker_registry.absolute_image(compt, j2_ctx, image),
         run_u=run_u or j2_ctx.rsconf_db.run_u,
+        service_exec=cmd,
     )
     volumes = _tuple_arg(volumes)
     run_d_in_volumes = False
@@ -150,26 +214,28 @@ def docker_unit_enable(
     # These files should be 400, since there's no value in making them public.
     compt.install_access(mode="444", owner=j2_ctx.rsconf_db.root_u)
     if z.is_timer:
+        assert z.instance_spec.is_null
         compt.install_resource(
             "systemd/timer_unit",
             j2_ctx,
             z.timer_f,
         )
-    compt.install_resource(
-        "systemd/docker_unit",
-        j2_ctx,
-        z.service_f,
-    )
+    compt.install_resource("systemd/docker_unit", j2_ctx, z.service_f)
     if not docker_registry.image_is_local(compt, j2_ctx, z.image):
         compt.append_root_bash(
-            "rsconf_service_docker_pull '{}' '{}'".format(z.image, z.service_name),
+            f"rsconf_service_docker_pull '{z.image}' '{z.service_name}'"
         )
     unit_enable(compt, j2_ctx)
 
 
-def docker_unit_prepare(compt, j2_ctx, watch_files=()):
+def docker_unit_prepare(
+    compt,
+    j2_ctx,
+    watch_files=(),
+    instance_spec=None,
+):
     """Must be first call"""
-    return custom_unit_prepare(compt, j2_ctx, watch_files)
+    return custom_unit_prepare(compt, j2_ctx, watch_files, instance_spec=instance_spec)
 
 
 def install_unit_override(compt, j2_ctx):
@@ -221,6 +287,7 @@ def timer_prepare(compt, j2_ctx, on_calendar, watch_files=(), service_name=None)
     z = j2_ctx.pksetdefault(systemd=PKDict).systemd
     z.pksetdefault(timezone="America/Denver")
     z.pkupdate(
+        instance_spec=_NullInstanceSpec(n),
         is_timer=True,
         on_calendar=_on_calendar(on_calendar, z.timezone),
         run_d=run_d,
@@ -243,16 +310,21 @@ def unit_enable(compt, j2_ctx):
     pass
 
 
-def unit_prepare(compt, j2_ctx, watch_files=()):
+def unit_prepare(compt, j2_ctx, watch_files=(), instance_spec=None):
     """Must be first call"""
-    f = _SYSTEMD_DIR.join("{}.service".format(compt.name))
+    z = j2_ctx.pksetdefault(systemd=PKDict).systemd
+    z.instance_spec = instance_spec or _NullInstanceSpec(compt.name)
+    z.service_name = z.instance_spec.service_name
+    f = _SYSTEMD_DIR.join(z.instance_spec.service_file)
     d = pkio.py_path(str(f) + ".d")
-    j2_ctx.pksetdefault(systemd=PKDict).systemd.pkupdate(
-        service_name=compt.name,
+    z.pkupdate(
         service_f=f,
         unit_override_d=d,
     )
-    compt.service_prepare([f, d] + list(watch_files))
+    compt.service_prepare(
+        [f, d] + list(watch_files),
+        name=z.service_name,
+    )
 
 
 def unit_run_d(j2_ctx, unit_name):

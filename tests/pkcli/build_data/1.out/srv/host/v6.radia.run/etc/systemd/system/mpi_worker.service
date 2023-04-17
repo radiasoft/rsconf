@@ -7,9 +7,9 @@ Requires=docker.service
 ExecStart=/srv/mpi_worker/start
 ExecStartPre=/srv/mpi_worker/remove
 ExecStop=-/srv/mpi_worker/stop
+SyslogIdentifier=mpi_worker
 Restart=on-failure
 RestartSec=10
-SyslogIdentifier=mpi_worker
 
 [Install]
 WantedBy=multi-user.target

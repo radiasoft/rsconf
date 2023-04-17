@@ -7,8 +7,8 @@ Requires=docker.service
 ExecStart=/srv/sirepo_test_http/start
 ExecStartPre=/srv/sirepo_test_http/remove
 ExecStop=-/srv/sirepo_test_http/stop
-Type=oneshot
 SyslogIdentifier=sirepo_test_http
+Type=oneshot
 
 [Install]
 WantedBy=multi-user.target

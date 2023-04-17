@@ -34,11 +34,23 @@ rsconf_install_access '700' 'root' 'root'
 rsconf_install_directory '/srv/docker/db_bkp'
 }
 #!/bin/bash
+_docker_pkg=docker-ce
+
+docker_update() {
+    if ! docker_should_update; then
+        return;
+    fi
+    yum makecache fast
+    install_yum update "$_docker_pkg" "$_docker_pkg"-cli
+    if docker_should_update; then
+        install_err "Installed docker=$(docker --version) is still < min_software_version=0.0.0 after update."
+    fi
+}
 
 docker_install() {
-    local dir=/srv/docker/volumes
+    declare dir=/srv/docker/volumes
     if [[ -e $dir && $(type -t docker) != '' ]]; then
-#TODO(robnagler) update docker rpm?
+        docker_update
         install_info "$dir: exists, docker already installed"
         return
     fi
@@ -63,22 +75,40 @@ Then re-run rsconf
         dnf -y install dnf-plugins-core
         dnf config-manager \
             --add-repo \
-            https://download.docker.com/linux/fedora/docker-ce.repo
+            https://download.docker.com/linux/fedora/"$_docker_pkg".repo
     else
         yum-config-manager \
-            --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+            --add-repo https://download.docker.com/linux/centos/"$_docker_pkg".repo
         yum makecache fast
         # yum-plugin-ovl required for overlay2 on centos7
         # https://github.com/docker-library/official-images/issues/1291
         rsconf_yum_install yum-plugin-ovl
     fi
-#TODO(robnagler) how to update?
-    rsconf_yum_install docker-ce
+    rsconf_yum_install "$_docker_pkg"
         # Give vagrant user access in dev mode only
         usermod -aG docker vagrant
+    if docker_should_update; then
+        install_err "Installed docker=$(docker version) is < min_software_version=0.0.0 after install."
+    fi
 }
 
 docker_main() {
     docker_install
+}
+
+docker_should_update() {
+    docker_should_update_do Client || docker_should_update_do Server
+}
+
+docker_should_update_do() {
+    declare docker_component=$1
+    declare i=$(docker version --format="{{ json . }}" | jq --raw-output ".$docker_component.Version")
+    (( $(docker_version_num "$i") < $(docker_version_num '0.0.0') ))
+}
+
+docker_version_num() {
+    declare str=$1
+    printf '%d%06d%06d' ${str//./ }
+
 }
 

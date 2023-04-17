@@ -1,7 +1,0 @@
-#!/bin/bash
-if [[ -r ~/.bashrc ]]; then
-    source ~/.bashrc
-fi
-set -euo pipefail
-cd '/srv/db_bkp'
-source /srv/db_bkp/run

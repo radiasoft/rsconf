@@ -1,0 +1,2 @@
+#!/bin/bash
+docker rm -f "sirepo-$SIREPO_PKCLI_SERVICE_PORT" >& /dev/null || true

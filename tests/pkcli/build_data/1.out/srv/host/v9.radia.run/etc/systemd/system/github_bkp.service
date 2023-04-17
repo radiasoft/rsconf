@@ -7,8 +7,8 @@ Requires=docker.service
 ExecStart=/srv/github_bkp/start
 ExecStartPre=/srv/github_bkp/remove
 ExecStop=-/srv/github_bkp/stop
-Type=oneshot
 SyslogIdentifier=github_bkp
+Type=oneshot
 
 [Install]
 WantedBy=multi-user.target
