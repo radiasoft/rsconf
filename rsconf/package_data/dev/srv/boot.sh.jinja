@@ -1,0 +1,3 @@
+#!/bin/bash
+export install_channel=dev install_server=http://{{ master }}:{{ port }}
+curl "$install_server/index.sh" | bash -s rsconf.sh "$(hostname -f)" setup_dev
