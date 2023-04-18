@@ -1,22 +1,25 @@
 #!/bin/bash
 set -eou pipefail
 
+_static_files_gen_prog=$0
+
 static_files_gen_do() {
     declare nginx_d=$1
     # POSIT: mounted inside the container and writable
     declare d='{{ sirepo._static_files_gen_d }}'
     rm -rf "$d"
-    mkdir -p "$d"
-    {{ systemd.start }} sirepo static_files_gen "$d"
+    install -o '{{ sirepo._run_u }}' -d "$d"
+    {{ systemd.start }} sirepo static_files gen "$d"
     chown -R {{ sirepo._run_u }}: "$d"
     find "$d" -type d -print0 | xargs -0 chmod 711
-    find "$d" -type f -print0 | xargs chmod 444
+    find "$d" -type f -print0 | xargs -0 chmod 444
     static_files_gen_mv "$nginx_d" "$d"
 }
 
 static_files_gen_main() {
     declare nginx_d='{{ sirepo._static_files_nginx_d }}'
-    if [[ ${static_files_gen_force:+1} || ! -d $nginx_d ]]; then
+    if static_files_gen_needed "$nginx_d"; then
+        echo "Generating: $nginx_d" 1>&2
         static_files_gen_do "$nginx_d"
     fi
 }
@@ -29,7 +32,19 @@ static_files_gen_mv() {
     rm -rf "$t" "$o"
     # Move to same file system so the move in place are fast and atomic
     mv "$d" "$t"
-    mv "$nginx_d" "$o"
+    if [[ -e $nginx_d ]]; then
+        mv "$nginx_d" "$o"
+    fi
     mv "$t" "$nginx_d"
     rm -rf "$o"
 }
+
+static_files_gen_needed() {
+    declare nginx_d=$1
+    if [[ ${static_files_gen_force:+1} || ! -d $nginx_d ]]; then
+        return 0
+    fi
+    [[ $(find "$nginx_d" -type f -newer "$_static_files_gen_prog" -print -quit) ]]
+}
+
+static_files_gen_main "$@"

@@ -70,6 +70,7 @@ class T(component.T):
                             ),
                         ),
                         srdb=PKDict(root=self.__run_d.join(_DB_SUBDIR)),
+                        static_files_expires="1d",
                         wordpress_host=None,
                     ),
                     pykern=PKDict(
@@ -220,7 +221,7 @@ class T(component.T):
                 (k, v) for k, v in compt.j2_ctx.items() if k in ("sirepo", "pykern")
             ),
             # local only values; ._ and __ are the same
-            exclude_re=r"^sirepo(?:_docker_image|.*_vhost|.*_client_max_body|\.num_api_servers|\._|__)",
+            exclude_re=r"^sirepo(?:_docker_image|.*static_files|.*_vhost|.*_client_max_body|\.num_api_servers|\._|__)",
         )
         e.PYTHONUNBUFFERED = "1"
         return e
@@ -249,11 +250,13 @@ class T(component.T):
         if self.__static_files_gen_f:
             z._static_files_nginx_d = nginx.STATIC_FILES_ROOT_D.join(self.name)
             z._static_files_gen_d = self.__run_d.join("static_files_gen_tmp")
+            self.install_access(mode="500")
             self.install_resource(
                 "sirepo/static_files_gen.sh",
                 jc,
                 self.__static_files_gen_f,
             )
+            self.install_access(mode="700")
         if not z.feature_config.proprietary_code_tarballs:
             return
         p = d.join(_PROPRIETARY_CODE_SUBDIR)

@@ -9,7 +9,7 @@ from pykern.pkcollections import PKDict
 from rsconf import component
 from pykern import pkio
 
-STATIC_FILES_ROOT_D = pkio.py_path("/var/www")
+STATIC_FILES_ROOT_D = pkio.py_path("/srv/www")
 
 _CONF_ROOT_D = pkio.py_path("/etc/nginx")
 
@@ -144,6 +144,8 @@ class T(component.T):
                 CONF_D,
             )
         self.install_resource("nginx/global.conf", jc, _GLOBAL_CONF)
+        self.install_access(mode="755")
+        self.install_directory(STATIC_FILES_ROOT_D)
         systemd.unit_enable(self, jc)
         self.rsconf_service_restart_at_end()
 
