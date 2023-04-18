@@ -28,6 +28,7 @@ class T(component.T):
             docker_exec="raydata scan_monitor",
         )
         z.db_d = z._run_d.join(_DB_SUBDIR)
+        z.raydata.pkcli.scan_monitor.db_dir = z.db_d
         z.intake_d = z._run_d.join(_INTAKE_D)
 
     def internal_build_write(self):
@@ -53,9 +54,4 @@ class T(component.T):
         self.install_directory(z.intake_d)
 
     def _unit_env(self, z):
-        return pkconfig.to_environ(
-            ["raydata.pkcli.*"],
-            values=PKDict(copy.deepcopy(z)).pkupdate(
-                {"raydata.pkcli.scan_monitor.db_dir": z.db_d}
-            ),
-        )
+        return pkconfig.to_environ(["*"], values=PKDict(raydata=z.raydata))
