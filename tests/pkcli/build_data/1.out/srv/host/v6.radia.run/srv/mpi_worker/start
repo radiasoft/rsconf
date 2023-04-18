@@ -14,10 +14,7 @@ if (( $# > 0 )); then
         # probably interactive debugging so allow strace
         flags+=( -t --cap-add SYS_PTRACE )
     fi
-    cmd=( /srv/mpi_worker/cmd )
-    if [[ ${cmd[@]} ]]; then
-        image_cmd+=( "${cmd[@]}" )
-    fi
+    image_cmd+=( /srv/mpi_worker/cmd )
     image_cmd+=( "$@" )
     if [[ ${start_run_u:=} ]]; then
         user=$start_run_u

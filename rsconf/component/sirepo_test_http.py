@@ -35,7 +35,6 @@ class T(component.T):
             jc,
             on_calendar=z.on_calendar,
             docker_exec="sirepo test_http",
-            is_docker=True,
         )
         e.pksetdefault(
             SIREPO_PKCLI_TEST_HTTP_SERVER_URI=f"https://{jc.sirepo.vhost}",

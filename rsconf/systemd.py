@@ -437,7 +437,6 @@ def _prepare_scripts(z, scripts):
         if z.is_docker
         else list(scripts)
     )
-    pkdp(z._scripts)
     for s in z._scripts:
         z[s] = z.run_d.join(s)
 

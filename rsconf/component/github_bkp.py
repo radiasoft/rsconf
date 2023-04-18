@@ -27,7 +27,6 @@ class T(component.T):
             j2_ctx,
             on_calendar=z.on_calendar,
             docker_exec=z.run_f,
-            is_docker=True,
         )
         env = pkcollections.Dict(
             PYKERN_PKCLI_GITHUB_EXCLUDE_RE=z.exclude_re,
