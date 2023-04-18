@@ -82,27 +82,6 @@ class T(component.T):
                 )
             )
 
-        self._comsol(z)
-        self._jupyterhublogin(z)
-        self._raydata()
-        self.j2_ctx_pksetdefault(
-            PKDict(
-                sirepo=PKDict(
-                    client_max_body_size=pkconfig.parse_bytes(z.job.max_message_bytes),
-                    job_api=PKDict,
-                    job_driver=PKDict(modules=["docker"]),
-                    job=PKDict(
-                        server_secret=lambda: self.secret_path_value(
-                            _SERVER_SECRET,
-                            gen_secret=lambda: pkcompat.from_bytes(
-                                base64.urlsafe_b64encode(os.urandom(32)),
-                            ),
-                        )
-                    ),
-                )
-            )
-        )
-
         def _defaults_2(jc):
             self.j2_ctx_pksetdefault(
                 PKDict(
@@ -157,6 +136,7 @@ class T(component.T):
             self.__run_d = systemd.docker_unit_prepare(self, jc)
         _defaults_1(jc)
         self._comsol(z)
+        self._raydata()
         self._jupyterhublogin(z)
         _defaults_2(jc)
         # server connects locally only so go direct to tornado.
