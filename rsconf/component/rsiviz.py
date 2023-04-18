@@ -17,7 +17,12 @@ class T(component.T):
     def internal_build_compile(self):
         self.buildt.require_component("docker", "nginx")
         jc, z = self.j2_ctx_init()
-        self.__run_d = systemd.docker_unit_prepare(self, jc)
+        z._run_u = jc.rsconf_db.run_u
+        self.__run_d = systemd.docker_unit_prepare(
+            self,
+            jc,
+            service_exec=f"bash {db.user_home_path(z._run_u)}/.radia-run/start",
+        )
 
     def internal_build_write(self):
         from rsconf.component import db_bkp
@@ -44,11 +49,10 @@ class T(component.T):
             image=z.docker_image,
             # TODO(e-carlin): This is the default command (set by build_docker_cmd)
             # is there a way to just use it and not specify cmd?
-            cmd="bash /home/vagrant/.radia-run/start",
             ports=(
                 (jc.nginx.docker_index_port, 8080),
                 (jc.nginx.docker_flask_port, 8082),
             ),
         )
-        self.install_access(mode="700", owner=jc.rsconf_db.run_u)
+        self.install_access(mode="700", owner=z._run_u)
         self.install_directory(d)

@@ -55,7 +55,6 @@ class T(rsconf.component.jupyterhub.T):
         systemd.docker_unit_enable(
             self,
             self.j2_ctx,
-            cmd="bash -l -c 'jupyterhub -f {}'".format(self.__conf_f),
             env=PKDict(
                 filter(
                     _env_ok,

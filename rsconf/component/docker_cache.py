@@ -85,7 +85,6 @@ class T(component.T):
             self,
             j2_ctx,
             image=docker_registry.REGISTRY_IMAGE,
-            cmd=None,
             after=["docker.service"],
             run_u=z.run_u,
             volumes=volumes,

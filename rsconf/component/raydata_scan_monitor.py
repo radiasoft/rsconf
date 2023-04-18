@@ -22,8 +22,13 @@ class T(component.T):
         self.buildt.require_component("docker")
         jc, z = self.j2_ctx_init()
         z.run_u = jc.rsconf_db.run_u
-        z.db_d = systemd.docker_unit_prepare(self, jc).join(_DB_SUBDIR)
-        z.intake_d = jc.systemd.run_d.join(_INTAKE_D)
+        z._run_d = systemd.docker_unit_prepare(
+            self,
+            jc,
+            service_exec="raydata scan_monitor",
+        )
+        z.db_d = z._run_d.join(_DB_SUBDIR)
+        z.intake_d = z._run_d.join(_INTAKE_D)
 
     def internal_build_write(self):
         jc = self.j2_ctx
@@ -33,7 +38,6 @@ class T(component.T):
             jc,
             image=z.docker_image,
             env=self._unit_env(z),
-            cmd="raydata scan_monitor",
             volumes=[
                 z.db_d,
                 [

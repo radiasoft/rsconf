@@ -18,7 +18,12 @@ class T(component.T):
         self.buildt.require_component("docker")
         jc, z = self.j2_ctx_init()
         z.run_u = jc.rsconf_db.run_u
-        z.run_d = systemd.docker_unit_prepare(self, jc)
+        z.run_d = systemd.docker_unit_prepare(
+            self,
+            jc,
+            # find in path (probably /usr/sbin, but might be /usr/libexec)
+            sevice_exec="mysqld",
+        )
         z.conf_f = z.run_d.join("my.cnf")
         z.db_d = z.run_d.join("db")
         systemd.docker_unit_enable(
@@ -31,8 +36,6 @@ class T(component.T):
                 [z.db_d, "/var/lib/mysql"],
             ],
             image=docker_registry.absolute_image(self),
-            # find in path (probably /usr/sbin, but might be /usr/libexec)
-            cmd="mysqld",
             run_u=z.run_u,
         )
         self.install_access(mode="700", owner=z.run_u)

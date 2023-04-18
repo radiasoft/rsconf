@@ -13,11 +13,13 @@ import datetime
 import pytz
 import re
 
-
 _SYSTEMD_DIR = pkio.py_path("/etc/systemd/system")
 
 # TODO(robnagler) when to download new version of docker container?
 # TODO(robnagler) docker pull happens explicitly, probably
+
+
+_DOCKER_SCRIPTS = ["env", "remove", "start", "stop"]
 
 
 class _InstanceSpecBase(PKDict):
@@ -77,9 +79,6 @@ class _NullInstanceSpec(_InstanceSpecBase):
 def custom_unit_enable(
     compt,
     j2_ctx,
-    start="start",
-    reload=None,
-    stop=None,
     after=None,
     run_u=None,
     resource_d=None,
@@ -92,22 +91,17 @@ def custom_unit_enable(
     z = j2_ctx.systemd
     z.update(
         after=_after(after),
-        reload=reload,
         run_u=run_u or j2_ctx.rsconf_db.run_u,
-        start=start,
-        stop=stop,
     )
     z.run_group = run_group or z.run_u
-    scripts = ("reload", "start", "stop")
     compt.install_access(mode=run_d_mode, owner=z.run_u, group=z.run_group)
     compt.install_directory(z.run_d)
     # pid_file has to be in a public directory that is writeable by run_u
     # "PID file /srv/petshop/petshop.pid not readable (yet?) after start."
     compt.install_access(mode="755")
     compt.install_access(mode="500")
-    for s in scripts:
-        if z[s]:
-            z[s] = z.run_d.join(s)
+    for s in z._scripts:
+        if z.get(s):
             compt.install_resource(
                 resource_d + "/" + s + ".sh",
                 j2_ctx,
@@ -125,16 +119,27 @@ def custom_unit_enable(
     unit_enable(compt, j2_ctx)
 
 
-def custom_unit_prepare(compt, j2_ctx, watch_files=(), instance_spec=None):
+def custom_unit_prepare(
+    compt,
+    j2_ctx,
+    watch_files=(),
+    instance_spec=None,
+    scripts=("start",),
+    is_docker=False,
+):
     """Must be first call"""
     run_d = unit_run_d(j2_ctx, compt.name)
     unit_prepare(
-        compt, j2_ctx, [run_d] + list(watch_files), instance_spec=instance_spec
+        compt,
+        j2_ctx,
+        [run_d] + list(watch_files),
+        instance_spec=instance_spec,
     )
     z = j2_ctx.systemd
     z.run_d = run_d
     z.is_timer = False
-    z.is_docker = False
+    z.is_docker = is_docker
+    _prepare_scripts(z, scripts)
     if z.instance_spec.is_null:
         # systemd creates RuntimeDirectory in /run see custom_unit.service
         z.runtime_d = pkio.py_path("/run").join(z.service_name)
@@ -150,7 +155,6 @@ def docker_unit_enable(
     compt,
     j2_ctx,
     image,
-    cmd,
     env=None,
     volumes=None,
     after=None,
@@ -188,7 +192,7 @@ def docker_unit_enable(
         extra_run_flags=_extra_run_flags(z.instance_spec),
         image=docker_registry.absolute_image(compt, j2_ctx, image),
         run_u=run_u or j2_ctx.rsconf_db.run_u,
-        service_exec=cmd,
+        service_exec=service_exec,
     )
     volumes = _tuple_arg(volumes)
     run_d_in_volumes = False
@@ -201,17 +205,11 @@ def docker_unit_enable(
     z.network = _colon_format("-p", _tuple_arg(ports))
     if not z.network:
         z.network = "--network=host"
-    scripts = ("cmd", "env", "remove", "start", "stop")
     compt.install_access(mode="700", owner=z.run_u)
     compt.install_directory(z.run_d)
     compt.install_access(mode="500")
-    for s in scripts:
-        z[s] = z.run_d.join(s)
-    if not cmd:
-        z.cmd = ""
-    for s in scripts:
-        if z[s]:
-            compt.install_resource("systemd/docker_" + s, j2_ctx, z[s])
+    for s in z._scripts:
+        compt.install_resource("systemd/docker_" + s, j2_ctx, z[s])
     # See Poettering's omniscience about what's good for all of us here:
     # https://github.com/systemd/systemd/issues/770
     # These files should be 400, since there's no value in making them public.
@@ -236,9 +234,19 @@ def docker_unit_prepare(
     j2_ctx,
     watch_files=(),
     instance_spec=None,
+    service_exec=None,
 ):
     """Must be first call"""
-    return custom_unit_prepare(compt, j2_ctx, watch_files, instance_spec=instance_spec)
+    res = custom_unit_prepare(
+        compt=compt,
+        j2_ctx=j2_ctx,
+        watch_files=watch_files,
+        instance_spec=instance_spec,
+        scripts=None,
+        is_docker=True,
+    )
+    j2_ctx.systemd.service_exec = service_exec
+    return res
 
 
 def install_unit_override(compt, j2_ctx):
@@ -254,13 +262,11 @@ def install_unit_override(compt, j2_ctx):
     )
 
 
-def timer_enable(compt, j2_ctx, cmd, run_u=None):
+def timer_enable(compt, j2_ctx, run_u=None):
     z = j2_ctx.systemd
     z.run_u = run_u or j2_ctx.rsconf_db.run_u
     compt.install_access(mode="700", owner=z.run_u)
     compt.install_directory(z.run_d)
-    # required by systemd
-    z.timer_exec = cmd
     compt.install_access(mode="500")
     compt.install_resource(
         "systemd/timer_start",
@@ -281,9 +287,19 @@ def timer_enable(compt, j2_ctx, cmd, run_u=None):
     unit_enable(compt, j2_ctx)
 
 
-def timer_prepare(compt, j2_ctx, on_calendar, watch_files=(), service_name=None):
+def timer_prepare(
+    compt,
+    j2_ctx,
+    on_calendar,
+    watch_files=(),
+    timer_exec=None,
+    service_name=None,
+    service_exec=None,
+    is_docker=False,
+):
     """Must be first call"""
     # TODO(robnagler) need to merge with unit_prepare
+    assert is_docker or timer_exec
     n = service_name or compt.name
     tn = n + ".timer"
     run_d = unit_run_d(j2_ctx, n)
@@ -292,18 +308,24 @@ def timer_prepare(compt, j2_ctx, on_calendar, watch_files=(), service_name=None)
     z.pkupdate(
         instance_spec=_NullInstanceSpec(n),
         is_timer=True,
+        is_docker=is_docker,
         on_calendar=_on_calendar(on_calendar, z.timezone),
         run_d=run_d,
+        service_exec=service_exec,
         service_f=_SYSTEMD_DIR.join(n + ".service"),
         service_name=n,
         timer_f=_SYSTEMD_DIR.join(tn),
         timer_name=tn,
         timer_start_f=run_d.join("start"),
     )
+    if timer_exec:
+        z.timer_exec = timer_exec
     compt.service_prepare(
         [z.service_f, z.timer_f, run_d] + list(watch_files),
         name=tn,
     )
+    if z.is_docker:
+        _prepare_scripts(z)
     return run_d
 
 
@@ -408,6 +430,16 @@ def _on_calendar(value, tz, now=None):
             h = 23
             m = "59"
     return res + " {}:{}:0".format(h, m)
+
+
+def _prepare_scripts(z, scripts):
+    z._scripts = (
+        ((["cmd"] if z.service_exec else []) + _DOCKER_SCRIPTS)
+        if z.is_docker
+        else list(scripts)
+    )
+    for s in z._scripts:
+        z[s] = z.run_d.join(s)
 
 
 def _tuple_arg(values):

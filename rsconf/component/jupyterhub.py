@@ -33,7 +33,13 @@ class T(component.T):
 
         self.buildt.require_component("docker")
         jc, z = self.j2_ctx_init()
-        self.__run_d = systemd.docker_unit_prepare(self, jc)
+        self.__run_d = systemd.unit_run_d(j2_ctx, self.name)
+        self.__conf_f = self.__run_d.join(_CONF_F)
+        systemd.docker_unit_prepare(
+            self,
+            jc,
+            service_exec=f"bash -l -c 'jupyterhub -f {self.__conf_f}'",
+        )
         z.setdefault("jupyter_docker_image_is_local", False)
         z.update(
             user_d=self._jupyterhub_db().join(_USER_SUBDIR),
@@ -75,7 +81,6 @@ class T(component.T):
         self.install_access(mode="700", owner=z.jupyter_run_u)
         self.install_directory(z.user_d)
         self.install_access(mode="400", owner=z.run_u)
-        self.__conf_f = self.__run_d.join(_CONF_F)
         self.install_resource(f"{self.name}/{_CONF_F}", self.j2_ctx, self.__conf_f)
         docker.setup_cluster(
             self,
@@ -111,7 +116,6 @@ class T(component.T):
         systemd.docker_unit_enable(
             self,
             self.j2_ctx,
-            cmd="bash -l -c 'jupyterhub -f {}'".format(self.__conf_f),
             image=docker_registry.absolute_image(self),
             run_u=z.run_u,
         )

@@ -27,7 +27,7 @@ class T(component.T):
         jc = self.hdb.j2_ctx_copy()
         z = jc.bkp
         z.run_u = jc.rsconf_db.root_u
-        z.run_d = systemd.timer_prepare(self, jc, on_calendar=z.on_calendar)
+        z.run_d = systemd.unit_run_d(jc, self.name)
         secondary_setup = None
         if jc.rsconf_db.host == z.primary:
             self._primary(jc, z)
@@ -36,6 +36,7 @@ class T(component.T):
             secondary_setup = self._secondary(jc, z)
             n = "secondary"
         te = z.run_d.join(n)
+        systemd.timer_prepare(self, jc, timer_exec=te, on_calendar=z.on_calendar)
         self.install_access(mode="500", owner=z.run_u)
         self.install_resource("bkp/{}.sh".format(n), jc, te)
         if secondary_setup:
@@ -43,7 +44,7 @@ class T(component.T):
                 secondary_setup,
                 z.run_d.join(secondary_setup.purebasename),
             )
-        systemd.timer_enable(self, j2_ctx=jc, cmd=te, run_u=z.run_u)
+        systemd.timer_enable(self, j2_ctx=jc, run_u=z.run_u)
 
     def _primary(self, jc, z):
         gv = "bkp_exclude=(\n"

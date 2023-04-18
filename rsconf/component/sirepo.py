@@ -122,7 +122,10 @@ class T(component.T):
                 last_port=z._last_port,
             )
             self.__run_d = systemd.docker_unit_prepare(
-                self, jc, instance_spec=self.__instance_spec
+                self,
+                jc,
+                instance_spec=self.__instance_spec,
+                service_exec="sirepo service tornado",
             )
             self.__static_files_gen_f = self.__run_d.join("static_files_gen")
 
@@ -135,7 +138,12 @@ class T(component.T):
             _tornado(jc, z)
         else:
             self.__static_files_gen_f = None
-            self.__run_d = systemd.docker_unit_prepare(self, jc)
+            self.__run_d = systemd.docker_unit_prepare(
+                self,
+                jc,
+                service_exec="sirepo service uwsgi",
+            )
+        z._run_u = jc.rsconf_db.run_u
         _defaults_1(jc)
         self._comsol(z)
         self._jupyterhublogin(z)
@@ -167,7 +175,6 @@ class T(component.T):
                 jc,
                 image=z.docker_image,
                 env=self.sirepo_unit_env(),
-                cmd="sirepo service uwsgi",
                 after=self.__docker_unit_enable_after,
                 volumes=self.__docker_vols,
             )
@@ -184,7 +191,6 @@ class T(component.T):
                 jc,
                 image=z.docker_image,
                 env=self.sirepo_unit_env(),
-                cmd="sirepo service tornado",
                 after=self.__docker_unit_enable_after,
                 volumes=self.__docker_vols,
                 static_files_gen=self.__static_files_gen_f,
@@ -200,7 +206,7 @@ class T(component.T):
         db_bkp.install_script_and_subdir(
             self,
             jc,
-            run_u=jc.rsconf_db.run_u,
+            run_u=z._run_u,
             run_d=self.__run_d,
         )
 
@@ -213,8 +219,8 @@ class T(component.T):
             values=PKDict(
                 (k, v) for k, v in compt.j2_ctx.items() if k in ("sirepo", "pykern")
             ),
-            # local only values
-            exclude_re=r"^sirepo(?:_docker_image|.*_vhost|.*_client_max_body|\.num_api_servers|\._)",
+            # local only values; ._ and __ are the same
+            exclude_re=r"^sirepo(?:_docker_image|.*_vhost|.*_client_max_body|\.num_api_servers|\._|__)",
         )
         e.PYTHONUNBUFFERED = "1"
         return e
@@ -235,13 +241,13 @@ class T(component.T):
 
         jc = self.j2_ctx
         z = jc[self.name]
-        self.install_access(mode="700", owner=jc.rsconf_db.run_u)
+        self.install_access(mode="700", owner=z._run_u)
         self.install_directory(self.__run_d)
         d = self.__run_d.join(_DB_SUBDIR)
         self.install_directory(d)
         self.install_directory(d.join(_USER_SUBDIR))
         if self.__static_files_gen_f:
-            z._nginx_static_files_d = nginx.STATIC_FILES_ROOT_D.join(self.name)
+            z._static_files_nginx_d = nginx.STATIC_FILES_ROOT_D.join(self.name)
             z._static_files_gen_d = self.__run_d.join("static_files_gen_tmp")
             self.install_resource(
                 "sirepo/static_files_gen.sh",
