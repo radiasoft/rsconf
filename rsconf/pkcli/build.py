@@ -103,7 +103,7 @@ def default_command():
     from rsconf import db
     from pykern import pkunit
 
-    if pkconfig.channel_in("dev"):
+    if pkconfig.in_dev_mode():
         from rsconf.pkcli import setup_dev
 
         setup_dev.default_command()

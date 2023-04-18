@@ -211,8 +211,8 @@ class T(component.T):
             values=PKDict(
                 (k, v) for k, v in compt.j2_ctx.items() if k in ("sirepo", "pykern")
             ),
-            # local only values
-            exclude_re=r"^sirepo(?:_docker_image|.*_vhost|.*_client_max_body|\.num_api_servers|\._)",
+            # local only values; double under (__) excluded
+            exclude_re=r"^sirepo(?:_docker_image|.*_vhost|.*_client_max_body|_num_api_servers|__)",
         )
         e.PYTHONUNBUFFERED = "1"
         return e
