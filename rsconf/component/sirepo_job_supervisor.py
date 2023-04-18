@@ -21,7 +21,7 @@ class T(component.T):
         self.__run_d = systemd.docker_unit_prepare(
             self,
             jc,
-            service_exec="sirepo job_supervisor",
+            docker_exec="sirepo job_supervisor",
         )
         self.__run_u = jc.rsconf_db.run_u
 

@@ -33,12 +33,12 @@ class T(component.T):
 
         self.buildt.require_component("docker")
         jc, z = self.j2_ctx_init()
-        self.__run_d = systemd.unit_run_d(j2_ctx, self.name)
+        self.__run_d = systemd.unit_run_d(jc, self.name)
         self.__conf_f = self.__run_d.join(_CONF_F)
         systemd.docker_unit_prepare(
             self,
             jc,
-            service_exec=f"bash -l -c 'jupyterhub -f {self.__conf_f}'",
+            docker_exec=f"bash -l -c 'jupyterhub -f {self.__conf_f}'",
         )
         z.setdefault("jupyter_docker_image_is_local", False)
         z.update(

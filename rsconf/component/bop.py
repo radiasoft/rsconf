@@ -63,7 +63,7 @@ class T(component.T):
         systemd.custom_unit_prepare(
             self,
             j2_ctx,
-            watch,
+            watch_files=watch,
             scripts=("start", "stop", "reload"),
         )
         systemd.custom_unit_enable(

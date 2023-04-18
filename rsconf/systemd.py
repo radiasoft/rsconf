@@ -125,6 +125,7 @@ def custom_unit_prepare(
     watch_files=(),
     instance_spec=None,
     scripts=("start",),
+    docker_exec=None,
     is_docker=False,
 ):
     """Must be first call"""
@@ -139,6 +140,7 @@ def custom_unit_prepare(
     z.run_d = run_d
     z.is_timer = False
     z.is_docker = is_docker
+    z.docker_exec = docker_exec
     _prepare_scripts(z, scripts)
     if z.instance_spec.is_null:
         # systemd creates RuntimeDirectory in /run see custom_unit.service
@@ -192,7 +194,6 @@ def docker_unit_enable(
         extra_run_flags=_extra_run_flags(z.instance_spec),
         image=docker_registry.absolute_image(compt, j2_ctx, image),
         run_u=run_u or j2_ctx.rsconf_db.run_u,
-        service_exec=service_exec,
     )
     volumes = _tuple_arg(volumes)
     run_d_in_volumes = False
@@ -234,19 +235,18 @@ def docker_unit_prepare(
     j2_ctx,
     watch_files=(),
     instance_spec=None,
-    service_exec=None,
+    docker_exec=None,
 ):
     """Must be first call"""
-    res = custom_unit_prepare(
+    return custom_unit_prepare(
         compt=compt,
         j2_ctx=j2_ctx,
         watch_files=watch_files,
         instance_spec=instance_spec,
         scripts=None,
+        docker_exec=docker_exec,
         is_docker=True,
     )
-    j2_ctx.systemd.service_exec = service_exec
-    return res
 
 
 def install_unit_override(compt, j2_ctx):
@@ -294,12 +294,11 @@ def timer_prepare(
     watch_files=(),
     timer_exec=None,
     service_name=None,
-    service_exec=None,
-    is_docker=False,
+    docker_exec=None,
 ):
     """Must be first call"""
     # TODO(robnagler) need to merge with unit_prepare
-    assert is_docker or timer_exec
+    assert docker_exec or timer_exec
     n = service_name or compt.name
     tn = n + ".timer"
     run_d = unit_run_d(j2_ctx, n)
@@ -308,10 +307,10 @@ def timer_prepare(
     z.pkupdate(
         instance_spec=_NullInstanceSpec(n),
         is_timer=True,
-        is_docker=is_docker,
         on_calendar=_on_calendar(on_calendar, z.timezone),
         run_d=run_d,
-        service_exec=service_exec,
+        docker_exec=docker_exec,
+        is_docker=bool(docker_exec),
         service_f=_SYSTEMD_DIR.join(n + ".service"),
         service_name=n,
         timer_f=_SYSTEMD_DIR.join(tn),
@@ -324,8 +323,8 @@ def timer_prepare(
         [z.service_f, z.timer_f, run_d] + list(watch_files),
         name=tn,
     )
-    if z.is_docker:
-        _prepare_scripts(z)
+    if z.docker_exec:
+        _prepare_scripts(z, scripts=None)
     return run_d
 
 
@@ -434,10 +433,11 @@ def _on_calendar(value, tz, now=None):
 
 def _prepare_scripts(z, scripts):
     z._scripts = (
-        ((["cmd"] if z.service_exec else []) + _DOCKER_SCRIPTS)
+        ((["cmd"] if z.docker_exec else []) + _DOCKER_SCRIPTS)
         if z.is_docker
         else list(scripts)
     )
+    pkdp(z._scripts)
     for s in z._scripts:
         z[s] = z.run_d.join(s)
 

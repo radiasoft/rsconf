@@ -23,7 +23,7 @@ class T(component.T):
         z.sa_update_keys_d = z.conf_d.join("sa-update-keys")
         z.trusted_networks = " ".join(nc.trusted_nets())
         watch = bop.install_perl_rpms(self, jc) + [z.conf_d]
-        z.run_d = systemd.custom_unit_prepare(self, jc, watch)
+        z.run_d = systemd.custom_unit_prepare(self, jc, watch_files=watch)
         z.log_postrotate_f = z.run_d.join("log_postrotate")
         z.socket_d = pkio.py_path("/run/spamd")
         z.socket_path = pkio.py_path("/run/spamd/spamd.sock")

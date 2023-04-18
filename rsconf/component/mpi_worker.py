@@ -33,7 +33,7 @@ class T(component.T):
             self,
             jc,
             watch_files=[z.host.ssh_d],
-            service_exec=f"/usr/sbin/sshd -D -f '{z.guest.sshd_config}'",
+            docker_exec=f"/usr/sbin/sshd -D -f '{z.guest.sshd_config}'",
         )
         self._prepare_hosts(jc, z)
 

@@ -25,7 +25,7 @@ class T(component.T):
         z._run_d = systemd.docker_unit_prepare(
             self,
             jc,
-            service_exec="raydata scan_monitor",
+            docker_exec="raydata scan_monitor",
         )
         z.db_d = z._run_d.join(_DB_SUBDIR)
         z.intake_d = z._run_d.join(_INTAKE_D)

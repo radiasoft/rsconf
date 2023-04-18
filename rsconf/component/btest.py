@@ -29,7 +29,7 @@ class T(component.T):
         systemd.timer_prepare(
             self,
             j2_ctx,
-            timer_exec=run_f
+            timer_exec=run_f,
             on_calendar=z.on_calendar,
         )
         systemd.timer_enable(

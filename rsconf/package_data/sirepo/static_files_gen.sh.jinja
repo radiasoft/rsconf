@@ -8,7 +8,7 @@ static_files_gen_do() {
     rm -rf "$d"
     mkdir -p "$d"
     {{ systemd.start }} sirepo static_files_gen "$d"
-    chown -R {{ sirepo.run_u }}: "$d"
+    chown -R {{ sirepo._run_u }}: "$d"
     find "$d" -type d -print0 | xargs -0 chmod 711
     find "$d" -type f -print0 | xargs chmod 444
     static_files_gen_mv "$nginx_d" "$d"

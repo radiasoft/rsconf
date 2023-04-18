@@ -125,7 +125,7 @@ class T(component.T):
                 self,
                 jc,
                 instance_spec=self.__instance_spec,
-                service_exec="sirepo service tornado",
+                docker_exec="sirepo service tornado",
             )
             self.__static_files_gen_f = self.__run_d.join("static_files_gen")
 
@@ -141,7 +141,7 @@ class T(component.T):
             self.__run_d = systemd.docker_unit_prepare(
                 self,
                 jc,
-                service_exec="sirepo service uwsgi",
+                docker_exec="sirepo service uwsgi",
             )
         z._run_u = jc.rsconf_db.run_u
         _defaults_1(jc)

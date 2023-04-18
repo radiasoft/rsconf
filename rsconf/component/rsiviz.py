@@ -21,7 +21,7 @@ class T(component.T):
         self.__run_d = systemd.docker_unit_prepare(
             self,
             jc,
-            service_exec=f"bash {db.user_home_path(z._run_u)}/.radia-run/start",
+            docker_exec=f"bash {db.user_home_path(z._run_u)}/.radia-run/start",
         )
 
     def internal_build_write(self):

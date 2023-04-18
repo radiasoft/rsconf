@@ -26,7 +26,7 @@ class T(component.T):
             self,
             j2_ctx,
             on_calendar=z.on_calendar,
-            service_exec=z.run_f,
+            docker_exec=z.run_f,
             is_docker=True,
         )
         env = pkcollections.Dict(

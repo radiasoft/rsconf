@@ -34,7 +34,7 @@ class T(component.T):
             self,
             jc,
             on_calendar=z.on_calendar,
-            service_exec="sirepo test_http",
+            docker_exec="sirepo test_http",
             is_docker=True,
         )
         e.pksetdefault(

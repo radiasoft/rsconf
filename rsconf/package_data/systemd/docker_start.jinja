@@ -14,7 +14,7 @@ if (( $# > 0 )); then
         # probably interactive debugging so allow strace
         flags+=( -t --cap-add SYS_PTRACE )
     fi
-    {% if systemd.cmd %}
+    {% if "cmd" in systemd %}
     image_cmd+=( {{ systemd.cmd }} )
     {% endif %}
     image_cmd+=( "$@" )
@@ -25,7 +25,7 @@ else
     # Systemd logs output to journal so we don't need docker to log, too.
     # No core dumps in daemons
     flags=( --name "{{ systemd.instance_spec.container_name }}" {{ systemd.instance_spec.env_arg }} --log-driver=none --ulimit core=0 )
-    {% if systemd.cmd %}
+    {% if "cmd" in systemd %}
     image_cmd+=( {{ systemd.cmd }} )
     {% endif %}
 fi

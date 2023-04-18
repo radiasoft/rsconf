@@ -21,7 +21,7 @@ class T(component.T):
         nc = self.buildt.get_component("network")
         z.whitelist_clients = "\n".join(nc.trusted_nets())
         watch = bop.install_perl_rpms(self, j2_ctx)
-        run_d = systemd.custom_unit_prepare(self, j2_ctx, watch)
+        run_d = systemd.custom_unit_prepare(self, j2_ctx, watch_files=watch)
         z.update(
             dbdir=run_d.join("db"),
             etc=run_d.join("etc"),

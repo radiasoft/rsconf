@@ -22,7 +22,7 @@ class T(component.T):
             self,
             jc,
             # find in path (probably /usr/sbin, but might be /usr/libexec)
-            sevice_exec="mysqld",
+            docker_exec="mysqld",
         )
         z.conf_f = z.run_d.join("my.cnf")
         z.db_d = z.run_d.join("db")

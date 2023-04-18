@@ -32,6 +32,7 @@ class T(component.T):
         z.apache_envvars_f = z.run_d.join("envvars")
         # Created dynamically every run
         z.apache_run_d = "/tmp/apache2"
+        z.log_postrotate_f = z.run_d.join("reload")
         z.log_d = z.run_d.join("log")
         # 127.0.0.1 assumes docker --network=host
         # If you connect to "localhost" (not 127.0.0.1) mysql fails to connect,
@@ -45,8 +46,7 @@ class T(component.T):
         )
         z.setdefault("num_servers", 4)
         z.setdefault("client_max_body_size", _DEFAULT_CLIENT_MAX_BODY_SIZE)
-        systemd.docker_unit_prepare(self, j2_ctx, service_exec=z.run_f)
-        z.log_postrotate_f = z.systemd.reload
+        systemd.docker_unit_prepare(self, j2_ctx, docker_exec=z.run_f)
         systemd.docker_unit_enable(
             self,
             j2_ctx,

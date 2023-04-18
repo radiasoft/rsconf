@@ -38,7 +38,7 @@ class T(component.T):
             self,
             jc,
             watch_files=[z.host.ssh_d],
-            service_exec="/usr/sbin/sshd -e -D -f '{}'".format(
+            docker_exec="/usr/sbin/sshd -e -D -f '{}'".format(
                 z.guest.ssh_d.join("sshd_config"),
             ),
         )
