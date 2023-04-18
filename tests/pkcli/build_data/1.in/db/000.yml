@@ -205,6 +205,14 @@ default:
       service_port: 7000
       job_supervisor:
         port: 7001
+    raydata:
+      scan_monitor:
+        automatic_analysis: false
+        catalog_names:
+          - chx
+          - csx
+        db_dir: /srv/raydata_scan_monitor/db
+        notebook_dir: /srv/raydata_scan_monitor/notebooks
   sirepo_jupyterhub:
     admin_users: [ 'vagrant' ]
     docker_image: radiasoft/jupyterhub
