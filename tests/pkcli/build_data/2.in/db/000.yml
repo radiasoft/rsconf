@@ -44,6 +44,12 @@ default:
     run_uid: 1000
   sirepo:
     docker_image: radiasoft/sirepo
+    smtp:
+      from_email: support@radisoft.net
+      from_name: support
+      password: password
+      server: mta.bivio.biz
+      user: this-is-ignored
   systemd:
     timezone: America/Phoenix
 
