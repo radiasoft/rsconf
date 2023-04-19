@@ -220,8 +220,8 @@ class T(component.T):
             values=PKDict(
                 (k, v) for k, v in compt.j2_ctx.items() if k in ("sirepo", "pykern")
             ),
-            # local only values; ._ and __ are the same
-            exclude_re=r"^sirepo(?:_docker_image|.*static_files|.*_vhost|.*_client_max_body|\.num_api_servers|\._|__)",
+            # local only values; exclude double under (__) which are "private" values, e.g. sirepo._run_u
+            exclude_re=r"^sirepo(?:_docker_image|_static_files|.*_vhost|.*_client_max_body|_num_api_servers|__)",
         )
         e.PYTHONUNBUFFERED = "1"
         return e
