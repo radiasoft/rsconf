@@ -31,7 +31,8 @@ default:
     trusted: {}
   nginx: {}
   pykern:
-    dev_mode: False
+    pkconfig:
+      dev_mode: False
   rsconf: {}
   rsconf_db:
     #TODO(robnagler) POSIT dev/nginx/nginx.conf.jinja
