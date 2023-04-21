@@ -26,27 +26,16 @@ class T(component.T):
         z.intake_d = jc.systemd.run_d.join(_INTAKE_D)
 
     def internal_build_write(self):
-        def _env_ok(item):
-            for p in (
-                "SIREPO_RAYDATA",
-                "PYKERN",
-                "PYTHON",
-            ):
-                if item[0].startswith(f"{p}"):
-                    return True
-            return False
-
         jc = self.j2_ctx
         z = jc[self.name]
         systemd.docker_unit_enable(
             self,
             jc,
             image=z.docker_image,
-            env=PKDict(
-                filter(
-                    _env_ok,
-                    self.buildt.get_component("sirepo").sirepo_unit_env(self).items(),
-                ),
+            env=self.python_service_env(
+                values=PKDict(
+                    pykern=jc.pykern, sirepo=PKDict(raydata=jc.sirepo.raydata)
+                )
             ),
             cmd="sirepo raydata scan_monitor",
             volumes=[

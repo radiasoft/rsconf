@@ -4,8 +4,8 @@
 :copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from __future__ import absolute_import, division, print_function
 from pykern import pkcompat
+from pykern import pkconfig
 from pykern import pkio
 from pykern import pkjson
 from pykern.pkcollections import PKDict
@@ -270,6 +270,15 @@ class T(PKDict):
                 n.pksetdefault(k[-1], v)
 
         f([], defaults)
+
+    def python_service_env(self, values, exclude_re=None):
+        e = pkconfig.to_environ(
+            ["*"],
+            values=values,
+            exclude_re=exclude_re,
+        )
+        e.PYTHONUNBUFFERED = "1"
+        return e
 
     def rpm_file(self, j2_ctx, rpm_base, channel=None):
         s = j2_ctx.rsconf_db.rpm_source_d.join(

@@ -206,16 +206,13 @@ class T(component.T):
         if not compt:
             compt = self
         # Only variable that is required to be in the environment
-        e = pkconfig.to_environ(
-            ["*"],
+        return self.python_service_env(
             values=PKDict(
                 (k, v) for k, v in compt.j2_ctx.items() if k in ("sirepo", "pykern")
             ),
             # local only values; double under (__) excluded
-            exclude_re=r"^sirepo(?:_docker_image|.*_vhost|.*_client_max_body|_num_api_servers|__)",
+            exclude_re=r"^sirepo(?:_docker_image|.*_vhost|.*_client_max_body|_num_api_servers|__|\.raydata\b)",
         )
-        e.PYTHONUNBUFFERED = "1"
-        return e
 
     def _comsol(self, z):
         r = z.get("comsol_register")
@@ -250,18 +247,16 @@ class T(component.T):
             )
 
     def _jupyterhublogin(self, z):
-        z.jupyterhub_enabled = "jupyterhublogin" in set(
-            self.j2_ctx.sirepo.feature_config.get("default_proprietary_sim_types", []),
-        ).union(set(self.j2_ctx.sirepo.feature_config.get("moderated_sim_types", [])))
+        z.jupyterhub_enabled = "jupyterhublogin" in self._sirepo_feature_config(
+            "default_proprietary_sim_types", "moderated_sim_types"
+        )
         if not z.jupyterhub_enabled:
             return
         self.__docker_vols.append(z.sim_api.jupyterhublogin.user_db_root_d)
         self._set_sirepo_config("sirepo_jupyterhub")
 
     def _raydata(self):
-        if "raydata" in set(
-            self.j2_ctx.sirepo.feature_config.get("sim_types", []),
-        ).union(set(self.j2_ctx.sirepo.feature_config.get("moderated_sim_types", []))):
+        if "raydata" in self._sirepo_feature_config("sim_types", "moderated_sim_types"):
             self._set_sirepo_config("raydata_scan_monitor")
 
     def _set_sirepo_config(self, component):
@@ -269,3 +264,9 @@ class T(component.T):
         c = self.buildt.get_component(component)
         c.sirepo_config(self)
         self.__docker_unit_enable_after.append(c.name)
+
+    def _sirepo_feature_config(self, *args):
+        s = set()
+        for a in args:
+            s = s.union(set(self.j2_ctx.sirepo.feature_config.get(a, [])))
+        return s
