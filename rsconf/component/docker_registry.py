@@ -149,7 +149,6 @@ class T(component.T):
             j2_ctx,
             # Specify pull from docker.io directly to avoid registry not yet running
             image=REGISTRY_IMAGE,
-            cmd=None,
             after=["docker.service"],
             run_u=j2_ctx.docker_registry.run_u,
             volumes=volumes,

@@ -30,13 +30,17 @@ class T(component.T):
             if _env_ok(k):
                 e[k] = v
         assert e.get(_SECRET), f"{_SECRET} not found in sirepo config"
-        systemd.timer_prepare(self, jc, on_calendar=z.on_calendar)
+        systemd.timer_prepare(
+            self,
+            jc,
+            on_calendar=z.on_calendar,
+            docker_exec="sirepo test_http",
+        )
         e.pksetdefault(
             SIREPO_PKCLI_TEST_HTTP_SERVER_URI=f"https://{jc.sirepo.vhost}",
         )
         systemd.docker_unit_enable(
             self,
-            cmd="sirepo test_http",
             env=e,
             image=docker_registry.absolute_image(
                 self,

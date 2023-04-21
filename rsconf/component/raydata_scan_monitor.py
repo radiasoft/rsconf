@@ -22,8 +22,14 @@ class T(component.T):
         self.buildt.require_component("docker")
         jc, z = self.j2_ctx_init()
         z.run_u = jc.rsconf_db.run_u
-        z.db_d = systemd.docker_unit_prepare(self, jc).join(_DB_SUBDIR)
-        z.intake_d = jc.systemd.run_d.join(_INTAKE_D)
+        z._run_d = systemd.docker_unit_prepare(
+            self,
+            jc,
+            docker_exec="raydata scan_monitor",
+        )
+        z.db_d = z._run_d.join(_DB_SUBDIR)
+        z.raydata.pkcli.scan_monitor.db_dir = z.db_d
+        z.intake_d = z._run_d.join(_INTAKE_D)
 
     def internal_build_write(self):
         jc = self.j2_ctx
@@ -33,7 +39,6 @@ class T(component.T):
             jc,
             image=z.docker_image,
             env=self._unit_env(z),
-            cmd="raydata scan_monitor",
             volumes=[
                 z.db_d,
                 [
@@ -49,9 +54,4 @@ class T(component.T):
         self.install_directory(z.intake_d)
 
     def _unit_env(self, z):
-        return pkconfig.to_environ(
-            ["raydata.pkcli.*"],
-            values=PKDict(copy.deepcopy(z)).pkupdate(
-                {"raydata.pkcli.scan_monitor.db_dir": z.db_d}
-            ),
-        )
+        return pkconfig.to_environ(["*"], values=PKDict(raydata=z.raydata))

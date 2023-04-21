@@ -70,6 +70,7 @@ class T(component.T):
                             ),
                         ),
                         srdb=PKDict(root=self.__run_d.join(_DB_SUBDIR)),
+                        static_files_expires="1d",
                         wordpress_host=None,
                     ),
                     pykern=PKDict(
@@ -122,8 +123,12 @@ class T(component.T):
                 last_port=z._last_port,
             )
             self.__run_d = systemd.docker_unit_prepare(
-                self, jc, instance_spec=self.__instance_spec
+                self,
+                jc,
+                instance_spec=self.__instance_spec,
+                docker_exec="sirepo service tornado",
             )
+            self.__static_files_gen_f = self.__run_d.join("static_files_gen")
 
         self.__docker_unit_enable_after = []
         self.__docker_vols = []
@@ -133,7 +138,13 @@ class T(component.T):
         if self.__tornado:
             _tornado(jc, z)
         else:
-            self.__run_d = systemd.docker_unit_prepare(self, jc)
+            self.__static_files_gen_f = None
+            self.__run_d = systemd.docker_unit_prepare(
+                self,
+                jc,
+                docker_exec="sirepo service uwsgi",
+            )
+        z._run_u = jc.rsconf_db.run_u
         _defaults_1(jc)
         self._comsol(z)
         self._jupyterhublogin(z)
@@ -151,7 +162,7 @@ class T(component.T):
         from rsconf.component import nginx
         from rsconf.component import docker
 
-        def _uwsgi(z):
+        def _uwsgi(jc, z):
             nginx.install_vhost(
                 self,
                 vhost=z.vhost,
@@ -165,12 +176,11 @@ class T(component.T):
                 jc,
                 image=z.docker_image,
                 env=self.sirepo_unit_env(),
-                cmd="sirepo service uwsgi",
                 after=self.__docker_unit_enable_after,
                 volumes=self.__docker_vols,
             )
 
-        def _tornado(z):
+        def _tornado(jc, z):
             nginx.install_vhost(
                 self,
                 vhost=z.vhost,
@@ -182,22 +192,22 @@ class T(component.T):
                 jc,
                 image=z.docker_image,
                 env=self.sirepo_unit_env(),
-                cmd="sirepo service tornado",
                 after=self.__docker_unit_enable_after,
                 volumes=self.__docker_vols,
+                static_files_gen=self.__static_files_gen_f,
             )
 
         jc = self.j2_ctx
         z = jc[self.name]
         self._install_dirs_and_files()
         if self.__tornado:
-            _tornado(z)
+            _tornado(jc, z)
         else:
-            _uwsgi(z)
+            _uwsgi(jc, z)
         db_bkp.install_script_and_subdir(
             self,
             jc,
-            run_u=jc.rsconf_db.run_u,
+            run_u=z._run_u,
             run_d=self.__run_d,
         )
 
@@ -210,8 +220,8 @@ class T(component.T):
             values=PKDict(
                 (k, v) for k, v in compt.j2_ctx.items() if k in ("sirepo", "pykern")
             ),
-            # local only values; double under (__) excluded
-            exclude_re=r"^sirepo(?:_docker_image|.*_vhost|.*_client_max_body|_num_api_servers|__)",
+            # local only values; exclude double under (__) which are "private" values, e.g. sirepo._run_u
+            exclude_re=r"^sirepo(?:_docker_image|_static_files|.*_vhost|.*_client_max_body|_num_api_servers|__)",
         )
         e.PYTHONUNBUFFERED = "1"
         return e
@@ -228,13 +238,25 @@ class T(component.T):
         z.pknested_get("feature_config.api_modules").append("comsol_register")
 
     def _install_dirs_and_files(self):
+        from rsconf.component import nginx
+
         jc = self.j2_ctx
         z = jc[self.name]
-        self.install_access(mode="700", owner=jc.rsconf_db.run_u)
+        self.install_access(mode="700", owner=z._run_u)
         self.install_directory(self.__run_d)
         d = self.__run_d.join(_DB_SUBDIR)
         self.install_directory(d)
         self.install_directory(d.join(_USER_SUBDIR))
+        if self.__static_files_gen_f:
+            z._static_files_nginx_d = nginx.STATIC_FILES_ROOT_D.join(self.name)
+            z._static_files_gen_d = self.__run_d.join("static_files_gen_tmp")
+            self.install_access(mode="500")
+            self.install_resource(
+                "sirepo/static_files_gen.sh",
+                jc,
+                self.__static_files_gen_f,
+            )
+            self.install_access(mode="700")
         if not z.feature_config.proprietary_code_tarballs:
             return
         p = d.join(_PROPRIETARY_CODE_SUBDIR)

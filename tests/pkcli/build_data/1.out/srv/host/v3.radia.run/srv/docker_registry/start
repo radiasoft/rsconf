@@ -14,10 +14,6 @@ if (( $# > 0 )); then
         # probably interactive debugging so allow strace
         flags+=( -t --cap-add SYS_PTRACE )
     fi
-    cmd=(  )
-    if [[ ${cmd[@]} ]]; then
-        image_cmd+=( "${cmd[@]}" )
-    fi
     image_cmd+=( "$@" )
     if [[ ${start_run_u:=} ]]; then
         user=$start_run_u
@@ -26,7 +22,6 @@ else
     # Systemd logs output to journal so we don't need docker to log, too.
     # No core dumps in daemons
     flags=( --name "docker_registry"  --log-driver=none --ulimit core=0 )
-    image_cmd+=(  )
 fi
 # --init runs tini wrapper: https://github.com/krallin/tini
 exec docker run "${flags[@]}" --init --rm "--user=$user" --network=host -v '/srv/docker_registry:/srv/docker_registry' -v '/srv/docker_registry/config.yml:/etc/docker/registry/config.yml'  "${image_cmd[@]}"

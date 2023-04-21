@@ -40,15 +40,17 @@ class T(component.T):
                 z.bash_script = tv.bash_script
                 run_u = tv.get("run_u", z.run_u)
                 timer_name = "{}_{}".format(app_name, t)
-                run_d = systemd.timer_prepare(
+                run_d = systemd.unit_run_d(jc, timer_name)
+                run_f = run_d.join("run")
+                systemd.timer_prepare(
                     self,
                     j2_ctx,
                     # TODO(robnagler) time zone
                     on_calendar=tv.on_calendar,
                     service_name=timer_name,
+                    timer_exec=run_f,
                 )
-                run_f = run_d.join("run")
-                systemd.timer_enable(self, j2_ctx=j2_ctx, cmd=run_f, run_u=run_u)
+                systemd.timer_enable(self, j2_ctx=j2_ctx, run_u=run_u)
                 self.install_access(mode="500", owner=run_u)
                 self.install_resource("bop_timer/run.sh", j2_ctx, run_f)
 

@@ -29,7 +29,12 @@ class T(component.T):
         # Only additional config for the server is the sshd config.
         # ssh_config and known_hosts are not read by sshd so don't
         # trigger a restart.
-        z.run_d = systemd.docker_unit_prepare(self, jc, watch_files=[z.host.ssh_d])
+        z.run_d = systemd.docker_unit_prepare(
+            self,
+            jc,
+            watch_files=[z.host.ssh_d],
+            docker_exec=f"/usr/sbin/sshd -D -f '{z.guest.sshd_config}'",
+        )
         self._prepare_hosts(jc, z)
 
     def internal_build_write(self):
@@ -85,7 +90,6 @@ class T(component.T):
             jc,
             image=docker_registry.absolute_image(self),
             volumes=x,
-            cmd="/usr/sbin/sshd -D -f '{}'".format(z.guest.sshd_config),
         )
 
     def _find_cluster(self, jc, z):

@@ -29,12 +29,12 @@ class T(component.T):
         z.run_u = j2_ctx.rsconf_db.root_u
         z.conf_f = CONF_F
         z.verbose_flag = "--verbose" if z.get("verbose", False) else ""
-        z.run_d = systemd.timer_prepare(self, j2_ctx, on_calendar=z.on_calendar)
+        z.run_d = systemd.unit_run_d(j2_ctx, self.name)
         run = z.run_d.join("run")
+        systemd.timer_prepare(self, j2_ctx, timer_exec=run, on_calendar=z.on_calendar)
         systemd.timer_enable(
             self,
             j2_ctx=j2_ctx,
-            cmd=run,
             run_u=z.run_u,
         )
         self.install_access(mode="500", owner=z.run_u)

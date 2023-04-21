@@ -41,7 +41,7 @@ EOF
     {{ systemd.start }} /bin/bash <<'EOF'
     set -euo pipefail
     init_log='{{ rs_mariadb.run_d }}/db_init.log'
-    {{ systemd.service_exec }} --init-file=/dev/stdin <<'EOF2' >& "$init_log" &
+    {{ systemd.docker_exec }} --init-file=/dev/stdin <<'EOF2' >& "$init_log" &
         DELETE FROM mysql.user;
         CREATE USER 'root'@'%' IDENTIFIED BY '{{ rs_mariadb.root_password }}';
         GRANT ALL ON *.* TO 'root'@'%' WITH GRANT OPTION;

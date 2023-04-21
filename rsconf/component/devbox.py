@@ -34,7 +34,14 @@ class T(component.T):
             z[x] = self._gen_paths(z, z[x + "_d"], d)
         z.run_u = jc.rsconf_db.run_u
         # Only additional config for the server is the sshd config.
-        z.run_d = systemd.custom_unit_prepare(self, jc, watch_files=[z.host.ssh_d])
+        z.run_d = systemd.docker_unit_prepare(
+            self,
+            jc,
+            watch_files=[z.host.ssh_d],
+            docker_exec="/usr/sbin/sshd -e -D -f '{}'".format(
+                z.guest.ssh_d.join("sshd_config"),
+            ),
+        )
         u = jc.devbox.users[self.user_name]
         if isinstance(u, PKDict):
             z.docker_image = u.get("docker_image", z.docker_image)
@@ -64,9 +71,6 @@ class T(component.T):
             jc,
             image=z.docker_image,
             volumes=v,
-            cmd="/usr/sbin/sshd -e -D -f '{}'".format(
-                z.guest.ssh_d.join("sshd_config")
-            ),
         )
         j = None
         for d in map(lambda x: x[0], v):

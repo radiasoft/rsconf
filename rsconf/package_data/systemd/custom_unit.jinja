@@ -23,10 +23,10 @@ RuntimeDirectoryMode=775
 SyslogIdentifier={{ systemd.service_name }}
 Type=forking
 User={{ systemd.run_u }}
-{% if systemd.reload %}
+{% if "reload" in systemd %}
 ExecReload={{ systemd.reload }}
 {% endif %}
-{% if systemd.stop %}
+{% if "stop" in systemd %}
 {#
   If we have ExecStop, then send an ignored KillSignal first time.
   SIGCONT is ignored by most processes so this allows ExecStop to do its job.
