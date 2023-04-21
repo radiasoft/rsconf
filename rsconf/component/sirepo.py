@@ -211,7 +211,7 @@ class T(component.T):
                 (k, v) for k, v in compt.j2_ctx.items() if k in ("sirepo", "pykern")
             ),
             # local only values; double under (__) excluded
-            exclude_re=r"^sirepo(?:_docker_image|.*_vhost|.*_client_max_body|_num_api_servers|__|\.raydata\b)",
+            exclude_re=r"^sirepo(?:_docker_image|.*_vhost|.*_client_max_body|_num_api_servers|__|__raydata)",
         )
 
     def _comsol(self, z):
@@ -247,7 +247,7 @@ class T(component.T):
             )
 
     def _jupyterhublogin(self, z):
-        z.jupyterhub_enabled = "jupyterhublogin" in self._sirepo_feature_config(
+        z.jupyterhub_enabled = "jupyterhublogin" in self._in_sim_types(
             "default_proprietary_sim_types", "moderated_sim_types"
         )
         if not z.jupyterhub_enabled:
@@ -256,7 +256,7 @@ class T(component.T):
         self._set_sirepo_config("sirepo_jupyterhub")
 
     def _raydata(self):
-        if "raydata" in self._sirepo_feature_config("sim_types", "moderated_sim_types"):
+        if "raydata" in self._in_sim_types("sim_types", "moderated_sim_types"):
             self._set_sirepo_config("raydata_scan_monitor")
 
     def _set_sirepo_config(self, component):
@@ -265,7 +265,7 @@ class T(component.T):
         c.sirepo_config(self)
         self.__docker_unit_enable_after.append(c.name)
 
-    def _sirepo_feature_config(self, *args):
+    def _in_sim_types(self, *args):
         s = set()
         for a in args:
             s = s.union(set(self.j2_ctx.sirepo.feature_config.get(a, [])))
