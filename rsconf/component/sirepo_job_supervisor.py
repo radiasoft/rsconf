@@ -18,7 +18,11 @@ class T(component.T):
     def internal_build_compile(self):
         self.buildt.require_component("docker", "nginx")
         jc, z = self.j2_ctx_init()
-        self.__run_d = systemd.docker_unit_prepare(self, jc)
+        self.__run_d = systemd.docker_unit_prepare(
+            self,
+            jc,
+            docker_exec="sirepo job_supervisor",
+        )
         self.__run_u = jc.rsconf_db.run_u
 
     def internal_build_write(self):
@@ -33,7 +37,6 @@ class T(component.T):
             jc,
             image=z.docker_image,
             env=self.buildt.get_component("sirepo").sirepo_unit_env(self),
-            cmd="sirepo job_supervisor",
             # TODO(robnagler) wanted by nginx
             volumes=[jc.sirepo.srdb.root],
         )

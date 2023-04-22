@@ -20,7 +20,7 @@ class T(component.T):
         self.j2_ctx = self.hdb.j2_ctx_copy()
         jc = self.j2_ctx
         rpm = self.install_perl_rpm(jc, "bivio-named")
-        run_d = systemd.custom_unit_prepare(self, jc, [rpm])
+        run_d = systemd.custom_unit_prepare(self, jc, watch_files=[rpm])
         jc.setdefault("bivio_named", pkcollections.Dict()).update(
             dbdir=run_d.join("db"),
             etc=run_d.join("etc"),

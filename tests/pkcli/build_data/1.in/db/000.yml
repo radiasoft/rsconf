@@ -532,12 +532,6 @@ host:
       sirepo:
         activait_redirect: false
         auth:
-          email:
-            from_email: support@radisoft.net
-            from_name: support
-            smtp_password: password
-            smtp_server: mta.bivio.biz
-            smtp_user: this-is-ignored
           github:
             callback_uri: https://v9.radia.runoauth-authorized/github
             key: n/a
@@ -554,6 +548,12 @@ host:
           docker:
             hosts: [ v9.radia.run ]
         listen_any: True
+        smtp:
+          from_email: support@radisoft.net
+          from_name: support
+          password: password
+          server: mta.bivio.biz
+          user: this-is-ignored
         wordpress_host: wordpress-home-page.sirepo.com
       sirepo_jupyterhub:
         pools:

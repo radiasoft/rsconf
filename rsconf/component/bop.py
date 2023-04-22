@@ -60,12 +60,15 @@ class T(component.T):
         j2_ctx = self.hdb.j2_ctx_copy()
         z = merge_app_vars(j2_ctx, self.name)
         watch = install_perl_rpms(self, j2_ctx, perl_root=z.perl_root)
-        systemd.custom_unit_prepare(self, j2_ctx, watch)
+        systemd.custom_unit_prepare(
+            self,
+            j2_ctx,
+            watch_files=watch,
+            scripts=("start", "stop", "reload"),
+        )
         systemd.custom_unit_enable(
             self,
             j2_ctx,
-            reload="reload",
-            stop="stop",
             resource_d="bop",
             run_u=z.run_u,
             run_d_mode="711",

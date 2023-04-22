@@ -12,8 +12,8 @@ upstream sirepo_api {
 
 server {
     listen {{ nginx.listen_ip }}:443 ssl;
+    root {{ sirepo._static_files_nginx_d }};
     server_name {{ nginx.vhost }};
-    root {{ nginx.default_root }};
     ssl_certificate {{ nginx.tls_crt }};
     ssl_certificate_key {{ nginx.tls_key }};
     client_max_body_size {{ sirepo.client_max_body_size }};
@@ -25,19 +25,20 @@ server {
         allow all;
         proxy_pass http://sirepo_api;
     }
-{# TODO(robnagler) dump static files into /srv/sirepo/srv/static
-# Create a command that generates static/robots.txt and favicon.ico
-#    location ^~ /static/ {
-#        root /var/www;
-#    }
-#    location = /favicon.ico {
-#        rewrite (.*) /static/img/favicon.ico;
-#    }
-#TODO(robnagler) needs to be dynamic based on symtypes
-#    location = /robots.txt {
-#        rewrite (.*) /static/robots.txt;
-#    }
-#}
+    location /static/ {
+        expires {{ sirepo.static_files_expires }};
+        add_header Cache-Control "public";
+        try_files $uri =404;
+    }
+    location = /favicon.ico {
+        rewrite (.*) /static/img/favicon.ico;
+    }
+    location = /favicon.png {
+        rewrite (.*) /static/img/favicon.png;
+    }
+    location = /robots.txt {
+        rewrite (.*) /static/robots.txt;
+    }
 {% if sirepo.wordpress_host %}
 {# legacy redirects #}
     location = /en/xray-beamlines.html {
