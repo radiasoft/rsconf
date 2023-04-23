@@ -171,6 +171,8 @@ default:
   postgrey:
     port: 10023
     whitelist_recipients: []
+  raydata_scan_monitor:
+    docker_image: radiasoft/sirepo
   rsconf: {}
   rsconf_db:
     #TODO(robnagler) POSIT dev/nginx/nginx.conf.jinja
@@ -261,6 +263,7 @@ channel:
       feature_config:
         moderated_sim_types:
           - jupyterhublogin
+          - raydata
       sim_api:
         jupyterhublogin:
           # POSIT: Jupyterhub user_d
