@@ -1,5 +1,5 @@
 #!/bin/bash
-export 'SIREPO_FEATURE_CONFIG_MODERATED_SIM_TYPES=jupyterhublogin'
+export 'SIREPO_FEATURE_CONFIG_MODERATED_SIM_TYPES=jupyterhublogin:raydata'
 export 'SIREPO_FEATURE_CONFIG_PROPRIETARY_CODE_TARBALLS=myapp'
 export 'SIREPO_FEATURE_CONFIG_PROPRIETARY_SIM_TYPES=myapp:zgoubi'
 export 'SIREPO_PKCLI_TEST_HTTP_SERVER_URI=https://sirepo.v4.radia.run'

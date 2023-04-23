@@ -1,5 +1,5 @@
 [Unit]
-After=docker.service sirepo_jupyterhub.service sirepo_job_supervisor.service
+After=docker.service raydata_scan_monitor.service sirepo_jupyterhub.service sirepo_job_supervisor.service
 Description=sirepo
 Requires=docker.service
 

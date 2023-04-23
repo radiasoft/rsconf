@@ -25,11 +25,11 @@ class T(component.T):
         z._run_d = systemd.docker_unit_prepare(
             self,
             jc,
-            docker_exec="raydata scan_monitor",
+            docker_exec="sirepo raydata scan_monitor",
         )
         z.db_d = z._run_d.join(_DB_SUBDIR)
-        z.raydata.pkcli.scan_monitor.db_dir = z.db_d
         z.intake_d = z._run_d.join(_INTAKE_D)
+        jc.sirepo.raydata.scan_monitor.db_dir = z.db_d
 
     def internal_build_write(self):
         jc = self.j2_ctx
@@ -38,7 +38,11 @@ class T(component.T):
             self,
             jc,
             image=z.docker_image,
-            env=self._unit_env(z),
+            env=self.python_service_env(
+                values=PKDict(
+                    pykern=jc.pykern, sirepo=PKDict(raydata=jc.sirepo.raydata)
+                )
+            ),
             volumes=[
                 z.db_d,
                 [
@@ -53,5 +57,5 @@ class T(component.T):
         self.install_directory(z.db_d)
         self.install_directory(z.intake_d)
 
-    def _unit_env(self, z):
-        return pkconfig.to_environ(["*"], values=PKDict(raydata=z.raydata))
+    def sirepo_config(self, sirepo):
+        self.j2_ctx_pksetdefault(sirepo.j2_ctx)

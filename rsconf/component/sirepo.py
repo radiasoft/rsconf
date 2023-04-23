@@ -147,6 +147,7 @@ class T(component.T):
         z._run_u = jc.rsconf_db.run_u
         _defaults_1(jc)
         self._comsol(z)
+        self._raydata()
         self._jupyterhublogin(z)
         _defaults_2(jc)
         # server connects locally only so go direct to tornado.
@@ -215,16 +216,13 @@ class T(component.T):
         if not compt:
             compt = self
         # Only variable that is required to be in the environment
-        e = pkconfig.to_environ(
-            ["*"],
+        return self.python_service_env(
             values=PKDict(
                 (k, v) for k, v in compt.j2_ctx.items() if k in ("sirepo", "pykern")
             ),
             # local only values; exclude double under (__) which are "private" values, e.g. sirepo._run_u
-            exclude_re=r"^sirepo(?:_docker_image|_static_files|.*_vhost|.*_client_max_body|_num_api_servers|__)",
+            exclude_re=r"^sirepo(?:_docker_image|_static_files|.*_vhost|.*_client_max_body|_num_api_servers|__|_raydata)",
         )
-        e.PYTHONUNBUFFERED = "1"
-        return e
 
     def _comsol(self, z):
         r = z.get("comsol_register")
@@ -271,16 +269,24 @@ class T(component.T):
             )
 
     def _jupyterhublogin(self, z):
-        z.jupyterhub_enabled = "jupyterhublogin" in set(
-            self.j2_ctx.sirepo.feature_config.get("default_proprietary_sim_types", []),
-        ).union(set(self.j2_ctx.sirepo.feature_config.get("moderated_sim_types", [])))
+        z.jupyterhub_enabled = self._in_sim_types("jupyterhublogin")
         if not z.jupyterhub_enabled:
             return
         self.__docker_vols.append(z.sim_api.jupyterhublogin.user_db_root_d)
         self._set_sirepo_config("sirepo_jupyterhub")
+
+    def _raydata(self):
+        if self._in_sim_types("raydata"):
+            self._set_sirepo_config("raydata_scan_monitor")
 
     def _set_sirepo_config(self, component):
         self.buildt.require_component(component)
         c = self.buildt.get_component(component)
         c.sirepo_config(self)
         self.__docker_unit_enable_after.append(c.name)
+
+    def _in_sim_types(self, to_check):
+        for k, v in self.j2_ctx.sirepo.feature_config.items():
+            if "sim_types" in k and to_check in v:
+                return True
+        return False
