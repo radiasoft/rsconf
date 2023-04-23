@@ -44,7 +44,7 @@ class T(component.T):
                 [
                     z.intake_d,
                     # POSIT: databroker.catalog_search_path()
-                    f"{rsconf.db.user_home_path(jc, z.run_u)}/.local/share/intake",
+                    f"{rsconf.db.user_home_path(z.run_u)}/.local/share/intake",
                     "rw",
                 ],
             ],

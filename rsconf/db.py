@@ -264,7 +264,7 @@ def secret_path(hdb, filename, visibility=None, qualifier=None, directory=False)
     return res
 
 
-def user_home_path(hdb, user):
+def user_home_path(user):
     return USER_HOME_ROOT_D.join(user)
 
 

@@ -55,7 +55,7 @@ class T(component.T):
         z.setdefault("template_vars", {})
         self._network(z, jc)
         z.admin_users_str = _list_to_str(z.admin_users)
-        z.home_d = db.user_home_path(jc, z.jupyter_run_u)
+        z.home_d = db.user_home_path(z.jupyter_run_u)
         z.cookie_secret_hex = self.secret_path_value(
             self._COOKIE_SECRET,
             gen_secret=lambda: db.random_string(length=64, is_hex=True),

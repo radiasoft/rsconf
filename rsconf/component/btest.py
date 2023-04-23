@@ -44,7 +44,7 @@ class T(component.T):
         )
         self.install_access(mode="700", owner=z.app_run_u)
         self.install_directory(z.apps_d)
-        z.home_d = db.user_home_path(j2_ctx, z.app_run_u)
+        z.home_d = db.user_home_path(z.app_run_u)
         # POSIT: Bivio::Test::Language::HTTP
         z.mail_d = z.home_d.join("btest-mail")
         self.install_directory(z.mail_d)

@@ -505,22 +505,26 @@ host:
         myhostname: 'v4.radia.run'
       rsconf_db:
         components:
+          - bkp
+          - bop
+          - bop_timer
+          - btest
+          - comsol
           - devbox
+          - dovecot
+          - github_bkp
+          - jupyterhub
+          - jupyterhub_proxy
           - nfs_client
           - nfs_server
-          - bkp
-          - comsol
+          - rsiviz
           - sirepo
           - sirepo_job_supervisor
           - sirepo_jupyterhub
           - sirepo_test_http
-          - bop
-          - btest
-          - dovecot
-          - jupyterhub
-          - jupyterhub_proxy
-          - github_bkp
           - wordpress
+      rsiviz:
+        docker_image: radiasoft/rsiviz
       sirepo:
         activait_redirect: false
         auth:
