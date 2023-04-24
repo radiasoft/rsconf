@@ -16,6 +16,7 @@ rsconf_require nfs_server
 rsconf_require bkp
 rsconf_require comsol
 rsconf_require nginx
+rsconf_require raydata_scan_monitor
 rsconf_require sirepo_jupyterhub
 rsconf_require sirepo_job_supervisor
 rsconf_require sirepo
