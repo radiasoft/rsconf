@@ -40,7 +40,7 @@ class T(component.T):
                 z.bash_script = tv.bash_script
                 run_u = tv.get("run_u", z.run_u)
                 timer_name = "{}_{}".format(app_name, t)
-                run_d = systemd.unit_run_d(jc, timer_name)
+                run_d = systemd.unit_run_d(j2_ctx, timer_name)
                 run_f = run_d.join("run")
                 systemd.timer_prepare(
                     self,
