@@ -125,7 +125,7 @@ class T(component.T):
             i = z.base_users.user_spec(u)
             i.pw_hash = pw_db[v.username]
             i.username = v.username
-            i.home_d = db.user_home_path(jc, u)
+            i.home_d = db.user_home_path(u)
             res.append(i)
             self._setup_procmail(i)
             self.install_access(mode="700", owner=i.uid, group=i.gid)
@@ -139,7 +139,7 @@ class T(component.T):
         z = jc.dovecot
         for u in z.alias_users:
             i = z.base_users.user_spec(u)
-            i.home_d = db.user_home_path(jc, u)
+            i.home_d = db.user_home_path(u)
             self._setup_procmail(i, is_alias=True)
 
 
