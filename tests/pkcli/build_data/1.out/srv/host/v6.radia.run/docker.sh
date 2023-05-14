@@ -29,7 +29,7 @@ rsconf_install_access '444' 'root' 'root'
 rsconf_install_file '/etc/systemd/system/docker.service.d/99-rsconf.conf' 'b0781f1cabcf1ef79449e4b3d22edc44'
 rsconf_service_restart
 rsconf_install_access '400' 'root' 'root'
-rsconf_install_file '/srv/docker/db_bkp.sh' '1c83cb791e6f8ad7e3506a08f56c6c41'
+rsconf_install_file '/srv/docker/db_bkp.sh' 'c29baf48eb49a688f08990281071d8f5'
 rsconf_install_access '700' 'root' 'root'
 rsconf_install_directory '/srv/docker/db_bkp'
 }
