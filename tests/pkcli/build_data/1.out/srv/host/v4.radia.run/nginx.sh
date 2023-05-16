@@ -8,7 +8,7 @@ rsconf_install_file '/etc/nginx/conf.d/www.redirect3.v4.radia.run.key' '41358777
 rsconf_install_file '/etc/nginx/conf.d/www.redirect3.v4.radia.run.crt' 'bc90227f5d1ee11128b7b29283f789fd'
 rsconf_service_prepare 'nginx' '/etc/systemd/system/nginx.service' '/etc/systemd/system/nginx.service.d' '/etc/nginx'
 rsconf_install_access '400' 'root' 'root'
-rsconf_install_file '/etc/nginx/nginx.conf' '202fb46395605dd8eadd31ae639c3af1'
+rsconf_install_file '/etc/nginx/nginx.conf' '2c95a4a887c65d41cdb19fe48b19c0af'
 rsconf_install_access '755' 'root' 'root'
 rsconf_install_directory '/srv/www'
 rsconf_service_restart_at_end 'nginx'
