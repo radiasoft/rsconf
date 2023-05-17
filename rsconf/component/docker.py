@@ -97,7 +97,6 @@ class T(component.T):
                 "live-restore": True,
                 "log-driver": "journald",
                 "storage-driver": "overlay2",
-                "storage-opts": ["overlay2.override_kernel_check=true"],
             }
         ).pkupdate(z.get("daemon_aux", {}))
         if "http_host" in z:
