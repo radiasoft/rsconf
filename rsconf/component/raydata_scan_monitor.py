@@ -40,7 +40,8 @@ class T(component.T):
             image=z.docker_image,
             env=self.python_service_env(
                 values=PKDict(
-                    pykern=jc.pykern, sirepo=PKDict(raydata=jc.sirepo.raydata)
+                    pykern=jc.get("pykern", PKDict()),
+                    sirepo=PKDict(raydata=jc.sirepo.raydata),
                 )
             ),
             volumes=[
