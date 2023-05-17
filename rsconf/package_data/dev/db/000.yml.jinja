@@ -506,12 +506,6 @@ host:
         myhostname: '{{ host }}'
       raydata_scan_monitor:
         docker_image: radiasoft/raydata
-        raydata:
-          pkcli:
-            scan_monitor:
-              catalog_names:
-                - chx
-                - csx
       rsconf_db:
         components:
           - mongod
@@ -555,6 +549,11 @@ host:
         job_driver:
           docker:
             hosts: [ {{ all_host }} ]
+        raydata:
+          scan_monitor:
+            catalog_names:
+              - chx
+              - csx
         wordpress_host: wordpress-home-page.sirepo.com
       sirepo_jupyterhub:
         pools:
