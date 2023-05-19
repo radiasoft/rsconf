@@ -214,7 +214,6 @@ default:
           - chx
           - csx
         db_dir: /srv/raydata_scan_monitor/db
-        notebook_dir: /srv/raydata_scan_monitor/notebooks
   sirepo_jupyterhub:
     admin_users: [ 'vagrant' ]
     docker_image: radiasoft/jupyterhub
