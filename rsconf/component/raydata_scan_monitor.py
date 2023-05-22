@@ -16,6 +16,8 @@ _DB_SUBDIR = "db"
 
 _INTAKE_D = "intake"
 
+_NOTEBOOK_D = "notebook"
+
 
 class T(component.T):
     def internal_build_compile(self):
@@ -29,7 +31,9 @@ class T(component.T):
         )
         z.db_d = z._run_d.join(_DB_SUBDIR)
         z.intake_d = z._run_d.join(_INTAKE_D)
+        z.notebook_d = z._run_d.join(_NOTEBOOK_D)
         jc.sirepo.raydata.scan_monitor.db_dir = z.db_d
+        jc.sirepo.raydata.scan_monitor.notebook_dir = z.notebook_d
 
     def internal_build_write(self):
         jc = self.j2_ctx
@@ -52,11 +56,13 @@ class T(component.T):
                     f"{rsconf.db.user_home_path(z.run_u)}/.local/share/intake",
                     "rw",
                 ],
+                z.notebook_d,
             ],
         )
         self.install_access(mode="700", owner=z.run_u)
         self.install_directory(z.db_d)
         self.install_directory(z.intake_d)
+        self.install_directory(z.notebook_d)
 
     def sirepo_config(self, sirepo):
         self.j2_ctx_pksetdefault(sirepo.j2_ctx)
