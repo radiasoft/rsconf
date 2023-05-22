@@ -33,6 +33,7 @@ class T(component.T):
         z.intake_d = z._run_d.join(_INTAKE_D)
         z.notebook_d = z._run_d.join(_NOTEBOOK_D)
         jc.sirepo.raydata.scan_monitor.db_dir = z.db_d
+        jc.sirepo.raydata.scan_monitor.notebook_dir = z.notebook_d
 
     def internal_build_write(self):
         jc = self.j2_ctx
