@@ -54,6 +54,7 @@ http {
         ;
     {# https://t37.net/nginx-optimization-understanding-sendfile-tcp_nodelay-and-tcp_nopush.html #}
     sendfile on;
+    server_tokens off;
     tcp_nopush on;
     tcp_nodelay on;
     keepalive_timeout 65;
