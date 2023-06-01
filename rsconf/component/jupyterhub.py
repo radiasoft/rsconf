@@ -4,10 +4,8 @@
 :copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from __future__ import absolute_import, division, print_function
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
-from pykern import pkcollections
 from pykern import pkjson
 from rsconf import component
 
@@ -136,53 +134,29 @@ class T(component.T):
         from rsconf.component import docker
 
         z.tls_d = self.__run_d.join(_DOCKER_TLS_SUBDIR)
-        c = pkcollections.Dict(
+        c = PKDict(
             port_base=z.setdefault("port_base", _DEFAULT_PORT_BASE),
             tls_dir=str(z.tls_d),
-        )
-        seen = pkcollections.Dict(
-            hosts=pkcollections.Dict(),
-            users=pkcollections.Dict(),
         )
         # POSIT: notebook_dir in
         # radiasoft/container-beamsim-jupyter/container-conf/build.sh
         # parameterize anyway, because matches above
-        z.setdefault("volumes", pkcollections.Dict())
+        z.setdefault("volumes", PKDict())
         z.volumes.setdefault(
             str(z.user_d.join("{username}")),
-            pkcollections.Dict(bind=str(z.home_d.join("jupyter"))),
+            PKDict(bind=str(z.home_d.join("jupyter"))),
         )
-        self._rsdockerspawner_v3(z, seen)
+        z.docker_hosts = self._rsdockerspawner_hosts(z)
+        c.volumes = self._rsdockerspawner_volumes(z)
         c.user_groups = z.get("user_groups", PKDict())
-        c.volumes = z.volumes
         c.pools = z.pools
         z.rsdockerspawner_cfg = pkjson.dump_pretty(c)
-        z.docker_hosts = list(seen.hosts.keys())
 
-    def _rsdockerspawner_v3(self, z, seen):
-        def _users_for_groups(groups, t, n):
-            res = set()
-            for g in groups:
-                if g == _DEFAULT_USER_GROUP:
-                    return []
-                u = z.user_groups.get(g)
-                assert u is not None, "user_group={} not found for {}={}".format(
-                    g, t, n
-                )
-                res = res.union(u)
-            return sorted(res)
-
-        for n, v in z.volumes.items():
-            m = v.get("mode")
-            if not isinstance(m, dict):
-                continue
-            seen2 = set()
-            for g in m.values():
-                for u in _users_for_groups(g, "volume", n):
-                    assert u not in seen2, "user={} in both modes for volume={}".format(
-                        u, n
-                    )
-                    seen2.add(u)
+    def _rsdockerspawner_hosts(self, z):
+        seen = PKDict(
+            hosts=PKDict(),
+            users=PKDict(),
+        )
         for n, p in z.pools.items():
             for h in p["hosts"]:
                 assert (
@@ -198,7 +172,7 @@ class T(component.T):
                     "user_groups" not in p
                 ), "user_groups may not be specified for pool={}".format(n)
             else:
-                for s in _users_for_groups(p.user_groups, "pool", n):
+                for s in self._users_for_groups(p.user_groups, "pool", n, z):
                     assert (
                         s not in seen.users
                     ), "duplicate user={} in two pools {} and {}".format(
@@ -207,6 +181,31 @@ class T(component.T):
                         seen.hosts[s],
                     )
                     seen.users[s] = n
+        return list(seen.hosts.keys())
+
+    def _rsdockerspawner_volumes(self, z):
+        for n, v in z.volumes.items():
+            m = v.get("mode")
+            if not isinstance(m, dict):
+                continue
+            seen2 = set()
+            for g in m.values():
+                for u in self._users_for_groups(g, "volume", n, z):
+                    assert u not in seen2, "user={} in both modes for volume={}".format(
+                        u, n
+                    )
+                    seen2.add(u)
+        return z.volumes
+
+    def _users_for_groups(self, groups, t, n, z):
+        res = set()
+        for g in groups:
+            if g == _DEFAULT_USER_GROUP:
+                return []
+            u = z.user_groups.get(g)
+            assert u is not None, "user_group={} not found for {}={}".format(g, t, n)
+            res = res.union(u)
+        return sorted(res)
 
     def _vhost(self, z, jc):
         z.vhost = jc.jupyterhub.vhosts[jc.rsconf_db.host]
