@@ -20,6 +20,7 @@ class T(component.T):
         jc, z = self.j2_ctx_init()
         z = jc.mpi_worker
         self._find_cluster(jc, z)
+        # POSIT: {username} is always at end of Jupyter host volume
         z.host_d = z.host_root_d.join(z.user)
         z.setdefault("volumes", {})
         z.setdefault("user_groups", {})
@@ -140,6 +141,7 @@ class T(component.T):
         z = self.j2_ctx.mpi_worker
 
         def _volume(host, guest):
+            should be inside jupyterhub, but really shared with rsdockerspawner. Perhaps could share that.
             r = [host.format(username=z.user), None]
             if isinstance(guest, dict):
                 g = guest.get("bind")
@@ -158,7 +160,7 @@ class T(component.T):
             return r
 
         x = [
-            # Implicit volume: /
+            # Jupyterhub directory is implict
             [z.host_d, z.guest_d],
             # SECURITY: no modifications to run_d
             [z.run_d, z.run_d, "ro"],
