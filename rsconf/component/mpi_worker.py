@@ -38,6 +38,7 @@ class T(component.T):
             docker_exec=f"/usr/sbin/sshd -D -f '{z.guest.sshd_config}'",
         )
         self._prepare_hosts(jc, z)
+        self._docker_volumes = self._docker_volumes()
 
     def internal_build_write(self):
         from rsconf import systemd
@@ -64,7 +65,7 @@ class T(component.T):
             self,
             jc,
             image=docker_registry.absolute_image(self),
-            volumes=self._volumes(),
+            volumes=self._docker_volumes(),
         )
 
     def _find_cluster(self, jc, z):
@@ -137,34 +138,24 @@ class T(component.T):
         z.max_slots = z.slots_per_host * len(res)
         z.hosts_sorted = sorted(res, key=lambda x: x.ip)
 
-    def _volumes(self):
+    def _docker_volumes(self):
+        from rsconf.component import jupyterhub
+        from rsconf import db
+
         z = self.j2_ctx.mpi_worker
-
-        def _volume(host, guest):
-            should be inside jupyterhub, but really shared with rsdockerspawner. Perhaps could share that.
-            r = [host.format(username=z.user), None]
-            if isinstance(guest, dict):
-                g = guest.get("bind")
-                m = guest.get("mode")
-                if m:
-                    assert m == "ro", f"mode={m} only 'ro' supported host={host}"
-                    r.append(m)
-            else:
-                assert isinstance(guest, str), f"guest={guest} not a string or dict"
-                g = guest
-            g = str(g).format(username=z.user)
-            assert g.startswith(
-                str(z.guest_d) + "/"
-            ), "mount={} must start with guest_d={}".format(g, z.guest_d)
-            r[1] = g
-            return r
-
-        x = [
-            # Jupyterhub directory is implict
-            [z.host_d, z.guest_d],
-            # SECURITY: no modifications to run_d
-            [z.run_d, z.run_d, "ro"],
-        ]
-        for k in sorted(z.volumes.keys()):
-            x.append(_volume(k, z.volumes[k]))
-        return x
+        # SECURITY: no modifications to run_d, always override
+        z.volumes[z.run_d] = PKDict(
+            bind=z.run_d, mode=PKDict(ro=[jupyterhub.DEFAULT_USER_GROUP])
+        )
+        res = []
+        for v in jupyterhub.Volumes(
+            z.volumes,
+            z.user_groups,
+            z.host_root_d,
+            db.user_home_path(z.run_u),
+        ).for_user_sorted_by_mount(z.user):
+            r = [v.bind, v.mount]
+            if v.read_only:
+                r.append("ro")
+            res.append[r]
+        return res

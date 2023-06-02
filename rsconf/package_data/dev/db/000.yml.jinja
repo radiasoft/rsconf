@@ -320,7 +320,8 @@ host:
         volumes:
           /srv/jupyterhub/user/Workshop:
             bind: /home/vagrant/jupyter/Workshop
-            mode: ro
+            mode:
+              ro: [ everybody ]
           /srv/jupyterhub/user/Workshop/{username}:
             bind: /home/vagrant/jupyter/Workshop/{username}
             mode:
@@ -384,7 +385,8 @@ host:
         volumes:
           /srv/jupyterhub/user/Workshop:
             bind: /home/vagrant/jupyter/Workshop
-            mode: ro
+            mode:
+              ro: [ everybody ]
           /srv/jupyterhub/user/Workshop/{username}:
             bind: /home/vagrant/jupyter/Workshop/{username}
             mode:

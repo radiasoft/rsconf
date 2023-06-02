@@ -5,9 +5,10 @@
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from pykern.pkcollections import PKDict
-from pykern.pkdebug import pkdp
+from pykern.pkdebug import pkdp, pkdlog
 from pykern import pkjson
 from rsconf import component
+import copy
 
 
 _CONF_F = "conf.py"
@@ -15,8 +16,9 @@ _USER_SUBDIR = "user"
 _DOCKER_TLS_SUBDIR = "docker_tls"
 _DEFAULT_PORT_BASE = 8100
 # POSIT: rsdockerspawner._DEFAULT_POOL_NAME
-_DEFAULT_USER_GROUP = "everybody"
-_DEFAULT_POOL_V3 = _DEFAULT_USER_GROUP
+_EVERYBODY = "everybody"
+DEFAULT_USER_GROUP = _EVERYBODY
+_DEFAULT_POOL = _EVERYBODY
 _DEFAULT_MOCK_PASSWORD = "testpass"
 
 
@@ -141,14 +143,11 @@ class T(component.T):
         # POSIT: notebook_dir in
         # radiasoft/container-beamsim-jupyter/container-conf/build.sh
         # parameterize anyway, because matches above
-        z.setdefault("volumes", PKDict())
-        z.volumes.setdefault(
-            str(z.user_d.join("{username}")),
-            PKDict(bind=str(z.home_d.join("jupyter"))),
-        )
+        z.pksetdefault("volumes", PKDict)
+        z.pksetdefault("user_groups", PKDict)
         z.docker_hosts = self._rsdockerspawner_hosts(z)
         c.volumes = self._rsdockerspawner_volumes(z)
-        c.user_groups = z.get("user_groups", PKDict())
+        c.user_groups = z.user_groups
         c.pools = z.pools
         z.rsdockerspawner_cfg = pkjson.dump_pretty(c)
 
@@ -167,12 +166,14 @@ class T(component.T):
                     seen.hosts[h],
                 )
                 seen.hosts[h] = n
-            if n == _DEFAULT_POOL_V3:
+            if n == _DEFAULT_POOL:
                 assert (
                     "user_groups" not in p
                 ), "user_groups may not be specified for pool={}".format(n)
             else:
-                for s in self._users_for_groups(p.user_groups, "pool", n, z):
+                for s in _users_for_groups(p.user_groups, "pool", n, z.user_groups):
+                    if s == DEFAULT_USER_GROUP:
+                        continue
                     assert (
                         s not in seen.users
                     ), "duplicate user={} in two pools {} and {}".format(
@@ -184,31 +185,152 @@ class T(component.T):
         return list(seen.hosts.keys())
 
     def _rsdockerspawner_volumes(self, z):
-        for n, v in z.volumes.items():
-            m = v.get("mode")
-            if not isinstance(m, dict):
-                continue
-            seen2 = set()
-            for g in m.values():
-                for u in self._users_for_groups(g, "volume", n, z):
-                    assert u not in seen2, "user={} in both modes for volume={}".format(
-                        u, n
-                    )
-                    seen2.add(u)
-        return z.volumes
-
-    def _users_for_groups(self, groups, t, n, z):
-        res = set()
-        for g in groups:
-            if g == _DEFAULT_USER_GROUP:
-                return []
-            u = z.user_groups.get(g)
-            assert u is not None, "user_group={} not found for {}={}".format(g, t, n)
-            res = res.union(u)
-        return sorted(res)
+        return Volumes(
+            z.volumes, z.user_groups, z.user_d, z.home_d
+        ).rsdockerspawner_cfg()
 
     def _vhost(self, z, jc):
         z.vhost = jc.jupyterhub.vhosts[jc.rsconf_db.host]
+
+
+class Volume(PKDict):
+    """Represents a volume to mount
+
+    Args:
+        mount (str): mount point in guest
+        bind (str): host path to mount
+        read_only (bool): true if read only
+    """
+
+    pass
+
+
+class Volumes:
+    """Represents and manipulates parsed volume config
+
+    Example config represented as YAML::
+
+        volumes:
+           /home/vagrant/jupyter/StaffScratch:
+               bind: /scratch-on-host
+               ro: [ staff ]
+           /home/vagrant/jupyter/StaffScratch/{username}:
+               bind: /scratch-on-host/{username}
+               rw: [ staff ]
+         user_groups:
+           staff: [ larry, moe, curly, laurel, hardy ]
+           stooges: [ larry, moe, curly ]
+
+
+    Will add the `host_home_d` to `guest_home_d` binding if not
+    included already in `volumes`.
+
+    Args:
+        volumes (PKDict): map of mounts to bind, mode (see example)
+        user_groups (PKDict): map of group name to user list (see example)
+        host_home_d (py.path): root of user directories (e.g. /srv/jupyterhub/user)
+        guest_home_d (py.path): guest users's home directory (e.g. /home/vagrant)
+    """
+
+    def __init__(self, volumes, user_groups, host_home_d, guest_home_d):
+        def _cfg_to_list():
+            res = []
+            for n, v in self._cfg.items():
+                res.append(
+                    PKDict(
+                        mount=n,
+                        bind=v.bind,
+                        rw=_users(v.mode.rw, n),
+                        ro=_users(v.mode.ro, n),
+                    )
+                )
+            return res
+
+        def _default_mode():
+            return PKDict(rw=[DEFAULT_USER_GROUP], ro=[])
+
+        def _default_volume(res):
+            x = str(host_home_d.join("{username}"))
+            if x not in res:
+                res[x] = PKDict(
+                    bind=str(guest_home_d.join("jupyter")),
+                    mode=_default_mode(),
+                )
+            return res
+
+        def _normalize_and_default():
+            res = PKDict()
+            for n, v in volumes.items():
+                try:
+                    if not isinstance(v, dict):
+                        x = PKDict(bind=v)
+                    else:
+                        assert "bind" in v, f"bind must be specified in volume={n}: {v}"
+                        x = copy.deepcopy(v)
+                        x.pksetdefault(mode=_default_mode)
+                        x.mode.pksetdefault(rw=list)
+                        x.mode.pksetdefault(ro=list)
+                    res[n] = x
+                except Exception:
+                    pkdlog("volume={} config={}", n, v)
+                    raise
+            return _default_volume(res)
+
+        def _users(groups, mount):
+            if not groups:
+                return set()
+            return _users_for_groups(groups, "volume", mount, user_groups)
+
+        self._cfg = _normalize_and_default()
+        self._list = _cfg_to_list()
+
+    def for_user_sorted_by_mount(self, user):
+        """Find volumes matching user
+
+        Args:
+            user (str): matches jupyterhub name
+        Returns:
+            list: Volume instances in mount sorted order
+        """
+
+        def _fmt(path):
+            return path.format(username=user)
+
+        res = PKDict()
+        for v in self._list:
+            if n in res:
+                # These loops are in precedence order
+                continue
+            # user overrides _EVERYBODY
+            for n in user, _EVERYBODY:
+                # rw overrides ro
+                for m in "rw", "ro":
+                    if n in v[m]:
+                        res[v.mount] = Volume(
+                            mount=_fmt(v.mount), bind=_fmt(v.bind), read_only=m == "ro"
+                        )
+        return sorted(res.values(), key=lambda x: x.mount)
+
+    def rsdockerspawner_cfg(self):
+        """Normalized rsdockerspawner config
+
+        Returns:
+            PKDict: ``volumes`` value of rsdockerspawner config
+        """
+        return self._cfg
+
+
+def _users_for_groups(groups, category, key, user_groups):
+    res = set()
+    for g in groups:
+        if g == DEFAULT_USER_GROUP:
+            assert (
+                len(groups) == 1
+            ), f"group={DEFAULT_USER_GROUP} may be only group in user_groups={user_groups} in {category}={key}"
+            return [DEFAULT_USER_GROUP]
+        assert g in user_groups, f"user_group={g} not found for {category}={key}"
+        res = res.union(user_groups[g])
+    return res
 
 
 def _list_to_str(v):
