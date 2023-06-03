@@ -197,8 +197,8 @@ class Volume(PKDict):
     """Represents a volume to mount
 
     Args:
-        mount (str): mount point in guest
-        bind (str): host path to mount
+        guest (str): mount point in guest
+        host (str): path on host mount
         read_only (bool): true if read only
     """
 
@@ -211,11 +211,11 @@ class Volumes:
     Example config represented as YAML::
 
         volumes:
-           /home/vagrant/jupyter/StaffScratch:
-               bind: /scratch-on-host
+           /scratch-on-host:
+               bind: /home/vagrant/jupyter/StaffScratch
                ro: [ staff ]
-           /home/vagrant/jupyter/StaffScratch/{username}:
-               bind: /scratch-on-host/{username}
+           /scratch-on-host/{username}:
+               bind: /home/vagrant/jupyter/StaffScratch/{username}
                rw: [ staff ]
          user_groups:
            staff: [ larry, moe, curly, laurel, hardy ]
@@ -226,7 +226,7 @@ class Volumes:
     included already in `volumes`.
 
     Args:
-        volumes (PKDict): map of mounts to bind, mode (see example)
+        volumes (PKDict): map of host to guest bindings with mode (see example)
         user_groups (PKDict): map of group name to user list (see example)
         host_home_d (py.path): root of user directories (e.g. /srv/jupyterhub/user)
         guest_home_d (py.path): guest users's home directory (e.g. /home/vagrant)
@@ -238,8 +238,8 @@ class Volumes:
             for n, v in self._cfg.items():
                 res.append(
                     PKDict(
-                        mount=n,
-                        bind=v.bind,
+                        host=n,
+                        guest=v.bind,
                         rw=_users(v.mode.rw, n),
                         ro=_users(v.mode.ro, n),
                     )
@@ -267,38 +267,39 @@ class Volumes:
                     else:
                         assert "bind" in v, f"bind must be specified in volume={n}: {v}"
                         x = copy.deepcopy(v)
-                        x.pksetdefault(mode=_default_mode)
-                        x.mode.pksetdefault(rw=list)
-                        x.mode.pksetdefault(ro=list)
+                        if "mode" in x:
+                            x.mode.pksetdefault(rw=list)
+                            x.mode.pksetdefault(ro=list)
+                    x.pksetdefault(mode=_default_mode)
                     res[n] = x
                 except Exception:
                     pkdlog("volume={} config={}", n, v)
                     raise
             return _default_volume(res)
 
-        def _users(groups, mount):
+        def _users(groups, host_path):
             if not groups:
                 return set()
-            return _users_for_groups(groups, "volume", mount, user_groups)
+            return _users_for_groups(groups, "volume", host_path, user_groups)
 
         self._cfg = _normalize_and_default()
         self._list = _cfg_to_list()
 
-    def for_user_sorted_by_mount(self, user):
+    def for_user_sorted_by_guest_path(self, user):
         """Find volumes matching user
 
         Args:
             user (str): matches jupyterhub name
         Returns:
-            list: Volume instances in mount sorted order
+            list: Volume instances in guest path sorted order
         """
 
         def _fmt(path):
-            return path.format(username=user)
+            return str(path).format(username=user)
 
         res = PKDict()
         for v in self._list:
-            if n in res:
+            if v.guest in res:
                 # These loops are in precedence order
                 continue
             # user overrides _EVERYBODY
@@ -306,10 +307,10 @@ class Volumes:
                 # rw overrides ro
                 for m in "rw", "ro":
                     if n in v[m]:
-                        res[v.mount] = Volume(
-                            mount=_fmt(v.mount), bind=_fmt(v.bind), read_only=m == "ro"
+                        res[v.guest] = Volume(
+                            host=_fmt(v.host), guest=_fmt(v.guest), read_only=m == "ro"
                         )
-        return sorted(res.values(), key=lambda x: x.mount)
+        return sorted(res.values(), key=lambda x: x.guest)
 
     def rsdockerspawner_cfg(self):
         """Normalized rsdockerspawner config

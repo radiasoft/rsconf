@@ -4,10 +4,9 @@
 :copyright: Copyright (c) 2019 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from __future__ import absolute_import, division, print_function
-from pykern.pkdebug import pkdp
-from pykern import pkcollections
 from pykern import pkio
+from pykern.pkcollections import PKDict
+from pykern.pkdebug import pkdp
 from rsconf import component
 
 
@@ -38,7 +37,7 @@ class T(component.T):
             docker_exec=f"/usr/sbin/sshd -D -f '{z.guest.sshd_config}'",
         )
         self._prepare_hosts(jc, z)
-        self._docker_volumes = self._docker_volumes()
+        self._docker_volumes = self.__docker_volumes()
 
     def internal_build_write(self):
         from rsconf import systemd
@@ -65,7 +64,7 @@ class T(component.T):
             self,
             jc,
             image=docker_registry.absolute_image(self),
-            volumes=self._docker_volumes(),
+            volumes=self._docker_volumes,
         )
 
     def _find_cluster(self, jc, z):
@@ -88,7 +87,7 @@ class T(component.T):
         assert "user" in z, "host={} not found in clusters".format(h)
 
     def _gen_paths(self, jc, z, d):
-        res = pkcollections.Dict()
+        res = PKDict()
         res.bin_d = d.join("bin")
         d = d.join(".rsmpi")
         res.conf_d = d
@@ -122,7 +121,7 @@ class T(component.T):
                 z.net = net
             s = self._gen_secrets(jc)
             res.append(
-                pkcollections.Dict(
+                PKDict(
                     host=h,
                     ip=ip,
                     host_key_pub=pkio.read_text(s.host_key_pub_f).rstrip(),
@@ -138,7 +137,7 @@ class T(component.T):
         z.max_slots = z.slots_per_host * len(res)
         z.hosts_sorted = sorted(res, key=lambda x: x.ip)
 
-    def _docker_volumes(self):
+    def __docker_volumes(self):
         from rsconf.component import jupyterhub
         from rsconf import db
 
@@ -153,9 +152,9 @@ class T(component.T):
             z.user_groups,
             z.host_root_d,
             db.user_home_path(z.run_u),
-        ).for_user_sorted_by_mount(z.user):
-            r = [v.bind, v.mount]
+        ).for_user_sorted_by_guest_path(z.user):
+            r = [v.host, v.guest]
             if v.read_only:
                 r.append("ro")
-            res.append[r]
+            res.append(r)
         return res
