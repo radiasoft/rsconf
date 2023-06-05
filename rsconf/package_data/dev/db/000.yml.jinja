@@ -1,4 +1,19 @@
 ---
+fconf_macros:
+  jupyterhub_volumes_and_user_groups():
+    user_groups:
+      private: [ vagrant ]
+      instructors: [ teach1 ]
+    volumes:
+      /srv/jupyterhub/user/Workshop:
+        bind: /home/vagrant/jupyter/Workshop
+        mode:
+          ro: [ everybody ]
+      /srv/jupyterhub/user/Workshop/{username}:
+        bind: /home/vagrant/jupyter/Workshop/{username}
+        mode:
+          rw: [ instructors ]
+
 default:
   base_os:
     ip_forward: false
@@ -314,20 +329,14 @@ host:
             user_groups: [ private ]
             servers_per_host: 1
             hosts: [ {{ host }} ]
-        user_groups:
-          private: [ vagrant ]
-          instructors: [ teach1 ]
-        volumes:
-          /srv/jupyterhub/user/Workshop:
-            bind: /home/vagrant/jupyter/Workshop
-            mode:
-              ro: [ everybody ]
-          /srv/jupyterhub/user/Workshop/{username}:
-            bind: /home/vagrant/jupyter/Workshop/{username}
-            mode:
-              rw: [ instructors ]
+        jupyterhub_volumes_and_user_groups():
         vhosts:
           {{ host }}: jupyter.{{ host }}
+      mpi_worker:
+        jupyterhub_volumes_and_user_groups():
+      # required by mpi_worker, because that's normal mode
+      nfs_client:
+        mounts: {}
       nfs_server:
         exports:
           /srv/mpi_worker/user: [ 10.10.10.0/24 ]
@@ -354,11 +363,7 @@ host:
           # - btest
           # - github_bkp
           # - dovecot
-
-        #components: [ rsconf, docker_registry, btest ]
-#        components: [ bop ]
-        #components: [ bkp, jupyterhub, jupyterhub_proxy ]
-        components: [ postfix, nfs_server, sirepo ]
+        components: [ postfix, nfs_server, mpi_worker, sirepo ]
       sirepo:
         auth:
           methods:
@@ -379,18 +384,7 @@ host:
             user_groups: [ private ]
             servers_per_host: 1
             hosts: [ {{ host }} ]
-        user_groups:
-          private: [ vagrant ]
-          instructors: [ teach1 ]
-        volumes:
-          /srv/jupyterhub/user/Workshop:
-            bind: /home/vagrant/jupyter/Workshop
-            mode:
-              ro: [ everybody ]
-          /srv/jupyterhub/user/Workshop/{username}:
-            bind: /home/vagrant/jupyter/Workshop/{username}
-            mode:
-              rw: [ instructors ]
+        jupyterhub_volumes_and_user_groups():
         vhosts:
           {{ host }}: sirepo.{{ host }}
     {{ worker5_host }}:
