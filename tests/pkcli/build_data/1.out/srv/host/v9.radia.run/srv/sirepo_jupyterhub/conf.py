@@ -52,7 +52,13 @@ c.RSDockerSpawner.cfg = '''{
     "user_groups": {},
     "volumes": {
         "/srv/jupyterhub/user/{username}": {
-            "bind": "/home/vagrant/jupyter"
+            "bind": "/home/vagrant/jupyter",
+            "mode": {
+                "ro": [],
+                "rw": [
+                    "everybody"
+                ]
+            }
         }
     }
 }
