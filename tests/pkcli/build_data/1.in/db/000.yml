@@ -294,6 +294,11 @@ host:
           - docker
           - rsconf
           - docker_registry
+        local_dirs:
+          "/srv/home":
+            mode: 0o700
+            owner: vagrant
+            group: vagrant
     v4.radia.run:
       base_users:
         add:

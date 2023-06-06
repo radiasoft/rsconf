@@ -50,22 +50,25 @@ docker_main() {
         docker_install
     fi
     if docker_need_update; then
-        install_err "Installed docker=$(docker version) is < min_software_version={{ docker.min_software_version }} after install."
+        install_err "Installed docker=$(docker_version) is < min_software_version={{ docker.min_software_version }} after install."
     fi
 }
 
 docker_need_update() {
-    (( $(docker_version_num "$(docker_version)") < $(docker_version_num '{{ docker.min_software_version }}') ))
+    local v=$(docker_version)
+    if [[ ! $v ]]; then
+        install_err "docker --version did not output a valid version number"
+    fi
+    (( $(docker_version_num "$v" ) < $(docker_version_num '{{ docker.min_software_version }}') ))
 }
 
 docker_version() {
     if [[ $(docker --version) =~ ([0-9]+\.[0-9]+\.[0-9]+) ]]; then
         echo "${BASH_REMATCH[1]}"
     fi
-    install_err "docker --version did not output a valid version number"
 }
 
 docker_version_num() {
-    declare str=$1
-    printf '%d%06d%06d' "${str//./ }"
+    declare dotted=$1
+    printf '%d%06d%06d' ${dotted//./ }
 }

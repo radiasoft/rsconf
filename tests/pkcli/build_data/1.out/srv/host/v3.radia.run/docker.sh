@@ -36,27 +36,10 @@ rsconf_install_directory '/srv/docker/db_bkp'
 #!/bin/bash
 _docker_pkg=docker-ce
 
-docker_update() {
-    if ! docker_should_update; then
-        return;
-    fi
-    yum makecache fast
-    install_yum update "$_docker_pkg" "$_docker_pkg"-cli
-    if docker_should_update; then
-        install_err "Installed docker=$(docker --version) is still < min_software_version=0.0.0 after update."
-    fi
-}
-
 docker_install() {
-    declare dir=/srv/docker/volumes
-    if [[ -e $dir && $(type -t docker) != '' ]]; then
-        docker_update
-        install_info "$dir: exists, docker already installed"
-        return
-    fi
     if [[ -e /var/lib/docker ]]; then
-        # This will happen on dev systems only, but a good check
-        install_err '/var/lib/docker exists:
+        # This will happen on dev systems only, but a good check nonetheless
+        install_err '/var/lib/docker exists. You need to:
 systemctl stop docker
 systemctl disable docker
 rm -rf /var/lib/docker/*
@@ -65,11 +48,9 @@ rmdir /var/lib/docker
 perl -pi -e "s{^/var/lib/docker.*}{}" /etc/fstab
 lvremove -f /dev/mapper/docker-vps
 
-Then re-run rsconf
+Then re-run rsconf. This should only happen in development environments.
 '
     fi
-#TODO(robnagler) need a list of repos and RPMs.
-    # F27
     if rsconf_fedora_release_if 26; then
         # https://docs.docker.com/engine/installation/linux/docker-ce/fedora/#set-up-the-repository
         dnf -y install dnf-plugins-core
@@ -87,28 +68,41 @@ Then re-run rsconf
     rsconf_yum_install "$_docker_pkg"
         # Give vagrant user access in dev mode only
         usermod -aG docker vagrant
-    if docker_should_update; then
-        install_err "Installed docker=$(docker version) is < min_software_version=0.0.0 after install."
-    fi
 }
 
 docker_main() {
-    docker_install
+    declare d=/srv/docker/volumes
+    if [[ -e $d ]] && type docker >& /dev/null; then
+        if docker_need_update; then
+            # Need to specify cli explicitly or it won't update
+            install_yum update "$_docker_pkg" "$_docker_pkg"-cli
+        else
+            install_info "$d: exists, docker already installed"
+        fi
+    else
+        docker_install
+    fi
+    if docker_need_update; then
+        install_err "Installed docker=$(docker_version) is < min_software_version=1.0.0 after install."
+    fi
 }
 
-docker_should_update() {
-    docker_should_update_do Client || docker_should_update_do Server
+docker_need_update() {
+    local v=$(docker_version)
+    if [[ ! $v ]]; then
+        install_err "docker --version did not output a valid version number"
+    fi
+    (( $(docker_version_num "$v" ) < $(docker_version_num '1.0.0') ))
 }
 
-docker_should_update_do() {
-    declare docker_component=$1
-    declare i=$(docker version --format="{{ json . }}" | jq --raw-output ".$docker_component.Version")
-    (( $(docker_version_num "$i") < $(docker_version_num '0.0.0') ))
+docker_version() {
+    if [[ $(docker --version) =~ ([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+        echo "${BASH_REMATCH[1]}"
+    fi
 }
 
 docker_version_num() {
-    declare str=$1
-    printf '%d%06d%06d' ${str//./ }
-
+    declare dotted=$1
+    printf '%d%06d%06d' ${dotted//./ }
 }
 

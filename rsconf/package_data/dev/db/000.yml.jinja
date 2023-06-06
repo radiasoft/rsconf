@@ -126,7 +126,7 @@ default:
   mpi_worker:
     docker_image: radiasoft/beamsim-jupyter
     guest_d: /home/vagrant/jupyter
-    host_root_d: /srv/mpi_worker/user
+    host_root_d: /srv/home
     ssh_port: 8022
     slots_per_host: 2
   network:
@@ -196,6 +196,11 @@ default:
       "/etc/base.rsconf":
         mode: 0o700
         owner: nobody
+        group: {{ user }}
+    local_directories:
+      "/srv/home":
+        mode: 0o700
+        owner: {{ user }}
         group: {{ user }}
   rs_mariadb:
     docker_image: radiasoft/mariadb:latest
@@ -333,13 +338,17 @@ host:
         vhosts:
           {{ host }}: jupyter.{{ host }}
       mpi_worker:
+        "/srv/home":
+          mode: 0o700
+          owner: {{ user }}
+          group: {{ user }}
         jupyterhub_volumes_and_user_groups():
       # required by mpi_worker, because that's normal mode
       nfs_client:
         mounts: {}
       nfs_server:
         exports:
-          /srv/mpi_worker/user: [ 10.10.10.0/24 ]
+          /srv/home: [ 10.10.10.0/24 ]
           /srv/sirepo/db/user: [ 10.10.10.0/24 ]
       nginx:
         listen_any: True
@@ -406,7 +415,7 @@ host:
       nfs_client:
         mounts:
           {{ host }}:
-            - /srv/mpi_worker/user
+            - /srv/home
       postfix:
         smart_host: {{ host }}
       rsconf_db:
@@ -417,10 +426,10 @@ host:
       nfs_client:
         mounts:
           {{ host }}:
-            - /srv/mpi_worker/user
+            - /srv/home
       mpi_worker:
         volumes:
-          '/srv/mpi_worker/tmp/{username}': '/home/vagrant/jupyter/tmp/{username}'
+          '/srv/home/tmp/{username}': '/home/vagrant/jupyter/tmp/{username}'
       rsconf_db:
         components: [ mpi_worker ]
     # This host never installed, just for testing build
