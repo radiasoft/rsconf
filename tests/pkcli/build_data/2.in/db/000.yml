@@ -15,10 +15,6 @@ default:
     ssh_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIB3mhGsrxFV4KnHjDtBaaU7ZdlNhwxIEPZ3/+Bv1xZY v3.radia.run"
   db_bkp:
     on_calendar: "7:30"
-  docker_cache:
-    host: ""
-  docker_registry:
-    host: ""
   component:
     tls_crt: {}
     tls_crt_create: true

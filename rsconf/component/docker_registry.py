@@ -4,7 +4,6 @@
 :copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from __future__ import absolute_import, division, print_function
 from pykern import pkcompat
 from pykern import pkio
 from pykern import pkjson
@@ -117,10 +116,11 @@ def install_crt_and_login(compt, j2_ctx):
 
 
 def update_j2_ctx(j2_ctx):
-    # TODO(robnagler) exit if already initialzed.
-    if not j2_ctx.docker_registry.host:
+    h = j2_ctx.pkunchecked_nested_get("docker_registry.host", "")
+    if h == "":
         return False
-    addr = "{}:{}".format(j2_ctx.docker_registry.host, _PORT)
+    # POSIT: docker_cache.update_j2_ctx asserts both hosts are not defined
+    addr = "{}:{}".format(h, _PORT)
     j2_ctx.docker_registry.update(
         PKDict(
             http_addr=addr,

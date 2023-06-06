@@ -97,10 +97,6 @@ default:
   docker:
     iptables: false
     min_software_version: "23.0.0"
-  docker_cache:
-    host: ''
-  docker_registry:
-    host: {{ master }}
   github_bkp:
     docker_image: docker.io/radiasoft/beamsim
     exclude_re: ''
@@ -197,11 +193,6 @@ default:
         mode: 0o700
         owner: nobody
         group: {{ user }}
-    local_directories:
-      "/srv/home":
-        mode: 0o700
-        owner: {{ user }}
-        group: {{ user }}
   rs_mariadb:
     docker_image: radiasoft/mariadb:latest
     docker_image_is_local: true
@@ -291,7 +282,6 @@ host:
         components:
           - docker
           - rsconf
-          - docker_registry
     {{ host }}:
       base_users:
         add:
@@ -373,6 +363,11 @@ host:
           # - github_bkp
           # - dovecot
         components: [ postfix, nfs_server, mpi_worker, sirepo ]
+        local_dirs:
+          "/srv/home":
+            mode: 0o700
+            owner: {{ user }}
+            group: {{ user }}
       sirepo:
         auth:
           methods:
