@@ -1,0 +1,99 @@
+#!/bin/bash
+#
+# Run rsaccounting monthly
+#
+# Usage: run-rsaccounting [last-month]
+#
+if [[ ! ${PYENV_ROOT:-} ]]; then
+    source ~/.bashrc
+fi
+set -eou pipefail
+
+declare _google_shared_drive_id='{{ rsaccounting.google_shared_drive_id }}'
+declare _work_d='{{ rsaccounting._work_d }}'
+declare _rclone_drive='{{ rsaccounting._rclone_drive }}'
+declare _run_log='{{ rsaccounting._run_log }}'
+export XDG_CONFIG_HOME='{{ rsaccounting._xdg_config_home }}'
+
+# Filled in dynamically
+declare _run_curr _run_prev
+
+run_download() {
+    declare d
+    run_log "download"
+    for d in Payroll/"$_run_curr" JSR/{"$_run_curr","$_run_prev"}; do
+        mkdir -p "$d"
+        run_rclone sync "$_rclone_drive:/$d" "$d"
+    done
+    (
+        # Excel on Windows by default creates .CSV files so
+        # need to downcase for rsaccounting.
+        cd JSR/"$_run_curr"
+        shopt -s nullglob
+        declare f
+        for f in *CSV; do
+            mv -f "$f" "$(basename "$f" CSV)"csv;
+        done
+    )
+}
+
+run_log() {
+    echo "$(date +'%Y-%m-%d %H:%M:%S') $*"
+}
+
+run_main() {
+    cd "$_work_d"
+    run_main_with_log "$@" &> "$_run_log"
+}
+
+run_main_with_log() {
+    run_log start
+    run_which "$@"
+    run_download
+    run_monthly
+    run_log end
+}
+
+run_monthly() {
+    declare s=sentinel
+    # ensure sentinel has different file date
+    sleep 1
+    run_log "run $_run_curr"
+    touch "$s"
+    if rsaccounting monthly Payroll/"$_run_curr"; then
+        run_log "upload"
+        # Slow but best way to ensure we don't delete data from other users
+        find {Payroll,JSR}/"$_run_curr" -type f -newer "$s" -print \
+            | run_rclone copy --files-from - . "$_rclone_drive":/
+    fi
+    unlink "$s"
+}
+
+run_rclone() {
+    rclone --drive-team-drive="$_google_shared_drive_id" --checkers=6 --fast-list "$@"
+}
+
+run_which() {
+    declare arg=${1:-}
+    if [[ $arg == last-month ]]; then
+        _run_curr=$(date -d '-1 month' +%Y/%m)
+        _run_prev=$(date -d '-2 months' +%Y/%m)
+        #declare d=date -d "$(date +%Y%m01) - 1 day" "+%Y%m%d"
+        #declare f=/Payroll/$_run_curr/${d}_timer.iif
+        #if run_rclone lsjson "$_rclone_drive:$f" >& /dev/null; then
+        #    run_log "$f exists, not running monthly payroll twice; remove it first"
+        #    return 1
+        #fi
+        return
+    fi
+    _run_curr=$(date +%Y/%m)
+    if run_rclone lsjson --dirs-only "$_rclone_drive:/Payroll/$_run_curr" >& /dev/null; then
+        # daily
+        _run_prev=$(date -d '-1 month' +%Y/%m)
+    else
+        run_log "Payroll/$_run_curr does not exist; maybe run copy.sh or need to run monthly"
+        return 1
+    fi
+}
+
+run_main "$@"

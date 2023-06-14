@@ -527,12 +527,18 @@ host:
           - jupyterhub_proxy
           - nfs_client
           - nfs_server
+          - rsaccounting
           - rsiviz
           - sirepo
           - sirepo_job_supervisor
           - sirepo_jupyterhub
           - sirepo_test_http
           - wordpress
+      rsaccounting:
+        docker_image: radiasoft/rsaccounting
+        google_shared_drive_id: xyzzy
+        port: 7777
+        vhost: rsaccounting.v4.radia.run
       rsiviz:
         docker_image: radiasoft/rsiviz
       sirepo:

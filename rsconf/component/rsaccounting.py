@@ -10,16 +10,46 @@ from rsconf import component
 from rsconf import db
 from rsconf import systemd
 
+_WORK_SUBDIR = "work"
+_RUN_LOG = "monthly.log"
+#: implicit directory name used by rclone relative to $XDG_CONFIG_HOME
+_RCLONE_SUBDIR = "rclone"
+_RCLONE_CONF_F = "rsaccounting_rclone.conf"
+_GOOGLE_JSON_F = "rsaccounting_google.json"
+
 
 class T(component.T):
     def internal_build_compile(self):
         self.buildt.require_component("nginx")
         jc, z = self.j2_ctx_init()
         z._run_u = jc.rsconf_db.run_u
-        systemd.custom_unit_prepare(self, jc)
+        self.__run_d = systemd.docker_unit_prepare(
+            self,
+            jc,
+            docker_exec=f"rsaccounting service start",
+        )
+        z._xdg_config_home = self.__run_d
+        z._rclone_d = z._xdg_config_home.join(_RCLONE_SUBDIR)
+        z._work_d = self.__run_d.join(_WORK_SUBDIR)
+        # POSIT: same as name inside _RCLONE_CONF_F
+        z._rclone_drive = self.name
+        z._run_log = z._work_d.join(_RUN_LOG)
+        z._run_monthly_f = self.__run_d.join("run-monthly")
+        z.pknested_set("pykern.pkcli.pkasyncio.port", z.port)
+        z.pknested_set("pkcli.service.monthly_cmd", z._run_monthly_f)
 
     def internal_build_write(self):
         from rsconf.component import nginx
+
+        # TODO(robnagler) simplify in component.python_service_env
+        def _env():
+            return self.python_service_env(
+                values=PKDict(
+                    (k, v)
+                    for k, v in self.j2_ctx.items()
+                    if k in ("rsaccounting", "pykern")
+                ),
+            )
 
         jc = self.j2_ctx
         z = jc[self.name]
@@ -28,12 +58,25 @@ class T(component.T):
             self,
             jc,
             image=z.docker_image,
-            # TODO(e-carlin): This is the default command (set by build_docker_cmd)
-            # is there a way to just use it and not specify cmd?
-            ports=(
-                (jc.nginx.docker_index_port, 8080),
-                (jc.nginx.docker_flask_port, 8082),
-            ),
+            env=_env(),
         )
         self.install_access(mode="700", owner=z._run_u)
-        self.install_directory(d)
+        # POSIT: xdg_config_home same as run_d so don't need to mkdir
+        self.install_directory(z._rclone_d)
+        self.install_directory(z._work_d)
+        self.install_access(mode="500")
+        self.install_resource(
+            "rsaccounting/run-monthly",
+            jc,
+            z._run_monthly_f,
+        )
+        self.install_access(mode="400")
+        self.install_abspath(
+            db.secret_path(jc, _RCLONE_CONF_F),
+            z._rclone_d.join("rclone.conf"),
+        )
+        self.install_abspath(
+            db.secret_path(jc, _GOOGLE_JSON_F),
+            # POSIT name is same inside rclone.conf
+            z._rclone_d.join(_GOOGLE_JSON_F),
+        )
