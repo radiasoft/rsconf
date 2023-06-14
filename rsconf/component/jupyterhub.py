@@ -268,8 +268,12 @@ class Volumes:
                         assert "bind" in v, f"bind must be specified in volume={n}: {v}"
                         x = copy.deepcopy(v)
                         if "mode" in x:
-                            x.mode.pksetdefault(rw=list)
-                            x.mode.pksetdefault(ro=list)
+                            # Mode exists so default rw or ro, depending on which
+                            # doesn't exist
+                            x.mode.pksetdefault(rw=list, ro=list)
+                            assert (
+                                x.mode.rw or x.mode.ro
+                            ), f"one of 'rw' or 'ro' must be specified in volume={n}: {v}"
                     x.pksetdefault(mode=_default_mode)
                     res[n] = x
                 except Exception:
@@ -297,19 +301,35 @@ class Volumes:
         def _fmt(path):
             return str(path).format(username=user)
 
-        res = PKDict()
-        for v in self._list:
-            if v.guest in res:
-                # These loops are in precedence order
-                continue
-            # user overrides _EVERYBODY
+        def _mode_for_user(list_elem):
+            """See if `user` has privileges for `list_elem`
+
+            `user` has precedence over `_EVERBODY` and ``rw`` has precedence over ``ro``.
+
+            Args:
+                list_elem (PKDict): element of `_list`
+            Returns:
+                str: "rw" if users has write privs, "ro" if read-only, else None (no match)
+            """
             for n in user, _EVERYBODY:
-                # rw overrides ro
                 for m in "rw", "ro":
                     if n in v[m]:
-                        res[v.guest] = Volume(
-                            host=_fmt(v.host), guest=_fmt(v.guest), read_only=m == "ro"
-                        )
+                        return m
+            return None
+
+        res = PKDict()
+        for v in self._list:
+            m = _mode_for_user(v)
+            if not m:
+                continue
+            assert (
+                v.guest not in res
+            ), "duplicate guest bind={v.guest} for user={user} for host paths={[v.path, res[v.guest].path]}"
+            res[v.guest] = Volume(
+                host=_fmt(v.host),
+                guest=_fmt(v.guest),
+                read_only=m == "ro",
+            )
         return sorted(res.values(), key=lambda x: x.guest)
 
     def rsdockerspawner_cfg(self):
