@@ -59,7 +59,7 @@ server {
     location = /en/plans.html {
         return 301 /en/plans/;
     }
-    location ~ ^/(wp-login\.php$|(wp-(admin|content|includes)|en)/) {
+    location ~ ^/(wp-login\.php$|(wp-(admin|content|includes)|en)(/|$)) {
         proxy_pass https://{{ sirepo.wordpress_host }};
     }
 {% endif %}
