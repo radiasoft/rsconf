@@ -71,18 +71,30 @@ c.RSDockerSpawner.cfg = '''{
     "volumes": {
         "/srv/jupyterhub/user/Workshop": {
             "bind": "/home/vagrant/jupyter/Workshop",
-            "mode": "ro"
+            "mode": {
+                "ro": [
+                    "everybody"
+                ],
+                "rw": []
+            }
         },
         "/srv/jupyterhub/user/Workshop/{username}": {
             "bind": "/home/vagrant/jupyter/Workshop/{username}",
             "mode": {
+                "ro": [],
                 "rw": [
                     "instructors"
                 ]
             }
         },
         "/srv/jupyterhub/user/{username}": {
-            "bind": "/home/vagrant/jupyter"
+            "bind": "/home/vagrant/jupyter",
+            "mode": {
+                "ro": [],
+                "rw": [
+                    "everybody"
+                ]
+            }
         }
     }
 }

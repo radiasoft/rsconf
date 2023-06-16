@@ -37,6 +37,7 @@ class T(component.T):
     def internal_build_write(self):
         jc = self.j2_ctx
         z = jc.base_os
+        self._install_local_dirs(jc.rsconf_db.local_dirs)
         self._install_local_files(jc.rsconf_db.local_files)
         self.install_access(mode="700", owner=jc.rsconf_db.root_u)
         self.install_directory(_JOURNAL_CONF_D)
@@ -68,6 +69,22 @@ class T(component.T):
         self.install_resource("base_os/hostname", jc, "/etc/hostname")
         self.install_resource("base_os/motd", jc, "/etc/motd")
         self.append_root_bash_with_main(jc)
+
+    def _install_local_dirs(self, values):
+        x = PKDict(
+            mode=0o400,
+            owner=self.j2_ctx.rsconf_db.root_u,
+            group=self.j2_ctx.rsconf_db.root_u,
+        )
+        for t in sorted(values.keys()):
+            v = values[t].copy()
+            v.pksetdefault(**x)
+            self.install_access(
+                mode="{:o}".format(v.mode),
+                owner=v.owner,
+                group=v.group,
+            )
+            self.install_directory(t)
 
     def _install_local_files(self, values):
         # TODO(robnagler) do we have to create directories and/or trigger on

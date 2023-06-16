@@ -294,6 +294,11 @@ host:
           - docker
           - rsconf
           - docker_registry
+        local_dirs:
+          "/srv/home":
+            mode: 0o700
+            owner: vagrant
+            group: vagrant
     v4.radia.run:
       base_users:
         add:
@@ -322,7 +327,8 @@ host:
         volumes:
           /srv/jupyterhub/user/Workshop:
             bind: /home/vagrant/jupyter/Workshop
-            mode: ro
+            mode:
+              ro: [ everybody ]
           /srv/jupyterhub/user/Workshop/{username}:
             bind: /home/vagrant/jupyter/Workshop/{username}
             mode:
@@ -397,7 +403,8 @@ host:
         volumes:
           /srv/jupyterhub/user/Workshop:
             bind: /home/vagrant/jupyter/Workshop
-            mode: ro
+            mode:
+              ro: [ everybody ]
           /srv/jupyterhub/user/Workshop/{username}:
             bind: /home/vagrant/jupyter/Workshop/{username}
             mode:
@@ -424,11 +431,18 @@ host:
           v4.radia.run:
             - /srv/mpi_worker/user
       mpi_worker:
+        user_groups:
+          staff: [ vagrant ]
         volumes:
           '/srv/mpi_worker/tmp/{username}': '/home/vagrant/jupyter/tmp/{username}'
-          '/srv/mpi_worker/tmp/':
+          /srv/mpi_worker/tmp:
             bind: /home/vagrant/jupyter/tmp
-            mode: ro
+            mode:
+              ro: [ everybody ]
+          /srv/mpi_worker/scratch:
+            bind: /home/vagrant/jupyter/scratch
+            mode:
+              rw: [ staff ]
       rsconf_db:
         components: [ mpi_worker ]
     # This host never installed, just for testing build

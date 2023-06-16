@@ -4,10 +4,9 @@
 :copyright: Copyright (c) 2019 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from __future__ import absolute_import, division, print_function
-from pykern.pkdebug import pkdp
-from pykern import pkcollections
 from pykern import pkio
+from pykern.pkcollections import PKDict
+from pykern.pkdebug import pkdp
 from rsconf import component
 
 
@@ -20,8 +19,10 @@ class T(component.T):
         jc, z = self.j2_ctx_init()
         z = jc.mpi_worker
         self._find_cluster(jc, z)
+        # POSIT: {username} is always at end of Jupyter host volume
         z.host_d = z.host_root_d.join(z.user)
         z.setdefault("volumes", {})
+        z.setdefault("user_groups", {})
         z.secrets = self._gen_secrets(jc)
         for x in "guest", "host":
             z[x] = self._gen_paths(jc, z, z.get(x + "_d"))
@@ -36,6 +37,7 @@ class T(component.T):
             docker_exec=f"/usr/sbin/sshd -D -f '{z.guest.sshd_config}'",
         )
         self._prepare_hosts(jc, z)
+        self._docker_volumes = self.__docker_volumes()
 
     def internal_build_write(self):
         from rsconf import systemd
@@ -43,25 +45,6 @@ class T(component.T):
 
         jc = self.j2_ctx
         z = jc.mpi_worker
-
-        def _volume(host, guest):
-            r = [host.format(username=z.user), None]
-            if isinstance(guest, dict):
-                g = guest.get("bind")
-                m = guest.get("mode")
-                if m:
-                    assert m == "ro", f"mode={m} only 'ro' supported host={host}"
-                    r.append(m)
-            else:
-                assert isinstance(guest, str), f"guest={guest} not a string or dict"
-                g = guest
-            g = str(g).format(username=z.user)
-            assert g.startswith(
-                str(z.guest_d) + "/"
-            ), "mount={} must start with guest_d={}".format(g, z.guest_d)
-            r[1] = g
-            return r
-
         self.install_access(mode="700", owner=z.run_u)
         # Need to make sure host_d exists, even though it isn't ours
         for d in z.host_d, z.host.conf_d, z.host.ssh_d:
@@ -77,19 +60,11 @@ class T(component.T):
             self.install_directory(z.host.bin_d)
             self.install_access(mode="500")
             self.install_resource(z.host.bin_d.join("rsmpi.sh"), jc)
-        x = [
-            [z.host_d, z.guest_d],
-            # SECURITY: no modifications to run_d
-            [z.run_d, z.run_d, "ro"],
-        ]
-
-        for k in sorted(z.volumes.keys()):
-            x.append(_volume(k, z.volumes[k]))
         systemd.docker_unit_enable(
             self,
             jc,
             image=docker_registry.absolute_image(self),
-            volumes=x,
+            volumes=self._docker_volumes,
         )
 
     def _find_cluster(self, jc, z):
@@ -112,7 +87,7 @@ class T(component.T):
         assert "user" in z, "host={} not found in clusters".format(h)
 
     def _gen_paths(self, jc, z, d):
-        res = pkcollections.Dict()
+        res = PKDict()
         res.bin_d = d.join("bin")
         d = d.join(".rsmpi")
         res.conf_d = d
@@ -146,7 +121,7 @@ class T(component.T):
                 z.net = net
             s = self._gen_secrets(jc)
             res.append(
-                pkcollections.Dict(
+                PKDict(
                     host=h,
                     ip=ip,
                     host_key_pub=pkio.read_text(s.host_key_pub_f).rstrip(),
@@ -161,3 +136,25 @@ class T(component.T):
         z.net = str(z.net.name)
         z.max_slots = z.slots_per_host * len(res)
         z.hosts_sorted = sorted(res, key=lambda x: x.ip)
+
+    def __docker_volumes(self):
+        from rsconf.component import jupyterhub
+        from rsconf import db
+
+        z = self.j2_ctx.mpi_worker
+        # SECURITY: no modifications to run_d, always override
+        z.volumes[z.run_d] = PKDict(
+            bind=z.run_d, mode=PKDict(ro=[jupyterhub.DEFAULT_USER_GROUP])
+        )
+        res = []
+        for v in jupyterhub.Volumes(
+            z.volumes,
+            z.user_groups,
+            z.host_root_d,
+            db.user_home_path(z.run_u),
+        ).for_user_sorted_by_guest_path(z.user):
+            r = [v.host, v.guest]
+            if v.read_only:
+                r.append("ro")
+            res.append(r)
+        return res
