@@ -193,11 +193,6 @@ default:
         mode: 0o700
         owner: nobody
         group: {{ user }}
-  rs_mariadb:
-    docker_image: radiasoft/mariadb:latest
-    docker_image_is_local: true
-    ip: 127.0.0.1
-    port: 7011
   sirepo:
     docker_image: radiasoft/sirepo
     auth:
@@ -253,10 +248,6 @@ channel:
     postgresql:
       auth_local_method: trust
     sirepo:
-      comsol_register:
-        mail_server: {{ host }}
-        mail_username: comsol@{{ host }}
-        mail_password: somepass
       feature_config:
         moderated_sim_types:
           - jupyterhublogin
@@ -512,7 +503,6 @@ host:
           - nfs_client
           - nfs_server
           - bkp
-          - comsol
           - raydata_scan_monitor
           - sirepo
           - sirepo_job_supervisor
