@@ -146,7 +146,6 @@ class T(component.T):
             )
         z._run_u = jc.rsconf_db.run_u
         _defaults_1(jc)
-        self._comsol(z)
         self._raydata()
         self._jupyterhublogin(z)
         _defaults_2(jc)
@@ -223,17 +222,6 @@ class T(component.T):
             # local only values; exclude double under (__) which are "private" values, e.g. sirepo._run_u
             exclude_re=r"^sirepo(?:_docker_image|_static_files|.*_vhost|.*_client_max_body|_num_api_servers|__|_raydata)",
         )
-
-    def _comsol(self, z):
-        r = z.get("comsol_register")
-        if not r:
-            return
-        e = r.get("mail_username")
-        r.pksetdefault(
-            mail_support_email=e,
-            mail_recipient_email=e,
-        )
-        z.pknested_get("feature_config.api_modules").append("comsol_register")
 
     def _install_dirs_and_files(self):
         from rsconf.component import nginx
