@@ -13,6 +13,7 @@ from rsconf import component
 
 
 _CONF_F = "conf.py"
+_PROXY_PID_F = "/tmp/jupyter-proxy.pid"
 _USER_SUBDIR = "user"
 _DOCKER_TLS_SUBDIR = "docker_tls"
 _DEFAULT_PORT_BASE = 8100
@@ -35,6 +36,7 @@ class T(component.T):
         jc, z = self.j2_ctx_init()
         self.__run_d = systemd.unit_run_d(jc, self.name)
         self.__conf_f = self.__run_d.join(_CONF_F)
+        z.setdefault("proxy_pid_f", _PROXY_PID_F)
         systemd.docker_unit_prepare(
             self,
             jc,
