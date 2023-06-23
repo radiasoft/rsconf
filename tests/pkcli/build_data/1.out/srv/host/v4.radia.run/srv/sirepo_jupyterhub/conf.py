@@ -13,6 +13,7 @@ c.JupyterHub.port = 8111
 
 # url for hub api access to proxy
 c.ConfigurableHTTPProxy.api_url = 'http://10.10.10.40:8112'
+c.ConfigurableHTTPProxy.pid_file = '/tmp/jupyter-proxy.pid'
 
 # ip/port hub binds to. User servers and proxy will use this to
 # communicate with the hub.

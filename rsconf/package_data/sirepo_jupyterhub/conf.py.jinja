@@ -13,6 +13,7 @@ c.JupyterHub.port = {{sirepo_jupyterhub.configurable_http_proxy_port}}
 
 # url for hub api access to proxy
 c.ConfigurableHTTPProxy.api_url = 'http://{{ sirepo_jupyterhub.hub_ip }}:{{ sirepo_jupyterhub.configurable_http_proxy_api_port }}'
+c.ConfigurableHTTPProxy.pid_file = '{{ sirepo_jupyterhub.proxy_pid_f }}'
 
 # ip/port hub binds to. User servers and proxy will use this to
 # communicate with the hub.
