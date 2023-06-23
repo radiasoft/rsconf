@@ -80,7 +80,7 @@ class T(component.T):
         )
 
     def _check_min_software_version(self, z):
-        z.setdefault("min_software_version", "0.0.0")
+        z.setdefault("min_software_version", "1.0.0")
         p = [int(v) for v in z.min_software_version.split(".")]
         if len(p) != 3:
             raise ValueError(

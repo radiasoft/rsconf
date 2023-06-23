@@ -187,11 +187,6 @@ default:
         mode: 0o700
         owner: nobody
         group: vagrant
-  rs_mariadb:
-    docker_image: radiasoft/mariadb:latest
-    docker_image_is_local: true
-    ip: 127.0.0.1
-    port: 7011
   sirepo:
     docker_image: radiasoft/sirepo
     auth:
@@ -228,8 +223,6 @@ default:
       mpi_worker:
         shm-size: "1G"
     timezone: America/Phoenix
-  wordpress:
-    docker_image: docker.io/radiasoft/wordpress
 
 channel:
   dev:
@@ -255,10 +248,6 @@ channel:
     postgresql:
       auth_local_method: trust
     sirepo:
-      comsol_register:
-        mail_server: v4.radia.run
-        mail_username: comsol@v4.radia.run
-        mail_password: somepass
       feature_config:
         moderated_sim_types:
           - jupyterhublogin
@@ -269,12 +258,6 @@ channel:
           user_db_root_d: /srv/jupyterhub/user
       mpi_cores: 4
       vhost: sirepo.v4.radia.run
-    wordpress:
-      vhosts:
-        wp1.v4.radia.run:
-          port: 7101
-          db_name: wp1
-          db_user: wp1user
 
 host:
   dev:
@@ -294,6 +277,11 @@ host:
           - docker
           - rsconf
           - docker_registry
+        local_dirs:
+          "/srv/home":
+            mode: 0o700
+            owner: vagrant
+            group: vagrant
     v4.radia.run:
       base_users:
         add:
@@ -322,7 +310,8 @@ host:
         volumes:
           /srv/jupyterhub/user/Workshop:
             bind: /home/vagrant/jupyter/Workshop
-            mode: ro
+            mode:
+              ro: [ everybody ]
           /srv/jupyterhub/user/Workshop/{username}:
             bind: /home/vagrant/jupyter/Workshop/{username}
             mode:
@@ -397,7 +386,8 @@ host:
         volumes:
           /srv/jupyterhub/user/Workshop:
             bind: /home/vagrant/jupyter/Workshop
-            mode: ro
+            mode:
+              ro: [ everybody ]
           /srv/jupyterhub/user/Workshop/{username}:
             bind: /home/vagrant/jupyter/Workshop/{username}
             mode:
@@ -424,11 +414,18 @@ host:
           v4.radia.run:
             - /srv/mpi_worker/user
       mpi_worker:
+        user_groups:
+          staff: [ vagrant ]
         volumes:
           '/srv/mpi_worker/tmp/{username}': '/home/vagrant/jupyter/tmp/{username}'
-          '/srv/mpi_worker/tmp/':
+          /srv/mpi_worker/tmp:
             bind: /home/vagrant/jupyter/tmp
-            mode: ro
+            mode:
+              ro: [ everybody ]
+          /srv/mpi_worker/scratch:
+            bind: /home/vagrant/jupyter/scratch
+            mode:
+              rw: [ staff ]
       rsconf_db:
         components: [ mpi_worker ]
     # This host never installed, just for testing build
@@ -519,7 +516,6 @@ host:
           - bop
           - bop_timer
           - btest
-          - comsol
           - devbox
           - dovecot
           - github_bkp
@@ -532,7 +528,6 @@ host:
           - sirepo_job_supervisor
           - sirepo_jupyterhub
           - sirepo_test_http
-          - wordpress
       rsiviz:
         docker_image: radiasoft/rsiviz
       sirepo:

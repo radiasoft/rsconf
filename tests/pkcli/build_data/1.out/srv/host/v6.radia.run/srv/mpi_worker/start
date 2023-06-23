@@ -26,4 +26,4 @@ else
     image_cmd+=( /srv/mpi_worker/cmd )
 fi
 # --init runs tini wrapper: https://github.com/krallin/tini
-exec docker run "${flags[@]}" --init --rm "--user=$user" --network=host -v '/srv/mpi_worker/user/vagrant:/home/vagrant/jupyter' -v '/srv/mpi_worker:/srv/mpi_worker:ro' -v '/srv/mpi_worker/tmp/:/home/vagrant/jupyter/tmp:ro' -v '/srv/mpi_worker/tmp/vagrant:/home/vagrant/jupyter/tmp/vagrant' --shm-size='1G' "${image_cmd[@]}"
+exec docker run "${flags[@]}" --init --rm "--user=$user" --network=host -v '/srv/mpi_worker/user/vagrant:/home/vagrant/jupyter' -v '/srv/mpi_worker/scratch:/home/vagrant/jupyter/scratch' -v '/srv/mpi_worker/tmp:/home/vagrant/jupyter/tmp:ro' -v '/srv/mpi_worker/tmp/vagrant:/home/vagrant/jupyter/tmp/vagrant' -v '/srv/mpi_worker:/srv/mpi_worker:ro' --shm-size='1G' "${image_cmd[@]}"

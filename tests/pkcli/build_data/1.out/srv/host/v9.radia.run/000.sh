@@ -16,7 +16,6 @@ rsconf_require petshop
 rsconf_require bop
 rsconf_require bop_timer
 rsconf_require btest
-rsconf_require comsol
 rsconf_require docker
 rsconf_require devbox_devtech3
 rsconf_require devbox_fullstackdude
@@ -34,5 +33,3 @@ rsconf_require sirepo_jupyterhub
 rsconf_require sirepo_job_supervisor
 rsconf_require sirepo
 rsconf_require sirepo_test_http
-rsconf_require rs_mariadb
-rsconf_require wordpress

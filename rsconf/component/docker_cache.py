@@ -4,8 +4,7 @@
 :copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from __future__ import absolute_import, division, print_function
-from pykern import pkcollections
+from pykern.pkcollections import PKDict
 from pykern import pkio
 from pykern import pkjson
 from pykern.pkdebug import pkdp
@@ -25,27 +24,6 @@ _PORT = 5000
 _CERTS_D = pkio.py_path("/etc/docker/certs.d")
 
 
-def update_j2_ctx(j2_ctx):
-    from rsconf.component import docker_registry
-
-    if not j2_ctx.docker_cache.host:
-        return False
-    addr = "{}:{}".format(j2_ctx.docker_cache.host, _PORT)
-    j2_ctx.docker_cache.update(
-        pkcollections.Dict(
-            http_addr=addr,
-            http_host="https://" + addr,
-        )
-    )
-    docker_registry.update_j2_ctx(j2_ctx)
-    assert not j2_ctx.docker_registry.get(
-        "http_host"
-    ), "{}: docker_cache and docker_registry.http_host both defined".format(
-        j2_ctx.docker_registry.http_host,
-    )
-    return True
-
-
 def install_crt(compt, j2_ctx):
     if not update_j2_ctx(j2_ctx):
         return
@@ -61,6 +39,26 @@ def install_crt(compt, j2_ctx):
     crt = component.tls_key_and_crt(j2_ctx, z.host).crt
     compt.install_access(mode="400")
     compt.install_abspath(crt, d.join("ca.crt"))
+
+
+def update_j2_ctx(j2_ctx):
+    from rsconf.component import docker_registry
+
+    h = j2_ctx.pkunchecked_nested_get("docker_cache.host", "")
+    if h == "":
+        return False
+    if docker_registry.update_j2_ctx(j2_ctx):
+        raise AssertionError(
+            f"docker_registry.host={j2_ctx.docker_registry.host} and docker_cache.host={h} cannot both be defined",
+        )
+    addr = "{}:{}".format(h, _PORT)
+    j2_ctx.docker_cache.update(
+        PKDict(
+            http_addr=addr,
+            http_host="https://" + addr,
+        )
+    )
+    return True
 
 
 class T(component.T):
