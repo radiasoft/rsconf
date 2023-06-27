@@ -221,8 +221,6 @@ default:
     extra_run_flags:
       mpi_worker:
         shm-size: "1G"
-  wordpress:
-    docker_image: docker.io/radiasoft/wordpress
 
 channel:
   dev:
@@ -257,12 +255,6 @@ channel:
           user_db_root_d: /srv/jupyterhub/user
       mpi_cores: 4
       vhost: sirepo.{{ host }}
-    wordpress:
-      vhosts:
-        wp1.{{ host }}:
-          port: 7101
-          db_name: wp1
-          db_user: wp1user
 
 host:
   dev:
@@ -514,7 +506,6 @@ host:
           - jupyterhub
           - jupyterhub_proxy
           - github_bkp
-          - wordpress
       sirepo:
         listen_any: True
         auth:
