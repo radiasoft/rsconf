@@ -45,9 +45,7 @@ class T(component.T):
             env=self.python_service_env(
                 values=PKDict(
                     pykern=jc.get("pykern", PKDict()),
-                    sirepo=PKDict(
-                        raydata=jc.sirepo.raydata, srdb_root=jc.sirepo.srdb.root
-                    ),
+                    sirepo=PKDict(raydata=jc.sirepo.raydata, srdb_root=z.db_d),
                 )
             ),
             volumes=[
