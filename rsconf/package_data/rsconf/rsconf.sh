@@ -386,7 +386,6 @@ rsconf_service_docker_pull() {
     declare container_name=${3:-$service}
     declare static_files_gen=${4:-true}
     if [[ $service ]]; then
-        declare s=$service
         declare container_image_id=$(docker inspect --format='{{.Image}}' "$container_name" 2>/dev/null || true)
         declare prev_id=$(docker inspect --format='{{.Id}}' "$image" 2>/dev/null || true)
     fi
