@@ -479,6 +479,8 @@ rsconf_service_restart() {
         fi
         rsconf_systemctl enable "$s"
     done
+    # And reload at end, because rsconf_systemctl_clean_unit may have run
+    systemctl daemon-reload
 }
 
 rsconf_service_restart_at_end() {
@@ -522,6 +524,7 @@ rsconf_systemctl() {
         enable)
             systemctl disable "$s" /etc/systemd/system/multi-user.target.wants/"$s"@* &> /dev/null || true
             eval systemctl enable $service
+            rsconf_systemctl_clean_unit "$s" "$service"
             ;;
         is-active)
             # is-active doesn't do the right thing so test individually
@@ -544,6 +547,18 @@ rsconf_systemctl() {
             install_err "unknown systemctl op=$op for service=$service"
             ;;
     esac
+}
+
+rsconf_systemctl_clean_unit() {
+    declare basename=$1
+    declare maybe_template_name=$2
+    declare x=
+    if [[ $basename == $maybe_template_name ]]; then
+        # Remove the template
+        x=@
+    fi
+    # POSIT: rsconf_service_restart runs systemctl daemon-reload
+    rm -f "/etc/systemd/system/$basename$x.service"
 }
 
 rsconf_user() {
