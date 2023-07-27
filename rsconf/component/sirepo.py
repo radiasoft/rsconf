@@ -52,8 +52,6 @@ class T(component.T):
                         feature_config=PKDict(
                             api_modules=[],
                             job=True,
-                            # TODO(e-carlin): Remove and use only moderated_sim_types once
-                            # git.radiasoft.org/sirepo/pull/4211 is in prod.
                             default_proprietary_sim_types=tuple(),
                             moderated_sim_types=tuple(),
                             proprietary_sim_types=tuple(),
