@@ -460,6 +460,15 @@ host:
           custom_image:
             docker_image: radiasoft/custom-image
             ssh_port: 3102
+          rsivizdevbox:
+            rsiviz:
+              ip_base: 127.2.0.0
+              port_base: 20000
+            ssh_port: 3103
+      systemd:
+        extra_run_flags:
+          rsivizdevbox:
+            gpus: "all"
       jupyterhub:
         jupyter_docker_image: radiasoft/custom-jupyter:latest
         jupyter_docker_image_is_local: true

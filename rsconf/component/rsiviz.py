@@ -19,18 +19,24 @@ class T(component.T):
         jc, z = self.j2_ctx_init()
         z._run_u = jc.rsconf_db.run_u
         self.j2_ctx_pksetdefault(
-            PKDict(pykern=PKDict(pkconfig=PKDict(channel=jc.rsconf_db.channel)))
+            PKDict(
+                pykern=PKDict(
+                    pkconfig=PKDict(channel=jc.rsconf_db.channel),
+                    pkasyncio=PKDict(server_port=8002),
+                ),
+                rsiviz=PKDict(pkcli=PKDict(service=PKDict(index_iframe_port=8000))),
+            )
         )
         self.__run_d = systemd.docker_unit_prepare(
             self,
             jc,
+            # TODO(e-carlin): This is the default command (set by build_docker_cmd)
+            # is there a way to just use it and not specify cmd?
             docker_exec=f"bash {db.user_home_path(z._run_u)}/.radia-run/start",
         )
 
     def internal_build_write(self):
-        from rsconf.component import db_bkp
         from rsconf.component import nginx
-        from rsconf.component import docker
 
         jc = self.j2_ctx
         z = jc[self.name]
@@ -38,8 +44,8 @@ class T(component.T):
         jc.nginx.pkupdate(
             index_port=8880,
             flask_port=8882,
-            docker_index_port=8000,
-            docker_flask_port=8002,
+            docker_index_port=z.pkcli.service.index_iframe_port,
+            docker_flask_port=jc.pykern.pkasyncio.server_port,
         )
         nginx.install_vhost(
             self,
@@ -54,10 +60,6 @@ class T(component.T):
                 exclude_re=r"^rsiviz(?:__|_docker_image|_url_secret)",
             ),
             image=z.docker_image,
-            ports=(
-                (jc.nginx.docker_index_port, 8080),
-                (jc.nginx.docker_flask_port, 8082),
-            ),
         )
         self.install_access(mode="700", owner=z._run_u)
         self.install_directory(d)
