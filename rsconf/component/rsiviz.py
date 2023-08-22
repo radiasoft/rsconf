@@ -18,6 +18,9 @@ class T(component.T):
         self.buildt.require_component("docker", "nginx")
         jc, z = self.j2_ctx_init()
         z._run_u = jc.rsconf_db.run_u
+        self.j2_ctx_pksetdefault(
+            PKDict(pykern=PKDict(pkconfig=PKDict(channel=jc.rsconf_db.channel)))
+        )
         self.__run_d = systemd.docker_unit_prepare(
             self,
             jc,
@@ -47,7 +50,8 @@ class T(component.T):
             self,
             jc,
             env=self.python_service_env(
-                PKDict(rsiviz=z), exclude_re=r"^rsiviz(?:__|_docker_image|_url_secret)"
+                PKDict(rsiviz=z, pykern=jc.pykern),
+                exclude_re=r"^rsiviz(?:__|_docker_image|_url_secret)",
             ),
             image=z.docker_image,
             ports=(
