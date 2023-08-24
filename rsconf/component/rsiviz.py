@@ -18,6 +18,9 @@ class T(component.T):
         self.buildt.require_component("docker", "nginx")
         jc, z = self.j2_ctx_init()
         z._run_u = jc.rsconf_db.run_u
+        self.j2_ctx_pksetdefault(
+            PKDict(pykern=PKDict(pkconfig=PKDict(channel=jc.rsconf_db.channel)))
+        )
         self.__run_d = systemd.docker_unit_prepare(
             self,
             jc,
@@ -46,9 +49,11 @@ class T(component.T):
         systemd.docker_unit_enable(
             self,
             jc,
+            env=self.python_service_env(
+                PKDict(rsiviz=z, pykern=jc.pykern),
+                exclude_re=r"^rsiviz(?:__|_docker_image|_url_secret)",
+            ),
             image=z.docker_image,
-            # TODO(e-carlin): This is the default command (set by build_docker_cmd)
-            # is there a way to just use it and not specify cmd?
             ports=(
                 (jc.nginx.docker_index_port, 8080),
                 (jc.nginx.docker_flask_port, 8082),
