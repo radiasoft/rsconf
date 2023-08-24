@@ -158,7 +158,7 @@ class T(component.T):
             path,
         )
         self._env(
-            "RSIVIZ_PKCLI_SERVICE_DICE_NETWORK_NETWORK_DISCOVERY_ADDRESS",
+            "RSIVIZ_PKCLI_SERVICE_DICE_NETWORK_DISCOVERY_ADDRESS",
             f"{u.rsiviz.ip_base}:{_RSIVIZ_DICE_NETWORK_DISCOVERY_PORT}",
             path,
         )
