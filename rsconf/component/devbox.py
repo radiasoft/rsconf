@@ -9,6 +9,8 @@ from pykern.pkdebug import pkdp
 from rsconf import component
 import ipaddress
 
+_RSIVIZ_DICE_NETWORK_DISCOVERY_PORT = 5555
+
 
 class T(component.T):
     def internal_build_compile(self):
@@ -157,7 +159,7 @@ class T(component.T):
         )
         self._env(
             "RSIVIZ_PKCLI_SERVICE_DICE_NETWORK_NETWORK_DISCOVERY_ADDRESS",
-            f"{u.rsiviz.ip_base}:5555",
+            f"{u.rsiviz.ip_base}:{_RSIVIZ_DICE_NETWORK_DISCOVERY_PORT}",
             path,
         )
         self._env(

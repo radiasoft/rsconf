@@ -11,6 +11,10 @@ from rsconf import db
 from rsconf import systemd
 
 _DB_SUBDIR = "db"
+_PORTS = PKDict(
+    index_port=8880,
+    flask_port=8882,
+)
 
 
 class T(component.T):
@@ -22,9 +26,11 @@ class T(component.T):
             PKDict(
                 pykern=PKDict(
                     pkconfig=PKDict(channel=jc.rsconf_db.channel),
-                    pkasyncio=PKDict(server_port=8002),
+                    pkasyncio=PKDict(server_port=z.server_port),
                 ),
-                rsiviz=PKDict(pkcli=PKDict(service=PKDict(index_iframe_port=8000))),
+                rsiviz=PKDict(
+                    pkcli=PKDict(service=PKDict(index_iframe_port=z.index_iframe_port))
+                ),
             )
         )
         self.__run_d = systemd.docker_unit_prepare(
@@ -42,10 +48,9 @@ class T(component.T):
         z = jc[self.name]
         d = self.__run_d.join(_DB_SUBDIR)
         jc.nginx.pkupdate(
-            index_port=8880,
-            flask_port=8882,
-            docker_index_port=z.pkcli.service.index_iframe_port,
-            docker_flask_port=jc.pykern.pkasyncio.server_port,
+            docker_index_port=z.index_iframe_port,
+            docker_flask_port=z.server_port,
+            **_PORTS,
         )
         nginx.install_vhost(
             self,

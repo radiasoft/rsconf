@@ -460,7 +460,7 @@ host:
           custom_image:
             docker_image: radiasoft/custom-image
             ssh_port: 3102
-          rsivizdevbox:
+          rsivizcoder:
             rsiviz:
               ip_base: 127.2.0.0
               port_base: 20000
@@ -539,6 +539,8 @@ host:
           - sirepo_test_http
       rsiviz:
         docker_image: radiasoft/rsiviz
+        server_port: 8002
+        index_iframe_port: 8000
       sirepo:
         activait_redirect: false
         auth:
