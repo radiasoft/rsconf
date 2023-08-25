@@ -7,6 +7,9 @@
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from rsconf import component
+import ipaddress
+
+_RSIVIZ_DICE_NETWORK_DISCOVERY_PORT = 5555
 
 
 class T(component.T):
@@ -94,6 +97,16 @@ class T(component.T):
         for k, v in self.secrets.items():
             self.install_abspath(v, z.host[k])
 
+    def _env(self, name, value, path):
+        v = str(value)
+        # TODO probably could recursively quote
+        if "'" in v:
+            raise ValueError(f"single quote in value={v} of bash variable name={name}")
+        self.rsconf_append(
+            path,
+            f"export {name}='{v}'",
+        )
+
     def _gen_paths(self, z, db_d, ssh_d):
         res = PKDict(ssh_d=db_d.join(ssh_d))
         res.pkupdate(sshd_config=res.ssh_d.join("sshd_config"))
@@ -108,34 +121,47 @@ class T(component.T):
         self.secrets = PKDict({k: s[k] for k in ("host_key_f", "identity_pub_f")})
 
     def _jupyter_bashrc(self, z, path):
-        def _env(name, value):
-            v = str(value)
-            # TODO probably could recursively quote
-            if "'" in v:
-                raise ValueError(
-                    f"single quote in value={v} of bash variable name={name}"
-                )
-            self.rsconf_append(
-                path,
-                f"export {name}='{v}'",
-            )
-
         self.install_access(mode="600")
         self.install_ensure_file_exists(path)
         for n in ("package_path", "sim_types"):
             if n in z:
-                _env(f"SIREPO_FEATURE_CONFIG_{n.upper()}", ":".join(z[n]))
+                self._env(f"SIREPO_FEATURE_CONFIG_{n.upper()}", ":".join(z[n]), path)
         z.service_port = z.ssh_port + z.ssh_service_port_difference
         z.job_supervisor_port = z.service_port + z.ssh_service_port_difference
         for n in ("service_port", "job_supervisor_port"):
-            _env(f"SIREPO_PKCLI_{n.upper()}", z[n])
+            self._env(f"SIREPO_PKCLI_{n.upper()}", z[n], path)
         for n in ("DRIVER_LOCAL", "API"):
-            _env(
+            self._env(
                 f"SIREPO_JOB_{n}_SUPERVISOR_URI",
                 f"http://127.0.0.1:{z.job_supervisor_port}",
+                path,
             )
+        self._rsiviz(z, path)
 
     def _network(self, jc, z):
         n = self.buildt.get_component("network")
         z.ip = n.unchecked_public_ip() or n.ip_and_net_for_host(jc.rsconf_db.host)[0]
         n.add_public_tcp_ports([str(z.ssh_port)])
+
+    def _rsiviz(self, z, path):
+        u = z.users[self.user_name]
+        if not isinstance(u, PKDict) or not "rsiviz" in u:
+            return
+        self._env(
+            "PYKERN_PKASYNCIO_SERVER_PORT",
+            u.rsiviz.port_base,
+            path,
+        )
+        self._env(
+            "RSIVIZ_PKCLI_SERVICE_DICE_NETWORK_CLUSTER_INTERFACE_ADDRESS",
+            ipaddress.ip_address(u.rsiviz.ip_base) + 1,
+            path,
+        )
+        self._env(
+            "RSIVIZ_PKCLI_SERVICE_DICE_NETWORK_DISCOVERY_ADDRESS",
+            f"{u.rsiviz.ip_base}:{_RSIVIZ_DICE_NETWORK_DISCOVERY_PORT}",
+            path,
+        )
+        self._env(
+            "RSIVIZ_PKCLI_SERVICE_INDEX_IFRAME_PORT", u.rsiviz.port_base + 1, path
+        )

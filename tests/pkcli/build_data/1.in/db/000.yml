@@ -460,6 +460,15 @@ host:
           custom_image:
             docker_image: radiasoft/custom-image
             ssh_port: 3102
+          rsivizcoder:
+            rsiviz:
+              ip_base: 127.2.0.0
+              port_base: 20000
+            ssh_port: 3103
+      systemd:
+        extra_run_flags:
+          rsivizdevbox:
+            gpus: "all"
       jupyterhub:
         jupyter_docker_image: radiasoft/custom-jupyter:latest
         jupyter_docker_image_is_local: true
@@ -530,6 +539,8 @@ host:
           - sirepo_test_http
       rsiviz:
         docker_image: radiasoft/rsiviz
+        server_port: 8002
+        index_iframe_port: 8000
       sirepo:
         activait_redirect: false
         auth:

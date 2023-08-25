@@ -20,6 +20,7 @@ rsconf_require docker
 rsconf_require devbox_devtech3
 rsconf_require devbox_fullstackdude
 rsconf_require devbox_custom_image
+rsconf_require devbox_rsivizcoder
 rsconf_require devbox
 rsconf_require dovecot
 rsconf_require github_bkp
