@@ -251,25 +251,27 @@ class T(PKDict):
         defaults is nested dicts with dotted keys that
         will be turned into nested `PKDict` if not defined.
 
-        Uses PKDictpksetdefault to set values so can use
+        Uses PKDict.pksetdefault to set values so can use
         callables as initializers.
 
         Args:
             defaults (dict): nested values
         """
 
-        def f(prefix, defaults):
-            for k, v in defaults.items():
-                k = prefix + k.split(".")
-                if isinstance(v, dict):
-                    f(k, v)
-                    continue
-                n = self.j2_ctx
-                for y in k[:-1]:
-                    n = n.setdefault(y, PKDict())
-                n.pksetdefault(k[-1], v)
+        return self._j2_ctx_set(updates, "pksetdefault")
 
-        f([], defaults)
+    def j2_ctx_pkupdate(self, updates):
+        """Set updates on self.j2_ctx
+
+        defaults is nested dicts with dotted keys that
+        will be turned into nested `PKDict` if not defined.
+
+        Uses PKDict.pkudpate to set values.
+
+        Args:
+            updates (dict): nested values to set
+        """
+        return self._j2_ctx_set(updates, "pkupdate")
 
     def python_service_env(self, values, exclude_re=None):
         e = pkconfig.to_environ(
@@ -394,6 +396,20 @@ class T(PKDict):
             md5 = _md5(self._write_binary(dst, file_contents))
         self._bash_append(host_path, md5=md5)
         return dst
+
+    def _j2_ctx_set(self, values, method):
+        def f(prefix, values, method):
+            for k, v in values.items():
+                k = prefix + k.split(".")
+                if isinstance(v, dict):
+                    f(k, v)
+                    continue
+                n = self.j2_ctx
+                for y in k[:-1]:
+                    n = n.setdefault(y, PKDict())
+                getattr(n, method)(k[-1], v)
+
+        f([], values)
 
     def _render_file(self, path, j2_ctx):
         from pykern import pkjinja

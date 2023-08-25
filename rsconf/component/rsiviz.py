@@ -22,21 +22,22 @@ class T(component.T):
         self.buildt.require_component("docker", "nginx")
         jc, z = self.j2_ctx_init()
         z._run_u = jc.rsconf_db.run_u
-        for k, v in PKDict(
-            nginx=PKDict(
-                docker_index_port=z.index_iframe_port,
-                docker_flask_port=z.server_port,
-                **_PORTS,
+        self.j2_ctx_pkupdate(
+            PKDict(
+                nginx=PKDict(
+                    docker_index_port=z.index_iframe_port,
+                    docker_flask_port=z.server_port,
+                    **_PORTS,
+                ),
+                pykern=PKDict(
+                    pkconfig=PKDict(channel=jc.rsconf_db.channel),
+                    pkasyncio=PKDict(server_port=z.server_port),
+                ),
+                rsiviz=PKDict(
+                    pkcli=PKDict(service=PKDict(index_iframe_port=z.index_iframe_port))
+                ),
             ),
-            pykern=PKDict(
-                pkconfig=PKDict(channel=jc.rsconf_db.channel),
-                pkasyncio=PKDict(server_port=z.server_port),
-            ),
-            rsiviz=PKDict(
-                pkcli=PKDict(service=PKDict(index_iframe_port=z.index_iframe_port))
-            ),
-        ).items():
-            jc.setdefault(k, PKDict()).pkupdate(v)
+        )
         self.__run_d = systemd.docker_unit_prepare(
             self,
             jc,
