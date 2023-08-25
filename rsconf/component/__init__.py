@@ -258,7 +258,7 @@ class T(PKDict):
             defaults (dict): nested values
         """
 
-        return self._j2_ctx_set(updates, "pksetdefault")
+        return self._j2_ctx_set(defaults, "pksetdefault")
 
     def j2_ctx_pkupdate(self, updates):
         """Set updates on self.j2_ctx
@@ -271,7 +271,7 @@ class T(PKDict):
         Args:
             updates (dict): nested values to set
         """
-        return self._j2_ctx_set(updates, "pkupdate")
+        return self._j2_ctx_set(updates, "__setitem__")
 
     def python_service_env(self, values, exclude_re=None):
         e = pkconfig.to_environ(
@@ -402,14 +402,14 @@ class T(PKDict):
             for k, v in values.items():
                 k = prefix + k.split(".")
                 if isinstance(v, dict):
-                    f(k, v)
+                    f(k, v, method)
                     continue
                 n = self.j2_ctx
                 for y in k[:-1]:
                     n = n.setdefault(y, PKDict())
                 getattr(n, method)(k[-1], v)
 
-        f([], values)
+        f([], values, method)
 
     def _render_file(self, path, j2_ctx):
         from pykern import pkjinja
