@@ -447,6 +447,7 @@ host:
         secondary_setup_f: etc/secondary_setup.sh
       devbox:
         docker_image: radiasoft/beamsim-jupyter
+        docker_image_is_local: true
         guest_d: /home/vagrant/
         package_path:
           - sirepo
