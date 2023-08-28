@@ -186,9 +186,9 @@ def _image_args(compt, j2_ctx=None, image=None, image_is_local=None):
     if j2_ctx is None:
         j2_ctx = compt.j2_ctx
     if not image:
-        image = j2_ctx[compt.name].docker_image
+        image = j2_ctx[compt.module_name].docker_image
     if image_is_local is None:
         image_is_local = j2_ctx.pkunchecked_nested_get(
-            f"{compt.name}.docker_image_is_local",
+            f"{compt.module_name}.docker_image_is_local",
         )
     return (j2_ctx, image, bool(image_is_local))

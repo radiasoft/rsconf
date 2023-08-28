@@ -5,7 +5,7 @@
 set -euo pipefail
 # Needed to allow for empty commands (e.g. docker_registry), bash will complain
 # if an variable is empty as unbound (set -u above)
-image_cmd=( 'v3.radia.run:5000/radiasoft/beamsim-jupyter:dev' )
+image_cmd=( 'radiasoft/beamsim-jupyter:dev' )
 user=vagrant
 if (( $# > 0 )); then
     # No name if called on the command line; called from command line so default log driver
