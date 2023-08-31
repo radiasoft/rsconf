@@ -26,4 +26,4 @@ else
     image_cmd+=( /srv/devbox_devtech3/cmd )
 fi
 # --init runs tini wrapper: https://github.com/krallin/tini
-exec docker run "${flags[@]}" --init --rm "--user=$user" --network=host -v '/srv/devbox_devtech3/jupyter:/home/vagrant/jupyter:rw' -v '/srv/devbox_devtech3/src:/home/vagrant/src:rw' -v '/srv/devbox_devtech3/sshd:/home/vagrant/.ssh:ro' -v '/srv/devbox_devtech3:/srv/devbox_devtech3:ro'  "${image_cmd[@]}"
+exec docker run "${flags[@]}" --init --rm "--user=$user" --network=host -v '/srv/devbox_devtech3/jupyter:/home/vagrant/jupyter:rw' -v '/srv/devbox_devtech3/src:/home/vagrant/src:rw' -v '/srv/devbox_devtech3/sshd:/home/vagrant/.ssh:ro' -v '/srv/devbox_devtech3:/srv/devbox_devtech3:ro' --gpus='all' "${image_cmd[@]}"
