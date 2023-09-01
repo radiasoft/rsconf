@@ -175,7 +175,7 @@ def docker_unit_enable(
         )
 
     def _extra_run_flags(instance_spec):
-        c = z.pkunchecked_nested_get("extra_run_flags." + compt.name)
+        c = z.pkunchecked_nested_get("extra_run_flags." + compt.module_name)
         if not c:
             return ""
         return " ".join([f"--{k}='{v}'" for k, v in c.items()])

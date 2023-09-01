@@ -468,7 +468,7 @@ host:
             ssh_port: 3103
       systemd:
         extra_run_flags:
-          rsivizdevbox:
+          devbox:
             gpus: "all"
       jupyterhub:
         jupyter_docker_image: radiasoft/custom-jupyter:latest
