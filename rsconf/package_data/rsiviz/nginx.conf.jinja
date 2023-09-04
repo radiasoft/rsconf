@@ -1,17 +1,21 @@
 client_max_body_size 200m;
 
 server {
-    listen {{ nginx.index_port }};
+    listen {{ nginx.index_port }} ssl;
     root {{ nginx.default_root }};
     server_name {{ nginx.vhost }};
+    ssl_certificate {{ nginx.tls_crt }};
+    ssl_certificate_key {{ nginx.tls_key }};
     location /{{ rsiviz.url_secret }}/ {
         proxy_pass http://127.0.0.1:{{ nginx.docker_index_port }}/;
     }
 }
 server {
-    listen {{ nginx.flask_port }};
+    listen {{ nginx.flask_port }} ssl;
     root {{ nginx.default_root }};
     server_name {{ nginx.vhost }};
+    ssl_certificate {{ nginx.tls_crt }};
+    ssl_certificate_key {{ nginx.tls_key }};
     location /{{ rsiviz.url_secret }}/ {
         proxy_pass http://127.0.0.1:{{ nginx.docker_flask_port }}/;
     }
