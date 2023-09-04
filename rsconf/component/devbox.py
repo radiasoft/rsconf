@@ -4,6 +4,7 @@
 :copyright: Copyright (c) 2022 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
+from pykern import pkconfig
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from rsconf import component
@@ -147,21 +148,24 @@ class T(component.T):
         u = z.users[self.user_name]
         if not isinstance(u, PKDict) or not "rsiviz" in u:
             return
-        self._env(
-            "PYKERN_PKASYNCIO_SERVER_PORT",
-            u.rsiviz.port_base,
-            path,
-        )
-        self._env(
-            "RSIVIZ_PKCLI_SERVICE_DICE_NETWORK_CLUSTER_INTERFACE_ADDRESS",
-            ipaddress.ip_address(u.rsiviz.ip_base) + 1,
-            path,
-        )
-        self._env(
-            "RSIVIZ_PKCLI_SERVICE_DICE_NETWORK_DISCOVERY_ADDRESS",
-            f"{u.rsiviz.ip_base}:{_RSIVIZ_DICE_NETWORK_DISCOVERY_PORT}",
-            path,
-        )
-        self._env(
-            "RSIVIZ_PKCLI_SERVICE_INDEX_IFRAME_PORT", u.rsiviz.port_base + 1, path
-        )
+        e = [
+            ("PYKERN_PKASYNCIO_SERVER_PORT", u.rsiviz.port_base),
+            (
+                "RSIVIZ_PKCLI_SERVICE_DICE_NETWORK_CLUSTER_INTERFACE_ADDRESS",
+                ipaddress.ip_address(u.rsiviz.ip_base) + 1,
+            ),
+            (
+                "RSIVIZ_PKCLI_SERVICE_DICE_NETWORK_DISCOVERY_ADDRESS",
+                f"{u.rsiviz.ip_base}:{_RSIVIZ_DICE_NETWORK_DISCOVERY_PORT}",
+            ),
+            ("RSIVIZ_PKCLI_SERVICE_INDEX_IFRAME_PORT", u.rsiviz.port_base + 1),
+        ]
+        d = self.j2_ctx.pkunchecked_nested_get("rsiviz.dice")
+        if d:
+            e.extend(list(pkconfig.to_environ(["*"], PKDict(dice=d)).items()))
+        for k, v in e:
+            self._env(
+                k,
+                str(v),
+                path,
+            )
