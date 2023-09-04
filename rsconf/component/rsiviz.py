@@ -46,7 +46,7 @@ class T(component.T):
             docker_exec=f"bash {db.user_home_path(z._run_u)}/.radia-run/start",
         )
         self.buildt.get_component("network").add_public_tcp_ports(
-            (z.index_iframe_port, z.server_port)
+            (_PORTS.index_port, _PORTS.flask_port)
         )
 
     def internal_build_write(self):
