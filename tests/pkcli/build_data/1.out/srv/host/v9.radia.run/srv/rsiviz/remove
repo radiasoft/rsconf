@@ -1,0 +1,2 @@
+#!/bin/bash
+docker rm -f "rsiviz" >& /dev/null || true

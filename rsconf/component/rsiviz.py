@@ -57,12 +57,15 @@ class T(component.T):
             vhost=self.hdb.rsconf_db.host,
             j2_ctx=jc,
         )
+        e = PKDict(rsiviz=z, pykern=jc.pykern)
+        if "dice" in z:
+            e.dice = z.dice
         systemd.docker_unit_enable(
             self,
             jc,
             env=self.python_service_env(
-                PKDict(rsiviz=z, pykern=jc.pykern),
-                exclude_re=r"^rsiviz(?:__|_docker_image|_url_secret)",
+                e,
+                exclude_re=r"^rsiviz(?:__|_docker_image|_url_secret|_dice_)",
             ),
             image=z.docker_image,
         )
