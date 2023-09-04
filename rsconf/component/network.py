@@ -142,7 +142,6 @@ class T(rsconf.component.T):
         return None
 
     def _add_ports(self, which, ports):
-        assert len([str(p) for p in ports][0]) > 2, "invalid ports: {}".format(ports)
         z = self.j2_ctx.network
         c = (
             ("trusted_tcp_ports", "public_tcp_ports")
@@ -150,8 +149,6 @@ class T(rsconf.component.T):
             else ("public_udp_ports",)
         )
         for p in ports:
-            for w in c:
-                assert not p in z[w], "port {} already in {}".format(p, w)
             z[which].append(p)
 
     def _restricted_public_tcp_ports(self, z):
