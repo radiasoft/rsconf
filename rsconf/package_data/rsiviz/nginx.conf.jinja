@@ -1,5 +1,3 @@
-client_max_body_size 200m;
-
 server {
     listen {{ nginx.index_port }} ssl;
     root {{ nginx.default_root }};
@@ -11,6 +9,7 @@ server {
     }
 }
 server {
+    client_max_body_size 200m;
     listen {{ nginx.flask_port }} ssl;
     root {{ nginx.default_root }};
     server_name {{ nginx.vhost }};
