@@ -10,7 +10,7 @@ from pykern.pkdebug import pkdp
 from rsconf import component
 import ipaddress
 
-_RSIVIZ_DICE_NETWORK_DISCOVERY_PORT = 5555
+_RSIVIZ_DICE_NETWORK_DISCOVERY_PORT = 5556
 
 
 class T(component.T):
@@ -152,7 +152,7 @@ class T(component.T):
             ("PYKERN_PKASYNCIO_SERVER_PORT", u.rsiviz.port_base),
             (
                 "RSIVIZ_PKCLI_SERVICE_DICE_NETWORK_CLUSTER_INTERFACE_ADDRESS",
-                ipaddress.ip_address(u.rsiviz.ip_base) + 1,
+                u.rsiviz.ip_base,
             ),
             (
                 "RSIVIZ_PKCLI_SERVICE_DICE_NETWORK_DISCOVERY_ADDRESS",
