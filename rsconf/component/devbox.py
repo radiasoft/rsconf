@@ -29,8 +29,7 @@ class T(component.T):
                 )
             return
         self.buildt.require_component("docker", "network")
-        jc, _ = self.j2_ctx_init()
-        z = jc.devbox
+        jc, z = self.j2_ctx_init()
         z.setdefault("volumes", ["jupyter", "src"])
         z.host_d = systemd.unit_run_d(jc, self.name)
         self._gen_secrets(jc)

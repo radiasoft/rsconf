@@ -315,7 +315,7 @@ class T(PKDict):
 
     def j2_ctx_init(self):
         self.j2_ctx = self.hdb.j2_ctx_copy()
-        d = self.j2_ctx.setdefault(self.name, PKDict())
+        d = self.j2_ctx.setdefault(self.module_name, PKDict())
         assert isinstance(
             d, PKDict
         ), f"component={self.name} is not a PKDict value={self.j2_ctx[self.name]}"

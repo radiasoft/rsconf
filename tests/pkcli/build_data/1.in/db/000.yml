@@ -19,6 +19,7 @@ default:
       joeblow:
         uid: 2002
         email: devnull@v4.radia.run
+        vm_devbox_ssh_port: 102002
       marysmith:
         uid: 2003
         email: blackhole@v4.radia.run
@@ -557,6 +558,7 @@ host:
           - sirepo_job_supervisor
           - sirepo_jupyterhub
           - sirepo_test_http
+          - vm_devbox
       rsiviz:
         index_vhost: rsiviz.v9.radia.run
       sirepo:
@@ -603,6 +605,9 @@ host:
           v9.radia.run: sirepo.v9.radia.run
       sirepo_test_http:
         on_calendar: "9:00"
+      vm_devbox:
+        users:
+          - joeblow
 
 # testing named needs build-perl-rpms.sh
 #          - bivio_named
