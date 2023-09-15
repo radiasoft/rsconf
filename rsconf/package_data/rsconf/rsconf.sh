@@ -264,13 +264,16 @@ rsconf_install_perl_rpm() {
     # both fresh install and update, which install does, but
     # it doesn't return an error if the update isn't done.
     # You just have to check so this way is more robust
-    declare reinstall=
+    declare install_cmd=
     if [[ $rpm_version == $prev_version ]]; then
         if rpm --verify "$rpm_base"; then
             return
         fi
         install_info "$rpm_version: rpm is modified, reinstalling"
-        reinstall=1
+        install_cmd=reinstall
+    elif rsconf_is_perl_rpm_rollback "$rpm_base" "$prev_version" "$rpm_version"; then
+        install_info "$rpm_version older than $prev_version, downgrading"
+        install_cmd=downgrade
     fi
     declare tmp=$rpm_file
     install_download "$rpm_file" > "$tmp"
@@ -279,7 +282,7 @@ rsconf_install_perl_rpm() {
         # "error: open of <html> failed: No such file or directory"
         install_err "$rpm_file: not found or not a valid RPM"
     fi
-    rsconf_yum_reinstall=$reinstall rsconf_yum_install "$tmp"
+    rsconf_yum_install_cmd=$install_cmd rsconf_yum_install "$tmp"
     rm -f "$tmp"
     declare curr_rpm=$(rpm -q "$rpm_base")
     if [[ $curr_rpm != $rpm_version ]]; then
@@ -307,6 +310,24 @@ rsconf_install_symlink() {
         install_err "$new: symlinks to $old but does not exist"
     fi
     rsconf_service_file_changed "$new"
+}
+
+rsconf_is_perl_rpm_rollback() {
+    declare base_rpm=$1
+    declare previous_rpm=$2
+    declare this_rpm=$3
+    declare versions=()
+    for rpm in $previous_rpm $this_rpm; do
+        if [[ $rpm =~ ^$base_rpm\-([[:digit:]]{8}\.[[:digit:]]{6}-[[:digit:]])\. ]]; then
+            versions+=( ${BASH_REMATCH[1]} )
+        else
+            return 1
+        fi
+    done
+    if [[ ${versions[0]} > ${versions[1]} ]]; then
+        return 0
+    fi
+    return 1
 }
 
 rsconf_main() {
@@ -587,9 +608,9 @@ rsconf_yum_install() {
             todo+=( "$x" )
         fi
     done
-    declare cmd=install
-    if [[ ${rsconf_yum_reinstall:-} ]]; then
-        cmd=reinstall
+    declare cmd="${rsconf_yum_install_cmd:-install}"
+    if [[ ! $cmd =~ ^((re)?install|downgrade)$ ]]; then
+        install_err "$cmd: unexpected yum command"
     fi
     if (( ${#todo[@]} > 0 )); then
         yum "$cmd" --color=never -y -q "${todo[@]}"
