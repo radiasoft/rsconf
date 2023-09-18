@@ -610,7 +610,7 @@ rsconf_yum_install() {
     done
     declare cmd="${rsconf_yum_install_cmd:-install}"
     if [[ ! $cmd =~ ^((re)?install|downgrade)$ ]]; then
-        install_err "$cmd: unexpected yum command"
+        install_err "unexpected value rsconf_yum_install_cmd=$cmd"
     fi
     if (( ${#todo[@]} > 0 )); then
         yum "$cmd" --color=never -y -q "${todo[@]}"
