@@ -313,21 +313,16 @@ rsconf_install_symlink() {
 }
 
 rsconf_is_perl_rpm_rollback() {
-    declare base_rpm=$1
-    declare previous_rpm=$2
-    declare this_rpm=$3
-    declare versions=()
-    for rpm in $previous_rpm $this_rpm; do
-        if [[ $rpm =~ ^$base_rpm\-([[:digit:]]{8}\.[[:digit:]]{6}-[[:digit:]])\. ]]; then
-            versions+=( ${BASH_REMATCH[1]} )
-        else
-            return 1
-        fi
-    done
-    if [[ ${versions[0]} > ${versions[1]} ]]; then
-        return 0
+    declare prev_version=$1
+    declare install_version=$2
+    if ! rsconf_perl_rpm_version prev_version "$prev_version"; then
+        return 1
     fi
-    return 1
+    rsconf_perl_rpm_version install_version "$install_version"
+    if [[ ! ${install_version:-} ]]; then
+        install_err "internal error with rsconf_perl_rpm_version parsing (install_version=$2)"
+    fi
+    [[ $prev_version > $install_version ]]
 }
 
 rsconf_main() {
@@ -369,6 +364,18 @@ rsconf_mkdir() {
     # Create the directory (and parents) with strict permissions;
     # Subsequent permissions will be created after
     install -d -o root -g root -m 700 "$d"
+}
+
+rsconf_perl_rpm_version() {
+    declare var=$1
+    declare rpm=$2
+    if [[ ! $rpm =~ -([[:digit:]]{8}\.[[:digit:]]{6}) ]]; then
+        if [[ $rpm =~ not.installed ]]; then
+            return 1
+        fi
+        install_err "invalid version format rpm=$rpm"
+    fi
+    eval "$var='${BASH_REMATCH[1]}'"
 }
 
 rsconf_radia_run_as_user() {
