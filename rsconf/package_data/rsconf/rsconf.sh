@@ -318,7 +318,9 @@ rsconf_is_perl_rpm_rollback() {
     if ! rsconf_perl_rpm_version prev_version "$prev_version"; then
         return 1
     fi
-    rsconf_perl_rpm_version install_version "$install_version"
+    if ! rsconf_perl_rpm_version install_version "$install_version"; then
+        install_err "program error install_version=$install_version"
+    fi
     if [[ ! ${install_version:-} ]]; then
         install_err "internal error with rsconf_perl_rpm_version parsing (install_version=$2)"
     fi
