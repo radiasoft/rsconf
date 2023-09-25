@@ -271,7 +271,7 @@ rsconf_install_perl_rpm() {
         fi
         install_info "$rpm_version: rpm is modified, reinstalling"
         install_cmd=reinstall
-    elif rsconf_is_perl_rpm_rollback "$rpm_base" "$prev_version" "$rpm_version"; then
+    elif rsconf_is_perl_rpm_rollback "$prev_version" "$rpm_version"; then
         install_info "$rpm_version older than $prev_version, downgrading"
         install_cmd=downgrade
     fi
