@@ -32,7 +32,10 @@ class T(component.T):
         z._rclone_d = z._xdg_config_home.join(_RCLONE_SUBDIR)
         z._work_d = self.__run_d.join(_WORK_SUBDIR)
         # POSIT: same as name inside _RCLONE_CONF_F
-        z._rclone_drive = self.name
+        z.pksetdefault(
+            rclone_remote=self.name,
+            team_drive="Accounting",
+        )
         z._run_log = z._work_d.join(_RUN_LOG)
         z._run_monthly_f = self.__run_d.join("run-monthly")
         z.pknested_set("pykern.pkcli.pkasyncio.port", z.port)

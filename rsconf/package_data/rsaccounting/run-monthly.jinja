@@ -9,11 +9,13 @@ if [[ ! ${PYENV_ROOT:-} ]]; then
 fi
 set -eou pipefail
 
-declare _google_shared_drive_id='{{ rsaccounting.google_shared_drive_id }}'
 declare _work_d='{{ rsaccounting._work_d }}'
-declare _rclone_drive='{{ rsaccounting._rclone_drive }}'
+declare _rclone_remote='{{ rsaccounting.rclone_remote }}'
 declare _run_log='{{ rsaccounting._run_log }}'
 export XDG_CONFIG_HOME='{{ rsaccounting._xdg_config_home }}'
+
+eval "declare -A _google_drive_id=( $(rclone backend drives $_rclone_device: | jq -r '.[] | "[\(.name)]=\(.id)"') )"
+declare _google_shared_drive_id=${_google_shared_drive_id[{{ rsaccounting.team_drive }}]}
 
 # Filled in dynamically
 declare _run_curr _run_prev
@@ -23,7 +25,7 @@ run_download() {
     run_log "download"
     for d in Payroll/"$_run_curr" JSR/{"$_run_curr","$_run_prev"}; do
         mkdir -p "$d"
-        run_rclone sync "$_rclone_drive:/$d" "$d"
+        run_rclone sync "$_rclone_device:/$d" "$d"
     done
     (
         # Excel on Windows by default creates .CSV files so
@@ -64,7 +66,7 @@ run_monthly() {
         run_log "upload"
         # Slow but best way to ensure we don't delete data from other users
         find {Payroll,JSR}/"$_run_curr" -type f -newer "$s" -print \
-            | run_rclone copy --files-from - . "$_rclone_drive":/
+            | run_rclone copy --files-from - . "$_rclone_remote":/
     fi
     unlink "$s"
 }
@@ -80,14 +82,14 @@ run_which() {
         _run_prev=$(date -d '-2 months' +%Y/%m)
         #declare d=date -d "$(date +%Y%m01) - 1 day" "+%Y%m%d"
         #declare f=/Payroll/$_run_curr/${d}_timer.iif
-        #if run_rclone lsjson "$_rclone_drive:$f" >& /dev/null; then
+        #if run_rclone lsjson "$_rclone_remote:$f" >& /dev/null; then
         #    run_log "$f exists, not running monthly payroll twice; remove it first"
         #    return 1
         #fi
         return
     fi
     _run_curr=$(date +%Y/%m)
-    if run_rclone lsjson --dirs-only "$_rclone_drive:/Payroll/$_run_curr" >& /dev/null; then
+    if run_rclone lsjson --dirs-only "$_rclone_remote:/Payroll/$_run_curr" >& /dev/null; then
         # daily
         _run_prev=$(date -d '-1 month' +%Y/%m)
     else
