@@ -13,6 +13,7 @@ c.JupyterHub.port = 8111
 
 # url for hub api access to proxy
 c.ConfigurableHTTPProxy.api_url = 'http://10.10.10.40:8112'
+c.ConfigurableHTTPProxy.pid_file = '/tmp/jupyter-proxy.pid'
 
 # ip/port hub binds to. User servers and proxy will use this to
 # communicate with the hub.
@@ -71,18 +72,30 @@ c.RSDockerSpawner.cfg = '''{
     "volumes": {
         "/srv/jupyterhub/user/Workshop": {
             "bind": "/home/vagrant/jupyter/Workshop",
-            "mode": "ro"
+            "mode": {
+                "ro": [
+                    "everybody"
+                ],
+                "rw": []
+            }
         },
         "/srv/jupyterhub/user/Workshop/{username}": {
             "bind": "/home/vagrant/jupyter/Workshop/{username}",
             "mode": {
+                "ro": [],
                 "rw": [
                     "instructors"
                 ]
             }
         },
         "/srv/jupyterhub/user/{username}": {
-            "bind": "/home/vagrant/jupyter"
+            "bind": "/home/vagrant/jupyter",
+            "mode": {
+                "ro": [],
+                "rw": [
+                    "everybody"
+                ]
+            }
         }
     }
 }

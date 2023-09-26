@@ -5,6 +5,7 @@ server {
 }
 
 upstream sirepo_api {
+    least_conn;
     {% for p in range(sirepo._first_port, sirepo._last_port) %}
     server {{ sirepo.pkcli.service.ip }}:{{ p }};
     {% endfor %}
@@ -29,6 +30,10 @@ server {
         expires {{ sirepo.static_files_expires }};
         add_header Cache-Control "public";
         try_files $uri =404;
+    }
+    location /static/html {
+        allow all;
+        proxy_pass http://sirepo_api;
     }
     location = /favicon.ico {
         rewrite (.*) /static/img/favicon.ico;
@@ -59,7 +64,7 @@ server {
     location = /en/plans.html {
         return 301 /en/plans/;
     }
-    location ~ ^/(wp-login\.php$|(wp-(admin|content|includes)|en)/) {
+    location ~ ^/(wp-login\.php$|(wp-(admin|content|includes)|en)(/|$)) {
         proxy_pass https://{{ sirepo.wordpress_host }};
     }
 {% endif %}

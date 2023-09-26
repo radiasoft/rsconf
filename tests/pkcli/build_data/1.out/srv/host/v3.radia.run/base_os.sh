@@ -2,6 +2,8 @@
 base_os_rsconf_component() {
 rsconf_service_prepare 'systemd-journald' '/etc/systemd/journald.conf.d'
 rsconf_service_prepare 'sshd' '/etc/ssh'
+rsconf_install_access '700' 'vagrant' 'vagrant'
+rsconf_install_directory '/srv/home'
 rsconf_install_access 700 root root
 rsconf_install_directory /etc/docker
 

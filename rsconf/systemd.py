@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """create systemd files
 
-:copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
+:copyright: Copyright (c) 2017-2023 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from __future__ import absolute_import, division, print_function
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from pykern import pkconfig
@@ -40,7 +39,7 @@ class InstanceSpec(_InstanceSpecBase):
         self.update(
             container_name=f"{self.base}-${self.env_var}",
             env_arg=f'--env {self.env_var}="${self.env_var}"',
-            first_container_name=f"{self.base}-${self.first_port}",
+            first_container_name=f"{self.base}-{self.first_port}",
             is_null=False,
             service_file=f"{self.base}@.service",
             service_name=f"{self.base}@{{{self.first_port}..{self.last_port}}}",
@@ -176,7 +175,7 @@ def docker_unit_enable(
         )
 
     def _extra_run_flags(instance_spec):
-        c = z.pkunchecked_nested_get("extra_run_flags." + compt.name)
+        c = z.pkunchecked_nested_get("extra_run_flags." + compt.module_name)
         if not c:
             return ""
         return " ".join([f"--{k}='{v}'" for k, v in c.items()])

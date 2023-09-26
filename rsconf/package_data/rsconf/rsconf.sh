@@ -264,13 +264,16 @@ rsconf_install_perl_rpm() {
     # both fresh install and update, which install does, but
     # it doesn't return an error if the update isn't done.
     # You just have to check so this way is more robust
-    declare reinstall=
+    declare install_cmd=
     if [[ $rpm_version == $prev_version ]]; then
         if rpm --verify "$rpm_base"; then
             return
         fi
         install_info "$rpm_version: rpm is modified, reinstalling"
-        reinstall=1
+        install_cmd=reinstall
+    elif rsconf_is_perl_rpm_rollback "$prev_version" "$rpm_version"; then
+        install_info "$rpm_version older than $prev_version, downgrading"
+        install_cmd=downgrade
     fi
     declare tmp=$rpm_file
     install_download "$rpm_file" > "$tmp"
@@ -279,7 +282,7 @@ rsconf_install_perl_rpm() {
         # "error: open of <html> failed: No such file or directory"
         install_err "$rpm_file: not found or not a valid RPM"
     fi
-    rsconf_yum_reinstall=$reinstall rsconf_yum_install "$tmp"
+    rsconf_yum_install_cmd=$install_cmd rsconf_yum_install "$tmp"
     rm -f "$tmp"
     declare curr_rpm=$(rpm -q "$rpm_base")
     if [[ $curr_rpm != $rpm_version ]]; then
@@ -307,6 +310,21 @@ rsconf_install_symlink() {
         install_err "$new: symlinks to $old but does not exist"
     fi
     rsconf_service_file_changed "$new"
+}
+
+rsconf_is_perl_rpm_rollback() {
+    declare prev_version=$1
+    declare install_version=$2
+    if ! rsconf_perl_rpm_version prev_version "$prev_version"; then
+        return 1
+    fi
+    if ! rsconf_perl_rpm_version install_version "$install_version"; then
+        install_err "program error install_version=$install_version"
+    fi
+    if [[ ! ${install_version:-} ]]; then
+        install_err "internal error with rsconf_perl_rpm_version parsing (install_version=$2)"
+    fi
+    [[ $prev_version > $install_version ]]
 }
 
 rsconf_main() {
@@ -350,6 +368,18 @@ rsconf_mkdir() {
     install -d -o root -g root -m 700 "$d"
 }
 
+rsconf_perl_rpm_version() {
+    declare var=$1
+    declare rpm=$2
+    if [[ ! $rpm =~ -([[:digit:]]{8}\.[[:digit:]]{6}) ]]; then
+        if [[ $rpm =~ not.installed ]]; then
+            return 1
+        fi
+        install_err "invalid version format rpm=$rpm"
+    fi
+    eval "$var='${BASH_REMATCH[1]}'"
+}
+
 rsconf_radia_run_as_user() {
     install_repo_as_user "$@"
 }
@@ -386,7 +416,6 @@ rsconf_service_docker_pull() {
     declare container_name=${3:-$service}
     declare static_files_gen=${4:-true}
     if [[ $service ]]; then
-        declare s=$service
         declare container_image_id=$(docker inspect --format='{{.Image}}' "$container_name" 2>/dev/null || true)
         declare prev_id=$(docker inspect --format='{{.Id}}' "$image" 2>/dev/null || true)
     fi
@@ -480,6 +509,8 @@ rsconf_service_restart() {
         fi
         rsconf_systemctl enable "$s"
     done
+    # And reload at end, because rsconf_systemctl_clean_unit may have run
+    systemctl daemon-reload
 }
 
 rsconf_service_restart_at_end() {
@@ -523,6 +554,7 @@ rsconf_systemctl() {
         enable)
             systemctl disable "$s" /etc/systemd/system/multi-user.target.wants/"$s"@* &> /dev/null || true
             eval systemctl enable $service
+            rsconf_systemctl_clean_unit "$s" "$service"
             ;;
         is-active)
             # is-active doesn't do the right thing so test individually
@@ -545,6 +577,18 @@ rsconf_systemctl() {
             install_err "unknown systemctl op=$op for service=$service"
             ;;
     esac
+}
+
+rsconf_systemctl_clean_unit() {
+    declare basename=$1
+    declare maybe_template_name=$2
+    declare x=
+    if [[ $basename == $maybe_template_name ]]; then
+        # Remove the template
+        x=@
+    fi
+    # POSIT: rsconf_service_restart runs systemctl daemon-reload
+    rm -f "/etc/systemd/system/$basename$x.service"
 }
 
 rsconf_user() {
@@ -573,9 +617,9 @@ rsconf_yum_install() {
             todo+=( "$x" )
         fi
     done
-    declare cmd=install
-    if [[ ${rsconf_yum_reinstall:-} ]]; then
-        cmd=reinstall
+    declare cmd="${rsconf_yum_install_cmd:-install}"
+    if [[ ! $cmd =~ ^((re)?install|downgrade)$ ]]; then
+        install_err "unexpected value rsconf_yum_install_cmd=$cmd"
     fi
     if (( ${#todo[@]} > 0 )); then
         yum "$cmd" --color=never -y -q "${todo[@]}"

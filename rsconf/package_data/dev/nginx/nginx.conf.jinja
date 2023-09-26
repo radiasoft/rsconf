@@ -22,7 +22,9 @@ http {
     sendfile on;
     tcp_nopush on;
     tcp_nodelay on;
-    keepalive_timeout 65;
+    # keepalive is not necessary for this server, and clutters the logs with:
+    # closed keepalive connection
+    keepalive_timeout 0;
     types_hash_max_size 2048;
     include /etc/nginx/mime.types;
     default_type application/octet-stream;

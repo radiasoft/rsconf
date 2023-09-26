@@ -1,4 +1,19 @@
 ---
+fconf_macros:
+  jupyterhub_volumes_and_user_groups():
+    user_groups:
+      private: [ vagrant ]
+      instructors: [ teach1 ]
+    volumes:
+      /srv/jupyterhub/user/Workshop:
+        bind: /home/vagrant/jupyter/Workshop
+        mode:
+          ro: [ everybody ]
+      /srv/jupyterhub/user/Workshop/{username}:
+        bind: /home/vagrant/jupyter/Workshop/{username}
+        mode:
+          rw: [ instructors ]
+
 default:
   base_os:
     ip_forward: false
@@ -82,10 +97,6 @@ default:
   docker:
     iptables: false
     min_software_version: "23.0.0"
-  docker_cache:
-    host: ''
-  docker_registry:
-    host: {{ master }}
   github_bkp:
     docker_image: docker.io/radiasoft/beamsim
     exclude_re: ''
@@ -111,7 +122,7 @@ default:
   mpi_worker:
     docker_image: radiasoft/beamsim-jupyter
     guest_d: /home/vagrant/jupyter
-    host_root_d: /srv/mpi_worker/user
+    host_root_d: /srv/home
     ssh_port: 8022
     slots_per_host: 2
   network:
@@ -182,11 +193,6 @@ default:
         mode: 0o700
         owner: nobody
         group: {{ user }}
-  rs_mariadb:
-    docker_image: radiasoft/mariadb:latest
-    docker_image_is_local: true
-    ip: 127.0.0.1
-    port: 7011
   sirepo:
     docker_image: radiasoft/sirepo
     auth:
@@ -215,8 +221,6 @@ default:
     extra_run_flags:
       mpi_worker:
         shm-size: "1G"
-  wordpress:
-    docker_image: docker.io/radiasoft/wordpress
 
 channel:
   dev:
@@ -242,10 +246,6 @@ channel:
     postgresql:
       auth_local_method: trust
     sirepo:
-      comsol_register:
-        mail_server: {{ host }}
-        mail_username: comsol@{{ host }}
-        mail_password: somepass
       feature_config:
         moderated_sim_types:
           - jupyterhublogin
@@ -255,12 +255,6 @@ channel:
           user_db_root_d: /srv/jupyterhub/user
       mpi_cores: 4
       vhost: sirepo.{{ host }}
-    wordpress:
-      vhosts:
-        wp1.{{ host }}:
-          port: 7101
-          db_name: wp1
-          db_user: wp1user
 
 host:
   dev:
@@ -271,7 +265,6 @@ host:
         components:
           - docker
           - rsconf
-          - docker_registry
     {{ host }}:
       base_users:
         add:
@@ -314,22 +307,21 @@ host:
             user_groups: [ private ]
             servers_per_host: 1
             hosts: [ {{ host }} ]
-        user_groups:
-          private: [ vagrant ]
-          instructors: [ teach1 ]
-        volumes:
-          /srv/jupyterhub/user/Workshop:
-            bind: /home/vagrant/jupyter/Workshop
-            mode: ro
-          /srv/jupyterhub/user/Workshop/{username}:
-            bind: /home/vagrant/jupyter/Workshop/{username}
-            mode:
-              rw: [ instructors ]
+        jupyterhub_volumes_and_user_groups():
         vhosts:
           {{ host }}: jupyter.{{ host }}
+      mpi_worker:
+        "/srv/home":
+          mode: 0o700
+          owner: {{ user }}
+          group: {{ user }}
+        jupyterhub_volumes_and_user_groups():
+      # required by mpi_worker, because that's normal mode
+      nfs_client:
+        mounts: {}
       nfs_server:
         exports:
-          /srv/mpi_worker/user: [ 10.10.10.0/24 ]
+          /srv/home: [ 10.10.10.0/24 ]
           /srv/sirepo/db/user: [ 10.10.10.0/24 ]
       nginx:
         listen_any: True
@@ -353,11 +345,12 @@ host:
           # - btest
           # - github_bkp
           # - dovecot
-
-        #components: [ rsconf, docker_registry, btest ]
-#        components: [ bop ]
-        #components: [ bkp, jupyterhub, jupyterhub_proxy ]
-        components: [ postfix, nfs_server, sirepo ]
+        components: [ postfix, nfs_server, mpi_worker, sirepo ]
+        local_dirs:
+          "/srv/home":
+            mode: 0o700
+            owner: {{ user }}
+            group: {{ user }}
       sirepo:
         auth:
           methods:
@@ -378,17 +371,7 @@ host:
             user_groups: [ private ]
             servers_per_host: 1
             hosts: [ {{ host }} ]
-        user_groups:
-          private: [ vagrant ]
-          instructors: [ teach1 ]
-        volumes:
-          /srv/jupyterhub/user/Workshop:
-            bind: /home/vagrant/jupyter/Workshop
-            mode: ro
-          /srv/jupyterhub/user/Workshop/{username}:
-            bind: /home/vagrant/jupyter/Workshop/{username}
-            mode:
-              rw: [ instructors ]
+        jupyterhub_volumes_and_user_groups():
         vhosts:
           {{ host }}: sirepo.{{ host }}
     {{ worker5_host }}:
@@ -410,7 +393,7 @@ host:
       nfs_client:
         mounts:
           {{ host }}:
-            - /srv/mpi_worker/user
+            - /srv/home
       postfix:
         smart_host: {{ host }}
       rsconf_db:
@@ -421,10 +404,10 @@ host:
       nfs_client:
         mounts:
           {{ host }}:
-            - /srv/mpi_worker/user
+            - /srv/home
       mpi_worker:
         volumes:
-          '/srv/mpi_worker/tmp/{username}': '/home/vagrant/jupyter/tmp/{username}'
+          '/srv/home/tmp/{username}': '/home/vagrant/jupyter/tmp/{username}'
       rsconf_db:
         components: [ mpi_worker ]
     # This host never installed, just for testing build
@@ -505,14 +488,13 @@ host:
         # fnl1i.bivio.biz: reverse dns for 216.17.132.33 does not match SLD of v5.radia.run
         myhostname: '{{ host }}'
       raydata_scan_monitor:
-        docker_image: radiasoft/raydata
+        docker_image: radiasoft/sirepo
       rsconf_db:
         components:
           - mongod
           - nfs_client
           - nfs_server
           - bkp
-          - comsol
           - raydata_scan_monitor
           - sirepo
           - sirepo_job_supervisor
@@ -524,7 +506,6 @@ host:
           - jupyterhub
           - jupyterhub_proxy
           - github_bkp
-          - wordpress
       sirepo:
         listen_any: True
         auth:
@@ -546,6 +527,7 @@ host:
         feature_config:
           proprietary_sim_types: [ myapp, zgoubi ]
           proprietary_code_tarballs: [ myapp ]
+          sim_types: [ raydata ]
         job_driver:
           docker:
             hosts: [ {{ all_host }} ]

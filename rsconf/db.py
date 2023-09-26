@@ -118,6 +118,8 @@ class T(PKDict):
                 rsconf_db=PKDict(
                     db_d=self.db_d,
                     host=host,
+                    # make sure has some value, base_os expects this
+                    local_dirs=PKDict(),
                     local_files=_init_local_files(c),
                     proprietary_source_d=self.proprietary_source_d,
                     resource_paths=_init_resource_paths(c),
