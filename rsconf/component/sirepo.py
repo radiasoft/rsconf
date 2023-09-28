@@ -51,7 +51,6 @@ class T(component.T):
                         docker_image=docker_registry.absolute_image(self),
                         feature_config=PKDict(
                             api_modules=[],
-                            job=True,
                             default_proprietary_sim_types=tuple(),
                             moderated_sim_types=tuple(),
                             proprietary_sim_types=tuple(),
