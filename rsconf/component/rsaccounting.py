@@ -16,10 +16,13 @@ _RUN_LOG = "monthly.log"
 _RCLONE_SUBDIR = "rclone"
 _RCLONE_CONF_F = "rsaccounting_rclone.conf"
 _GOOGLE_JSON_F = "rsaccounting_google.json"
+_PASSWD_SECRET_F = "rsaccounting_auth"
 
 
 class T(component.T):
     def internal_build_compile(self):
+        from rsconf.component import nginx
+
         self.buildt.require_component("nginx")
         jc, z = self.j2_ctx_init()
         z._run_u = jc.rsconf_db.run_u
@@ -33,6 +36,7 @@ class T(component.T):
         z._work_d = self.__run_d.join(_WORK_SUBDIR)
         # POSIT: same as name inside _RCLONE_CONF_F
         z.pksetdefault(
+            auth_f=nginx.CONF_D.join(_PASSWD_SECRET_F),
             rclone_remote=self.name,
             team_drive="Accounting",
         )
@@ -57,6 +61,13 @@ class T(component.T):
         jc = self.j2_ctx
         z = jc[self.name]
         nginx.install_vhost(self, vhost=z.vhost, j2_ctx=jc)
+        nginx.install_auth(
+            self,
+            _PASSWD_SECRET_F,
+            jc.rsaccounting.auth_f,
+            db.VISIBILITY_DEFAULT,
+            jc,
+        )
         systemd.docker_unit_enable(
             self,
             jc,
