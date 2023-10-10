@@ -524,6 +524,8 @@ host:
         docker_image: radiasoft/rsaccounting
         vhost: acct.v9.radia.run
         port: 7788
+        test_run_curr: 2021/10
+        test_run_prev: 2021/09
       rsconf_db:
         components:
           - bkp

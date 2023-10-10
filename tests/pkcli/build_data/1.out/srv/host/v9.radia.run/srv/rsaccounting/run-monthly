@@ -9,17 +9,17 @@ if [[ ! ${PYENV_ROOT:-} ]]; then
 fi
 set -eou pipefail
 
-declare _work_d='{{ rsaccounting._work_d }}'
-declare _rclone_remote='{{ rsaccounting.rclone_remote }}'
-declare _run_log='{{ rsaccounting._run_log }}'
-export XDG_CONFIG_HOME='{{ rsaccounting._xdg_config_home }}'
+declare _work_d='/srv/rsaccounting/work'
+declare _rclone_remote='rsaccounting'
+declare _run_log='/srv/rsaccounting/work/monthly.log'
+export XDG_CONFIG_HOME='/srv/rsaccounting'
 
 eval "declare -A _google_drive_id=( $(rclone backend drives $_rclone_device: | jq -r '.[] | "[\(.name)]=\(.id)"') )"
-declare _google_shared_drive_id=${_google_shared_drive_id[{{ rsaccounting.team_drive }}]}
+declare _google_shared_drive_id=${_google_shared_drive_id[Accounting]}
 
 # Filled in dynamically (unless test which is static)
-declare _run_curr={{ rsaccounting.test_run_curr }}
-declare _run_prev={{ rsaccounting.test_run_prev }}
+declare _run_curr=2021/10
+declare _run_prev=2021/09
 
 run_download() {
     declare d

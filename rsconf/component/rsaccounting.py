@@ -39,6 +39,8 @@ class T(component.T):
             auth_f=nginx.CONF_D.join(_PASSWD_SECRET_F),
             rclone_remote=self.name,
             team_drive="Accounting",
+            test_run_curr="",
+            test_run_prev="",
         )
         z._run_log = z._work_d.join(_RUN_LOG)
         z._run_monthly_f = self.__run_d.join("run-monthly")
