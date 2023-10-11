@@ -1,5 +1,5 @@
 server {
-    listen {{ nginx.listen_ip }}:443 ssl;
+    listen {{ nginx.vhost }}:443 ssl;
     root {{ nginx.default_root }};
     server_name {{ nginx.vhost }};
     ssl_certificate {{ nginx.tls_crt }};

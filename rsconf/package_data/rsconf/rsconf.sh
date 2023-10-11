@@ -622,8 +622,19 @@ rsconf_yum_install() {
         install_err "unexpected value rsconf_yum_install_cmd=$cmd"
     fi
     if (( ${#todo[@]} > 0 )); then
-        yum "$cmd" --color=never -y -q "${todo[@]}"
+        if ! yum "$cmd" --color=never -y -q "${todo[@]}"; then
+            install_err "FAILED: yum $cmd ${todo[*]}";
+        fi
     fi
+}
+
+rsconf_yum_install_url() {
+    declare base=$1
+    declare url=$2
+    if rpm -q "$base" >& /dev/null; then
+        return
+    fi
+    rsconf_yum_install "$url"
 }
 
 rsconf_main ${install_extra_args[@]+"${install_extra_args[@]}"}

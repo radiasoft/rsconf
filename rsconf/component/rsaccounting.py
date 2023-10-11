@@ -11,7 +11,7 @@ from rsconf import db
 from rsconf import systemd
 
 _WORK_SUBDIR = "work"
-_RUN_LOG = "monthly.log"
+_RUN_LOG = "00_rsaccounting_log.txt"
 #: implicit directory name used by rclone relative to $XDG_CONFIG_HOME
 _RCLONE_SUBDIR = "rclone"
 _RCLONE_CONF_F = "rsaccounting_rclone.conf"
@@ -22,14 +22,21 @@ _PASSWD_SECRET_F = "rsaccounting_auth"
 class T(component.T):
     def internal_build_compile(self):
         from rsconf.component import nginx
+        from rsconf.component import docker_registry
 
         self.buildt.require_component("nginx")
+        # much newer than centos 7 version
+        v = "rclone-1.64.0-1"
+        self.append_root_bash(
+            f"rsconf_yum_install_url {v} https://downloads.rclone.org/v1.64.0/{v}-linux-amd64.rpm"
+        )
         jc, z = self.j2_ctx_init()
         z._run_u = jc.rsconf_db.run_u
         self.__run_d = systemd.docker_unit_prepare(
             self,
             jc,
-            docker_exec=f"rsaccounting service start",
+            # POSIT: _WORK_SUBDIR has no spaces or specials
+            docker_exec=f"bash -c 'cd {_WORK_SUBDIR} && rsaccounting service start'",
         )
         z._xdg_config_home = self.__run_d
         z._rclone_d = z._xdg_config_home.join(_RCLONE_SUBDIR)
@@ -37,14 +44,21 @@ class T(component.T):
         # POSIT: same as name inside _RCLONE_CONF_F
         z.pksetdefault(
             auth_f=nginx.CONF_D.join(_PASSWD_SECRET_F),
+            docker_image_is_local=False,
             rclone_remote=self.name,
             team_drive="Accounting",
             test_run_curr="",
             test_run_prev="",
+        ).pksetdefault(
+            docker_image=docker_registry.absolute_image(
+                self,
+                image=z.docker_image,
+                image_is_local=z.docker_image_is_local,
+            ),
         )
         z._run_log = z._work_d.join(_RUN_LOG)
         z._run_monthly_f = self.__run_d.join("run-monthly")
-        z.pknested_set("pykern.pkcli.pkasyncio.port", z.port)
+        jc.pknested_set("pykern.pkasyncio.server_port", z.port)
         z.pknested_set("pkcli.service.monthly_cmd", z._run_monthly_f)
 
     def internal_build_write(self):
@@ -70,6 +84,7 @@ class T(component.T):
             db.VISIBILITY_DEFAULT,
             jc,
         )
+        jc.systemd.run_d
         systemd.docker_unit_enable(
             self,
             jc,
