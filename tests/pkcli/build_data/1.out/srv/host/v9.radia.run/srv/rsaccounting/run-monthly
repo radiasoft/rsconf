@@ -11,11 +11,11 @@ set -eou pipefail
 
 declare _work_d='/srv/rsaccounting/work'
 declare _rclone_remote='rsaccounting'
-declare _run_log='/srv/rsaccounting/work/monthly.log'
+declare _run_log='/srv/rsaccounting/work/00_rsaccounting_log.txt'
 export XDG_CONFIG_HOME='/srv/rsaccounting'
 
-eval "declare -A _google_drive_id=( $(rclone backend drives $_rclone_device: | jq -r '.[] | "[\(.name)]=\(.id)"') )"
-declare _google_shared_drive_id=${_google_shared_drive_id[Accounting]}
+eval "declare -A _google_drive_map=( $(rclone backend drives $_rclone_remote: | jq -r '.[] | "[\(.name)]=\(.id)"') )"
+declare _google_drive_id=${_google_drive_map[Accounting]}
 
 # Filled in dynamically (unless test which is static)
 declare _run_curr=2021/10
@@ -26,7 +26,7 @@ run_download() {
     run_log "download"
     for d in Payroll/"$_run_curr" JSR/{"$_run_curr","$_run_prev"}; do
         mkdir -p "$d"
-        run_rclone sync "$_rclone_device:/$d" "$d"
+        run_rclone sync "$_rclone_remote:/$d" "$d"
     done
     (
         # Excel on Windows by default creates .CSV files so
@@ -78,7 +78,7 @@ run_monthly() {
 }
 
 run_rclone() {
-    rclone --drive-team-drive="$_google_shared_drive_id" --checkers=6 --fast-list "$@"
+    rclone --drive-team-drive="$_google_drive_id" --checkers=6 --fast-list "$@"
 }
 
 run_which() {
