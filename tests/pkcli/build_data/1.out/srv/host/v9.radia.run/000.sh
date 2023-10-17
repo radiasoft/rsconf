@@ -28,6 +28,7 @@ rsconf_require jupyterhub
 rsconf_require jupyterhub_proxy
 rsconf_require nfs_client
 rsconf_require nfs_server
+rsconf_require rsaccounting
 rsconf_require rsiviz
 rsconf_require raydata_scan_monitor
 rsconf_require sirepo_jupyterhub

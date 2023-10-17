@@ -4,18 +4,13 @@
 :copyright: Copyright (c) 2018 Bivio Software, Inc.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from __future__ import absolute_import, division, print_function
-from pykern import pkcollections
+from pykern.pkcollections import PKDict
+from pykern.pkdebug import pkdp
 from pykern import pkcompat
 from pykern import pkjson
 from pykern.pkdebug import pkdp
 from rsconf import component
-
-try:
-    from urllib.parse import urlparse
-except:
-    from urlparse import urlparse
-
+from urllib.parse import urlparse
 
 _PASSWD_SECRET_JSON_F = "rsconf_auth.json"
 PASSWD_SECRET_F = "rsconf_auth"
@@ -30,7 +25,7 @@ class T(component.T):
         self.buildt.require_component("docker", "nginx")
         self.j2_ctx = self.hdb.j2_ctx_copy()
         jc = self.j2_ctx
-        jc.rsconf = pkcollections.Dict(
+        jc.rsconf = PKDict(
             auth_f=nginx.CONF_D.join(PASSWD_SECRET_F),
             srv_d=jc.rsconf_db.srv_d,
             host_subdir=db.HOST_SUBDIR,
@@ -63,7 +58,7 @@ def host_init(j2_ctx, host):
         with jf.open() as f:
             y = pkjson.load_any(f)
     else:
-        y = pkcollections.Dict()
+        y = PKDict()
     if not host in y:
         y[host] = _passwd_entry(j2_ctx, host)
         pkjson.dump_pretty(y, filename=jf)

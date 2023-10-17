@@ -520,6 +520,12 @@ host:
         # if you do not set this, you'll get to test the SLD matching:
         # fnl1i.bivio.biz: reverse dns for 216.17.132.33 does not match SLD of v5.radia.run
         myhostname: 'v4.radia.run'
+      rsaccounting:
+        docker_image: radiasoft/rsaccounting
+        vhost: acct.v9.radia.run
+        port: 7788
+        test_run_curr: 2021/10
+        test_run_prev: 2021/09
       rsconf_db:
         components:
           - bkp
@@ -533,6 +539,7 @@ host:
           - jupyterhub_proxy
           - nfs_client
           - nfs_server
+          - rsaccounting
           - rsiviz
           - sirepo
           - sirepo_job_supervisor

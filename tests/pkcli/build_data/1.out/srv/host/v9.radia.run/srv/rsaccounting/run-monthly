@@ -1,0 +1,106 @@
+#!/bin/bash
+#
+# Run rsaccounting monthly
+#
+# Usage: run-rsaccounting [last-month]
+#
+if [[ ! ${PYENV_ROOT:-} ]]; then
+    source ~/.bashrc
+fi
+set -eou pipefail
+
+declare _work_d='/srv/rsaccounting/work'
+declare _rclone_remote='rsaccounting'
+declare _run_log='/srv/rsaccounting/work/00_rsaccounting_log.txt'
+export XDG_CONFIG_HOME='/srv/rsaccounting'
+
+eval "declare -A _google_drive_map=( $(rclone backend drives $_rclone_remote: | jq -r '.[] | "[\(.name)]=\(.id)"') )"
+declare _google_drive_id=${_google_drive_map[Accounting]}
+
+# Filled in dynamically (unless test which is static)
+declare _run_curr=2021/10
+declare _run_prev=2021/09
+
+run_download() {
+    declare d
+    run_log "download"
+    for d in Payroll/"$_run_curr" JSR/{"$_run_curr","$_run_prev"}; do
+        mkdir -p "$d"
+        run_rclone sync "$_rclone_remote:/$d" "$d"
+    done
+    (
+        # Excel on Windows by default creates .CSV files so
+        # need to downcase for rsaccounting.
+        cd JSR/"$_run_curr"
+        shopt -s nullglob
+        declare f
+        for f in *CSV; do
+            mv -f "$f" "$(basename "$f" CSV)"csv;
+        done
+    )
+}
+
+run_err() {
+    run_log "$@"
+    return 1
+}
+
+run_log() {
+    echo "$(date +'%Y-%m-%d %H:%M:%S') $*"
+}
+
+run_main() {
+    cd "$_work_d"
+    run_main_with_log "$@" &> "$_run_log"
+}
+
+run_main_with_log() {
+    run_log start
+    run_which "$@"
+    run_download
+    run_monthly
+    run_log end
+}
+
+run_monthly() {
+    declare s=sentinel
+    # ensure sentinel has different file date
+    sleep 1
+    run_log "run $_run_curr"
+    touch "$s"
+    if rsaccounting monthly Payroll/"$_run_curr"; then
+        run_log "upload"
+        # Slow but best way to ensure we don't delete data from other users
+        find {Payroll,JSR}/"$_run_curr" -type f -newer "$s" -print \
+            | run_rclone copy --files-from - . "$_rclone_remote":/
+    fi
+    unlink "$s"
+}
+
+run_rclone() {
+    rclone --drive-team-drive="$_google_drive_id" --checkers=6 --fast-list "$@"
+}
+
+run_which() {
+    declare arg=${1:-missing-arg}
+    case $arg in
+        last-month)
+            : ${_run_curr:=$(date -d '-1 month' +%Y/%m)}
+            : ${_run_prev:=$(date -d '-2 months' +%Y/%m)}
+            ;;
+        this-month)
+            : ${_run_curr:=$(date +%Y/%m)}
+            : ${_run_prev:=$(date -d '-1 month' +%Y/%m)}
+            if ! run_rclone lsjson --dirs-only "$_rclone_remote:/Payroll/$_run_curr" &> /dev/null; then
+                run_log "Payroll/$_run_curr does not exist; maybe run copy.sh or need to run monthly"
+                return 1
+            fi
+            ;;
+        *)
+            run_err "invalid arg=$arg
+usage: $0 last-month|this-month"
+            ;;
+    esac
+}
+
+run_main "$@"
