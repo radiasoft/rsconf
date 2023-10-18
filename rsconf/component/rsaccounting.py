@@ -25,11 +25,6 @@ class T(component.T):
         from rsconf.component import docker_registry
 
         self.buildt.require_component("nginx")
-        # much newer rclone than centos 7 version
-        v = "1.64.0"
-        self.append_root_bash(
-            f"rsconf_yum_install_url rclone-{v}-1 https://downloads.rclone.org/v{v}/rclone-v{v}-linux-amd64.rpm",
-        )
         jc, z = self.j2_ctx_init()
         z._run_u = jc.rsconf_db.run_u
         self.__run_d = systemd.docker_unit_prepare(
