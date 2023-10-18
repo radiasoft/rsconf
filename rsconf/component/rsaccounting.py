@@ -26,9 +26,9 @@ class T(component.T):
 
         self.buildt.require_component("nginx")
         # much newer than centos 7 version
-        v = "rclone-1.64.0-1"
+        v = "rclone-1.64.0"
         self.append_root_bash(
-            f"rsconf_yum_install_url {v} https://downloads.rclone.org/v1.64.0/{v}-linux-amd64.rpm"
+            f"rsconf_yum_install_url {v}-1 https://downloads.rclone.org/v1.64.0/{v}-linux-amd64.rpm"
         )
         jc, z = self.j2_ctx_init()
         z._run_u = jc.rsconf_db.run_u
