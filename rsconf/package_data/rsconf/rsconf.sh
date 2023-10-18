@@ -617,14 +617,8 @@ rsconf_yum_install() {
             todo+=( "$x" )
         fi
     done
-    declare cmd="${rsconf_yum_install_cmd:-install}"
-    if [[ ! $cmd =~ ^((re)?install|downgrade)$ ]]; then
-        install_err "unexpected value rsconf_yum_install_cmd=$cmd"
-    fi
     if (( ${#todo[@]} > 0 )); then
-        if ! yum "$cmd" --color=never -y -q "${todo[@]}"; then
-            install_err "FAILED: yum $cmd ${todo[*]}";
-        fi
+        _rsconf_yum_install "${todo[@]}"
     fi
 }
 
@@ -634,7 +628,18 @@ rsconf_yum_install_url() {
     if rpm -q "$base" >& /dev/null; then
         return
     fi
-    rsconf_yum_install "$url"
+    _rsconf_yum_install "$url"
+}
+
+_rsconf_yum_install() {
+    declare todo=( "$@" )
+    declare cmd="${rsconf_yum_install_cmd:-install}"
+    if [[ ! $cmd =~ ^((re)?install|downgrade)$ ]]; then
+        install_err "unexpected value rsconf_yum_install_cmd=$cmd"
+    fi
+    if ! yum "$cmd" --color=never -y -q "${todo[@]}"; then
+        install_err "FAILED: yum $cmd ${todo[*]}";
+    fi
 }
 
 rsconf_main ${install_extra_args[@]+"${install_extra_args[@]}"}
