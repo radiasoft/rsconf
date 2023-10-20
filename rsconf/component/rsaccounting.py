@@ -24,7 +24,7 @@ class T(component.T):
         from rsconf.component import nginx
         from rsconf.component import docker_registry
 
-        self.buildt.require_component("nginx")
+        self.buildt.require_component("network", "docker", "nginx")
         jc, z = self.j2_ctx_init()
         z._run_u = jc.rsconf_db.run_u
         self.__run_d = systemd.docker_unit_prepare(
@@ -38,7 +38,7 @@ class T(component.T):
         z._work_d = self.__run_d.join(_WORK_SUBDIR)
         # POSIT: same as name inside _RCLONE_CONF_F
         z.pksetdefault(
-            auth_f=nginx.CONF_D.join(_PASSWD_SECRET_F),
+            _auth_f=nginx.CONF_D.join(_PASSWD_SECRET_F),
             docker_image_is_local=False,
             rclone_remote=self.name,
             team_drive="Accounting",
@@ -51,6 +51,7 @@ class T(component.T):
                 image_is_local=z.docker_image_is_local,
             ),
         )
+        self.j2_ctx_pykern_defaults()
         z._run_log = z._work_d.join(_RUN_LOG)
         z._run_monthly_f = self.__run_d.join("run-monthly")
         jc.pknested_set("pykern.pkasyncio.server_port", z.port)
@@ -62,6 +63,7 @@ class T(component.T):
         # TODO(robnagler) simplify in component.python_service_env
         def _env():
             return self.python_service_env(
+                exclude_re="__|^rsaccounting_(?:docker|port|rclone|team|test|vhost)",
                 values=PKDict(
                     (k, v)
                     for k, v in self.j2_ctx.items()
@@ -75,7 +77,7 @@ class T(component.T):
         nginx.install_auth(
             self,
             _PASSWD_SECRET_F,
-            jc.rsaccounting.auth_f,
+            jc.rsaccounting._auth_f,
             db.VISIBILITY_DEFAULT,
             jc,
         )

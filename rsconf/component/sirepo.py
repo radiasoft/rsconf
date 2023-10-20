@@ -70,15 +70,9 @@ class T(component.T):
                         static_files_expires="1d",
                         wordpress_host=None,
                     ),
-                    pykern=PKDict(
-                        pkdebug=PKDict(
-                            redirect_logging=True,
-                            want_pid_time=True,
-                        ),
-                        pkconfig=PKDict(channel=jc.rsconf_db.channel),
-                    ),
                 )
             )
+            self.j2_ctx_pykern_defaults()
 
         def _defaults_2(jc):
             self.j2_ctx_pksetdefault(
@@ -97,7 +91,7 @@ class T(component.T):
                                 ),
                                 visibility="channel",
                             )[0],
-                            verify_tls=lambda: jc.pykern.pkconfig.channel != "dev",
+                            verify_tls=lambda: jc.rsconf_db.channel != "dev",
                         ),
                         pkcli=PKDict(
                             job_supervisor=PKDict(
