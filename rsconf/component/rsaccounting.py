@@ -24,7 +24,7 @@ class T(component.T):
         from rsconf.component import nginx
         from rsconf.component import docker_registry
 
-        self.buildt.require_component("network", "docker", "nginx")
+        self.buildt.require_component("docker", "nginx")
         jc, z = self.j2_ctx_init()
         z._run_u = jc.rsconf_db.run_u
         self.__run_d = systemd.docker_unit_prepare(
