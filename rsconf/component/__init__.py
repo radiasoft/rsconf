@@ -243,7 +243,11 @@ class T(PKDict):
 
     def j2_ctx_init(self):
         self.j2_ctx = self.hdb.j2_ctx_copy()
-        return self.j2_ctx, self.j2_ctx.setdefault(self.name, PKDict())
+        d = self.j2_ctx.setdefault(self.name, PKDict())
+        assert isinstance(
+            d, PKDict
+        ), f"component={self.name} is not a PKDict value={self.j2_ctx[self.name]}"
+        return self.j2_ctx, d
 
     def j2_ctx_pksetdefault(self, defaults):
         """Set defaults on self.j2_ctx
@@ -272,6 +276,21 @@ class T(PKDict):
             updates (dict): nested values to set
         """
         return self._j2_ctx_set(updates, "__setitem__")
+
+    def j2_ctx_pykern_defaults(self):
+        """Set default pykern.pkconfig.channel, etc"""
+        self.j2_ctx_pksetdefault(
+            PKDict(
+                pykern=PKDict(
+                    pkdebug=PKDict(
+                        redirect_logging=True,
+                        # journalctl puts both of these in so off by default
+                        want_pid_time=False,
+                    ),
+                    pkconfig=PKDict(channel=self.j2_ctx.rsconf_db.channel),
+                ),
+            )
+        )
 
     def python_service_env(self, values, exclude_re=None):
         e = pkconfig.to_environ(

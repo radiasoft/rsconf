@@ -183,10 +183,9 @@ def docker_unit_enable(
     z = j2_ctx.systemd
     if env is None:
         env = PKDict()
-    if "TZ" not in env:
-        # Tested on CentOS 7, and it does have the localtime stat problem
-        # https://blog.packagecloud.io/eng/2017/02/21/set-environment-variable-save-thousands-of-system-calls/
-        env["TZ"] = ":/etc/localtime"
+    # Tested on CentOS 7, and it does have the localtime stat problem
+    # https://blog.packagecloud.io/eng/2017/02/21/set-environment-variable-save-thousands-of-system-calls/
+    env.pksetdefault(TZ=":/etc/localtime")
     z.update(
         after=_after(after),
         exports=_exports(z.instance_spec, env),

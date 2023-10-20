@@ -30,7 +30,6 @@ class T(component.T):
                     **_PORTS,
                 ),
                 pykern=PKDict(
-                    pkconfig=PKDict(channel=jc.rsconf_db.channel),
                     pkasyncio=PKDict(server_port=z.server_port),
                 ),
                 rsiviz=PKDict(
@@ -38,6 +37,7 @@ class T(component.T):
                 ),
             ),
         )
+        self.j2_ctx_pykern_defaults()
         self.__run_d = systemd.docker_unit_prepare(
             self,
             jc,
