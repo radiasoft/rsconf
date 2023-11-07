@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """create sirepo configuration
 
-:copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
+:copyright: Copyright (c) 2017-2023 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from __future__ import absolute_import, division, print_function
 from pykern.pkcollections import PKDict
 from pykern import pkcompat
 from pykern import pkconfig
@@ -121,6 +120,7 @@ class T(component.T):
             )
             self.__static_files_gen_f = self.__run_d.join("static_files_gen")
 
+        self.__env_components = ["sirepo", "pykern"]
         self.__docker_unit_enable_after = []
         self.__docker_vols = []
         self.buildt.require_component("docker", "nginx", "db_bkp")
@@ -139,6 +139,8 @@ class T(component.T):
         _defaults_1(jc)
         self._raydata()
         self._jupyterhublogin(z)
+        # Must come before sirepo_job_supervisor. This sets config that supervisor needs.
+        self._viz3d()
         _defaults_2(jc)
         # server connects locally only so go direct to tornado.
         # supervisor has different uri to pass to agents.
@@ -208,7 +210,7 @@ class T(component.T):
         # Only variable that is required to be in the environment
         return self.python_service_env(
             values=PKDict(
-                (k, v) for k, v in compt.j2_ctx.items() if k in ("sirepo", "pykern")
+                (k, v) for k, v in compt.j2_ctx.items() if k in self.__env_components
             ),
             # local only values; exclude double under (__) which are "private" values, e.g. sirepo._run_u
             exclude_re=r"^sirepo(?:_docker_image|_static_files|.*_vhost|.*_client_max_body|_num_api_servers|__|_raydata)",
@@ -258,14 +260,32 @@ class T(component.T):
         if self._in_sim_types("raydata"):
             self._set_sirepo_config("raydata_scan_monitor")
 
-    def _set_sirepo_config(self, component):
+    def _set_sirepo_config(self, component, is_docker_component=True):
         self.buildt.require_component(component)
         c = self.buildt.get_component(component)
         c.sirepo_config(self)
-        self.__docker_unit_enable_after.append(c.name)
+        if is_docker_component:
+            self.__docker_unit_enable_after.append(c.name)
 
     def _in_sim_types(self, to_check):
         for k, v in self.j2_ctx.sirepo.feature_config.items():
             if "sim_types" in k and to_check in v:
                 return True
         return False
+
+    def _viz3d(self):
+        if (
+            self.j2_ctx.sirepo.feature_config.get("enable_global_resources", False)
+            and "viz3d" in self.j2_ctx.sirepo.feature_config.proprietary_sim_types
+        ):
+            n = self.buildt.get_component("network")
+            n.add_public_tcp_ports(
+                list(
+                    range(
+                        self.j2_ctx.sirepo.global_resources.public_ports_min,
+                        self.j2_ctx.sirepo.global_resources.public_ports_max,
+                    )
+                )
+            )
+            self._set_sirepo_config("rsiviz", is_docker_component=False)
+            self.__env_components += ["rsiviz"]

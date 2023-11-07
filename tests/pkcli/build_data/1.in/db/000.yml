@@ -545,10 +545,6 @@ host:
           - sirepo_job_supervisor
           - sirepo_jupyterhub
           - sirepo_test_http
-      rsiviz:
-        docker_image: radiasoft/rsiviz
-        server_port: 8002
-        index_iframe_port: 8000
       sirepo:
         activait_redirect: false
         auth:
@@ -562,8 +558,15 @@ host:
             - email
           deprecated_methods: [ github ]
         feature_config:
-          proprietary_sim_types: [ myapp, zgoubi ]
+          enable_global_resources: true
+          proprietary_sim_types: [ myapp, zgoubi, viz3d ]
           proprietary_code_tarballs: [ myapp ]
+        global_resources:
+          public_ports_min: 12000
+          public_ports_max: 12002
+          ports_min: 12002
+          ports_max: 12104
+          ips: 127.3.0.0/16
         job_driver:
           docker:
             hosts: [ v9.radia.run ]
