@@ -21,5 +21,5 @@ rsconf_install_file '/srv/sirepo_job_supervisor/docker_tls/v9.radia.run/cacert.p
 rsconf_install_file '/srv/sirepo_job_supervisor/docker_tls/v9.radia.run/cert.pem' '9bf8e30f1906deb2dc8ef9b8e3677ec3'
 rsconf_install_file '/srv/sirepo_job_supervisor/docker_tls/v9.radia.run/key.pem' '737ecfd7c000fe3a49fc34346ea37819'
 rsconf_install_access '400' 'root' 'root'
-rsconf_install_file '/etc/nginx/conf.d/docker-job-supervisor-sirepo.v4.radia.run.conf' 'e84a5488b7520c06a5fd6eea5766810d'
+rsconf_install_file '/etc/nginx/conf.d/docker-job-supervisor-sirepo.v4.radia.run.conf' '44f649da13034f7533dd08720db0c535'
 }
