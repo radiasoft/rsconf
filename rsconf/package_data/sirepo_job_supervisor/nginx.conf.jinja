@@ -8,7 +8,7 @@ server {
         {# no external server-supervisor requests #}
         return 404;
     }
-    location ~ ^/(job|sim)- {
+    location ~ ^/{{ "(job|sim" + ("|global" if sirepo.feature_config.get('enable_global_resources', False) else "") + ")" }}- {
         client_max_body_size {{ sirepo.client_max_body_size }};
         proxy_pass http://{{ nginx.backend_host }}:{{ nginx.backend_port }};
     }
