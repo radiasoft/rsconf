@@ -16,23 +16,14 @@ class T(component.T):
     def internal_build_compile(self):
         self.buildt.require_component("nginx")
         jc, z = self.j2_ctx_init()
-
-        n = self.buildt.get_component("network")
-        if pkconfig.in_dev_mode():
-            h = jc.rsconf_db.host
-        else:
-            i = n.unchecked_public_ip()
-            assert i, "must have a public ip outside of dev"
-            h = socket.gethostbyaddr(i)[0]
-        self.__host = h
         if "index_uri_secret" not in z:
             z.index_uri_secret = db.random_string()
         z.global_resources.viz3d.index_uri_fmt = (
-            f"https://{self.__host}:{{}}/{z.index_uri_secret}/"
+            f"https://{z.index_vhost}:{{}}/{z.index_uri_secret}/"
         )
         z.global_resources.viz3d.index_allowed_origins = f" ".join(
             [
-                f"{self.__host}:{p}"
+                f"{z.index_vhost}:{p}"
                 for p in range(
                     jc.sirepo.global_resources.public_ports_min,
                     jc.sirepo.global_resources.public_ports_max,
@@ -45,7 +36,7 @@ class T(component.T):
 
         nginx.install_vhost(
             self,
-            vhost=self.__host,
+            vhost=self.j2_ctx.rsiviz.index_vhost,
             j2_ctx=self.j2_ctx,
         )
 
