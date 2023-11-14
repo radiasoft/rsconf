@@ -545,6 +545,8 @@ host:
           - sirepo_job_supervisor
           - sirepo_jupyterhub
           - sirepo_test_http
+      rsiviz:
+        index_vhost: rsiviz.v9.radia.run
       sirepo:
         activait_redirect: false
         auth:
