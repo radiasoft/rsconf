@@ -9,7 +9,6 @@ from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from rsconf import component
 from rsconf import db
-import socket
 
 
 class T(component.T):
