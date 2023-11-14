@@ -1,6 +1,6 @@
 {% for port in range(sirepo.global_resources.public_ports_min, sirepo.global_resources.public_ports_max) %}
 server {
-    listen {{ nginx.listen_ip }}:{{ port }};
+    listen {{ nginx.listen_ip }}:{{ port }} ssl;
     server_name {{ nginx.vhost }};
     root {{ nginx.default_root }};
     ssl_certificate {{ nginx.tls_crt }};
@@ -10,6 +10,5 @@ server {
         proxy_pass http://127.0.0.1:{{ port }}/;
 
     }
-
 }
 {% endfor %}
