@@ -15,8 +15,6 @@ class T(component.T):
     def internal_build_compile(self):
         self.buildt.require_component("nginx")
         jc, z = self.j2_ctx_init()
-        if "index_uri_secret" not in z:
-            z.index_uri_secret = db.random_string()
         z.global_resources.viz3d.index_uri_fmt = (
             f"https://{z.index_vhost}:{{}}/{z.index_uri_secret}/"
         )
