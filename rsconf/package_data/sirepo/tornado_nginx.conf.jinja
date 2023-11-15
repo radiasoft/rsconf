@@ -6,7 +6,7 @@ server {
 
 upstream sirepo_api {
     least_conn;
-    {% for p in range(sirepo._first_port, sirepo._last_port) %}
+    {% for p in range(sirepo._first_port, sirepo._last_port + 1) %}
     server {{ sirepo.pkcli.service.ip }}:{{ p }};
     {% endfor %}
 }
