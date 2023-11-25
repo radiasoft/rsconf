@@ -38,9 +38,12 @@ SyslogFacility AUTHPRIV
 #LogLevel INFO
 
 # Authentication:
+AuthenticationMethods publickey,keyboard-interactive
+PermitRootLogin yes
+ChallengeResponseAuthentication yes
+PasswordAuthentication no
 
 #LoginGraceTime 2m
-PermitRootLogin without-password
 #StrictModes yes
 #MaxAuthTries 6
 #MaxSessions 10
@@ -64,13 +67,7 @@ AuthorizedKeysFile	.ssh/authorized_keys
 # Don't read the user's ~/.rhosts and ~/.shosts files
 #IgnoreRhosts yes
 
-# To disable tunneled clear text passwords, change to no here!
-PasswordAuthentication yes
 #PermitEmptyPasswords no
-
-# Change to no to disable s/key passwords
-#ChallengeResponseAuthentication yes
-ChallengeResponseAuthentication no
 
 # Kerberos options
 #KerberosAuthentication no
