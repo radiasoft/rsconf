@@ -297,9 +297,10 @@ rsconf_install_rpm_key() {
     if rpm -q "$rpm_key" &> /dev/null; then
         return
     fi
+    declare tmp=$rpm_key-rsconf-tmp
     install_download "$rpm_key" > "$tmp"
     if [[ ! $(file "$tmp" 2>/dev/null) =~ public.key ]]; then
-        install_err "$rpm_key: not found or not a valid rpm key"
+        install_err "rpm_key=$rpm_key not found or not a valid rpm key file=$tmp"
     fi
     rpm --import "$tmp"
     rm -f "$tmp"

@@ -17,6 +17,7 @@ rsconf_install_file '/etc/sysctl.d/60-rsconf-base.conf' 'da732edac738b7aeda84e28
 rsconf_install_access '444' 'root' 'root'
 rsconf_install_file '/etc/hostname' 'be2478321c6d2ff6a25488ca14b201c9'
 rsconf_install_file '/etc/motd' '6bf408e65fc8387235735f3caebd3593'
+rsconf_install_file '/etc/pam.d/sshd' '8b1fd19e1642990d48d179b4996950b9'
 rsconf_install_access '400' 'root' 'root'
 rsconf_install_file '/etc/ssh/sshd_config' 'df36edac5e890beaa30eff7e6810afbb'
 base_os_main

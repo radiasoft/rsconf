@@ -1,12 +1,12 @@
 #%PAM-1.0
 auth       required     pam_sepermit.so
-{# removed
-auth       substack     password-auth
-added next three lines
-#}
+{% if 'pam_duo' in base_os and base_os.pam_duo -%}
 auth       required     pam_env.so
 auth       sufficient   pam_duo.so
 auth       required     pam_deny.so
+{% else -%}
+auth       substack     password-auth
+{% endif %}
 auth       include      postlogin
 # Used with polkit to reauthorize users in remote sessions
 -auth      optional     pam_reauthorize.so prepare

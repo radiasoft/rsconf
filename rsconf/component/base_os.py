@@ -112,8 +112,8 @@ class T(component.T):
             self.append_root_bash("rsconf_yum_install duo_unix")
             # These are read dynamically by sshd so don't need to be watched files
             self.install_resource2("pam_duo.conf", "/etc/duo", access="400")
-            self.install_resource2("pam_duo_sshd", "/etc/pam.d", host_f="sshd")
         # Must be after pam_duo in case duo is installed so that sshd is not broken
+        self.install_resource2("sshd", "/etc/pam.d")
         self.install_resource2("sshd_config", _SSHD_CONF_D, access="400")
 
     def _sorted_logical_volumes(self, vg):
