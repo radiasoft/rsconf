@@ -45,14 +45,14 @@ SyslogFacility AUTHPRIV
 
 # Authentication:
 {% if 'pam_duo' in base_os and base_os.pam_duo -%}
-    AuthenticationMethods publickey,keyboard-interactive
-    PermitRootLogin yes
-    ChallengeResponseAuthentication yes
-    PasswordAuthentication no
-{% else %}
-    PermitRootLogin without-password
-    ChallengeResponseAuthentication no
-    PasswordAuthentication no
+AuthenticationMethods publickey,keyboard-interactive
+PermitRootLogin yes
+ChallengeResponseAuthentication yes
+PasswordAuthentication no
+{% else -%}
+PermitRootLogin without-password
+ChallengeResponseAuthentication no
+PasswordAuthentication yes
 {% endif %}
 
 #LoginGraceTime 2m

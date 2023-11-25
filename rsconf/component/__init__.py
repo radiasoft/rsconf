@@ -213,6 +213,50 @@ class T(PKDict):
         )
         return host_path
 
+    def install_resource2(
+        self,
+        basename,
+        host_d,
+        host_f=None,
+        access=None,
+        host_d_access=None,
+    ):
+        """Simpler version of `install_resource`
+
+        Resource `module_name/basename` will be installed in `host_d/basename` with
+        `access` permissions (if not None).
+
+        If either `access` or `host_d_access` is a str, it will be assumed to be the mode
+        for `install_access`.
+
+        Args:
+            basename (str): basename of resource to be installed
+            host_d (py.path or str): host directory
+            host_f (py.path or str): host basename or full path (if py.path)
+            access (dict or str): passed to `install_access`
+            host_d_access (dict or str): if not None, `install_access` and `install_directory`
+        """
+        host_d = pkio.py_path(host_d)
+        if host_f is None:
+            host_f = host_d.join(basename)
+        elif isinstance(host_f, str):
+            host_f = host_d.join(host_f)
+        if host_d_access is not None:
+            if isinstance(host_d_access, str):
+                host_d_access = PKDict(mode=host_d_access)
+            self.install_access(**host_d_access)
+            assert (
+                access is not None
+            ), f"host_d_access={host_d_access} requires access be set"
+            self.install_directory(host_d)
+        if access is not None:
+            if isinstance(access, str):
+                access = PKDict(mode=access)
+            self.install_access(**access)
+        return self.install_resource(
+            f"{self.module_name}/{basename}", self.j2_ctx, host_f
+        )
+
     def install_rpm_key(self, j2_ctx, rpm_key, channel=None):
         self._write_binary(
             j2_ctx.build.dst_d.join(rpm_key),

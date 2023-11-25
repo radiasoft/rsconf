@@ -10,7 +10,7 @@ from pykern.pkdebug import pkdp
 from rsconf import component
 
 _JOURNAL_CONF_D = pkio.py_path("/etc/systemd/journald.conf.d")
-_SSHD_CONF_F = pkio.py_path("/etc/ssh/sshd_config")
+_SSHD_CONF_D = pkio.py_path("/etc/ssh")
 
 
 class T(component.T):
@@ -32,42 +32,35 @@ class T(component.T):
                 )
         z.logical_volume_cmds = cmds
         self.service_prepare([_JOURNAL_CONF_D], name="systemd-journald")
-        self.service_prepare([_SSHD_CONF_F.dirpath()], name="sshd")
+        self.service_prepare([_SSHD_CONF_D], name="sshd")
 
     def internal_build_write(self):
         jc = self.j2_ctx
         z = jc.base_os
         self._install_local_dirs(jc.rsconf_db.local_dirs)
         self._install_local_files(jc.rsconf_db.local_files)
-        self.install_access(mode="700", owner=jc.rsconf_db.root_u)
-        self.install_directory(_JOURNAL_CONF_D)
-        self.install_access(mode="400")
-        self.install_resource(
-            "base_os/journald.conf",
-            jc,
-            _JOURNAL_CONF_D.join("99-rsconf.conf"),
+        self.install_resource2(
+            "journald.conf",
+            _JOURNAL_CONF_D,
+            host_f="99-rsconf.conf",
+            access="400",
+            host_d_access=PKDict(mode="700", owner=jc.rsconf_db.root_u),
         )
-        self.install_resource(
-            "base_os/60-rsconf-base.conf",
-            jc,
-            "/etc/sysctl.d/60-rsconf-base.conf",
-        )
+        self.install_resource2("60-rsconf-base.conf", "/etc/sysctl.d")
         if "pam_limits" in z:
             # POSIT: /etc/security/limits.d/20-nproc.conf is the only file on CentOS 7
-            self.install_resource(
-                "base_os/pam_limits",
-                jc,
-                "/etc/security/limits.d/99-rsconf.conf",
+            self.reboot_on_change(
+                [
+                    self.install_resource2(
+                        "pam_limits",
+                        "/etc/security/limits.d",
+                        host_f="99-rsconf.conf",
+                    ),
+                ],
             )
-            self.reboot_on_change(["/etc/security/limits.d/99-rsconf.conf"])
-        self.install_resource(
-            "base_os/sshd_config",
-            jc,
-            _SSHD_CONF_F,
-        )
-        self.install_access(mode="444")
-        self.install_resource("base_os/hostname", jc, "/etc/hostname")
-        self.install_resource("base_os/motd", jc, "/etc/motd")
+        self.install_resource2("hostname", "/etc", access="444")
+        self.install_resource2("motd", "/etc")
+        self._pam_duo_and_sshd()
         self.append_root_bash_with_main(jc)
 
     def _install_local_dirs(self, values):
@@ -109,6 +102,19 @@ class T(component.T):
             # Local files overwrite existing (distro) files but if a component tries
             # to overwrite a local file, and error will occur.
             self.install_abspath(v._source, t, ignore_exists=True)
+
+    def _pam_duo_and_sshd(self):
+        jc = self.j2_ctx
+        z = jc.base_os
+        if "pam_duo" in z:
+            self.install_resource2("duosecurity.repo", "/etc/yum.repos.d", access="444")
+            self.install_rpm_key("gpg-pubkey-ff696172-62979e51")
+            self.append_root_bash("rsconf_yum_install duo_unix")
+            # These are read dynamically by sshd so don't need to be watched files
+            self.install_resource2("pam_duo.conf", "/etc/duo", access="400")
+            self.install_resource2("pam_duo_sshd", "/etc/pam.d", host_f="sshd")
+        # Must be after pam_duo in case duo is installed.
+        self.install_resource2("sshd_config", _SSHD_CONF_D, access="400")
 
     def _sorted_logical_volumes(self, vg):
         res = []

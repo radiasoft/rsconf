@@ -16,10 +16,11 @@ rsconf_install_file '/etc/systemd/journald.conf.d/99-rsconf.conf' '9556d6ace0f41
 rsconf_install_file '/etc/sysctl.d/60-rsconf-base.conf' 'da732edac738b7aeda84e28eb516c99b'
 rsconf_install_file '/etc/security/limits.d/99-rsconf.conf' '0e2ee6a80d800ef63084be31e954bbaa'
 rsconf_service_prepare 'reboot' '/etc/security/limits.d/99-rsconf.conf'
-rsconf_install_file '/etc/ssh/sshd_config' '1b44eb96fb99c6afc3b0ac7826a5653a'
 rsconf_install_access '444' 'root' 'root'
 rsconf_install_file '/etc/hostname' '20e1de3282fcdf4a1e3df4993b0fecfb'
 rsconf_install_file '/etc/motd' '6bf408e65fc8387235735f3caebd3593'
+rsconf_install_access '400' 'root' 'root'
+rsconf_install_file '/etc/ssh/sshd_config' '91e9d7f13beef5c17b6dee84bd961aff'
 base_os_main
 }
 #!/bin/bash
