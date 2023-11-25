@@ -213,6 +213,13 @@ class T(PKDict):
         )
         return host_path
 
+    def install_rpm_key(self, j2_ctx, rpm_key, channel=None):
+        self._write_binary(
+            j2_ctx.build.dst_d.join(rpm_key),
+            db.resource_path(j2_ctx, rpm_key).read_binary(),
+        )
+        self.append_root_bash(f"rsconf_install_rpm_key '{rpm_key}'")
+
     def install_secret_path(
         self, filename, host_path, gen_secret=None, visibility=None
     ):

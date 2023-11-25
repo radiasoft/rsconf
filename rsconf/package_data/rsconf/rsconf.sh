@@ -291,6 +291,20 @@ rsconf_install_perl_rpm() {
     rsconf_service_file_changed "$rpm_file"
 }
 
+rsconf_install_rpm_key() {
+    # installs a custom rpm_key if not already installed
+    declare rpm_key=$1
+    if rpm -q "$rpm_key" &> /dev/null; then
+        return
+    fi
+    install_download "$rpm_key" > "$tmp"
+    if [[ ! $(file "$tmp" 2>/dev/null) =~ public.key ]]; then
+        install_err "$rpm_key: not found or not a valid rpm key"
+    fi
+    rpm --import "$tmp"
+    rm -f "$tmp"
+}
+
 rsconf_install_symlink() {
     declare old=$1
     declare new=$2
