@@ -257,7 +257,7 @@ class T(PKDict):
             f"{self.module_name}/{basename}", self.j2_ctx, host_f
         )
 
-    def install_rpm_key(self, rpm_key, channel=None):
+    def install_rpm_key(self, rpm_key):
         self._write_binary(
             self.j2_ctx.build.dst_d.join(rpm_key),
             db.resource_path(
