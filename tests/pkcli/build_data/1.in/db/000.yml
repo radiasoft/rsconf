@@ -23,6 +23,7 @@ default:
         uid: 2003
         email: blackhole@v4.radia.run
         procmail_want_include: true
+        public_ssh_key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOrg8mRPQ8KPjJdZ6ebMYNFZgie7FglkhxNcoGzd2mdF marysmith@radia.run
       vagrant:
         uid: 1000
         email: vagrant@v4.radia.run

@@ -1,5 +1,6 @@
 #!/bin/bash
 base_users_rsconf_component() {
+rsconf_append_authorized_key 'marysmith' 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOrg8mRPQ8KPjJdZ6ebMYNFZgie7FglkhxNcoGzd2mdF marysmith@radia.run'
 rsconf_install_access '400' 'root' 'root'
 rsconf_install_file '/root/.post_bivio_bashrc' '1bdc2408012083bb98396f73fe4d116e'
 rsconf_append_authorized_key 'root' 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIB3mhGsrxFV4KnHjDtBaaU7ZdlNhwxIEPZ3/+Bv1xZY v3.radia.run'

@@ -10,7 +10,6 @@ from pykern import pkio
 from pykern import pkjson
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp, pkdc, pkdlog
-from rsconf import db
 import hashlib
 import re
 import subprocess
@@ -86,6 +85,8 @@ class T(PKDict):
     def gen_identity_and_host_ssh_keys(
         self, j2_ctx, visibility, encrypt_identity=False
     ):
+        from rsconf import db
+
         def _pass():
             s = db.secret_path(
                 j2_ctx, f"{self.module_name}_ssh_passphrase.json", visibility=visibility
@@ -258,6 +259,8 @@ class T(PKDict):
         )
 
     def install_rpm_key(self, rpm_key):
+        from rsconf import db
+
         self._write_binary(
             self.j2_ctx.build.dst_d.join(rpm_key),
             db.resource_path(
@@ -411,6 +414,8 @@ class T(PKDict):
         )
 
     def secret_path_value(self, filename, gen_secret=None, visibility=None):
+        from rsconf import db
+
         src = db.secret_path(self.hdb, filename, visibility=visibility)
         if src.check():
             return pkio.read_text(src), src
@@ -429,6 +434,8 @@ class T(PKDict):
         )
 
     def tmp_path(self):
+        from rsconf import db
+
         return self.hdb.rsconf_db.tmp_d.join(db.random_string())
 
     def _bash_append(self, host_path, is_file=True, ensure_exists=False, md5=None):
@@ -494,6 +501,7 @@ class T(PKDict):
 
     def _render_resource(self, name, j2_ctx):
         from pykern import pkjinja
+        from rsconf import db
 
         return self._render_file(
             db.resource_path(j2_ctx, name + pkjinja.RESOURCE_SUFFIX),
@@ -563,6 +571,7 @@ def _bash_quote(value):
 
 def _find_tls_crt(j2_ctx, domain):
     from rsconf.pkcli import tls
+    from rsconf import db
 
     d = db.secret_path(j2_ctx, TLS_SECRET_SUBDIR, visibility="global")
     for crt, domains in j2_ctx.component.tls_crt.items():
