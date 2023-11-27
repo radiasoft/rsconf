@@ -16,10 +16,18 @@ rsconf_install_file '/etc/systemd/journald.conf.d/99-rsconf.conf' '9556d6ace0f41
 rsconf_install_file '/etc/sysctl.d/60-rsconf-base.conf' 'da732edac738b7aeda84e28eb516c99b'
 rsconf_install_file '/etc/security/limits.d/99-rsconf.conf' '0e2ee6a80d800ef63084be31e954bbaa'
 rsconf_service_prepare 'reboot' '/etc/security/limits.d/99-rsconf.conf'
-rsconf_install_file '/etc/ssh/sshd_config' '1b44eb96fb99c6afc3b0ac7826a5653a'
 rsconf_install_access '444' 'root' 'root'
 rsconf_install_file '/etc/hostname' '20e1de3282fcdf4a1e3df4993b0fecfb'
 rsconf_install_file '/etc/motd' '6bf408e65fc8387235735f3caebd3593'
+rsconf_install_access '444' 'root' 'root'
+rsconf_install_file '/etc/yum.repos.d/duosecurity.repo' '71f539dd52ce623cd071b497b617f2b2'
+rsconf_install_rpm_key 'gpg-pubkey-ff696172-62979e51'
+rsconf_yum_install duo_unix
+rsconf_install_access '400' 'root' 'root'
+rsconf_install_file '/etc/duo/pam_duo.conf' '5717fc698953812c8f9e86bb674d33bd'
+rsconf_install_file '/etc/pam.d/sshd' '0e1c42ba763cb8eaae0275aea35b7c16'
+rsconf_install_access '400' 'root' 'root'
+rsconf_install_file '/etc/ssh/sshd_config' 'd971c91e7dea6b9b5ae435e6a06582d6'
 base_os_main
 }
 #!/bin/bash

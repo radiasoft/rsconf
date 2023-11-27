@@ -242,7 +242,7 @@ def resource_path(hdb, filename):
         res = p.join(filename)
         if res.check():
             return res
-    return pkresource.filename(filename)
+    return pkresource.file_path(filename)
 
 
 def secret_path(hdb, filename, visibility=None, qualifier=None, directory=False):

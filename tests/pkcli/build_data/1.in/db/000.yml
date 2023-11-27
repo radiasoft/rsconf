@@ -431,6 +431,10 @@ host:
     # This host never installed, just for testing build
     v9.radia.run:
       base_os:
+        pam_duo:
+          ikey: sample-ikey
+          skey: sample-skey
+          host: sample-host.duosecurity.com
         pam_limits:
           nproc: 9999
       base_users:
