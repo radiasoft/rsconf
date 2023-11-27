@@ -144,6 +144,7 @@ base_os_ipv4() {
         dracut -f
     fi
     base_os_postfix
+    base_os_pwquality
     base_os_rpcbind_patch
     return $no_reboot
 }
@@ -152,6 +153,10 @@ base_os_postfix() {
     if type postconf >& /dev/null; then
         postconf -e inet_protocols=ipv4
     fi
+}
+
+base_os_pwquality() {
+    rsconf_edit_no_change_res=0 rsconf_edit /etc/security/pwquality.conf 'minlen=16' 's/^#?\s*minlen.*/minlen=16/'
 }
 
 base_os_rpcbind_patch() {
