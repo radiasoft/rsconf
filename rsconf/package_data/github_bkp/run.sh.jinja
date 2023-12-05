@@ -7,5 +7,4 @@ install -m 600 /dev/stdin ~/.github_bkp_creds <<EOF
 https://$PYKERN_PKCLI_GITHUB_USER:$PYKERN_PKCLI_GITHUB_PASSWORD@github.com
 EOF
 git config --global credential.helper "store --file $HOME/.github_bkp_creds"
-cd {{ github_bkp.db_d }}
-exec pykern github backup
+exec pykern github backup '{{ github_bkp.org }}'

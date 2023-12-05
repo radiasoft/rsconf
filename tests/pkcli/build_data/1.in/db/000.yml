@@ -100,6 +100,7 @@ default:
     exclude_re: ''
     # Relatively early, because it takes a long time (3 hours)
     on_calendar: "3"
+    org: radiasoft
     test_mode: True
   jupyterhub:
     admin_users: [ 'vagrant' ]
