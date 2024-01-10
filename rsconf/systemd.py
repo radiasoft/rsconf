@@ -260,7 +260,9 @@ def install_unit_override(compt, j2_ctx):
     )
 
 
-def timer_enable(compt, j2_ctx, run_u=None):
+def timer_enable(compt, j2_ctx=None, run_u=None):
+    if j2_ctx is None:
+        j2_ctx = compt.j2_ctx
     z = j2_ctx.systemd
     z.run_u = run_u or j2_ctx.rsconf_db.run_u
     compt.install_access(mode="700", owner=z.run_u)
