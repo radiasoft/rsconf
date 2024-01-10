@@ -4,7 +4,7 @@ echo hello
 
 rsconf_service_prepare 'every_five.timer' '/etc/systemd/system/every_five.service' '/etc/systemd/system/every_five.timer' '/srv/every_five'
 rsconf_install_access '500' 'root' 'root'
-rsconf_install_file '/srv/every_five/run' '99fa414cbe03e1be17e1512c93caa413'
+rsconf_install_file '/srv/every_five/run' '15bb1f8cf012034cd494dd3e96d8bc76'
 rsconf_install_access '700' 'root' 'root'
 rsconf_install_directory '/srv/every_five'
 rsconf_install_access '500' 'root' 'root'
