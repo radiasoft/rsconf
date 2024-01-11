@@ -15,7 +15,7 @@ class T(component.T):
 
         jc, z = self.j2_ctx_init()
         self.buildt.require_component(*(z.get("require_components", ["base_users"])))
-        jc.pksetdefault(timers=PKDict)
+        z.pksetdefault(timers=PKDict)
         for k, v in z.timers.items():
             v._run_d = systemd.unit_run_d(jc, k)
             v._run_f = v._run_d.join("run")
