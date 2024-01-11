@@ -10,6 +10,8 @@ server {
     root {{ nginx.default_root }};
     ssl_certificate {{ nginx.tls_crt }};
     ssl_certificate_key {{ nginx.tls_key }};
+    keepalive_timeout 0;
+
     location / {
         root {{ rsconf.srv_d }};
         try_files $uri $uri/index.sh $uri/index.html =404;

@@ -202,7 +202,23 @@ class T(PKDict):
         )
         return r
 
-    def install_resource(self, name, j2_ctx, host_path=None):
+    def install_resource(self, name, j2_ctx=None, host_path=None):
+        """Resource file `name` will be copied to guest path
+
+        If `host_path` is not supplied, `name` will be used as
+        `host_path`, and `name` will be modified to be ``module_name/name.basename``.
+
+        Args:
+            name (object): str path or py.path to install
+            j2_ctx (PKDict): jinja context to use [self.j2_ctx]
+            host_path (py.path): where on host to install the file
+
+        Returns:
+            py.path: `host_path`
+
+        """
+        if j2_ctx is None:
+            j2_ctx = self.j2_ctx
         if not host_path:
             host_path = name
             if host_path.ext == ".sh":
