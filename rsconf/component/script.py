@@ -44,6 +44,6 @@ class T(component.T):
                 service_name=k,
                 timer_exec=v._run_f,
             )
+            systemd.timer_enable(self, run_u=v.run_u)
             self.install_access(mode="500", owner=v.run_u)
             self.install_resource("script/timer.sh", host_path=v._run_f)
-            systemd.timer_enable(self, run_u=v.run_u)
