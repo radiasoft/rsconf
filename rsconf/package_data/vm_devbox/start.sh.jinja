@@ -5,19 +5,12 @@ vm_devbox_first_start() {
     if [[ -e Vagrantfile ]]; then
         return
     fi
-    # Put vms in this dir so we don't scatter them around the machine.
-    # The default is under $HOME which doesn't make sense for this kind
-    # of service.
-    declare d=virtualbox_vms
-    mkdir "$d"
-    vboxmanage setproperty machinefolder "$PWD/$d"
     curl https://radia.run | vagrant_dev_private_net= \
         vagrant_dev_provision_eth1= \
         vagrant_dev_no_mounts=1 \
         vagrant_dev_no_nfs_src=1 \
         vagrant_dev_no_vbguest=1 \
         bash -s vagrant-sirepo-dev
-    vboxmanage setproperty machinefolder default
 }
 
 vm_devbox_set_forwarded_port() {
@@ -55,7 +48,6 @@ ListenAddress 0.0.0.0:{{ vm_devbox.ssh_port }}
 
 AuthorizedKeysFile .ssh/authorized_keys
 PasswordAuthentication no
-PrintLastLog no
 Protocol 2
 X11Forwarding yes
 EOF_INSTALL

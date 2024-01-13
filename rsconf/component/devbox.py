@@ -17,13 +17,13 @@ class T(component.T):
     def internal_build_compile(self):
         from rsconf import systemd
 
-        if "user_name" not in self:
+        if "_user" not in self:
             for u in self.hdb.devbox.users.keys():
                 self.buildt.build_component(
                     T(
                         f"{self.name}_{u}",
                         self.buildt,
-                        user_name=u,
+                        _user=u,
                         module_name=self.name,
                     )
                 )
@@ -45,7 +45,7 @@ class T(component.T):
                 z.guest.ssh_d.join("sshd_config"),
             ),
         )
-        u = jc.devbox.users[self.user_name]
+        u = jc.devbox.users[self._user]
         if isinstance(u, PKDict):
             z.docker_image = u.get("docker_image", z.docker_image)
             z.ssh_port = u.ssh_port
@@ -56,7 +56,7 @@ class T(component.T):
     def internal_build_write(self):
         from rsconf import systemd
 
-        if "user_name" not in self:
+        if "_user" not in self:
             self.append_root_bash(": user instances do all the installs")
             return
         jc = self.j2_ctx
@@ -144,7 +144,7 @@ class T(component.T):
         n.add_public_tcp_ports([str(z.ssh_port)])
 
     def _rsiviz(self, z, path):
-        u = z.users[self.user_name]
+        u = z.users[self._user]
         if not isinstance(u, PKDict) or not "rsiviz" in u:
             return
         e = [

@@ -15,21 +15,24 @@ _VM_DIR = "v"
 
 class T(component.T):
     def internal_build_compile(self):
-        jc, z = self.j2_ctx_init()
-        if "user_name" not in self:
+        def _create_user_instances():
             for u in self.hdb.vm_devbox.users:
                 self.buildt.build_component(
                     T(
-                        f"{self.name}_{u}",
+                        f"{self.module_name}_{u}",
                         self.buildt,
-                        user_name=u,
-                        module_name=self.name,
+                        _user=u,
+                        module_name=self.module_name,
                     )
                 )
+
+        jc, z = self.j2_ctx_init()
+        if self.name == "vm_devbox":
+            _create_user_instances()
             return
         self.buildt.require_component("network")
         z.vm_d = systemd.custom_unit_prepare(self, self.j2_ctx).join(_VM_DIR)
-        z.ssh_port = jc.base_users.spec[self.user_name].vm_devbox_ssh_port
+        z.ssh_port = jc.base_users.spec[self._user].vm_devbox_ssh_port
         z.ssh_guest_host_key_f = "/etc/ssh/host_key"
         z.ssh_guest_identity_pub_f = "/etc/ssh/identity.pub"
         self._network(jc, z)
@@ -37,7 +40,7 @@ class T(component.T):
 
     def internal_build_write(self):
         jc = self.j2_ctx
-        if "user_name" not in self:
+        if self.name == "vm_devbox":
             self.append_root_bash_with_main(jc)
             return
         z = jc[self.module_name]

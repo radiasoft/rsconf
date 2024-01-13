@@ -92,16 +92,16 @@ class T(PKDict):
                 j2_ctx, f"{self.module_name}_ssh_passphrase.json", visibility=visibility
             )
             o = pkjson.load_any(s) if s.exists() else PKDict()
-            p = o.get(self.user_name)
+            p = o.get(self._user)
             if p is None:
-                o[self.user_name] = p = db.random_string()
+                o[self._user] = p = db.random_string()
                 pkjson.dump_pretty(o, filename=s)
             return p
 
         res = PKDict()
         b = db.secret_path(
             j2_ctx,
-            f"{self.module_name}/{self.user_name}",
+            f"{self.module_name}/{self._user}",
             visibility=visibility,
             directory=True,
         )
