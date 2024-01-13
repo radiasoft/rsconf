@@ -39,10 +39,10 @@ class T(component.T):
         self._ssh(jc, z)
 
     def internal_build_write(self):
-        jc = self.j2_ctx
         if self.name == "vm_devbox":
-            self.append_root_bash_with_main(jc)
+            self.append_root_bash_with_main()
             return
+        jc = self.j2_ctx
         z = jc[self.module_name]
         systemd.install_unit_override(self, self.j2_ctx)
         systemd.custom_unit_enable(
@@ -52,12 +52,11 @@ class T(component.T):
         self.install_directory(z.vm_d)
 
     def _network(self, jc, z):
-        n = self.buildt.get_component("network")
-        n.add_public_tcp_ports([str(z.ssh_port)])
+        self.buildt.get_component("network").add_public_tcp_ports([str(z.ssh_port)])
 
     def _ssh(self, jc, z):
         z.sshd_config_f = z.vm_d.join("sshd_config")
-        s = super().gen_identity_and_host_ssh_keys(jc, "host", encrypt_identity=True)
+        s = self.gen_identity_and_host_ssh_keys(jc, "host", encrypt_identity=True)
         z.pkupdate(
             PKDict(
                 ssh_identity_pub_key=pkio.read_text(s["identity_pub_f"]),
