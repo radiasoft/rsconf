@@ -31,10 +31,13 @@ class T(component.T):
             _create_user_instances()
             return
         self.buildt.require_component("network")
-        z.vm_d = systemd.custom_unit_prepare(self, self.j2_ctx).join(_VM_DIR)
+        systemd.unit_prepare(self, self.j2_ctx)
+        z.run_d = systemd.unit_run_d(jc, self.name)
+        z.vm_d = z.run_d.join(_VM_DIR)
         z.ssh_port = jc.base_users.spec[self._user].vm_devbox_ssh_port
         z.ssh_guest_host_key_f = "/etc/ssh/host_key"
         z.ssh_guest_identity_pub_f = "/etc/ssh/identity.pub"
+        z.start_f = z.run_d.join("start")
         self._network(jc, z)
         self._ssh(jc, z)
 
@@ -44,12 +47,13 @@ class T(component.T):
             return
         jc = self.j2_ctx
         z = jc[self.module_name]
-        systemd.install_unit_override(self, self.j2_ctx)
-        systemd.custom_unit_enable(
-            self, self.j2_ctx, run_u=jc.rsconf_db.run_u, run_group=jc.rsconf_db.run_u
-        )
         self.install_access(mode="700", owner=jc.rsconf_db.run_u)
-        self.install_directory(z.vm_d)
+        self.install_directory(z.run_d)
+        self.install_access(mode="500", owner=jc.rsconf_db.run_u)
+        self.install_resource("vm_devbox/start.sh", host_path=z.start_f)
+        self.install_resource(
+            "vm_devbox/vm_devbox_unit_service", jc, jc.systemd.service_f
+        )
 
     def _network(self, jc, z):
         self.buildt.get_component("network").add_public_tcp_ports([str(z.ssh_port)])
