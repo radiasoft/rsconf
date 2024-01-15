@@ -48,9 +48,10 @@ class T(component.T):
         jc = self.j2_ctx
         z = jc[self.module_name]
         self.install_access(mode="700", owner=jc.rsconf_db.run_u)
-        self.install_directory(z.run_d)
+        self.install_directory(z.vm_d)
         self.install_access(mode="500", owner=jc.rsconf_db.run_u)
         self.install_resource("vm_devbox/start.sh", host_path=z.start_f)
+        self.install_access(mode="444", owner=jc.rsconf_db.root_u)
         self.install_resource(
             "vm_devbox/vm_devbox_unit_service", jc, jc.systemd.service_f
         )
