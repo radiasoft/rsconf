@@ -99,6 +99,7 @@ class T(PKDict):
                     host_run_d="/srv",
                     run_u="vagrant",
                     root_u="root",
+                    installers_url="https://radia.run",
                 ).pkupdate(c)
             ),
         )
