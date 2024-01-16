@@ -9,17 +9,42 @@ vm_devbox_first_start() {
 }
 
 vm_devbox_set_forwarded_port() {
-    declare r=
-    if ! grep -q 'forwarded_port' Vagrantfile; then
-        perl -pi -e 's{^\s*(config.vm.hostname.*)$}{$1\nconfig.vm.network "forwarded_port", guest: 102002, host: 102002}' Vagrantfile
-        r=1
-    elif ! grep -q 'guest: 102002, host: 102002' Vagrantfile; then
-        perl -pi -e 's{^\s*config.vm.network "forwarded_port"}{config.vm.network "forwarded_port", guest: 102002, host: 102002}' Vagrantfile
-        r=1
-    fi
-    if [[ ${r:-} ]]; then
-        vagrant reload
-    fi
+    python <<'EOF'
+import re
+import subprocess
+
+_FILE = "Vagrantfile"
+_FORWARDED_PORT_PREAMBLE = 'config.vm.network "forwarded_port"'
+_FORWARDED_PORT_FULL = (
+    "{}, guest: 102002, host: 102002".format(
+        _FORWARDED_PORT_PREAMBLE
+    )
+)
+r = False
+with open(_FILE, "r+") as f:
+    c = f.read()
+    if _FORWARDED_PORT_PREAMBLE not in c:
+        c = re.sub(
+            r"^\s*(config\.vm\.hostname.*)$",
+            r"\1\n{}".format(_FORWARDED_PORT_FULL),
+            c,
+            flags=re.MULTILINE,
+        )
+        r = True
+    elif _FORWARDED_PORT_FULL not in c:
+        c = re.sub(
+            r"^\s*{}.*$".format(_FORWARDED_PORT_PREAMBLE),
+            _FORWARDED_PORT_FULL,
+            c,
+            flags=re.MULTILINE,
+        )
+        r = True
+    f.seek(0)
+    f.write(c)
+    f.truncate()
+if r:
+    subprocess.check_call(("vagrant", "reload"))
+EOF
 }
 
 vm_devbox_set_ssh_config() {
