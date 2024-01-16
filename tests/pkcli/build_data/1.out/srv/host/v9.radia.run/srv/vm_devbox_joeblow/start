@@ -5,7 +5,7 @@ vm_devbox_first_start() {
     if [[ -e Vagrantfile ]]; then
         return
     fi
-    curl https://radia.run | vagrant_dev_private_net= \
+    curl 'https://radia.run' | vagrant_dev_private_net= \
         vagrant_dev_provision_eth1= \
         vagrant_dev_no_mounts=1 \
         vagrant_dev_no_nfs_src=1 \
