@@ -36,6 +36,7 @@ class T(component.T):
         z.ssh_guest_host_key_f = "/etc/ssh/host_key"
         z.ssh_guest_identity_pub_f = "/etc/ssh/identity.pub"
         z.start_f = z.run_d.join("start")
+        z.vm_hostname = f"{self._user}.{jc[self.module_name].vm_parent_domain}"
         self._network(jc, z)
         self._ssh(jc, z)
 

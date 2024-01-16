@@ -606,6 +606,7 @@ host:
       sirepo_test_http:
         on_calendar: "9:00"
       vm_devbox:
+        vm_parent_domain: radia.run
         users:
           - joeblow
 

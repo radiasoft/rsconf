@@ -5,12 +5,7 @@ vm_devbox_first_start() {
     if [[ -e Vagrantfile ]]; then
         return
     fi
-    curl 'https://radia.run' | vagrant_dev_private_net= \
-        vagrant_dev_provision_eth1= \
-        vagrant_dev_no_mounts=1 \
-        vagrant_dev_no_nfs_src=1 \
-        vagrant_dev_no_vbguest=1 \
-        bash -s vagrant-sirepo-dev
+    curl 'https://radia.run' | vagrant_dev_vm_devbox=1 bash -s vagrant-sirepo-dev 'joeblow.radia.run'
 }
 
 vm_devbox_set_forwarded_port() {
