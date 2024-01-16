@@ -4,11 +4,11 @@ Description={{ systemd.service_name }}
 [Service]
 Environment=TZ=:/etc/localtime
 ExecStart={{ vm_devbox.start_f }}
-Group={{ rsconf_db.run_u }}
+Group={{ vm_devbox.run_u }}
 PrivateTmp=true
 SyslogIdentifier={{ systemd.service_name }}
 Type=oneshot
-User={{ rsconf_db.run_u }}
+User={{ vm_devbox.run_u }}
 
 [Install]
 WantedBy=multi-user.target

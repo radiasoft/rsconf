@@ -52,7 +52,7 @@ Protocol 2
 X11Forwarding yes
 EOF_INSTALL
 
-echo '{{ vm_devbox.ssh_identity_pub_key }}' >> '/home/{{ rsconf_db.run_u }}/.ssh/authorized_keys'
+echo '{{ vm_devbox.ssh_identity_pub_key }}' >> '/home/{{ vm_devbox.run_u }}/.ssh/authorized_keys'
 
 install --mode=400 --owner=root --group=root /dev/stdin "{{ vm_devbox.ssh_guest_host_key_f }}"<<EOF_INSTALL
 {{ vm_devbox.ssh_host_key }}

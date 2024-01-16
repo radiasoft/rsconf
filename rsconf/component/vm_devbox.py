@@ -33,6 +33,7 @@ class T(component.T):
         self.buildt.require_component("network")
         systemd.unit_prepare(self, self.j2_ctx)
         z.run_d = systemd.unit_run_d(jc, self.name)
+        z.run_u = jc.rsconf_db.run_u
         z.vm_d = z.run_d.join(_VM_DIR)
         z.ssh_port = jc.base_users.spec[self._user].vm_devbox_ssh_port
         z.ssh_guest_host_key_f = "/etc/ssh/host_key"
@@ -47,9 +48,9 @@ class T(component.T):
             return
         jc = self.j2_ctx
         z = jc[self.module_name]
-        self.install_access(mode="700", owner=jc.rsconf_db.run_u)
+        self.install_access(mode="700", owner=z.run_u)
         self.install_directory(z.vm_d)
-        self.install_access(mode="500", owner=jc.rsconf_db.run_u)
+        self.install_access(mode="500", owner=z.run_u)
         self.install_resource("vm_devbox/start.sh", host_path=z.start_f)
         self.install_access(mode="444", owner=jc.rsconf_db.root_u)
         self.install_resource(
