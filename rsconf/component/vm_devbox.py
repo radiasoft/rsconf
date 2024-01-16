@@ -65,7 +65,7 @@ class T(component.T):
         s = self.gen_identity_and_host_ssh_keys(jc, "host", encrypt_identity=True)
         z.pkupdate(
             PKDict(
-                ssh_identity_pub_key=pkio.read_text(s["identity_pub_f"]),
-                ssh_host_key=pkio.read_text(s["host_key_f"]),
+                ssh_identity_pub_key=pkio.read_text(s.identity_pub_f),
+                ssh_host_key=pkio.read_text(s.host_key_f),
             )
         )
