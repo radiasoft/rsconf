@@ -226,10 +226,14 @@ class T(PKDict):
             if host_path.ext == ".sh":
                 host_path = host_path.new(ext="")
             name = self.module_name + "/" + name.basename
-        self._bash_append_and_dst(
-            host_path,
-            file_contents=self._render_resource(name, j2_ctx),
-        )
+        try:
+            j2_ctx.this = j2_ctx[self.name]
+            self._bash_append_and_dst(
+                host_path,
+                file_contents=self._render_resource(name, j2_ctx),
+            )
+        finally:
+            j2_ctx.pkdel("this")
         return host_path
 
     def install_resource2(
@@ -317,7 +321,7 @@ class T(PKDict):
 
     def j2_ctx_init(self):
         self.j2_ctx = self.hdb.j2_ctx_copy()
-        d = self.j2_ctx.setdefault(self.module_name, PKDict())
+        d = self.j2_ctx.setdefault(self.name, PKDict())
         assert isinstance(
             d, PKDict
         ), f"component={self.name} is not a PKDict value={self.j2_ctx[self.name]}"

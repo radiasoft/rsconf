@@ -17,14 +17,14 @@ class T(component.T):
     def internal_build_compile(self):
         from rsconf import systemd
 
-        if "_user" not in self:
+        if self.name == "devbox":
             for u in self.hdb.devbox.users.keys():
                 self.buildt.build_component(
                     T(
-                        f"{self.name}_{u}",
+                        f"{self.module_name}_{u}",
                         self.buildt,
                         _user=u,
-                        module_name=self.name,
+                        module_name=self.module_name,
                     )
                 )
             return
@@ -33,8 +33,8 @@ class T(component.T):
         z.setdefault("volumes", ["jupyter", "src"])
         z.host_d = systemd.unit_run_d(jc, self.name)
         self._gen_secrets(jc)
-        for x, d in ("guest", ".ssh"), ("host", "sshd"):
-            z[x] = self._gen_paths(z, z[x + "_d"], d)
+        z.guest = self._gen_paths(z, jc[self.module_name].guest_d, ".ssh")
+        z.host = self._gen_paths(z, z.host_d, "sshd")
         z.run_u = jc.rsconf_db.run_u
         # Only additional config for the server is the sshd config.
         z.run_d = systemd.docker_unit_prepare(
@@ -45,7 +45,8 @@ class T(component.T):
                 z.guest.ssh_d.join("sshd_config"),
             ),
         )
-        u = jc.devbox.users[self._user]
+        u = self._user_cfg(jc)
+        z.docker_image = jc[self.module_name].docker_image
         if isinstance(u, PKDict):
             z.docker_image = u.get("docker_image", z.docker_image)
             z.ssh_port = u.ssh_port
@@ -56,11 +57,11 @@ class T(component.T):
     def internal_build_write(self):
         from rsconf import systemd
 
-        if "_user" not in self:
+        if self.name == "devbox":
             self.append_root_bash(": user instances do all the installs")
             return
         jc = self.j2_ctx
-        z = jc.devbox
+        z = jc[self.name]
         v = [[z.host[v], z.guest[v], "rw"] for v in z.volumes]
         v.extend(
             [
@@ -91,7 +92,7 @@ class T(component.T):
                 )
             if "jupyter" in str(d):
                 j = d.join("bashrc")
-        self._jupyter_bashrc(z, j)
+        self._jupyter_bashrc(jc, z, j)
         self.install_access(mode="400")
         self.install_resource(z.host.sshd_config, jc)
         for k, v in self.secrets.items():
@@ -120,14 +121,20 @@ class T(component.T):
         s = super().gen_identity_and_host_ssh_keys(jc, "host", encrypt_identity=True)
         self.secrets = PKDict({k: s[k] for k in ("host_key_f", "identity_pub_f")})
 
-    def _jupyter_bashrc(self, z, path):
+    def _jupyter_bashrc(self, jc, z, path):
         self.install_access(mode="600")
         self.install_ensure_file_exists(path)
         for n in ("package_path", "sim_types"):
-            if n in z:
-                self._env(f"SIREPO_FEATURE_CONFIG_{n.upper()}", ":".join(z[n]), path)
-        z.service_port = z.ssh_port + z.ssh_service_port_difference
-        z.job_supervisor_port = z.service_port + z.ssh_service_port_difference
+            if n in jc[self.module_name]:
+                self._env(
+                    f"SIREPO_FEATURE_CONFIG_{n.upper()}",
+                    ":".join(jc[self.module_name][n]),
+                    path,
+                )
+        z.service_port = z.ssh_port + jc[self.module_name].ssh_service_port_difference
+        z.job_supervisor_port = (
+            z.service_port + jc[self.module_name].ssh_service_port_difference
+        )
         for n in ("service_port", "job_supervisor_port"):
             self._env(f"SIREPO_PKCLI_{n.upper()}", z[n], path)
         for n in ("DRIVER_LOCAL", "API"):
@@ -136,15 +143,15 @@ class T(component.T):
                 f"http://127.0.0.1:{z.job_supervisor_port}",
                 path,
             )
-        self._rsiviz(z, path)
+        self._rsiviz(jc, z, path)
 
     def _network(self, jc, z):
         n = self.buildt.get_component("network")
         z.ip = n.unchecked_public_ip() or n.ip_and_net_for_host(jc.rsconf_db.host)[0]
         n.add_public_tcp_ports([str(z.ssh_port)])
 
-    def _rsiviz(self, z, path):
-        u = z.users[self._user]
+    def _rsiviz(self, jc, z, path):
+        u = self._user_cfg(jc)
         if not isinstance(u, PKDict) or not "rsiviz" in u:
             return
         e = [
@@ -168,3 +175,6 @@ class T(component.T):
                 str(v),
                 path,
             )
+
+    def _user_cfg(self, jc):
+        return jc[self.module_name].users[self._user]

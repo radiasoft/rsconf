@@ -47,7 +47,7 @@ class T(component.T):
             self.append_root_bash_with_main()
             return
         jc = self.j2_ctx
-        z = jc[self.module_name]
+        z = jc[self.name]
         self.install_access(mode="700", owner=z.run_u)
         self.install_directory(z.vm_d)
         self.install_access(mode="500", owner=z.run_u)

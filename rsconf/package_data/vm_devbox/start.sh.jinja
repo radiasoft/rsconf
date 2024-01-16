@@ -16,10 +16,10 @@ vm_devbox_first_start() {
 vm_devbox_set_forwarded_port() {
     declare r=
     if ! grep -q 'forwarded_port' Vagrantfile; then
-        perl -pi -e 's{^\s*(config.vm.hostname.*)$}{$1\nconfig.vm.network "forwarded_port", guest: {{ vm_devbox.ssh_port }}, host: {{ vm_devbox.ssh_port }}}' Vagrantfile
+        perl -pi -e 's{^\s*(config.vm.hostname.*)$}{$1\nconfig.vm.network "forwarded_port", guest: {{ this.ssh_port }}, host: {{ this.ssh_port }}}' Vagrantfile
         r=1
-    elif ! grep -q 'guest: {{ vm_devbox.ssh_port }}, host: {{ vm_devbox.ssh_port }}' Vagrantfile; then
-        perl -pi -e 's{^\s*config.vm.network "forwarded_port"}{config.vm.network "forwarded_port", guest: {{ vm_devbox.ssh_port }}, host: {{ vm_devbox.ssh_port }}}' Vagrantfile
+    elif ! grep -q 'guest: {{ this.ssh_port }}, host: {{ this.ssh_port }}' Vagrantfile; then
+        perl -pi -e 's{^\s*config.vm.network "forwarded_port"}{config.vm.network "forwarded_port", guest: {{ this.ssh_port }}, host: {{ this.ssh_port }}}' Vagrantfile
         r=1
     fi
     if [[ ${r:-} ]]; then
@@ -43,8 +43,8 @@ install --mode=400 --owner=root --group=root /dev/stdin /etc/sshd_config<<EOF_IN
 Include /etc/ssh/sshd_config.d/*.conf
 ListenAddress 0.0.0.0:22
 
-HostKey {{ vm_devbox.ssh_guest_host_key_f }}
-ListenAddress 0.0.0.0:{{ vm_devbox.ssh_port }}
+HostKey {{ this.ssh_guest_host_key_f }}
+ListenAddress 0.0.0.0:{{ this.ssh_port }}
 
 AuthorizedKeysFile .ssh/authorized_keys
 PasswordAuthentication no
@@ -52,10 +52,10 @@ Protocol 2
 X11Forwarding yes
 EOF_INSTALL
 
-echo '{{ vm_devbox.ssh_identity_pub_key }}' >> '/home/{{ vm_devbox.run_u }}/.ssh/authorized_keys'
+echo '{{ this.ssh_identity_pub_key }}' >> '/home/{{ this.run_u }}/.ssh/authorized_keys'
 
-install --mode=400 --owner=root --group=root /dev/stdin "{{ vm_devbox.ssh_guest_host_key_f }}"<<EOF_INSTALL
-{{ vm_devbox.ssh_host_key }}
+install --mode=400 --owner=root --group=root /dev/stdin "{{ this.ssh_guest_host_key_f }}"<<EOF_INSTALL
+{{ this.ssh_host_key }}
 EOF_INSTALL
 
 sshd -t
@@ -64,7 +64,7 @@ EOF_BASH
 EOF
 }
 
-cd {{ vm_devbox.vm_d }}
+cd {{ this.vm_d }}
 vm_devbox_create_vm
 vm_devbox_set_forwarded_port
 vm_devbox_set_ssh_config
