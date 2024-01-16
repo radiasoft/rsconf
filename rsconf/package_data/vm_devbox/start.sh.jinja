@@ -5,12 +5,7 @@ vm_devbox_first_start() {
     if [[ -e Vagrantfile ]]; then
         return
     fi
-    curl '{{ rsconf_db.installers_url }}' | vagrant_dev_private_net= \
-        vagrant_dev_provision_eth1= \
-        vagrant_dev_no_mounts=1 \
-        vagrant_dev_no_nfs_src=1 \
-        vagrant_dev_no_vbguest=1 \
-        bash -s vagrant-sirepo-dev
+    curl '{{ rsconf_db.installers_url }}' | vagrant_dev_vm_devbox=1 bash -s vagrant-sirepo-dev
 }
 
 vm_devbox_set_forwarded_port() {
@@ -64,7 +59,7 @@ EOF_BASH
 EOF
 }
 
-cd {{ this.vm_d }}
+cd {{ this.run_d }}
 vm_devbox_create_vm
 vm_devbox_set_forwarded_port
 vm_devbox_set_ssh_config

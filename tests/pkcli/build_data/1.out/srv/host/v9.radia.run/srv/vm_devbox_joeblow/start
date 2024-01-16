@@ -72,7 +72,7 @@ EOF_BASH
 EOF
 }
 
-cd /srv/vm_devbox_joeblow/v
+cd /srv/vm_devbox_joeblow
 vm_devbox_create_vm
 vm_devbox_set_forwarded_port
 vm_devbox_set_ssh_config

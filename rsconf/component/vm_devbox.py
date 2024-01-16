@@ -10,8 +10,6 @@ from pykern.pkdebug import pkdp
 from rsconf import component
 from rsconf import systemd
 
-_VM_DIR = "v"
-
 
 class T(component.T):
     def internal_build_compile(self):
@@ -34,7 +32,6 @@ class T(component.T):
         systemd.unit_prepare(self, self.j2_ctx)
         z.run_d = systemd.unit_run_d(jc, self.name)
         z.run_u = jc.rsconf_db.run_u
-        z.vm_d = z.run_d.join(_VM_DIR)
         z.ssh_port = jc.base_users.spec[self._user].vm_devbox_ssh_port
         z.ssh_guest_host_key_f = "/etc/ssh/host_key"
         z.ssh_guest_identity_pub_f = "/etc/ssh/identity.pub"
@@ -48,8 +45,6 @@ class T(component.T):
             return
         jc = self.j2_ctx
         z = jc[self.name]
-        self.install_access(mode="700", owner=z.run_u)
-        self.install_directory(z.vm_d)
         self.install_access(mode="500", owner=z.run_u)
         self.install_resource("vm_devbox/start.sh", host_path=z.start_f)
         self.install_access(mode="444", owner=jc.rsconf_db.root_u)
@@ -61,7 +56,7 @@ class T(component.T):
         self.buildt.get_component("network").add_public_tcp_ports([str(z.ssh_port)])
 
     def _ssh(self, jc, z):
-        z.sshd_config_f = z.vm_d.join("sshd_config")
+        z.sshd_config_f = z.run_d.join("sshd_config")
         s = self.gen_identity_and_host_ssh_keys(jc, "host", encrypt_identity=True)
         z.pkupdate(
             PKDict(
