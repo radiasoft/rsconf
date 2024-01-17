@@ -32,7 +32,7 @@ class T(component.T):
         systemd.unit_prepare(self, self.j2_ctx)
         z.run_d = systemd.unit_run_d(jc, self.name)
         z.run_u = jc.rsconf_db.run_u
-        z.ssh_port = jc.base_users.spec[self._user].vm_devbox_ssh_port
+        z.ssh_port = jc.vm_devbox_users.spec[self._user].ssh_port
         z.ssh_guest_host_key_f = "/etc/ssh/host_key"
         z.ssh_guest_identity_pub_f = "/etc/ssh/identity.pub"
         z.start_f = z.run_d.join("start")

@@ -35,5 +35,5 @@ rsconf_require sirepo_jupyterhub
 rsconf_require sirepo_job_supervisor
 rsconf_require sirepo
 rsconf_require sirepo_test_http
-rsconf_require vm_devbox_joeblow
+rsconf_require vm_devbox_user_1
 rsconf_require vm_devbox

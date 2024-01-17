@@ -19,7 +19,6 @@ default:
       joeblow:
         uid: 2002
         email: devnull@v4.radia.run
-        vm_devbox_ssh_port: 102002
       marysmith:
         uid: 2003
         email: blackhole@v4.radia.run
@@ -226,6 +225,10 @@ default:
       mpi_worker:
         shm-size: "1G"
     timezone: America/Phoenix
+  vm_devbox_users:
+    spec:
+      user_1:
+        ssh_port: 11110
 
 channel:
   dev:
@@ -608,7 +611,7 @@ host:
       vm_devbox:
         vm_parent_domain: radia.run
         users:
-          - joeblow
+          - user_1
 
 # testing named needs build-perl-rpms.sh
 #          - bivio_named

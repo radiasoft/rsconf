@@ -5,7 +5,7 @@ vm_devbox_first_start() {
     if [[ -e Vagrantfile ]]; then
         return
     fi
-    curl 'https://radia.run' | vagrant_dev_vm_devbox=1 bash -s vagrant-sirepo-dev 'joeblow.radia.run'
+    curl 'https://radia.run' | vagrant_dev_vm_devbox=1 bash -s vagrant-sirepo-dev 'user_1.radia.run'
 }
 
 vm_devbox_set_forwarded_port() {
@@ -16,7 +16,7 @@ import subprocess
 _FILE = "Vagrantfile"
 _FORWARDED_PORT_PREAMBLE = 'config.vm.network "forwarded_port"'
 _FORWARDED_PORT_FULL = (
-    "{}, guest: 102002, host: 102002".format(
+    "{}, guest: 11110, host: 11110".format(
         _FORWARDED_PORT_PREAMBLE
     )
 )
@@ -64,7 +64,7 @@ Include /etc/ssh/sshd_config.d/*.conf
 ListenAddress 0.0.0.0:22
 
 HostKey /etc/ssh/host_key
-ListenAddress 0.0.0.0:102002
+ListenAddress 0.0.0.0:11110
 
 AuthorizedKeysFile .ssh/authorized_keys
 PasswordAuthentication no
@@ -92,7 +92,7 @@ EOF_BASH
 EOF
 }
 
-cd /srv/vm_devbox_joeblow
+cd /srv/vm_devbox_user_1
 vm_devbox_create_vm
 vm_devbox_set_forwarded_port
 vm_devbox_set_ssh_config
