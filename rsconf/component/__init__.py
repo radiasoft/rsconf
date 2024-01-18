@@ -6,10 +6,12 @@
 """
 from pykern import pkcompat
 from pykern import pkconfig
+from pykern import pkinspect
 from pykern import pkio
 from pykern import pkjson
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp, pkdc, pkdlog
+import copy
 import hashlib
 import re
 import subprocess
@@ -492,6 +494,9 @@ class T(PKDict):
             md5 = _md5(self._write_binary(dst, file_contents))
         self._bash_append(host_path, md5=md5)
         return dst
+
+    def _is_main_instance(self):
+        return self.name == pkinspect.module_basename(pkinspect.caller_module())
 
     def _j2_ctx_set(self, values, method):
         def f(prefix, values, method):

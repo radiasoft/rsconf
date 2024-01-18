@@ -25,7 +25,7 @@ class T(component.T):
                 )
 
         jc, z = self.j2_ctx_init()
-        if self.name == "vm_devbox":
+        if self._is_main_instance():
             _create_user_instances()
             return
         self.buildt.require_component("network")
@@ -41,7 +41,7 @@ class T(component.T):
         self._ssh(jc, z)
 
     def internal_build_write(self):
-        if self.name == "vm_devbox":
+        if self._is_main_instance():
             self.append_root_bash_with_main()
             return
         jc = self.j2_ctx

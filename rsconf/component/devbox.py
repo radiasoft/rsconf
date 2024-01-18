@@ -17,7 +17,7 @@ class T(component.T):
     def internal_build_compile(self):
         from rsconf import systemd
 
-        if self.name == "devbox":
+        def _create_user_instances():
             for u in self.hdb.devbox.users.keys():
                 self.buildt.build_component(
                     T(
@@ -27,6 +27,9 @@ class T(component.T):
                         module_name=self.module_name,
                     )
                 )
+
+        if self._is_main_instance():
+            _create_user_instances()
             return
         self.buildt.require_component("docker", "network")
         jc, z = self.j2_ctx_init()
@@ -57,7 +60,7 @@ class T(component.T):
     def internal_build_write(self):
         from rsconf import systemd
 
-        if self.name == "devbox":
+        if self._is_main_instance():
             self.append_root_bash(": user instances do all the installs")
             return
         jc = self.j2_ctx
