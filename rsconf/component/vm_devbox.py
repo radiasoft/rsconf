@@ -29,7 +29,6 @@ class T(component.T):
             _create_user_instances()
             return
         self.buildt.require_component("network")
-        systemd.unit_prepare(self, self.j2_ctx)
         z.run_d = systemd.unit_run_d(jc, self.name)
         z.run_u = jc.rsconf_db.run_u
         z.ssh_port = jc.vm_devbox_users.spec[self._user].ssh_port
@@ -37,6 +36,7 @@ class T(component.T):
         z.ssh_guest_identity_pub_f = "/etc/ssh/identity.pub"
         z.start_f = z.run_d.join("start")
         z.vm_hostname = f"{self._user}.{jc[self.module_name].vm_parent_domain}"
+        systemd.unit_prepare(self, self.j2_ctx, watch_files=(z.start_f,))
         self._network(jc, z)
         self._ssh(jc, z)
 

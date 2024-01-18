@@ -20,7 +20,6 @@ _FORWARDED_PORT_FULL = (
         _FORWARDED_PORT_PREAMBLE
     )
 )
-r = False
 with open(_FILE) as f:
     c = f.read()
     if _FORWARDED_PORT_PREAMBLE not in c:
@@ -30,7 +29,6 @@ with open(_FILE) as f:
             c,
             flags=re.MULTILINE,
         )
-        r = True
     elif _FORWARDED_PORT_FULL not in c:
         c = re.sub(
             r"^\s*{}.*$".format(_FORWARDED_PORT_PREAMBLE),
@@ -38,11 +36,8 @@ with open(_FILE) as f:
             c,
             flags=re.MULTILINE,
         )
-        r = True
 with open(_FILE, 'w') as f:
     f.write(c)
-if r:
-    subprocess.check_call(("vagrant", "reload"))
 EOF
 }
 

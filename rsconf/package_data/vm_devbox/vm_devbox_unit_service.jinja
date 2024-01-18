@@ -4,6 +4,7 @@ Description={{ systemd.service_name }}
 [Service]
 Environment=TZ=:/etc/localtime
 ExecStart={{ this.start_f }}
+ExecStop=-vagrant halt
 Group={{ this.run_u }}
 PrivateTmp=true
 SyslogIdentifier={{ systemd.service_name }}
