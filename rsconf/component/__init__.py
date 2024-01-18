@@ -45,8 +45,7 @@ class T(PKDict):
             abs_path (py.path): absolute path of file to render
             j2_ctx (PKDict): dictionary to render
         """
-        jc = j2_ctx or self.j2_ctx
-        self._root_bash.append(self._render_file(abs_path, jc))
+        self._root_bash.append(self._render_file(abs_path, j2_ctx or self.j2_ctx))
 
     def append_root_bash_with_main(self, j2_ctx=None):
         jc = j2_ctx or self.j2_ctx
@@ -226,14 +225,10 @@ class T(PKDict):
             if host_path.ext == ".sh":
                 host_path = host_path.new(ext="")
             name = self.module_name + "/" + name.basename
-        try:
-            j2_ctx.this = j2_ctx[self.name]
-            self._bash_append_and_dst(
-                host_path,
-                file_contents=self._render_resource(name, j2_ctx),
-            )
-        finally:
-            j2_ctx.pkdel("this")
+        self._bash_append_and_dst(
+            host_path,
+            file_contents=self._render_resource(name, j2_ctx),
+        )
         return host_path
 
     def install_resource2(
@@ -515,8 +510,10 @@ class T(PKDict):
     def _render_file(self, path, j2_ctx):
         from pykern import pkjinja
 
+        c = copy.copy(j2_ctx)
+        c.this = c[self.name]
         try:
-            return pkjinja.render_file(path, j2_ctx, strict_undefined=True)
+            return pkjinja.render_file(path, c, strict_undefined=True)
         except Exception as e:
             pkdlog("path={} exception={}", path, e)
             raise
