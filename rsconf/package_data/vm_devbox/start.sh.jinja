@@ -8,6 +8,13 @@ vm_devbox_first_start() {
     curl '{{ rsconf_db.installer_url }}' | vagrant_dev_vm_devbox=1 bash -s vagrant-sirepo-dev '{{ this.vm_hostname}}'
 }
 
+vm_devbox_main() {
+    cd {{ this.run_d }}
+    vm_devbox_create_vm
+    vm_devbox_set_forwarded_port
+    vm_devbox_set_ssh_config
+}
+
 vm_devbox_set_forwarded_port() {
     python <<'EOF'
 import re
@@ -78,7 +85,4 @@ EOF_BASH
 EOF
 }
 
-cd {{ this.run_d }}
-vm_devbox_create_vm
-vm_devbox_set_forwarded_port
-vm_devbox_set_ssh_config
+vm_devbox_main

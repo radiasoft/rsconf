@@ -470,7 +470,7 @@ host:
         sim_types:
           - elegant
           - srw
-        ssh_service_port_difference: 100
+        ssh_service_port_delta: 100
         users:
           devtech3: 3100
           fullstackdude: 3101

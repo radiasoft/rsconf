@@ -33,6 +33,7 @@ class T(component.T):
             return
         self.buildt.require_component("docker", "network")
         jc, z = self.j2_ctx_init()
+        jc[self.module_name].setdefault("ssh_service_port_delta", 1000)
         z.setdefault("volumes", ["jupyter", "src"])
         z.host_d = systemd.unit_run_d(jc, self.name)
         self._gen_secrets(jc)
@@ -134,9 +135,9 @@ class T(component.T):
                     ":".join(jc[self.module_name][n]),
                     path,
                 )
-        z.service_port = z.ssh_port + jc[self.module_name].ssh_service_port_difference
+        z.service_port = z.ssh_port + jc[self.module_name].ssh_service_port_delta
         z.job_supervisor_port = (
-            z.service_port + jc[self.module_name].ssh_service_port_difference
+            z.service_port + jc[self.module_name].ssh_service_port_delta
         )
         for n in ("service_port", "job_supervisor_port"):
             self._env(f"SIREPO_PKCLI_{n.upper()}", z[n], path)
