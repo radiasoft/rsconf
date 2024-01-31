@@ -1,15 +1,15 @@
 #!/bin/bash
 set -eou pipefail
 
-vm_devbox_first_start() {
+vm_devbox_create_vm() {
     if [[ -e Vagrantfile ]]; then
         return
     fi
-    curl 'https://radia.run' | vagrant_dev_vm_devbox=1 bash -s vagrant-sirepo-dev 'user_1.radia.run'
+    curl 'https://radia.run' | vagrant_dev_vm_devbox=1 bash -s vagrant-sirepo-dev 'user-1.radia.run'
 }
 
 vm_devbox_main() {
-    cd /srv/vm_devbox_user_1
+    cd /srv/vm_devbox_user-1
     vm_devbox_create_vm
     vm_devbox_set_forwarded_port
     vm_devbox_set_ssh_config

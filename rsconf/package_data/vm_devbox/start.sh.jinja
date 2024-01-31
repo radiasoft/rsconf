@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eou pipefail
 
-vm_devbox_first_start() {
+vm_devbox_create_vm() {
     if [[ -e Vagrantfile ]]; then
         return
     fi
