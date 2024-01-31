@@ -9,12 +9,18 @@ from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from rsconf import component
 from rsconf import systemd
+import re
+
+# Allowable pattern enforced by vagrant
+_VM_HOSTNAME_RE = "[a-z0-9][a-z0-9.-]*"
 
 
 class T(component.T):
     def internal_build_compile(self):
         def _create_user_instances():
             for u in self.hdb.vm_devbox.users:
+                if not re.match(_VM_HOSTNAME_RE, u):
+                    raise AssertionError(f"usernmae={u} must match /{_VM_HOSTNAME_RE}/")
                 self.buildt.build_component(
                     T(
                         f"{self.module_name}_{u}",
@@ -46,6 +52,8 @@ class T(component.T):
             return
         jc = self.j2_ctx
         z = jc[self.name]
+        self.install_access(mode="700", owner=z.run_u)
+        self.install_directory(z.run_d)
         self.install_access(mode="500", owner=z.run_u)
         self.install_resource("vm_devbox/start.sh", host_path=z.start_f)
         self.install_access(mode="444", owner=jc.rsconf_db.root_u)
