@@ -98,7 +98,6 @@ class T(rsconf.component.T):
 
     def internal_build_write(self):
         jc = self.j2_ctx
-        jc = self.j2_ctx
         z = jc.network
         # Order matters: _restricted_public_tcp_ports modifed public_tcp_ports
         # to remove ports that that in the restricted set.

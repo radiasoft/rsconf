@@ -86,7 +86,7 @@ def custom_unit_enable(
 ):
     """Must be last call"""
     if not resource_d:
-        resource_d = compt.name
+        resource_d = compt.module_name
     z = j2_ctx.systemd
     z.update(
         after=_after(after),
@@ -254,7 +254,7 @@ def install_unit_override(compt, j2_ctx):
     compt.install_directory(d)
     compt.install_access(mode="444")
     compt.install_resource(
-        compt.name + "/unit_override.conf",
+        compt.module_name + "/unit_override.conf",
         j2_ctx,
         d.join("99-rsconf.conf"),
     )

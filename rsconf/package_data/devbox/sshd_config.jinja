@@ -1,6 +1,6 @@
-AuthorizedKeysFile {{ devbox.guest.identity_pub_f }}
-HostKey {{ devbox.guest.host_key_f }}
-ListenAddress {{ devbox.ip }}:{{ devbox.ssh_port }}
+AuthorizedKeysFile {{ this.guest.identity_pub_f }}
+HostKey {{ this.guest.host_key_f }}
+ListenAddress {{ this.ip }}:{{ this.ssh_port }}
 PasswordAuthentication no
 PrintLastLog no
 Protocol 2

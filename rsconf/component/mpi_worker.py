@@ -78,7 +78,7 @@ class T(component.T):
                     u,
                     z.user,
                 )
-                self.user_name = u
+                self._user = u
                 z.update(
                     user=u,
                     hosts=hosts[:],

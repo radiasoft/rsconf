@@ -6,10 +6,12 @@
 """
 from pykern import pkcompat
 from pykern import pkconfig
+from pykern import pkinspect
 from pykern import pkio
 from pykern import pkjson
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp, pkdc, pkdlog
+import copy
 import hashlib
 import re
 import subprocess
@@ -36,7 +38,7 @@ class T(PKDict):
     def append_root_bash(self, *line):
         self._root_bash.extend(line)
 
-    def append_root_bash_with_file(self, abs_path, j2_ctx):
+    def append_root_bash_with_file(self, abs_path, j2_ctx=None):
         """Append lines from jinja-rendered path
 
         Distinct from `append_root_bash_with_resource`.
@@ -45,12 +47,13 @@ class T(PKDict):
             abs_path (py.path): absolute path of file to render
             j2_ctx (PKDict): dictionary to render
         """
-        self._root_bash.append(self._render_file(abs_path, j2_ctx))
+        self._root_bash.append(self._render_file(abs_path, j2_ctx or self.j2_ctx))
 
-    def append_root_bash_with_main(self, j2_ctx):
+    def append_root_bash_with_main(self, j2_ctx=None):
+        jc = j2_ctx or self.j2_ctx
         self.append_root_bash_with_resource(
             "{}/main.sh".format(self.name),
-            j2_ctx,
+            jc,
             "{}_main".format(self.name),
         )
 
@@ -92,16 +95,16 @@ class T(PKDict):
                 j2_ctx, f"{self.module_name}_ssh_passphrase.json", visibility=visibility
             )
             o = pkjson.load_any(s) if s.exists() else PKDict()
-            p = o.get(self.user_name)
+            p = o.get(self._user)
             if p is None:
-                o[self.user_name] = p = db.random_string()
+                o[self._user] = p = db.random_string()
                 pkjson.dump_pretty(o, filename=s)
             return p
 
         res = PKDict()
         b = db.secret_path(
             j2_ctx,
-            f"{self.module_name}/{self.user_name}",
+            f"{self.module_name}/{self._user}",
             visibility=visibility,
             directory=True,
         )
@@ -492,6 +495,9 @@ class T(PKDict):
         self._bash_append(host_path, md5=md5)
         return dst
 
+    def _is_main_instance(self):
+        return self.name == pkinspect.module_basename(pkinspect.caller_module())
+
     def _j2_ctx_set(self, values, method):
         def f(prefix, values, method):
             for k, v in values.items():
@@ -509,8 +515,10 @@ class T(PKDict):
     def _render_file(self, path, j2_ctx):
         from pykern import pkjinja
 
+        c = copy.copy(j2_ctx)
+        c.this = c[self.name]
         try:
-            return pkjinja.render_file(path, j2_ctx, strict_undefined=True)
+            return pkjinja.render_file(path, c, strict_undefined=True)
         except Exception as e:
             pkdlog("path={} exception={}", path, e)
             raise
