@@ -7,7 +7,7 @@ ExecStart={{ this.start_f }}
 ExecStop={{ this.stop_f }}
 Group={{ this.run_u }}
 SyslogIdentifier={{ systemd.service_name }}
-TimeoutStartSec=10min
+TimeoutStartSec={{ this.timeout_start_min }}min
 Type=forking
 User={{ this.run_u }}
 
