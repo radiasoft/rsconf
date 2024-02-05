@@ -41,8 +41,9 @@ class T(component.T):
         z.ssh_guest_host_key_f = "/etc/ssh/host_key"
         z.ssh_guest_identity_pub_f = "/etc/ssh/identity.pub"
         z.start_f = z.run_d.join("start")
+        z.stop_f = z.run_d.join("stop")
         z.vm_hostname = f"{self._user}.{jc[self.module_name].vm_parent_domain}"
-        systemd.unit_prepare(self, self.j2_ctx, watch_files=(z.start_f,))
+        systemd.unit_prepare(self, self.j2_ctx, watch_files=(z.start_f, z.stop_f))
         self._network(jc, z)
         self._ssh(jc, z)
 
@@ -56,6 +57,7 @@ class T(component.T):
         self.install_directory(z.run_d)
         self.install_access(mode="500", owner=z.run_u)
         self.install_resource("vm_devbox/start.sh", host_path=z.start_f)
+        self.install_resource("vm_devbox/start.sh", host_path=z.stop_f)
         self.install_access(mode="444", owner=jc.rsconf_db.root_u)
         self.install_resource(
             "vm_devbox/vm_devbox_unit_service", jc, jc.systemd.service_f

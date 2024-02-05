@@ -1,0 +1,9 @@
+#!/bin/bash
+set -eou pipefail
+
+vm_devbox_main() {
+    cd {{ this.run_d }}
+    vagrant halt
+}
+
+vm_devbox_main

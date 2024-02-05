@@ -4,11 +4,11 @@ Description={{ systemd.service_name }}
 [Service]
 Environment=TZ=:/etc/localtime
 ExecStart={{ this.start_f }}
-ExecStop=-vagrant halt
+ExecStop={{ this.stop_f }}
 Group={{ this.run_u }}
-PrivateTmp=true
 SyslogIdentifier={{ systemd.service_name }}
-Type=oneshot
+TimeoutStartSec=10min
+Type=forking
 User={{ this.run_u }}
 
 [Install]
