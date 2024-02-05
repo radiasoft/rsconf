@@ -609,9 +609,10 @@ host:
       sirepo_test_http:
         on_calendar: "9:00"
       vm_devbox:
-        vm_parent_domain: radia.run
+        timeout_start_min: 5
         users:
           - user-1
+        vm_parent_domain: radia.run
 
 # testing named needs build-perl-rpms.sh
 #          - bivio_named
