@@ -4,8 +4,8 @@ rsconf_service_prepare 'vm_devbox_user-1' '/etc/systemd/system/vm_devbox_user-1.
 rsconf_install_access '700' 'vagrant' 'vagrant'
 rsconf_install_directory '/srv/vm_devbox_user-1'
 rsconf_install_access '500' 'vagrant' 'vagrant'
-rsconf_install_file '/srv/vm_devbox_user-1/start' '5dc3180f1dfd32e5d9d15e426928e94a'
-rsconf_install_file '/srv/vm_devbox_user-1/stop' '17c8ef8fe2fa06489f4e9cb5869d22b6'
+rsconf_install_file '/srv/vm_devbox_user-1/start' '03f7809d5a7ef88b6a4ce734814a8ec8'
+rsconf_install_file '/srv/vm_devbox_user-1/stop' '94f5e7855deadc753f54580dfad70217'
 rsconf_install_access '444' 'root' 'root'
 rsconf_install_file '/etc/systemd/system/vm_devbox_user-1.service' '9bea6d3fc6b169474e19863d1e2da5a3'
 }

@@ -2,7 +2,7 @@
 set -eou pipefail
 
 vm_devbox_main() {
-    cd /srv/vm_devbox_user-1
+    cd '/srv/vm_devbox_user-1'
     vagrant halt
 }
 
