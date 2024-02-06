@@ -9,7 +9,7 @@ vm_devbox_create_vm() {
 }
 
 vm_devbox_main() {
-    cd {{ this.run_d }}
+    cd '{{ this.run_d }}'
     vm_devbox_create_vm
     vm_devbox_set_forwarded_port
     vm_devbox_set_ssh_config
