@@ -73,7 +73,10 @@ HostKey {{ this.ssh_guest_host_key_f }}
 ListenAddress 0.0.0.0:{{ this.ssh_port }}
 
 AuthorizedKeysFile .ssh/authorized_keys
+
+AllowUsers {{ this.run_u }}
 PasswordAuthentication no
+PermitRootLogin no
 Protocol 2
 X11Forwarding yes
 EOF_INSTALL

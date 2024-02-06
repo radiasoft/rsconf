@@ -73,7 +73,10 @@ HostKey /etc/ssh/host_key
 ListenAddress 0.0.0.0:11110
 
 AuthorizedKeysFile .ssh/authorized_keys
+
+AllowUsers vagrant
 PasswordAuthentication no
+PermitRootLogin no
 Protocol 2
 X11Forwarding yes
 EOF_INSTALL
