@@ -26,6 +26,7 @@ rsconf_require dovecot
 rsconf_require github_bkp
 rsconf_require jupyterhub
 rsconf_require jupyterhub_proxy
+rsconf_require mlflow
 rsconf_require nfs_client
 rsconf_require nfs_server
 rsconf_require rsaccounting
