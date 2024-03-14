@@ -7,6 +7,7 @@ It's unnecessary complexity. NetworkManager (NM) create
 :copyright: Copyright (c) 2018-2022 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
+
 from pykern import pkcollections
 from pykern import pkcompat
 from pykern import pkio
@@ -229,7 +230,9 @@ class T(rsconf.component.T):
             )
             v.pksetdefault(is_private=lambda: not v.is_global and n.is_private)
             if v.gateway:
-                assert ipaddress.ip_network(v.gateway + "/32",).subnet_of(
+                assert ipaddress.ip_network(
+                    v.gateway + "/32",
+                ).subnet_of(
                     n
                 ), "{}: gateway is not subnet of {}".format(v.gateway, n)
             if "nameservers" in v:
