@@ -11,7 +11,6 @@ from rsconf import component
 
 
 _DB_SUBDIR = "db"
-_MLFLOW_IP = "127.0.0.1"
 _BASIC_AUTH_CONF_F = "basic-auth.ini"
 _BASIC_AUTH_DB_F = "basic-auth.db"
 _SECRETS = {"mlflow_admin_password", "mlflow_admin_username"}
@@ -28,10 +27,11 @@ class T(component.T):
         z.db_d = z.run_d.join(_DB_SUBDIR)
         z.auth_conf_f = z.run_d.join(_BASIC_AUTH_CONF_F)
         z.auth_db_f = z.run_d.join(_BASIC_AUTH_DB_F)
+        z.mlflow_ip = db.LOCAL_IP
         systemd.docker_unit_prepare(
             self,
             jc,
-            docker_exec=f"mlflow server --host {_MLFLOW_IP} --port {z.service_port} --backend-store-uri 'sqlite:///{z.db_d}/backend-store.db' --no-serve-artifacts --default-artifact-root '{z.db_d}' --app-name basic-auth",
+            docker_exec=f"mlflow server --host {z.mlflow_ip} --port {z.service_port} --backend-store-uri 'sqlite:///{z.db_d}/backend-store.db' --no-serve-artifacts --default-artifact-root '{z.db_d}' --app-name basic-auth",
         )
         for s in _SECRETS:
             z[s] = self.secret_path_value(
@@ -62,7 +62,7 @@ class T(component.T):
         nginx.install_vhost(
             self,
             vhost=z.vhost,
-            backend_host=_MLFLOW_IP,
+            backend_host=z.mlflow_ip,
             backend_port=z.service_port,
             j2_ctx=jc,
         )

@@ -11,6 +11,7 @@ from pykern import pkcollections
 
 class T(component.T):
     def internal_build(self):
+        from rsconf import db
         from rsconf import systemd
         from rsconf.component import bop
 
@@ -26,7 +27,7 @@ class T(component.T):
             etc=run_d.join("etc"),
         )
         z = jc.bivio_named
-        z.listen_on = "127.0.0.1;"
+        z.listen_on = f"{db.LOCAL_IP};"
         nc = self.buildt.get_component("network")
         nc.add_public_tcp_ports(["domain"])
         nc.add_public_udp_ports(["domain"])
