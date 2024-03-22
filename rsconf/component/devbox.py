@@ -128,6 +128,8 @@ class T(component.T):
         self.secrets = PKDict({k: s[k] for k in ("host_key_f", "identity_pub_f")})
 
     def _jupyter_bashrc(self, jc, z, path):
+        from rsconf import db
+
         self.install_access(mode="600")
         self.install_ensure_file_exists(path)
         for n in ("package_path", "sim_types"):
@@ -144,7 +146,7 @@ class T(component.T):
         for n in ("DRIVER_LOCAL", "API"):
             self._env(
                 f"SIREPO_JOB_{n}_SUPERVISOR_URI",
-                f"http://127.0.0.1:{z.job_supervisor_port}",
+                f"http://{db.LOCAL_IP}:{z.job_supervisor_port}",
                 path,
             )
         self._rsiviz(jc, z, path)
