@@ -1,5 +1,8 @@
 #!/bin/bash
 petshop_rsconf_component() {
+install_repo_eval biviosoftware/container-perl base
+rsconf_install_perl_rpm 'bivio-perl' 'bivio-perl-dev.rpm' 'bivio-perl-20220722.195234-1.x86_64'
+rsconf_install_perl_rpm 'perl-Bivio' 'perl-Bivio-dev.rpm' 'perl-Bivio-20220722.195252-1.x86_64'
 rsconf_install_perl_rpm 'special-perl' 'special-perl-dev.rpm' 'perl-Bivio-20220722.195252-1.x86_64'
 rsconf_service_prepare 'petshop' '/etc/systemd/system/petshop.service' '/etc/systemd/system/petshop.service.d' '/srv/petshop' 'bivio-perl-dev.rpm' 'perl-Bivio-dev.rpm' 'special-perl-dev.rpm'
 rsconf_install_access '711' 'vagrant' 'vagrant'

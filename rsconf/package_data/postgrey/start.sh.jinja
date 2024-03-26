@@ -2,10 +2,10 @@
 set -eu -o pipefail
 rm -f /etc/postgrey/postgrey_whitelist_clients
 cp /usr/share/postgrey/postgrey_whitelist_clients /etc/postgrey/postgrey_whitelist_clients
-cd '{{ postgrey.dbdir }}'
+cd '{{ postgrey.db_d }}'
 exec /usr/sbin/postgrey \
     --daemonize \
-    --dbdir '{{ postgrey.dbdir }}' \
+    --dbdir '{{ postgrey.db_d }}' \
     --group="$(id -g -n)" \
     --inet=127.0.0.1:{{ postgrey.port }} \
     --pidfile '{{ systemd.pid_file }}' \
