@@ -1,21 +1,18 @@
-PidFile	/run/opendkim/opendkim.pid
-Mode	v
-Syslog	yes
-SyslogSuccess	yes
-LogWhy	yes
-UserID	opendkim:opendkim
-Socket	inet:8891@localhost
-Umask	002
-SendReports	yes
-SoftwareHeader	yes
-Canonicalization	relaxed/relaxed
-Selector	default
-MinimumKeyBits	1024
-KeyFile	/etc/opendkim/keys/default.private
-# KeyTable	/etc/opendkim/KeyTable
-# SigningTable	refile:/etc/opendkim/SigningTable
-# ExternalIgnoreList	refile:/etc/opendkim/TrustedHosts
-# InternalHosts	refile:/etc/opendkim/TrustedHosts
-# PeerList	X.X.X.X
-OversignHeaders	From
-# QueryCache	yes
+Canonicalization relaxed/relaxed
+ExternalIgnoreList refile:{{ opendkim.external_ignore_list_f }}
+InternalHosts refile:{{ opendkim.internal_hosts_f }}
+KeyTable {{ opendkim.key_table_f }}
+LogWhy yes
+MinimumKeyBits 1024
+Mode s
+OversignHeaders Cc,Date,From,Message-Id,Reply-To,Subject,To
+PidFile /run/opendkim/opendkim.pid
+SendReports no
+SignHeaders Cc,Content-Type,Date,From,In-Reply-To,Message-Id,Mime-Version,References,Reply-To,Subject,To
+SigningTable refile:{{ opendkim.signing_table_f }}
+Socket inet:{{ opendkim.port }}@localhost
+SoftwareHeader no
+Syslog yes
+SyslogSuccess yes
+Umask 007
+UserID {{ opendkim.run_u }}:{{ opendkim.run_u }}
