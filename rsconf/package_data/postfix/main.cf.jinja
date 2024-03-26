@@ -93,6 +93,12 @@ smtpd_sender_restrictions =
 {#
     Conditional Custom Config: alphabetical by conditional
 #}
+{% if postfix.opendkim_port %}
+milter_default_action = tempfail
+milter_protocol = 2
+smtpd_milters = inet:localhost:{{ postfix.opendkim_port }}
+non_smtpd_milters = inet:localhost:{{ postfix.opendkim_port }}
+{% endif %}
 {% if not postfix.have_public_smtp %}
 relayhost = {{ postfix.relayhost }}
 smtp_sasl_auth_enable = yes
