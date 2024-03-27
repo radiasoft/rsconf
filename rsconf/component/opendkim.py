@@ -21,7 +21,10 @@ class T(component.T):
         from rsconf.component import network
 
         jc, z = self.j2_ctx_init()
-        self.append_root_bash("rsconf_yum_install opendkim opendkim-tools")
+        if z.get("named_only"):
+            self._named_compile(jc, z)
+            return
+        self.append_root_bash("rsconf_yum_install opendkim")
         z.update(
             external_ignore_list_f=_CONF_D.join("ExternalIgnoreList"),
             internal_hosts_f=_CONF_D.join("InternalHosts"),
@@ -40,13 +43,16 @@ class T(component.T):
 
         jc = self.j2_ctx
         z = jc[self.name]
+        if z.get("named_only"):
+            self._named_write(jc, z)
+            return
         systemd.unit_prepare(self, jc, watch_files=(_CONF_D, _CONF_F))
         self.install_access(mode="400", owner=z.run_u)
         self._install_keys(z.domains)
         systemd.unit_enable(self, jc)
         access("400", run_u)
 
-    def _install_keys(self, domains):
+    def _gen_keys(self, domains, named=False):
         def _find(secret_d):
             rv = PKDict()
             for d in domains:
@@ -59,9 +65,23 @@ class T(component.T):
                     )
             return rv
 
-        r = _find(db.secret_path(j2_ctx, SECRET_SUBDIR, visibility="global"))
-        for d, v in r.items():
+        rv = _find(db.secret_path(j2_ctx, SECRET_SUBDIR, visibility="global"))
+        for d, v in rv.items():
             if not v.keys:
-                v.keys.append(rsconf.pkcli.opendkim.gen_key(v.secret_d, d))
+                if named:
+                    v.keys.append(rsconf.pkcli.opendkim.gen_key(v.secret_d, d))
+                else:
+                    raise AssertionError(f"missing keys for domain={d}")
             for k in v.keys:
                 k.dns = rsconf.pkcli.opendkim.parse_txt(k.txt_f)
+        return rv
+
+    def _named_write(self, jc, z):
+        pass
+
+    def _named_compile(self, jc, z):
+        jc = self.j2_ctx
+        z = jc[self.name]
+
+        self.append_root_bash("rsconf_yum_install opendkim")
+        # NamedConf.zones.domain.txt = [[key, txt]]
