@@ -47,12 +47,21 @@ class T(component.T):
         access("400", run_u)
 
     def _install_keys(self, domains):
-        selector =
+        def _find(secret_d):
+            rv = PKDict()
+            for d in domains:
+                rv[d] = PKDict(keys=[], secret_d=secret_d.join(d))
+                for p in pkio.sorted_glob(rv[d].secret_d.join("*.private")):
+                    rv[d].append(
+                        PKDict(
+                            private_f=p, txt_f=p.new(ext="txt"), selector=p.purebasename
+                        )
+                    )
+            return rv
 
-        def _gen_key(path, domain):
-        s = db.secret_path(j2_ctx, SECRET_SUBDIR, visibility="global")
-        for d in domains:
-            p = pkio.sorted_glob(s.join(d, "*.private"))
-            need both private and public
-            if not p:
-                _gen_key(s, d)
+        r = _find(db.secret_path(j2_ctx, SECRET_SUBDIR, visibility="global"))
+        for d, v in r.items():
+            if not v.keys:
+                v.keys.append(rsconf.pkcli.opendkim.gen_key(v.secret_d, d))
+            for k in v.keys:
+                k.dns = rsconf.pkcli.opendkim.parse_txt(k.txt_f)

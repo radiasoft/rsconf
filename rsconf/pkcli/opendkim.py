@@ -6,10 +6,10 @@
 
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
-from rsconf import db
-
-
-PUBLIC_KEY_SUFFIX
+import pykern.pkio
+import datetime
+import re
+import subprocess
 
 
 def gen_key(secret_dir, domain, selector=None):
@@ -19,12 +19,12 @@ def gen_key(secret_dir, domain, selector=None):
         secret_dir (str): directory to write to
         domain (str): domain to generate
     Returns:
-        PKDict: private_key_f, public_key_f, and selector
+        PKDict: private_f, txt_f, and selector
     """
     rv = PKDict(
-        selector=datetime.datetime.utcnow().strftime("%Y%m%d"),
+        selector=selector or datetime.datetime.utcnow().strftime("%Y%m%d"),
     )
-    p = pkio.mkdir_parent(pkio.py_path(secret_dir).join(domain))
+    p = pykern.pkio.mkdir_parent(pykern.pkio.py_path(secret_dir).join(domain))
     subprocess.check_call(
         (
             "opendkim-genkey",
@@ -41,6 +41,27 @@ def gen_key(secret_dir, domain, selector=None):
         shell=False,
     )
     return rv.pkupdate(
-        private_key_f=p.join(f"{rv.selector}.private"),
-        public_key_f=p.join(f"{rv.selector}.txt"),
+        private_f=p.join(f"{rv.selector}.private"),
+        txt_f=p.join(f"{rv.selector}.txt"),
+    )
+
+
+def parse_txt(path):
+    """Parse opendkim txt file
+
+    Args:
+        path (str): txt file
+    Returns:
+        PKDict: subdomain and txt
+    """
+    m = re.search(
+        r'(\S+_domainkey).*\(\s*(".+")\s*\)',
+        pykern.pkio.read_text(path),
+        flags=re.DOTALL,
+    )
+    if not m:
+        pykern.pkcli.command_error("path={} does not contain domainkey", path)
+    return PKDict(
+        subdomain=m.group(1),
+        txt=re.sub(r"\s+", " ", m.group(2), flags=re.DOTALL),
     )
