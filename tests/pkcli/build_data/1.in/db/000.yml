@@ -131,6 +131,8 @@ default:
     num_servers: 16
   nginx:
     worker_processes: 1
+  opendkim:
+    domains: [ example.com, radiasoft.net ]
   petshop:
     aux_perl_rpms: [ special-perl ]
     cookie_tag: PSD
@@ -278,9 +280,12 @@ host:
                 mount_d: /srv/docker
       docker:
         tls_host: v3.radia.run
+      opendkim:
+        named_conf_d: /etc/named
       rsconf_db:
         components:
           - docker
+          - opendkim
           - rsconf
           - docker_registry
         local_dirs:
