@@ -12,6 +12,7 @@ from pykern import pkio
 _CONF_D = pkio.py_path("/etc/postfix")
 _CONF_F = pkio.py_path("/etc/opendkim.conf")
 _KEYS_D = _CONF_D.join("keys")
+_SECRET_SUBDIR = "opendkim"
 
 
 class T(component.T):
@@ -20,10 +21,13 @@ class T(component.T):
         from rsconf.component import network
 
         jc, z = self.j2_ctx_init()
+        self.append_root_bash("rsconf_yum_install opendkim opendkim-tools")
         z.update(
             external_ignore_list_f=_CONF_D.join("ExternalIgnoreList"),
             internal_hosts_f=_CONF_D.join("InternalHosts"),
             key_table_f=_CONF_D.join("KeyTable"),
+            keys_d=_KEYS_D,
+            keys=PKDict(),
             port=8891,
             run_u="opendkim",
             signing_table_f=_CONF_D.join("SigningTable"),
@@ -37,10 +41,18 @@ class T(component.T):
         jc = self.j2_ctx
         z = jc[self.name]
         systemd.unit_prepare(self, jc, watch_files=(_CONF_D, _CONF_F))
-        self.rsconf_edit(
-            _CONF_F,
-            "^{}$".format(x),
-            r"s<^#?\s*RPCNFSDCOUNT.*><{}>".format(x),
-        )
+        self.install_access(mode="400", owner=z.run_u)
+        self._install_keys(z.domains)
         systemd.unit_enable(self, jc)
         access("400", run_u)
+
+    def _install_keys(self, domains):
+        selector =
+
+        def _gen_key(path, domain):
+        s = db.secret_path(j2_ctx, SECRET_SUBDIR, visibility="global")
+        for d in domains:
+            p = pkio.sorted_glob(s.join(d, "*.private"))
+            need both private and public
+            if not p:
+                _gen_key(s, d)
