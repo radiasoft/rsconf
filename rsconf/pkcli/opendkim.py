@@ -24,7 +24,7 @@ def gen_key(secret_dir, domain, selector=None):
     rv = PKDict(
         selector=selector or datetime.datetime.utcnow().strftime("%Y%m%d"),
     )
-    p = pykern.pkio.mkdir_parent(pykern.pkio.py_path(secret_dir).join(domain))
+    p = pykern.pkio.mkdir_parent(pykern.pkio.py_path(secret_dir))
     subprocess.check_call(
         (
             "opendkim-genkey",

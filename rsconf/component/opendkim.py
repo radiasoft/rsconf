@@ -55,7 +55,8 @@ class T(component.T):
             rv = PKDict()
             for d in z.domains:
                 rv[d] = PKDict(rows=[], secret_d=secret_d.join(d))
-                for p in pkio.sorted_glob(rv[d].secret_d.join("*.private")):
+                for p in pkio.sorted_glob(pkdp(rv[d].secret_d.join("*.private"))):
+                    pkdp(d)
                     rv[d].rows.append(
                         PKDict(
                             private_f=p, txt_f=p.new(ext="txt"), selector=p.purebasename
