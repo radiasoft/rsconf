@@ -79,6 +79,11 @@ PasswordAuthentication no
 PermitRootLogin no
 Protocol 2
 X11Forwarding yes
+
+# SSH acces from localhost (ex for sirepo.job_driver.sbatch)
+ListenAddress 127.0.0.1:22
+Match User vagrant Address 127.0.0.1
+    PasswordAuthentication yes
 EOF_INSTALL
 
 echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKe3wWXD3GUVd/5viGVhf6L/ttJJfmksXauPSpC8zWru v9.radia.run

@@ -9,6 +9,7 @@ from pykern import pkio
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from rsconf import component
+from rsconf import db
 from rsconf import systemd
 import re
 
@@ -38,6 +39,7 @@ class T(component.T):
         self.buildt.require_component("network")
         z.run_d = systemd.unit_run_d(jc, self.name)
         z.run_u = jc.rsconf_db.run_u
+        z.local_ip = db.LOCAL_IP
         z.ssh_port = jc.vm_devbox_users.spec[self._user].ssh_port
         z.ssh_guest_host_key_f = "/etc/ssh/host_key"
         z.ssh_guest_identity_pub_f = "/etc/ssh/identity.pub"

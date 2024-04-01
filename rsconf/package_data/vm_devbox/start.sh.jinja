@@ -79,6 +79,11 @@ PasswordAuthentication no
 PermitRootLogin no
 Protocol 2
 X11Forwarding yes
+
+# SSH acces from localhost (ex for sirepo.job_driver.sbatch)
+ListenAddress {{ this.local_ip }}:22
+Match User {{ this.run_u }} Address {{ this.local_ip }}
+    PasswordAuthentication yes
 EOF_INSTALL
 
 echo '{{ this.ssh_identity_pub_key }}' >> '/home/{{ this.run_u }}/.ssh/authorized_keys'
