@@ -91,7 +91,7 @@ echo '{{ this.ssh_identity_pub_key }}' >> '/home/{{ this.run_u }}/.ssh/authorize
 install --mode=400 --owner=root --group=root /dev/stdin "{{ this.ssh_guest_host_key_f }}"<<EOF_INSTALL
 {{ this.ssh_host_key }}
 
-passwd -d root
+passwd -d {{ this.root_u }}
 passwd -d {{ this.run_u }}
 EOF_INSTALL
 

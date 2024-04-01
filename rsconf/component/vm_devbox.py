@@ -39,6 +39,7 @@ class T(rsconf.component.T):
         self.buildt.require_component("network")
         z.run_d = rsconf.systemd.unit_run_d(jc, self.name)
         z.run_u = jc.rsconf_db.run_u
+        z.root_u = jc.rsconf_db.root_u
         z.local_ip = rsconf.db.LOCAL_IP
         z.ssh_port = jc.vm_devbox_users.spec[self._user].ssh_port
         z.ssh_guest_host_key_f = "/etc/ssh/host_key"
