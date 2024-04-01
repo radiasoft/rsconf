@@ -80,7 +80,7 @@ PermitRootLogin no
 Protocol 2
 X11Forwarding yes
 
-# SSH acces from localhost (ex for sirepo.job_driver.sbatch)
+# SSH access from localhost (ex for sirepo.job_driver.sbatch)
 ListenAddress 127.0.0.1:22
 Match User vagrant Address 127.0.0.1
     PasswordAuthentication yes
@@ -98,6 +98,9 @@ AAAEBVP+MksqPH64Pi3Rfb8lieY9ofTRBWZqvKWk2oYjuqsJP8+wv39dw5OYRcC8ZWEmPn
 4yUuX9QFQ0OIL4fzgAAdAAAADHY5LnJhZGlhLnJ1bgE=
 -----END OPENSSH PRIVATE KEY-----
 
+
+passwd -d root
+passwd -d vagrant
 EOF_INSTALL
 
 sshd -t

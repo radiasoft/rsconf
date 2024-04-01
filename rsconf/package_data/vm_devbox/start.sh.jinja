@@ -80,7 +80,7 @@ PermitRootLogin no
 Protocol 2
 X11Forwarding yes
 
-# SSH acces from localhost (ex for sirepo.job_driver.sbatch)
+# SSH access from localhost (ex for sirepo.job_driver.sbatch)
 ListenAddress {{ this.local_ip }}:22
 Match User {{ this.run_u }} Address {{ this.local_ip }}
     PasswordAuthentication yes
@@ -90,6 +90,9 @@ echo '{{ this.ssh_identity_pub_key }}' >> '/home/{{ this.run_u }}/.ssh/authorize
 
 install --mode=400 --owner=root --group=root /dev/stdin "{{ this.ssh_guest_host_key_f }}"<<EOF_INSTALL
 {{ this.ssh_host_key }}
+
+passwd -d root
+passwd -d {{ this.run_u }}
 EOF_INSTALL
 
 sshd -t
