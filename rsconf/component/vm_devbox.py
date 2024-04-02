@@ -8,15 +8,16 @@ from pykern import pkconfig
 from pykern import pkio
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
-from rsconf import component
-from rsconf import systemd
 import re
+import rsconf.component
+import rsconf.db
+import rsconf.systemd
 
 # Allowable pattern enforced by vagrant
 _VM_HOSTNAME_RE = "[a-z0-9][a-z0-9.-]*"
 
 
-class T(component.T):
+class T(rsconf.component.T):
     def internal_build_compile(self):
         def _create_user_instances():
             for u in self.hdb.vm_devbox.users:
@@ -36,8 +37,10 @@ class T(component.T):
             _create_user_instances()
             return
         self.buildt.require_component("network")
-        z.run_d = systemd.unit_run_d(jc, self.name)
+        z.run_d = rsconf.systemd.unit_run_d(jc, self.name)
         z.run_u = jc.rsconf_db.run_u
+        z.root_u = jc.rsconf_db.root_u
+        z.local_ip = rsconf.db.LOCAL_IP
         z.ssh_port = jc.vm_devbox_users.spec[self._user].ssh_port
         z.ssh_guest_host_key_f = "/etc/ssh/host_key"
         z.ssh_guest_identity_pub_f = "/etc/ssh/identity.pub"
@@ -45,7 +48,9 @@ class T(component.T):
         z.stop_f = z.run_d.join("stop")
         z.timeout_start_min = jc[self.module_name].get("timeout_start_min", 15)
         z.vm_hostname = f"{self._user}.{jc[self.module_name].vm_parent_domain}"
-        systemd.unit_prepare(self, self.j2_ctx, watch_files=(z.start_f, z.stop_f))
+        rsconf.systemd.unit_prepare(
+            self, self.j2_ctx, watch_files=(z.start_f, z.stop_f)
+        )
         self._network(jc, z)
         self._ssh(jc, z)
 
