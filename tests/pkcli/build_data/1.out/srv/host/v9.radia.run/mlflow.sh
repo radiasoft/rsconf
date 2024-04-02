@@ -1,0 +1,23 @@
+#!/bin/bash
+mlflow_rsconf_component() {
+rsconf_service_prepare 'mlflow' '/etc/systemd/system/mlflow.service' '/etc/systemd/system/mlflow.service.d' '/srv/mlflow'
+rsconf_install_access '700' 'vagrant' 'vagrant'
+rsconf_install_directory '/srv/mlflow'
+rsconf_install_access '500' 'vagrant' 'vagrant'
+rsconf_install_file '/srv/mlflow/cmd' '883ef20d348691bc33dd992112ed9985'
+rsconf_install_file '/srv/mlflow/env' '01f7ee885371f9fd9a8042017614adf9'
+rsconf_install_file '/srv/mlflow/remove' 'e8253886ccf08377b23c8cc32c4b64fa'
+rsconf_install_file '/srv/mlflow/start' '1ad20b9401cf3eaf5191245a26475dc0'
+rsconf_install_file '/srv/mlflow/stop' 'fe05a526f775d8c47ebca4412dc6b432'
+rsconf_install_access '444' 'root' 'root'
+rsconf_install_file '/etc/systemd/system/mlflow.service' 'b370658c6db4685dd6c38153694b8786'
+rsconf_service_docker_pull 'v3.radia.run:5000/radiasoft/mlops:dev' 'mlflow' 'mlflow' ''
+rsconf_install_access '700' 'vagrant' 'vagrant'
+rsconf_install_directory '/srv/mlflow/db'
+rsconf_install_access '400' 'vagrant' 'vagrant'
+rsconf_install_file '/srv/mlflow/basic-auth.ini' '0e4ac81b2bd4cc356905d3b25f0989b3'
+rsconf_install_access '400' 'root' 'root'
+rsconf_install_file '/etc/nginx/conf.d/mlflow.v9.radia.run.key' '97cef7711a10368c80d469627acf4814'
+rsconf_install_file '/etc/nginx/conf.d/mlflow.v9.radia.run.crt' 'c832c6b9d565a6ceb76b15bde9a24e52'
+rsconf_install_file '/etc/nginx/conf.d/mlflow.v9.radia.run.conf' '69dd677938428b9501c0b3c4c447bba5'
+}

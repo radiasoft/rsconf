@@ -502,6 +502,10 @@ host:
           v9.radia.run: jupyter.v9.radia.run
       jupyterhub_proxy:
         listen_any: True
+      mlflow:
+        docker_image: radiasoft/mlops
+        service_port: 8999
+        vhost: mlflow.v9.radia.run
       network:
         restricted_public_tcp_ports:
           https: [ 192.168.1.0/24, 127.0.0.1 ]
@@ -553,6 +557,7 @@ host:
           - github_bkp
           - jupyterhub
           - jupyterhub_proxy
+          - mlflow
           - nfs_client
           - nfs_server
           - rsaccounting

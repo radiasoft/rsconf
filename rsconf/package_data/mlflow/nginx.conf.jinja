@@ -1,0 +1,11 @@
+server {
+    listen {{ nginx.listen_ip }}:443 ssl;
+    server_name {{ nginx.vhost }};
+    root {{ nginx.default_root }};
+    ssl_certificate {{ nginx.tls_crt }};
+    ssl_certificate_key {{ nginx.tls_key }};
+
+    location / {
+        proxy_pass http://{{nginx.backend_host}}:{{ nginx.backend_port }}/;
+    }
+}

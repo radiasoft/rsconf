@@ -1,0 +1,4 @@
+#!/bin/bash
+export 'MLFLOW_AUTH_CONFIG_PATH=/srv/mlflow/basic-auth.ini'
+export 'PYTHONUNBUFFERED=1'
+export 'TZ=:/etc/localtime'
