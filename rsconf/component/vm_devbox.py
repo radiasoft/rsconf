@@ -51,7 +51,6 @@ class T(rsconf.component.T):
         rsconf.systemd.unit_prepare(
             self, self.j2_ctx, watch_files=(z.start_f, z.stop_f)
         )
-        self._network(jc, z)
         self._ssh(jc, z)
 
     def internal_build_write(self):
@@ -69,9 +68,6 @@ class T(rsconf.component.T):
         self.install_resource(
             "vm_devbox/vm_devbox_unit_service", jc, jc.systemd.service_f
         )
-
-    def _network(self, jc, z):
-        self.buildt.get_component("network").add_public_tcp_ports([str(z.ssh_port)])
 
     def _ssh(self, jc, z):
         z.sshd_config_f = z.run_d.join("sshd_config")
