@@ -67,7 +67,6 @@ install --mode=400 --owner=root --group=root /dev/stdin /etc/ssh/sshd_config<<EO
 
 # Keep vagrant ssh working
 Include /etc/ssh/sshd_config.d/*.conf
-ListenAddress 0.0.0.0:22
 
 HostKey {{ this.ssh_guest_host_key_f }}
 ListenAddress 0.0.0.0:{{ this.ssh_port }}
@@ -80,8 +79,9 @@ PermitRootLogin no
 Protocol 2
 X11Forwarding yes
 
-# SSH access from localhost (ex for sirepo.job_driver.sbatch)
-ListenAddress {{ this.local_ip }}:22
+# For `vagrant ssh` and SSH access from local_ip
+ListenAddress 0.0.0.0:22
+# Allow passwords just for vagrant from local_ip (ex for sirepo.job_driver.sbatch)
 Match User {{ this.run_u }} Address {{ this.local_ip }}
     PasswordAuthentication yes
 EOF_SSH_CONFIG
