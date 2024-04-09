@@ -617,6 +617,7 @@ host:
         timeout_start_min: 5
         users:
           - user-1
+        vagrant_cpus: 8
         vm_parent_domain: radia.run
 
 # testing named needs build-perl-rpms.sh
