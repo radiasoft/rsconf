@@ -13,6 +13,7 @@ import rsconf.component
 import rsconf.db
 import rsconf.systemd
 
+_DEFAULT_VAGRANT_CPUS = 4
 # Allowable pattern enforced by vagrant
 _VM_HOSTNAME_RE = "[a-z0-9][a-z0-9.-]*"
 
@@ -48,6 +49,7 @@ class T(rsconf.component.T):
         z.stop_f = z.run_d.join("stop")
         z.timeout_start_min = jc[self.module_name].get("timeout_start_min", 15)
         z.vm_hostname = f"{self._user}.{jc[self.module_name].vm_parent_domain}"
+        z.vagrant_cpus = jc[self.module_name].get("vagrant_cpus", _DEFAULT_VAGRANT_CPUS)
         rsconf.systemd.unit_prepare(
             self, self.j2_ctx, watch_files=(z.start_f, z.stop_f)
         )
