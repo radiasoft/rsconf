@@ -1,0 +1,18 @@
+Canonicalization relaxed/relaxed
+ExternalIgnoreList {{ opendkim.external_ignore_list_f }}
+InternalHosts {{ opendkim.internal_hosts_f }}
+KeyTable {{ opendkim.key_table_f }}
+LogWhy yes
+MinimumKeyBits 1024
+Mode s
+OversignHeaders Cc,Date,From,Message-Id,Reply-To,Subject,To
+PidFile /run/opendkim/opendkim.pid
+SendReports no
+SignHeaders Cc,Content-Type,Date,From,In-Reply-To,Message-Id,Mime-Version,References,Reply-To,Subject,To
+SigningTable refile:{{ opendkim.signing_table_f }}
+Socket inet:{{ opendkim.port }}@localhost
+SoftwareHeader no
+Syslog yes
+SyslogSuccess yes
+Umask 007
+UserID {{ opendkim.run_u }}:{{ opendkim.run_u }}

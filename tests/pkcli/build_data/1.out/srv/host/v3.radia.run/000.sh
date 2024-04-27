@@ -7,6 +7,7 @@ rsconf_require logrotate
 rsconf_require base_all
 rsconf_require db_bkp
 rsconf_require docker
+rsconf_require opendkim
 rsconf_require nginx
 rsconf_require rsconf
 rsconf_require docker_registry

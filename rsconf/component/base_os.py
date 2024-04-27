@@ -37,6 +37,7 @@ class T(component.T):
     def internal_build_write(self):
         jc = self.j2_ctx
         z = jc.base_os
+        z.has_component_postfix = self.buildt.has_component("postfix")
         self._install_local_dirs(jc.rsconf_db.local_dirs)
         self._install_local_files(jc.rsconf_db.local_files)
         self.install_resource2(

@@ -38,6 +38,9 @@ class T(rsconf.component.T):
         ip = socket.gethostbyname(host)
         return ip, self._net_check(ip)
 
+    def ip_for_this_host(self):
+        return socket.gethostbyname(self.j2_ctx.rsconf_db.host)
+
     def internal_build_compile(self):
         self.buildt.require_component("base_os")
         self.j2_ctx = self.hdb.j2_ctx_copy()

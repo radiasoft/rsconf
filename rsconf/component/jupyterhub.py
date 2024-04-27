@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 """create sirepo configuration
 
 :copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
+
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp, pkdlog
 from pykern import pkjson
@@ -131,8 +131,7 @@ class T(component.T):
     def _network(self, z, jc):
         self._vhost(z, jc)
         self.buildt.require_component("network")
-        nc = self.buildt.get_component("network")
-        z.hub_ip = nc.ip_and_net_for_host(jc.rsconf_db.host)[0]
+        z.hub_ip = self.buildt.get_component("network").ip_for_this_host()
 
     def _rsdockerspawner(self, z):
         from rsconf.component import docker

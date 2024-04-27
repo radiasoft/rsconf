@@ -8,7 +8,7 @@ rsconf_install_access '400' 'root' 'root'
 rsconf_install_file '/etc/postfix/v9.radia.run.key' 'fe22a3a98b83d3cd8d48eb5ccda07d60'
 rsconf_install_file '/etc/postfix/v9.radia.run.crt' 'a6d3bba40727a12f03b1f44727bb98be'
 rsconf_install_access '644' 'root' 'root'
-rsconf_install_file '/etc/postfix/main.cf' '549a8f9df10846e8ecadaa75ba61ac2a'
+rsconf_install_file '/etc/postfix/main.cf' '0597641b2ee962e3cd822156c8ab6d54'
 rsconf_install_file '/etc/postfix/master.cf' '7963eb585d2f004631f7a78748d4dac7'
 rsconf_install_file '/etc/aliases' '505977dfd514ab835c60dacf40535cd1'
 postfix_main

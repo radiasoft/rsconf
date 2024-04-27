@@ -153,7 +153,7 @@ class T(component.T):
 
     def _network(self, jc, z):
         n = self.buildt.get_component("network")
-        z.ip = n.unchecked_public_ip() or n.ip_and_net_for_host(jc.rsconf_db.host)[0]
+        z.ip = n.unchecked_public_ip() or n.ip_for_this_host()
         n.add_public_tcp_ports([str(z.ssh_port)])
 
     def _rsiviz(self, jc, z, path):

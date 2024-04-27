@@ -131,6 +131,8 @@ default:
     num_servers: 16
   nginx:
     worker_processes: 1
+  opendkim:
+    domains: [ example.com, radiasoft.net ]
   petshop:
     aux_perl_rpms: [ special-perl ]
     cookie_tag: PSD
@@ -278,9 +280,12 @@ host:
                 mount_d: /srv/docker
       docker:
         tls_host: v3.radia.run
+      opendkim:
+        named_conf_d: /etc/named
       rsconf_db:
         components:
           - docker
+          - opendkim
           - rsconf
           - docker_registry
         local_dirs:
@@ -535,6 +540,8 @@ host:
         num_servers: 64
         exports:
           /exports/foo: [ 10.10.10.0/24, localhost ]
+      opendkim:
+        smart_host_clients: [ v4.radia.run ]
       postfix:
         postfix_base():
         # if you do not set this, you'll get to test the SLD matching:
@@ -560,6 +567,8 @@ host:
           - mlflow
           - nfs_client
           - nfs_server
+          - opendkim
+          - postfix
           - rsaccounting
           - rsiviz
           - sirepo

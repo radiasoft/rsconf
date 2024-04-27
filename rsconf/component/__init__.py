@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 """Load components
 
 :copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
+
 from pykern import pkcompat
 from pykern import pkconfig
 from pykern import pkinspect
@@ -148,6 +148,7 @@ class T(PKDict):
             ignore_exists=ignore_exists,
             file_src=abs_path,
         )
+        return host_path
 
     def install_access(self, mode=None, owner=None, group=None):
         if not mode is None:
@@ -173,9 +174,11 @@ class T(PKDict):
             int(self._install_access.mode, 8) & 0o700 == 0o700
         ), "{}: directory must be at least 700 mode (u=rwx)"
         self._bash_append(host_path, is_file=False)
+        return host_path
 
     def install_ensure_file_exists(self, host_path):
         self._bash_append(host_path, is_file=True, ensure_exists=True)
+        return host_path
 
     def install_joined_lines(self, lines, host_path):
         """Write lines with newlines to host_path
@@ -293,8 +296,11 @@ class T(PKDict):
     def install_secret_path(
         self, filename, host_path, gen_secret=None, visibility=None
     ):
-        src = self.secret_path_value(filename, gen_secret, visibility)[1]
-        dst = self._bash_append_and_dst(host_path, file_src=src)
+        self._bash_append_and_dst(
+            host_path,
+            file_src=self.secret_path_value(filename, gen_secret, visibility)[1],
+        )
+        return host_path
 
     def install_symlink(self, old_host_path, new_host_path):
         _assert_host_path(new_host_path)
