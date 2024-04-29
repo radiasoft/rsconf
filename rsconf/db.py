@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 """Database
 
 :copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from __future__ import absolute_import, division, print_function
+
 from pykern.pkcollections import PKDict
 from pykern import pkconfig
 from pykern import pkio
@@ -64,16 +63,20 @@ class Host(PKDict):
 class T(PKDict):
     def __init__(self, *args, **kwargs):
         super(T, self).__init__(*args, **kwargs)
-        self.root_d = root_d()
-        self.db_d = self.root_d.join(DB_SUBDIR)
-        self.proprietary_source_d = self.root_d.join(PROPRIETARY_SUBDIR)
-        self.rpm_source_d = self.root_d.join(RPM_SUBDIR)
-        self.tmp_d = self.root_d.join(TMP_SUBDIR)
-        self.secret_d = self.db_d.join(SECRET_SUBDIR)
-        self.srv_d = self.root_d.join(SRV_SUBDIR)
-        self.srv_host_d = self.srv_d.join(HOST_SUBDIR)
+        b = PKDict(root_d=root_d())
+        b.pkupdate(
+            db_d=b.root_d.join(DB_SUBDIR),
+            proprietary_source_d=b.root_d.join(PROPRIETARY_SUBDIR),
+            rpm_source_d=b.root_d.join(RPM_SUBDIR),
+            srv_d=b.root_d.join(SRV_SUBDIR),
+            tmp_d=b.root_d.join(TMP_SUBDIR),
+        ).pkupdate(
+            secret_d=b.db_d.join(SECRET_SUBDIR),
+            srv_host_d=b.srv_d.join(HOST_SUBDIR),
+        )
+        self.pkupdate(copy.deepcopy(b))
         pkio.mkdir_parent(self.tmp_d)
-        self.base = self._init_fconf()
+        self.base = self._init_fconf(PKDict(rsconf_db=b))
 
     def channel_hosts(self):
         res = PKDict()
@@ -83,10 +86,7 @@ class T(PKDict):
             )
         return res
 
-    def host_db(self, *args):
-        return self._host_db_fconf(*args)
-
-    def _host_db_fconf(self, channel, host):
+    def host_db(self, channel, host):
         c = PKDict(
             channel=channel,
             db_d=self.db_d,
@@ -143,7 +143,7 @@ class T(PKDict):
         pkjson.dump_pretty(res, filename=res.rsconf_db.tmp_d.join("db.json"))
         return res
 
-    def _init_fconf(self):
+    def _init_fconf(self, base_vars):
         from pykern import fconf
         import itertools, functools
 
@@ -156,6 +156,7 @@ class T(PKDict):
                 ),
                 [],
             ),
+            base_vars=base_vars,
         ).result
 
 

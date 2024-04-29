@@ -53,10 +53,12 @@ class T(component.T):
         systemd.unit_prepare(self, jc, [_CONF_D])
         z.have_virtual_aliases = bool(z.get("virtual_aliases"))
         z.pksetdefault(
+            aliases=PKDict,
             sasl_users=PKDict,
             sasl_host_users=[],
         )
         z.have_sasl = bool(z.get("sasl_users") or z.get("sasl_host_users"))
+        z.opendkim_port = None
         z.local_host_names = []
         self._setup_mynames(jc, z)
 
@@ -68,7 +70,7 @@ class T(component.T):
         assert (
             bool(z.have_sasl or z.local_host_names or z.have_virtual_aliases)
             == z.have_public_smtp
-        ), "either sasl_users, sasl_host_users, btest, or bop, or need a smarthost"
+        ), "either sasl_users, sasl_host_users, btest, or bop, or need a smart_host"
         z.mydestination = ",".join(
             [z.myhostname, "localhost"] + sorted(z.local_host_names),
         )
@@ -104,6 +106,10 @@ class T(component.T):
             z.have_public_smtp
         ), "if bop is installed, must have_public_smtp (smart_host must not be set)"
         self.extend_local_host_names(mail_domains)
+
+    def setup_opendkim(self, opendkim):
+        z = self.j2_ctx.postfix
+        z.opendkim_port = opendkim.j2_ctx.opendkim.port
 
     def _setup_mynames(self, jc, z):
         jc = self.j2_ctx
