@@ -7,7 +7,7 @@
 import pytest
 
 
-def test_build():
+def test_cases():
     from pykern import pkconfig, pkunit, pkio
     from pykern.pkdebug import pkdlog
     from pykern.pkcollections import PKDict
@@ -22,4 +22,12 @@ update the component.sh file to see what changed in the file to be downloaded.
     )
     for d in pkunit.case_dirs():
         pkio.mkdir_parent(d.join("srv"))
+        raise
+
+
+def test_dev():
+    from pykern import pkunit
+    from rsconf.pkcli import build
+
+    with pkunit.save_chdir_work():
         build.default_command()

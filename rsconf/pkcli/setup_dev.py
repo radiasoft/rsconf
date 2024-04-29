@@ -1,14 +1,14 @@
-# -*- coding: utf-8 -*-
 """Test tree
 
 :copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from __future__ import absolute_import, division, print_function
+
 from pykern import pkcollections
 from pykern import pkio
 from pykern import pkjinja
 from pykern import pkresource
+from pykern import pkunit
 from pykern.pkdebug import pkdp
 from rsconf import db
 import grp
@@ -26,8 +26,12 @@ def default_command():
     import rsconf.pkcli.tls
 
     root_d = db.root_d()
-    if root_d.check():
-        return "{}: already exists".format(root_d)
+    if (
+        root_d.check()
+        and not pkunit.is_test_run()
+        and db.cfg.root_d != db.UNIT_TEST_ROOT_D
+    ):
+        return f"{root_d}: already exists"
     srv = pkio.mkdir_parent(root_d.join(db.SRV_SUBDIR))
 
     def _sym(old, new_base=None):

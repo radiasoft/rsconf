@@ -43,7 +43,7 @@ LEVELS = ("default", "channel", "host")
 _BASE62_CHARS = string.ascii_lowercase + string.digits + string.ascii_uppercase
 _HEX_CHARS = "0123456789abcdef"
 _IGNORE_RE = re.compile(r"^(?:\.#|#)|~$")
-_UNIT_TEST_ROOT_D = "UNIT TEST"
+UNIT_TEST_ROOT_D = "UNIT TEST"
 
 
 class Host(PKDict):
@@ -165,7 +165,7 @@ def root_d():
     Returns:
         py.path: directory
     """
-    if cfg.root_d == _UNIT_TEST_ROOT_D:
+    if cfg.root_d == UNIT_TEST_ROOT_D:
         return pkio.py_path()
     return cfg.root_d
 
@@ -305,7 +305,7 @@ def _cfg_root(value):
     else:
         assert pkconfig.in_dev_mode(), "must be configured except in DEV"
         if pkunit.is_test_run():
-            return _UNIT_TEST_ROOT_D
+            return UNIT_TEST_ROOT_D
         fn = pkio.py_path(sys.modules[pkinspect.root_package(_cfg_root)].__file__)
         root = pkio.py_path(pkio.py_path(fn.dirname).dirname)
         # Check to see if we are in our ~/src/radiasoft/<pkg> dir. This is a hack,
