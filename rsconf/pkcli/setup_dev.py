@@ -128,7 +128,7 @@ def _add_host(j2_ctx, srv, host):
     from rsconf.component import rsconf
 
     def _netrc():
-        for l in rsconf.host_init(j2_ctx, host).split("(?<=\n)"):
+        for l in re.compile("(?<=\n)").split(rsconf.host_init(j2_ctx, host)):
             if l.startswith("machine"):
                 return l
         raise AssertionError("format of host_init changed no machine line found")

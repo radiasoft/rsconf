@@ -1,6 +1,6 @@
 """create dkim configuration for named and/or opendkim
 
-:copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
+:copyright: Copyright (c) 2024 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 
