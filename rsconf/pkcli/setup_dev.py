@@ -26,11 +26,7 @@ def default_command():
     import rsconf.pkcli.tls
 
     root_d = db.root_d()
-    if (
-        root_d.check()
-        and not pkunit.is_test_run()
-        and db.cfg.root_d != db.UNIT_TEST_ROOT_D
-    ):
+    if root_d.check():
         return f"{root_d}: already exists"
     srv = pkio.mkdir_parent(root_d.join(db.SRV_SUBDIR))
 
