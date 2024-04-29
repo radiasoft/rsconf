@@ -152,10 +152,12 @@ class T(component.T):
         return z.named_only
 
     def _trusted_hosts(self, jc, z):
+        from rsconf import db
+
         def _iter():
             n = self.buildt.get_component("network")
             for h in [
-                "127.0.0.1",
+                db.LOCAL_IP,
                 "localhost",
                 n.ip_for_this_host(),
                 n.unchecked_public_ip(),
