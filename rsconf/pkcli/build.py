@@ -66,10 +66,12 @@ class T(PKDict):
             raise
 
     def get_component(self, name):
-        for c in self._write_queue:
-            if c.name == name:
-                return c
+        if c := self._get_component(name):
+            return c
         raise AssertionError("component not in write_queue: {}".format(name))
+
+    def has_component(self, name):
+        return bool(self._get_component(name))
 
     def require_component(self, *components):
         from rsconf import component
@@ -97,11 +99,36 @@ class T(PKDict):
                 pkdlog("{}: build_write failed:", c.name)
                 raise
 
+    def _get_component(self, name):
+        for c in self._write_queue:
+            if c.name == name:
+                return c
+        return None
+
 
 def default_command():
     """Build the distribution tree"""
     from rsconf import db
     from pykern import pkunit
+
+    def _instantiate():
+        rv = []
+        for c, hosts in dbt.channel_hosts().items():
+            p = None
+            for h in hosts:
+                t = T(dbt, c, h)
+                if "rsconf" in t.hdb.rsconf_db.components:
+                    if p != None:
+                        raise AssertionError(f"duplicate rsconf_host={h} first={p}")
+                    p = t
+                else:
+                    rv.append(t)
+        if not p:
+            raise AssertionError(
+                f"rsconf_host not found; one host must have 'rsconf' as component"
+            )
+        rv.insert(0, p)
+        return rv
 
     if pkconfig.in_dev_mode():
         from rsconf.pkcli import setup_dev
@@ -121,8 +148,6 @@ def default_command():
         new_d = tmp_d + "-new"
         pkio.unchecked_remove(new_d, old_d)
         pkio.mkdir_parent(new_d)
-        # TODO(robnagler) make this global pkconfig. Doesn't make sense to
-        # be configured in rsconf_db, because not host-based.
         for c, hosts in dbt.channel_hosts().items():
             for h in hosts:
                 t = T(dbt, c, h)

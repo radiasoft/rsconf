@@ -105,7 +105,7 @@ class T(component.T):
 
     def _prepare_hosts(self, jc, z):
         nc = self.buildt.get_component("network")
-        z.ip, _ = nc.ip_and_net_for_host(jc.rsconf_db.host)
+        z.ip = nc.ip_for_this_host()
         if not z.is_first:
             return
         res = []

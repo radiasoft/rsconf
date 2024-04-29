@@ -132,6 +132,8 @@ default:
     num_servers: 16
   nginx:
     worker_processes: 1
+  opendkim:
+    domains: [ {{ host }} ]
   petshop:
     cookie_tag: PSD
     filter_out_of_office: true
@@ -162,12 +164,6 @@ default:
       - facade: m-petshop
       - facade: other
       - facade: requiresecure
-  postfix:
-    aliases:
-      blackhole: /dev/null
-    virtual_aliases:
-      wp1.{{ host }}:
-        vagrant: vagrant
   postgresql:
     # https://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server#effective_cache_size
     effective_cache_size: 244MB
@@ -261,9 +257,14 @@ host:
     {{ master }}:
       docker:
         tls_host: {{ master }}
+      opendkim:
+        named_conf_d: ${rsconf_db.db_d}/named
+      postfix:
+        smart_host: {{ host }}
       rsconf_db:
         components:
           - docker
+          - opendkim
           - rsconf
     {{ host }}:
       base_users:
@@ -345,7 +346,7 @@ host:
           # - btest
           # - github_bkp
           # - dovecot
-        components: [ postfix, nfs_server, mpi_worker, sirepo ]
+        components: [ postfix, opendkim, nfs_server, mpi_worker, sirepo ]
         local_dirs:
           "/srv/home":
             mode: 0o700
@@ -394,8 +395,6 @@ host:
         mounts:
           {{ host }}:
             - /srv/home
-      postfix:
-        smart_host: {{ host }}
       rsconf_db:
         components: [ mpi_worker ]
     {{ worker6_host }}:
@@ -486,9 +485,14 @@ host:
         exports:
           /exports/foo: [ 10.10.10.0/24, localhost ]
       postfix:
+        aliases:
+          blackhole: /dev/null
         # if you do not set this, you'll get to test the SLD matching:
         # fnl1i.bivio.biz: reverse dns for 216.17.132.33 does not match SLD of v5.radia.run
-        myhostname: '{{ host }}'
+        myhostname: '{{ all_host }}'
+        virtual_aliases:
+          wp1.{{ host }}:
+            vagrant: vagrant
       raydata_scan_monitor:
         docker_image: radiasoft/sirepo
       rsconf_db:

@@ -1,0 +1,39 @@
+[build-system]
+requires = ["chronver", "setuptools>=66"]
+build-backend = "setuptools.build_meta"
+
+[project]
+authors = [
+    { name = "RadiaSoft LLC", email = "pip@radiasoft.org" },
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: Apache Software License",
+    "Natural Language :: English",
+    "Programming Language :: Python",
+    "Topic :: System :: Systems Administration",
+]
+dependencies = [
+    "bcrypt>=3.1",
+    "ipaddress",
+    "pykern"
+]
+description = "RadiaSoft host configuration management"
+dynamic = ["version"]
+name = "rsconf"
+readme = "README.md"
+
+[project.scripts]
+rsconf = "rsconf.rsconf_console:main"
+
+[project.urls]
+Homepage = "http://git.radiasoft.org/rsconf"
+
+[tool.setuptools.package-data]
+rsconf = ["package_data/**"]
+
+[tool.setuptools.packages.find]
+include = ["rsconf*"]

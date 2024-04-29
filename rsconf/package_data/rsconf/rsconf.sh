@@ -51,25 +51,37 @@ rsconf_clone_repo() {
 }
 
 rsconf_edit() {
+    # Update $file with $edit_perl if $need_egrep is not found
+    #
+    # $need_egrep is an egrep regex. If found, then $rsconf_edit_no_change_res
+    # is returned (default: 1). If $need_egrep, begins with a
+    # bang ("!") then the opposite test happens: if $need_egrep is found,
+    # then the edit *does* happen.
+    #
+    # $edit_perl is a perl expression passed to `perl -pi -e`. If $edit_perl
+    # does not modify the file in a way that satisfies $need_egrep, then
+    # an error is raised.
+    #
+    # rsconf_service_file_changed is called in the event of changes.
     declare file=$1
-    declare egrep=$2
-    declare perl=$3
+    declare need_egrep=$2
+    declare edit_perl=$3
     if [[ ! -e $file ]]; then
         install_err "$file: does not exist"
     fi
     declare need=
-    if [[ $egrep =~ ^![[:space:]]*(.+) ]]; then
+    if [[ $need_egrep =~ ^![[:space:]]*(.+) ]]; then
         need=1
         egrep=${BASH_REMATCH[1]}
     fi
-    declare g=$( egrep -s -q -- "$egrep" "$file" && echo 1 || true )
+    declare g=$( egrep -s -q -- "$need_egrep" "$file" && echo 1 || true )
     if [[ $g != $need ]]; then
         return ${rsconf_edit_no_change_res:-1}
     fi
-    perl -pi -e "$perl" "$file"
-    g=$( egrep -s -q -- "$egrep" "$file" && echo 1 || true )
+    perl -pi -e "$edit_perl" "$file"
+    g=$( egrep -s -q -- "$need_egrep" "$file" && echo 1 || true )
     if [[ $g == $need ]]; then
-        install_err "$perl: failed to modify: $file"
+        install_err "$edit_perl: failed to modify: $file"
     fi
     rsconf_service_file_changed "$file"
     return 0

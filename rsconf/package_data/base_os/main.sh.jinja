@@ -83,6 +83,7 @@ base_os_main() {
     base_os_journal_persist
     rsconf_edit_no_change_res=0 rsconf_append /etc/screenrc 'escape ^^^^'
     base_os_logical_volumes
+    base_os_postfix
     if [[ $reboot ]]; then
         rsconf_reboot
     fi
@@ -114,16 +115,28 @@ base_os_ipv4() {
         sysctl -w net.ipv6.conf.all.disable_ipv6=1 net.ipv6.conf.default.disable_ipv6=1
         dracut -f
     fi
-    base_os_postfix
     base_os_pwquality
     base_os_rpcbind_patch
     return $no_reboot
 }
 
 base_os_postfix() {
-    if type postconf >& /dev/null; then
-        postconf -e inet_protocols=ipv4
+    if ! type postconf >& /dev/null; then
+        return
     fi
+    if [[ ! $(postconf inet_protocols) =~ inet_protocols.?=.?ipv4 ]]; then
+        postconf -e inet_protocols=ipv4
+        rsconf_service_restart_at_end postfix
+    fi
+    {% if base_os.has_component_postfix %}
+    if rsconf_edit /etc/postfix/master.cf '^smtp\s.*inet.*smtpd' 's/^#(?=smtp\s.*inet.*smtpd)//'; then
+        rsconf_service_restart_at_end postfix
+    fi
+    {% else %}
+    if rsconf_edit /etc/postfix/master.cf '^#smtp\s.*inet.*smtpd' 's/^(?=smtp\s.*inet.*smtpd)/#/'; then
+        rsconf_service_restart_at_end postfix
+    fi
+    {% endif %}
 }
 
 base_os_pwquality() {
