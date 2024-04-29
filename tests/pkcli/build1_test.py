@@ -23,11 +23,3 @@ If you get an error caused by the hash in a component.sh file,
 update the component.sh file to see what changed in the file to be downloaded."""
         )
         raise
-
-
-def test_dev():
-    from pykern import pkunit
-    from rsconf.pkcli import build
-
-    with pkunit.save_chdir_work():
-        build.default_command()
