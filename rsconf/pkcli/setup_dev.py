@@ -1,15 +1,16 @@
-# -*- coding: utf-8 -*-
 """Test tree
 
 :copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from __future__ import absolute_import, division, print_function
-from pykern import pkcollections
+
+from pykern import pkconfig
 from pykern import pkio
 from pykern import pkjinja
 from pykern import pkresource
-from pykern.pkdebug import pkdp
+from pykern import pkunit
+from pykern.pkcollections import PKDict
+from pykern.pkdebug import pkdc, pkdlog, pkdp
 from rsconf import db
 import grp
 import os
@@ -19,6 +20,8 @@ import subprocess
 
 NGINX_SUBDIR = "nginx"
 
+_cfg = None
+
 
 def default_command():
     import rsconf.component
@@ -26,8 +29,8 @@ def default_command():
     import rsconf.pkcli.tls
 
     root_d = db.root_d()
-    if root_d.check():
-        return "{}: already exists".format(root_d)
+    if not _cfg.unit_test and root_d.check():
+        return f"{root_d}: already exists"
     srv = pkio.mkdir_parent(root_d.join(db.SRV_SUBDIR))
 
     def _sym(old, new_base=None):
@@ -42,13 +45,13 @@ def default_command():
     db_d = pkio.mkdir_parent(root_d.join(db.DB_SUBDIR))
     secret_d = pkio.mkdir_parent(db_d.join(db.SECRET_SUBDIR))
     nginx_d = pkio.mkdir_parent(root_d.join(NGINX_SUBDIR))
-    boot_hdb = pkcollections.Dict(
-        rsconf_db=pkcollections.Dict(
-            secret_d=secret_d,
+    boot_hdb = PKDict(
+        rsconf_db=PKDict(
             channel="dev",
+            secret_d=secret_d,
         )
     )
-    j2_ctx = pkcollections.Dict(
+    j2_ctx = PKDict(
         all_host="v9.radia.run",
         group=grp.getgrgid(os.getgid())[0],
         host="v4.radia.run",
@@ -57,6 +60,7 @@ def default_command():
         root_d=root_d,
         srv_d=str(srv),
         uid=os.getuid(),
+        unit_test=_cfg.unit_test,
         user=pwd.getpwuid(os.getuid())[0],
         worker5_host="v5.radia.run",
         worker6_host="v6.radia.run",
@@ -65,7 +69,7 @@ def default_command():
     # bootstrap
     j2_ctx.update(boot_hdb)
     j2_ctx.rsconf_db.http_host = "http://{}:{}".format(j2_ctx.master, j2_ctx.port)
-    j2_ctx.bkp = pkcollections.Dict(primary=j2_ctx.host)
+    j2_ctx.bkp = PKDict(primary=j2_ctx.host)
     j2_ctx.passwd_f = rsconf.component.rsconf.passwd_secret_f(j2_ctx)
     for h in hosts:
         _add_host(j2_ctx, srv, h)
@@ -85,9 +89,8 @@ def default_command():
             pkjinja.render_file(f, j2_ctx, output=dst, strict_undefined=True)
     n = []
     for e in "rpm", "proprietary":
-        d = pkio.py_path(root_d.dirname).join(e)
+        d = root_d.join(e)
         pkio.mkdir_parent(d)
-        root_d.join(e).mksymlinkto(d, absolute=False)
         n.append(str(d))
     subprocess.check_call(
         ["bash", str(secret_d.join("setup_dev.sh")), *n],
@@ -100,7 +103,9 @@ def default_command():
         # pull private images from all hosts. Only used in dev, because
         # private registry doesn't protect against pushes from these hosts.
         if h != j2_ctx.master:
-            subprocess.check_call(["rsconf", "host", "init_docker_registry", h])
+            from rsconf.pkcli import host
+
+            host.init_docker_registry(h)
     tls_d = secret_d.join(rsconf.component.TLS_SECRET_SUBDIR)
     tls_d.ensure(dir=True)
     for h in (
@@ -136,3 +141,8 @@ def _add_host(j2_ctx, srv, host):
     pkio.write_text(srv.join(host + "-netrc"), _netrc())
     if host == j2_ctx.master:
         docker_registry.host_init(j2_ctx, host)
+
+
+_cfg = pkconfig.init(
+    unit_test=(False, bool, "used by tests that are testing setup_dev"),
+)

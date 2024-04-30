@@ -147,17 +147,17 @@ class T(PKDict):
         from pykern import fconf
         import itertools, functools
 
-        return fconf.Parser(
-            functools.reduce(
-                lambda r, i: r + pkio.sorted_glob(i[0].join(i[1])),
-                itertools.product(
-                    (self.db_d, self.secret_d),
-                    ("*.py", ZERO_YML),
-                ),
-                [],
+        f = functools.reduce(
+            lambda r, i: r + pkio.sorted_glob(i[0].join(i[1])),
+            itertools.product(
+                (self.db_d, self.secret_d),
+                ("*.py", ZERO_YML),
             ),
-            base_vars=base_vars,
-        ).result
+            [],
+        )
+        if not f:
+            raise ValueError(f"no files in db_d={self.db_d}")
+        return fconf.Parser(files=f, base_vars=base_vars).result
 
 
 def root_d():
@@ -311,7 +311,7 @@ def _cfg_root(value):
         root = pkio.py_path(pkio.py_path(fn.dirname).dirname)
         # Check to see if we are in our ~/src/radiasoft/<pkg> dir. This is a hack,
         # but should be reliable.
-        if not root.join("setup.py").check():
+        if not root.join("pyproject.toml").check():
             # Don't run from an install directory
             root = pkio.py_path(".")
         value = root.join(DEFAULT_ROOT_SUBDIR)
