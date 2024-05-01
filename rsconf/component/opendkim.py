@@ -165,7 +165,6 @@ class T(component.T):
             return False
         z.pksetdefault(named_only=True)
         self._read_keys(jc, z)
-        self.append_root_bash("rsconf_yum_install opendkim-tools")
         return z.named_only
 
     def _trusted_hosts(self, jc, z):
