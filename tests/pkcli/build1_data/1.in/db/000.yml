@@ -132,7 +132,7 @@ default:
   nginx:
     worker_processes: 1
   opendkim:
-    domains: [ example.com, radiasoft.net ]
+    domains: [ example.com, radiasoft.net, mail.v4.radia.run, v4.radia.run ]
   petshop:
     aux_perl_rpms: [ special-perl ]
     cookie_tag: PSD
