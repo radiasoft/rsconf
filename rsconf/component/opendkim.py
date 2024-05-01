@@ -7,6 +7,7 @@
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
 from pykern import pkio
+from pykern import pkjson
 from rsconf import component
 
 _CONF_D = pkio.py_path("/etc/opendkim")
@@ -127,19 +128,35 @@ class T(component.T):
 
     def _named_write(self, jc, z):
         def _content():
-            rv = ""
-            for d, v in self._iter_keys(z):
-                rv += f"    '{d}' => [\n"
-                for k in self._iter_key_rows(v):
-                    rv += f"        ['{k.dns.subdomain}' => '{k.dns.txt}'],\n"
-                rv += "    ],\n"
+            return PKDict(
+                {d: _content_rows(s) for d, s in _normalize_domains().items()}
+            )
+
+        def _content_rows(subdomains):
+            rv = PKDict()
+            for s in subdomains:
+                for r in self._iter_key_rows(s.rows):
+                    rv[f"{r.dns.subdomain}{s.prefix}"] = r.dns.txt
             return rv
+
+        def _normalize_domains():
+            rv = PKDict()
+            for d, v in self._iter_keys(z):
+                x = _split_domain(d)
+                rv.setdefault(x.sld, []).append(x.pkupdate(rows=v))
+            return rv
+
+        def _split_domain(full_name):
+            x = full_name.split(".")
+            return PKDict(
+                sld=".".join(x[-2:]),
+                prefix=".".join([""] + x[0:-2]) if len(x) > 2 else "",
+            )
 
         if not z.named_conf_d:
             return False
-        z.named_content = _content()
         self.install_access(mode="400", owner=jc.rsconf_db.root_u)
-        self.install_resource2("opendkim-named.pl", z.named_conf_d)
+        self.install_json(_content(), z.named_conf_d.join("opendkim-named.json"))
         return z.named_only
 
     def _named_compile(self, jc, z):
