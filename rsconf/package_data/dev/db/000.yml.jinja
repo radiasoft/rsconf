@@ -346,7 +346,7 @@ host:
           # - btest
           # - github_bkp
           # - dovecot
-        components: [ postfix, opendkim, nfs_server, mpi_worker, sirepo ]
+        components: [ postfix, nfs_server, mpi_worker, sirepo ]
         local_dirs:
           "/srv/home":
             mode: 0o700
@@ -484,6 +484,8 @@ host:
         num_servers: 64
         exports:
           /exports/foo: [ 10.10.10.0/24, localhost ]
+      opendkim:
+        smtp_clients: [ {{ master }} ]
       postfix:
         aliases:
           blackhole: /dev/null
@@ -512,6 +514,7 @@ host:
           - jupyterhub
           - jupyterhub_proxy
           - github_bkp
+          - opendkim
       sirepo:
         listen_any: True
         auth:

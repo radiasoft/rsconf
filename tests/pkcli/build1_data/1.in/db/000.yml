@@ -541,7 +541,7 @@ host:
         exports:
           /exports/foo: [ 10.10.10.0/24, localhost ]
       opendkim:
-        smart_host_clients: [ v4.radia.run ]
+        smtp_clients: [ v4.radia.run ]
       postfix:
         postfix_base():
         # if you do not set this, you'll get to test the SLD matching:

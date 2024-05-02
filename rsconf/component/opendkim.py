@@ -22,7 +22,7 @@ class T(component.T):
             return
         self.buildt.require_component("postfix")
         self.append_root_bash("rsconf_yum_install opendkim")
-        z.pksetdefault(port=8891, smart_host_clients=[])
+        z.pksetdefault(port=8891, smtp_clients=[])
         z.update(
             external_ignore_list_f=_CONF_D.join("ExternalIgnoreList"),
             internal_hosts_f=_CONF_D.join("InternalHosts"),
@@ -169,16 +169,21 @@ class T(component.T):
 
     def _trusted_hosts(self, jc, z):
         from rsconf import db
+        import socket
+
+        def _ip(name_or_ip):
+            if any(c.isalpha() for c in name_or_ip):
+                return socket.gethostbyname(name_or_ip)
+            return name_or_ip
 
         def _iter():
             n = self.buildt.get_component("network")
             for h in [
-                db.LOCAL_IP,
-                "localhost",
                 n.ip_for_this_host(),
                 n.unchecked_public_ip(),
-            ] + z.smart_host_clients:
-                if h is not None:
-                    yield h
+            ] + z.smtp_clients:
+                if h is not None and (h := _ip(h)):
+                    if h != db.LOCAL_IP:
+                        yield h
 
-        z._trusted_hosts = list(_iter())
+        z._trusted_hosts = ["localhost", db.LOCAL_IP] + sorted(set(_iter()))
