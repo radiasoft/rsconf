@@ -1,4 +1,4 @@
-"""create dkim configuration for named and/or opendkim
+"""create configuration for opendkim
 
 :copyright: Copyright (c) 2024 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -18,8 +18,6 @@ _SECRET_SUBDIR = "opendkim"
 class T(component.T):
     def internal_build_compile(self):
         jc, z = self.j2_ctx_init()
-        if self._named_compile(jc, z):
-            return
         self.buildt.require_component("postfix")
         self.append_root_bash("rsconf_yum_install opendkim")
         z.pksetdefault(port=8891, smtp_clients=[])
@@ -41,8 +39,6 @@ class T(component.T):
 
         jc = self.j2_ctx
         z = jc[self.name]
-        if self._named_write(jc, z):
-            return
         systemd.unit_prepare(self, jc, watch_files=(_CONF_D, _CONF_F))
         self._install_conf(jc, z, self._install_keys(jc, z))
         systemd.unit_enable(self, jc)
@@ -96,7 +92,7 @@ class T(component.T):
             yield d, z._keys[d]
 
     def _iter_key_rows(self, key):
-        for k in sorted(key.rows, key=lambda x: x.dns.subdomain):
+        for k in sorted(key.rows, key=lambda x: x.subdomain):
             yield k
 
     def _read_keys(self, jc, z):
@@ -120,52 +116,9 @@ class T(component.T):
         z._keys = _find(db.secret_path(jc, _SECRET_SUBDIR, visibility="global"))
         for d, v in z._keys.items():
             if not v.rows:
-                if not z.named_conf_d:
-                    raise AssertionError(f"missing keys for domain={d}")
-                v.rows.append(opendkim.gen_key(v.secret_d, d))
+                raise AssertionError(f"missing keys for domain={d}")
             for k in v.rows:
-                k.dns = opendkim.parse_txt(k.txt_f)
-
-    def _named_write(self, jc, z):
-        def _content():
-            return PKDict(
-                {d: _content_rows(s) for d, s in _normalize_domains().items()}
-            )
-
-        def _content_rows(subdomains):
-            rv = PKDict()
-            for s in subdomains:
-                for r in self._iter_key_rows(s.rows):
-                    rv[f"{r.dns.subdomain}{s.prefix}"] = r.dns.txt
-            return rv
-
-        def _normalize_domains():
-            rv = PKDict()
-            for d, v in self._iter_keys(z):
-                x = _split_domain(d)
-                rv.setdefault(x.sld, []).append(x.pkupdate(rows=v))
-            return rv
-
-        def _split_domain(full_name):
-            x = full_name.split(".")
-            return PKDict(
-                sld=".".join(x[-2:]),
-                prefix=".".join([""] + x[0:-2]) if len(x) > 2 else "",
-            )
-
-        if not z.named_conf_d:
-            return False
-        self.install_access(mode="400", owner=jc.rsconf_db.root_u)
-        self.install_json(_content(), z.named_conf_d.join("opendkim-named.json"))
-        return z.named_only
-
-    def _named_compile(self, jc, z):
-        z.pksetdefault(named_conf_d=None)
-        if not z.named_conf_d:
-            return False
-        z.pksetdefault(named_only=True)
-        self._read_keys(jc, z)
-        return z.named_only
+                k.subdomain = opendkim.public_key_info(k.txt_f)
 
     def _trusted_hosts(self, jc, z):
         from rsconf import db
