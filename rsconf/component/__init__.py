@@ -191,6 +191,17 @@ class T(PKDict):
         p.write("".join([x + "\n" for x in lines]))
         self.install_abspath(p, host_path)
 
+    def install_json(self, obj, host_path, **dump_pretty_kwargs):
+        """Write json file
+
+        Args:
+            obj (object): to be converted to json
+            host_path (py.path): where to install
+        """
+        p = self.tmp_path()
+        pkjson.dump_pretty(obj, filename=p, **dump_pretty_kwargs)
+        self.install_abspath(p, host_path)
+
     def install_perl_rpm(self, j2_ctx, rpm_base, channel=None):
         src = self.rpm_file(j2_ctx, rpm_base, channel)
         r = src.basename

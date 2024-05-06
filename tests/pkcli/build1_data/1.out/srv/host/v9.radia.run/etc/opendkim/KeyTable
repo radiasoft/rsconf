@@ -1,0 +1,4 @@
+20240328._domainkey.example.com example.com:20240328:/etc/opendkim/keys/example.com/20240328.private
+20240429._domainkey.mail.v4.radia.run mail.v4.radia.run:20240429:/etc/opendkim/keys/mail.v4.radia.run/20240429.private
+20240328._domainkey.radiasoft.net radiasoft.net:20240328:/etc/opendkim/keys/radiasoft.net/20240328.private
+20240429._domainkey.v4.radia.run v4.radia.run:20240429:/etc/opendkim/keys/v4.radia.run/20240429.private

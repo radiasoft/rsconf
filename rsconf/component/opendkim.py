@@ -1,4 +1,4 @@
-"""create dkim configuration for named and/or opendkim
+"""create configuration for opendkim
 
 :copyright: Copyright (c) 2024 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -7,6 +7,7 @@
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
 from pykern import pkio
+from pykern import pkjson
 from rsconf import component
 
 _CONF_D = pkio.py_path("/etc/opendkim")
@@ -17,11 +18,9 @@ _SECRET_SUBDIR = "opendkim"
 class T(component.T):
     def internal_build_compile(self):
         jc, z = self.j2_ctx_init()
-        if self._named_compile(jc, z):
-            return
         self.buildt.require_component("postfix")
         self.append_root_bash("rsconf_yum_install opendkim")
-        z.pksetdefault(port=8891, smart_host_clients=[])
+        z.pksetdefault(port=8891, smtp_clients=[])
         z.update(
             external_ignore_list_f=_CONF_D.join("ExternalIgnoreList"),
             internal_hosts_f=_CONF_D.join("InternalHosts"),
@@ -40,8 +39,6 @@ class T(component.T):
 
         jc = self.j2_ctx
         z = jc[self.name]
-        if self._named_write(jc, z):
-            return
         systemd.unit_prepare(self, jc, watch_files=(_CONF_D, _CONF_F))
         self._install_conf(jc, z, self._install_keys(jc, z))
         systemd.unit_enable(self, jc)
@@ -95,7 +92,7 @@ class T(component.T):
             yield d, z._keys[d]
 
     def _iter_key_rows(self, key):
-        for k in sorted(key.rows, key=lambda x: x.dns.subdomain):
+        for k in sorted(key.rows, key=lambda x: x.subdomain):
             yield k
 
     def _read_keys(self, jc, z):
@@ -119,50 +116,27 @@ class T(component.T):
         z._keys = _find(db.secret_path(jc, _SECRET_SUBDIR, visibility="global"))
         for d, v in z._keys.items():
             if not v.rows:
-                if not z.named_conf_d:
-                    raise AssertionError(f"missing keys for domain={d}")
-                v.rows.append(opendkim.gen_key(v.secret_d, d))
+                raise AssertionError(f"missing keys for domain={d}")
             for k in v.rows:
-                k.dns = opendkim.parse_txt(k.txt_f)
-
-    def _named_write(self, jc, z):
-        def _content():
-            rv = ""
-            for d, v in self._iter_keys(z):
-                rv += f"    '{d}' => [\n"
-                for k in self._iter_key_rows(v):
-                    rv += f"        ['{k.dns.subdomain}' => '{k.dns.txt}'],\n"
-                rv += "    ],\n"
-            return rv
-
-        if not z.named_conf_d:
-            return False
-        z.named_content = _content()
-        self.install_access(mode="400", owner=jc.rsconf_db.root_u)
-        self.install_resource2("opendkim-named.pl", z.named_conf_d)
-        return z.named_only
-
-    def _named_compile(self, jc, z):
-        z.pksetdefault(named_conf_d=None)
-        if not z.named_conf_d:
-            return False
-        z.pksetdefault(named_only=True)
-        self._read_keys(jc, z)
-        self.append_root_bash("rsconf_yum_install opendkim-tools")
-        return z.named_only
+                k.subdomain = opendkim.public_key_info(k.txt_f)
 
     def _trusted_hosts(self, jc, z):
         from rsconf import db
+        import socket
+
+        def _ip(name_or_ip):
+            if any(c.isalpha() for c in name_or_ip):
+                return socket.gethostbyname(name_or_ip)
+            return name_or_ip
 
         def _iter():
             n = self.buildt.get_component("network")
             for h in [
-                db.LOCAL_IP,
-                "localhost",
                 n.ip_for_this_host(),
                 n.unchecked_public_ip(),
-            ] + z.smart_host_clients:
-                if h is not None:
-                    yield h
+            ] + z.smtp_clients:
+                if h is not None and (h := _ip(h)):
+                    if h != db.LOCAL_IP:
+                        yield h
 
-        z._trusted_hosts = list(_iter())
+        z._trusted_hosts = ["localhost", db.LOCAL_IP] + sorted(set(_iter()))
