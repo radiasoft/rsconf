@@ -88,10 +88,11 @@ def default_command():
         else:
             pkjinja.render_file(f, j2_ctx, output=dst, strict_undefined=True)
     n = []
-    for e in "rpm", "proprietary":
+    for e in "rpm", "proprietary", "etc":
         d = root_d.join(e)
         pkio.mkdir_parent(d)
         n.append(str(d))
+    n.append(str(secret_d))
     subprocess.check_call(
         ["bash", str(secret_d.join("setup_dev.sh")), *n],
     )

@@ -280,12 +280,9 @@ host:
                 mount_d: /srv/docker
       docker:
         tls_host: v3.radia.run
-      opendkim:
-        named_conf_d: /etc/named
       rsconf_db:
         components:
           - docker
-          - opendkim
           - rsconf
           - docker_registry
         local_dirs:
