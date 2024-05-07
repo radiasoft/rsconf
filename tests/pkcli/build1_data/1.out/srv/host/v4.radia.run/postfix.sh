@@ -13,7 +13,7 @@ rsconf_install_access '400' 'root' 'root'
 rsconf_install_file '/etc/postfix/star.v4.radia.run.key' '031805b0a7c2e0fd1330b0613f385ede'
 rsconf_install_file '/etc/postfix/star.v4.radia.run.crt' '19cdea6247d259c6ffb2b36726ea297c'
 rsconf_install_access '644' 'root' 'root'
-rsconf_install_file '/etc/postfix/main.cf' 'f7ae38f241e0f1cd657387434f317ece'
+rsconf_install_file '/etc/postfix/main.cf' 'd1bb3ec199724d930dbcc617f799ebea'
 rsconf_install_file '/etc/postfix/master.cf' '0a14355ea1a1ae57497775949f308c1b'
 rsconf_install_file '/etc/aliases' '014c8aa0c7b0a320bb594911a1b4c908'
 postfix_main
