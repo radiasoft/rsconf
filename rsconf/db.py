@@ -27,22 +27,16 @@ USER_HOME_ROOT_D = pkio.py_path("/home")
 
 LOCAL_IP = "127.0.0.1"
 ANY_IP = "0.0.0.0"
-SRV_SUBDIR = "srv"
 DEFAULT_ROOT_SUBDIR = "run"
-DB_SUBDIR = "db"
-LOCAL_SUBDIR = "local"
-PROPRIETARY_SUBDIR = "proprietary"
-RPM_SUBDIR = "rpm"
-SECRET_SUBDIR = "secret"
-RESOURCE_SUBDIR = "resource"
-TMP_SUBDIR = "tmp"
-HOST_SUBDIR = "host"
 LEVELS = ("default", "channel", "host")
 # Secrets are long so keep them simple
 _BASE62_CHARS = string.ascii_lowercase + string.digits + string.ascii_uppercase
 _HEX_CHARS = "0123456789abcdef"
 _IGNORE_RE = re.compile(r"^(?:\.#|#)|~$")
 _UNIT_TEST_ROOT_D = "UNIT TEST"
+
+
+_GLOBAL_PATHS = None
 
 
 class Host(PKDict):
@@ -63,17 +57,7 @@ class Host(PKDict):
 class T(PKDict):
     def __init__(self, *args, **kwargs):
         super(T, self).__init__(*args, **kwargs)
-        b = PKDict(root_d=root_d())
-        b.pkupdate(
-            db_d=b.root_d.join(DB_SUBDIR),
-            proprietary_source_d=b.root_d.join(PROPRIETARY_SUBDIR),
-            rpm_source_d=b.root_d.join(RPM_SUBDIR),
-            srv_d=b.root_d.join(SRV_SUBDIR),
-            tmp_d=b.root_d.join(TMP_SUBDIR),
-        ).pkupdate(
-            secret_d=b.db_d.join(SECRET_SUBDIR),
-            srv_host_d=b.srv_d.join(HOST_SUBDIR),
-        )
+        b = global_paths_as_dict()
         self.pkupdate(copy.deepcopy(b))
         pkio.mkdir_parent(self.tmp_d)
         self.base = self._init_fconf(PKDict(rsconf_db=b))
@@ -87,9 +71,8 @@ class T(PKDict):
         return res
 
     def host_db(self, channel, host):
-        c = PKDict(
+        c = global_paths_as_dict().pkupdate(
             channel=channel,
-            db_d=self.db_d,
             host=host.lower(),
         )
         res = Host().pkmerge(
@@ -117,23 +100,20 @@ class T(PKDict):
         res.pkmerge(
             PKDict(
                 rsconf_db=PKDict(
-                    db_d=self.db_d,
-                    host=host,
                     # make sure has some value, base_os expects this
                     local_dirs=PKDict(),
                     local_files=_init_local_files(c),
-                    proprietary_source_d=self.proprietary_source_d,
                     resource_paths=_init_resource_paths(c),
-                    rpm_source_d=self.rpm_source_d,
-                    secret_d=self.secret_d,
-                    srv_d=self.srv_d,
-                    srv_host_d=self.srv_host_d,
-                    tmp_d=self.tmp_d.join(host),
                     # https://jnovy.fedorapeople.org/pxz/node1.html
                     # compression with 8 threads and max compression
                     # Useful (random) constants
                     compress_cmd="pxz -T8 -9",
-                ).pkupdate(c),
+                )
+                .pkupdate(c)
+                .pkupdate(
+                    # overrides the global tmp_d
+                    tmp_d=c.tmp_d.join(host),
+                ),
             ),
         )
         _assert_no_rsconf_db_values(res)
@@ -160,15 +140,53 @@ class T(PKDict):
         return fconf.Parser(files=f, base_vars=base_vars).result
 
 
-def root_d():
-    """Root directory for db and host
+def global_path(name):
+    """Get global path by name
+
+    Args:
+        name (str): db_d, root_d, etc.
+    Returns:
+        py.path: path corresponding to `name`
+    """
+
+    def _dict():
+        global _GLOBAL_PATHS
+        if _GLOBAL_PATHS is not None:
+            return _GLOBAL_PATHS
+        # Slower but necessary, because tests can change root
+        if cfg.root_d == _UNIT_TEST_ROOT_D:
+            return global_paths_as_dict()
+        _GLOBAL_PATHS = global_paths_as_dict()
+        return _GLOBAL_PATHS
+
+    return _dict()[name]
+
+
+def global_paths_as_dict():
+    """All global paths
 
     Returns:
-        py.path: directory
+        PKDict: new copy of all paths
     """
-    if cfg.root_d == _UNIT_TEST_ROOT_D:
-        return pkio.py_path()
-    return cfg.root_d
+    rv = PKDict(
+        root_d=pkio.py_path() if cfg.root_d == _UNIT_TEST_ROOT_D else cfg.root_d,
+    )
+    rv.pkupdate(
+        db_d=rv.root_d.join("db"),
+        etc_d=rv.root_d.join("etc"),
+        proprietary_source_d=rv.root_d.join("proprietary"),
+        rpm_source_d=rv.root_d.join("rpm"),
+        srv_d=rv.root_d.join("srv"),
+        tmp_d=rv.root_d.join("tmp"),
+    ).pkupdate(
+        local_d=rv.db_d.join("local"),
+        resource_base_d=rv.db_d.join("resource"),
+        secret_d=rv.db_d.join("secret"),
+        srv_host_d=rv.srv_d.join("host"),
+    ).pkupdate(
+        tls_d=rv.secret_d.join("tls"),
+    )
+    return rv
 
 
 def merge_dict(base, new):
@@ -331,7 +349,7 @@ def _cfg_srv_group(value):
 
 
 def _init_local_files(rsconf_db):
-    r = rsconf_db.db_d.join(LOCAL_SUBDIR)
+    r = rsconf_db.local_d
     res = PKDict()
     for l in LEVELS[0], rsconf_db.channel, rsconf_db.host:
         d = r.join(l)
@@ -343,7 +361,7 @@ def _init_local_files(rsconf_db):
 
 
 def _init_resource_paths(rsconf_db):
-    res = [rsconf_db.db_d.join(RESOURCE_SUBDIR)]
+    res = [rsconf_db.resource_base_d]
     for i in rsconf_db.channel, rsconf_db.host:
         res.insert(0, res[0].join(i))
     return res

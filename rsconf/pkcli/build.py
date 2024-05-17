@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 """Build the tree
 
 :copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from __future__ import absolute_import, division, print_function
+
 from pykern.pkcollections import PKDict
 from pykern import pkconfig
 from pykern import pkio
@@ -143,7 +142,7 @@ def default_command():
         # make sure the same levels of directory so relative
         # links to rpm still work.
         # POSIT: srv_host_d is one level below srv_d
-        tmp_d = (dbt.srv_d + "-tmp").join(db.HOST_SUBDIR)
+        tmp_d = (dbt.srv_d + "-tmp").join(dbt.srv_host_d.basename)
         old_d = tmp_d + "-old"
         new_d = tmp_d + "-new"
         pkio.unchecked_remove(new_d, old_d)

@@ -190,7 +190,7 @@ def _self_signed_crt(j2_ctx, host):
     ca = _crt_create(
         b,
         # certificate cannot match host so we just create an arbitrary name
-        lambda: tls.gen_ca_crt("root-ca." + host, basename=str(b)),
+        lambda: tls.gen_ca_crt("root-ca." + host, basename=b),
     )
     b = db.secret_path(
         j2_ctx,
@@ -200,7 +200,7 @@ def _self_signed_crt(j2_ctx, host):
     )
     c = _crt_create(
         b,
-        lambda: tls.gen_signed_crt(ca.key, str(b), host),
+        lambda: tls.gen_signed_crt(ca.key, host, basename=b),
     )
     return c, ca
 
@@ -211,5 +211,5 @@ def _signed_crt(j2_ctx, ca, basename):
     # TODO(robnagler) if the ca changes, then need to recreate the crt
     return _crt_create(
         basename,
-        lambda: tls.gen_signed_crt(ca.key, basename, j2_ctx.rsconf_db.host),
+        lambda: tls.gen_signed_crt(ca.key, j2_ctx.rsconf_db.host, basename=basename),
     )

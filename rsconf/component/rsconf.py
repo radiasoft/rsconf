@@ -28,7 +28,7 @@ class T(component.T):
         jc.rsconf = PKDict(
             auth_f=nginx.CONF_D.join(PASSWD_SECRET_F),
             srv_d=jc.rsconf_db.srv_d,
-            host_subdir=db.HOST_SUBDIR,
+            host_subdir=jc.rsconf_db.srv_host_d.basename,
         )
 
     def internal_build_write(self):

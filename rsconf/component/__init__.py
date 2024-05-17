@@ -20,7 +20,6 @@ _DONE = "done"
 _START = "start"
 _MODE_RE = re.compile(r"^\d{3,4}$")
 _BASH_FUNC_SUFFIX = "_rsconf_component"
-TLS_SECRET_SUBDIR = "tls"
 _WILDCARD_TLS = "star"
 
 
@@ -594,9 +593,7 @@ def tls_key_and_crt(j2_ctx, domain):
             src_crt, domain
         )
         pkio.mkdir_parent_only(src_crt)
-        # https://stackoverflow.com/a/42730929
-        # Cannot pass (basename=str(src), *domains)
-        tls.gen_self_signed_crt(str(src), *domains)
+        tls.gen_self_signed_crt(*domains, basename=src)
     assert src_key.check(), "{}: missing key for: {}".format(src_key, domain)
     return PKDict(key=src_key, crt=src_crt)
 
@@ -616,7 +613,7 @@ def _find_tls_crt(j2_ctx, domain):
     from rsconf.pkcli import tls
     from rsconf import db
 
-    d = db.secret_path(j2_ctx, TLS_SECRET_SUBDIR, visibility="global")
+    d = j2_ctx.rsconf_db.tls_d
     for crt, domains in j2_ctx.component.tls_crt.items():
         if domain in domains:
             return d.join(crt), domains
@@ -634,7 +631,7 @@ def _find_tls_crt(j2_ctx, domain):
     assert j2_ctx.component.tls_crt_create, f"{domain}: tls crt for domain not found"
     src = d.join(domain)
     pkio.mkdir_parent_only(src)
-    tls.gen_self_signed_crt(str(src), *domain)
+    tls.gen_self_signed_crt(*domain, basename=src)
     return src, domain
 
 

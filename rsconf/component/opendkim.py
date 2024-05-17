@@ -99,11 +99,11 @@ class T(component.T):
         from rsconf import db
         from rsconf.pkcli import opendkim
 
-        def _find(secret_d):
+        def _find(key_d):
             rv = PKDict()
             for d in z.domains:
-                rv[d] = PKDict(domain=d, rows=[], secret_d=secret_d.join(d))
-                for p in pkio.sorted_glob(rv[d].secret_d.join("*.private")):
+                rv[d] = PKDict(domain=d, rows=[], key_d=key_d.join(d))
+                for p in pkio.sorted_glob(rv[d].key_d.join("*.private")):
                     rv[d].rows.append(
                         PKDict(
                             private_f=p,
@@ -113,7 +113,7 @@ class T(component.T):
                     )
             return rv
 
-        z._keys = _find(db.secret_path(jc, _SECRET_SUBDIR, visibility="global"))
+        z._keys = _find(opendkim.global_path("key_d"))
         for d, v in z._keys.items():
             if not v.rows:
                 raise AssertionError(f"missing keys for domain={d}")
