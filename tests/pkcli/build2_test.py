@@ -7,11 +7,15 @@
 
 def test_setup_dev():
     from pykern import pkconfig, pkdebug, pkunit
+    import os
 
-    d = pkdebug.pkdp(pkunit.empty_work_dir())
+    d = str(pkunit.empty_work_dir())
+    # This better simulates how build.default_command is executed.
+    # It needs the environment for subprocesses in setup_dev.
+    os.environ["RSCONF_DB_ROOT_D"] = d
     pkconfig.reset_state_for_testing(
         {
-            "RSCONF_DB_ROOT_D": str(pkdebug.pkdp(d)),
+            "RSCONF_DB_ROOT_D": d,
             "RSCONF_PKCLI_SETUP_DEV_UNIT_TEST": "1",
         }
     )

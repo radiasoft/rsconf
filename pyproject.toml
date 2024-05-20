@@ -17,9 +17,11 @@ classifiers = [
     "Topic :: System :: Systems Administration",
 ]
 dependencies = [
+    "acme>=2.10",
     "bcrypt>=3.1",
+    "cryptography",
     "ipaddress",
-    "pykern"
+    "pykern",
 ]
 description = "RadiaSoft host configuration management"
 dynamic = ["version"]

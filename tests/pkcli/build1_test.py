@@ -10,7 +10,6 @@ def test_build():
     from pykern.pkdebug import pkdlog
     from pykern.pkcollections import PKDict
     from rsconf.pkcli import build
-    from rsconf import db
 
     try:
         for d in pkunit.case_dirs():

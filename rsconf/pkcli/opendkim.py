@@ -10,32 +10,30 @@ import datetime
 import pykern.pkcli
 import pykern.pkio
 import pykern.pkjson
+import rsconf.db
 import re
 import subprocess
 
 
-def gen_key(key_d, named_conf_f, domain, selector=None):
+def gen_key(domain, selector=None):
     """Generate opendkim key pairs for domain in key_d
 
     Creates key_d/domain/selector.{txt,private}. Calls
     `gen_named_conf` when done.
 
     Args:
-        key_d (str): directory to write to
-        named_conf_f (str
         domain (str): domain to generate
         selector (str): dkim selector for key [yyyymmdd]
     Returns:
         PKDict: private_f, txt_f, and selector
     """
-    k = pykern.pkio.py_path(key_d)
     subprocess.check_call(
         (
             "opendkim-genkey",
             "-b",
             "2048",
             "-D",
-            str(pykern.pkio.mkdir_parent(k.join(domain))),
+            str(pykern.pkio.mkdir_parent(global_path("key_d").join(domain))),
             "-s",
             selector or datetime.datetime.utcnow().strftime("%Y%m%d"),
             "-d",
@@ -44,20 +42,38 @@ def gen_key(key_d, named_conf_f, domain, selector=None):
         stderr=subprocess.STDOUT,
         shell=False,
     )
-    gen_named_conf(k, named_conf_f)
+    gen_named_conf()
 
 
-def gen_named_conf(key_d, named_conf_f):
-    """Read key_d and write named_conf_f
+def gen_named_conf():
+    """Read key_d and write `NAMED_CONF_F`
 
-    key_d is created by `gen_key`. named_conf_f is a list of
+    key_d is created by `gen_key`. `NAMED_CONF_F` is a list of
     domains which point to keys.
+    """
+    pykern.pkjson.dump_pretty(
+        _PublicKeys(global_path("key_d")).as_dict(),
+        filename=global_path("named_conf_f"),
+    )
+
+
+def global_path(name):
+    """Return path for name
 
     Args:
-        key_d (str): dir that contains keys
-        named_conf_f (str): where to write json
+        name (str): "named_conf_f" or "key_d"
+    Returns:
+        py.path: corresponding to name
     """
-    pykern.pkjson.dump_pretty(_PublicKeys(key_d).as_dict(), filename=named_conf_f)
+    if name == "key_d":
+        return rsconf.db.global_path("secret_d").join("opendkim").ensure(dir=True)
+    elif name == "named_conf_f":
+        # POSIT: Bivio::Util::NamedConf looks for ``*-named.json``
+        return (
+            rsconf.db.global_path("etc_d").ensure(dir=True).join("opendkim-named.json")
+        )
+    else:
+        raise AssertionError(f"invalid name={name}")
 
 
 def public_key_info(path):
@@ -81,7 +97,7 @@ def public_key_info(path):
 
 
 class _PublicKeys(PKDict):
-    """All keys in secret_d organized by second level domain (sld)
+    """All keys in `key_d` organized by second level domain (sld)
 
     self index is sld, which contains a dict selector.subdomain
     pointing to public key txt. The dictionaries are already sorted.
