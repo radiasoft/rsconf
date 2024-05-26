@@ -42,11 +42,12 @@ def check_expiring(authority_urn_re=None):
     return tuple(e.path.purebasename for e in _expiring(authority_urn_re)) or None
 
 
-def download_first_crt(domain):
+def download_first_crt(domain, as_dict=True):
     """Get the first certificate from domain
 
     Args:
         domain (str): domain to access
+        as_dict (bool): output with `read_as_dict` else PEM  [True]
     Returns:
         str: first certificate in chain
     """
@@ -70,7 +71,7 @@ def download_first_crt(domain):
     m = re.search("(-+BEGIN CERTIFICATE-+.+?-+END CERTIFICATE-+)", o, re.DOTALL)
     if not m:
         raise ValueError(pkdformat("no cert in output={}", o))
-    return m.group(1)
+    return _crt_as_dict(pkcompat.to_bytes(m.group(1))) if as_dict else m.group(1)
 
 
 def gen_ca_crt(common_name, basename=None):
@@ -234,6 +235,29 @@ def read_crt_as_dict(path):
         datetime: Expiry of cert
     """
 
+    return _crt_as_dict(pkio.read_binary(path))
+
+
+def read_csr(filename):
+    """Read the certificate signing request
+
+    Args:
+        filename (str): path to crt
+
+    Returns:
+        str: read certificate
+    """
+    return _run(["openssl", "req", "-text", "-noout", "-verify", "-in", str(filename)])
+
+
+def _alt_names(domains):
+    return "subjectAltName = {}".format(
+        ", ".join(["DNS:" + x for x in domains]),
+    )
+
+
+def _crt_as_dict(value):
+
     def _domains(crt):
         c = crt.subject.get_attributes_for_oid(
             cryptography.x509.oid.NameOID.COMMON_NAME
@@ -259,31 +283,13 @@ def read_crt_as_dict(path):
         else:
             raise ValueError("No issuer AuthorityInfoAccess in crt")
 
-    c = cryptography.x509.load_pem_x509_certificate(pkio.read_binary(path))
+    c = cryptography.x509.load_pem_x509_certificate(value)
     s = _is_self_signed_crt(c)
     return PKDict(
         authority_urn=None if s else _authority_urn(c),
         domains=tuple(_domains(c)),
         expiry=c.not_valid_after_utc.replace(tzinfo=None),
         is_self_signed=s,
-    )
-
-
-def read_csr(filename):
-    """Read the certificate signing request
-
-    Args:
-        filename (str): path to crt
-
-    Returns:
-        str: read certificate
-    """
-    return _run(["openssl", "req", "-text", "-noout", "-verify", "-in", str(filename)])
-
-
-def _alt_names(domains):
-    return "subjectAltName = {}".format(
-        ", ".join(["DNS:" + x for x in domains]),
     )
 
 
