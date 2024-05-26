@@ -7,6 +7,7 @@
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
 import acme.messages
+import os.path
 import pykern.pkcli
 import pykern.pkconfig
 import pykern.pkio
@@ -27,46 +28,6 @@ def check_expiring():
     return rsconf.pkcli.tls.check_expiring(authority_urn_re=_AUTHORITY_URN_RE)
 
 
-def csr_and_order(*domains, basename=None):
-    """Generates csr and key for domains and creates order
-
-    Wildcard certs must be a single domain. The cert will include the
-    higher level domain, e.g. ``*.example.com`` will have
-    ``example.com`` added to the CSR. The cert will be named
-    ``star.<domain>``, e.g. ``star.example.com``.
-
-    If there are multiple domains (except for wildcard case),
-    `basename` must be provided.
-
-    Otherwise, the basename is the single domain case, the csr
-    basename is the domain.
-
-    Args:
-        domains (tuple): list of domains for cert
-        basename (str): for file name for multidomain certs only [None]
-    Returns:
-        py.path: order created
-
-    """
-
-    if len(domains) > 1:
-        if not basename:
-            pykern.pkcli.command_error(
-                "multi-domain cert requires basename; domains={}", domains
-            )
-        b = basename
-    elif domains[0].startswith("*"):
-        f = domains[0][2:]
-        domains = (domains[0], f)
-        b = "star." + f
-    else:
-        b = domains[0]
-    c = rsconf.pkcli.tls.gen_csr_and_key(
-        *domains, basename=rsconf.db.global_path("tls_d").ensure(dir=True).join(b)
-    )
-    return order(c.csr)
-
-
 def finalize_orders():
     """Answers all challenges and saved certs
 
@@ -75,11 +36,7 @@ def finalize_orders():
     """
 
     def _remove_csr_and_return_crt(order):
-        rv = (
-            rsconf.db.global_path("tls_d")
-            .join(order.path.basename)
-            .new(ext=rsconf.pkcli.tls.CRT_EXT)
-        )
+        rv = _tls_path(order.path.purebasename, rsconf.pkcli.tls.CRT_EXT)
         pykern.pkio.unchecked_remove(rv.new(ext=rsconf.pkcli.tls.CSR_EXT))
         return rv
 
@@ -140,15 +97,15 @@ def global_path(name):
     raise AssertionError(f"invalid name={name}")
 
 
-def order(csr_path):
-    """Generate a single order for `csr_path`
+def order(csr_or_basename):
+    """Generate a single order for `csr_or_basename`
 
     Args:
-        csr_path (str): which CSR
+        csr_or_basename (str): path to or basename of CSR
     Returns:
         py.path: file that contains serialized order
     """
-    p = pykern.pkio.py_path(csr_path)
+    p = _tls_path(csr_or_basename, rsconf.pkcli.tls.CSR_EXT)
     rv = global_path("orders_d").join(p.basename).new(ext="json")
     if rv.exists():
         pykern.pkcli.command_error(
@@ -157,6 +114,94 @@ def order(csr_path):
     o = _client().new_order(p.read_binary())
     pykern.pkio.write_text(rv, o.json_dumps_pretty())
     return rv
+
+
+def order_with_crt(crt_basename, *domains):
+    """Generate order from existing crt and key
+
+    This is used to convert from another authority to letsencrypt on a
+    live domain so that the key remains the same while the
+    re-authorization is in process.
+
+    Args:
+        key_basename (str): basename of crt (no suffix)
+    Returns:
+        py.path: file that contains serialized order
+
+    """
+    p = _tls_path(crt_basename, rsconf.pkcli.tls.CRT_EXT)
+    return order(
+        rsconf.pkcli.tls.gen_csr(
+            p.new(ext=rsconf.pkcli.tls.KEY_EXT),
+            *rsconf.pkcli.tls.read_crt_as_dict(p).domains,
+        ).csr,
+    )
+
+
+def order_with_key(key_basename, *domains):
+    """Generate order from existing key and possibly crt.
+
+    The `key_basename` will the new basename. `order_with_crt` is more
+    common usage. This allows adding or removing domains from an
+    existing crt.
+
+    Args:
+        key_basename (str): basename of key (crt) to order
+    Returns:
+        py.path: file that contains serialized order
+
+    """
+    return order(
+        rsconf.pkcli.tls.gen_csr(
+            _tls_path(key_basename, rsconf.pkcli.tls.KEY_EXT),
+            *domains,
+        ).csr,
+    )
+
+
+def order_with_new_csr_and_key(*domains, basename=None):
+    """Generates csr and key for domains and creates order
+
+    Wildcard certs must be a single domain. The cert will include the
+    higher level domain, e.g. ``*.example.com`` will have
+    ``example.com`` added to the CSR. The cert will be named
+    ``star.<domain>``, e.g. ``star.example.com``.
+
+    If there are multiple domains (except for wildcard case),
+    `basename` must be provided.
+
+    Otherwise, the basename is the single domain case, the csr
+    basename is the domain.
+
+    Args:
+        domains (tuple): list of domains for cert
+        basename (str): for file name for multidomain certs only [None]
+    Returns:
+        py.path: order created
+
+    """
+
+    def _base():
+        nonlocal domains
+
+        if len(domains) > 1:
+            if not basename:
+                pykern.pkcli.command_error(
+                    "multi-domain cert requires basename; domains={}", domains
+                )
+            return basename
+        if domains[0].startswith("*"):
+            f = domains[0][2:]
+            domains = (domains[0], f)
+            return "star." + f
+        return domains[0]
+
+    return order(
+        rsconf.pkcli.tls.gen_csr_and_key(
+            *domains,
+            basename=_tls_path(_base()),
+        ).csr,
+    )
 
 
 def register():
@@ -311,3 +356,13 @@ def _iter_orders():
 
     for f in pykern.pkio.sorted_glob(global_path("orders_d").join("*").new(ext="json")):
         yield _order(f)
+
+
+def _tls_path(path_or_base, ext=None):
+    if not isinstance(path_or_base, str):
+        # A py.path or could be pathlib, but not a base
+        return path_or_base
+    if os.path.split(path_or_base)[0]:
+        return pykern.pkio.py_path(path_or_base)
+    rv = rsconf.db.global_path("tls_d").ensure(dir=True).join(path_or_base)
+    return rv if not ext or path_or_base.endswith(ext) else rv + ext
