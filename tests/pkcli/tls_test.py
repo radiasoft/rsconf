@@ -41,3 +41,16 @@ def test_self_signed_and_expiry():
         )
         pkunit.pkok(e < a.expiry, "expect={} >= actual={}", e, a.expiry)
         pkunit.pkeq(domains, a.domains)
+
+
+def test_db_yaml():
+    from pykern import pkunit, pkio, pkyaml
+    from pykern.pkdebug import pkdlog, pkdp
+    from rsconf.pkcli import tls
+
+    with pkunit.save_chdir_work():
+        with pkio.save_chdir("db/secret/tls", mkdir=True):
+            tls.gen_self_signed_crt("c.c", "b.b", "a.a")
+            tls.gen_self_signed_crt("d.d")
+        tls.db_yaml("out.yml")
+        pkunit.file_eq("out.yml")
