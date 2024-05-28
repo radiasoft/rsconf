@@ -53,7 +53,9 @@ def db_yaml(path):
     def _map():
         return PKDict({p.purebasename: sorted(c.domains) for p, c in _read_tls_d()})
 
-    pkyaml.dump_pretty(PKDict(default=PKDict(tls_crt=_map())), filename=path)
+    pkyaml.dump_pretty(
+        PKDict(default=PKDict(component=PKDict(tls_crt=_map()))), filename=path
+    )
 
 
 def download_first_crt(domain, as_dict=True):
