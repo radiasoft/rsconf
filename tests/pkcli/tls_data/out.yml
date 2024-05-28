@@ -1,8 +1,9 @@
 default:
-  tls_crt:
-    c.c:
-      - a.a
-      - b.b
-      - c.c
-    d.d:
-      - d.d
+  component:
+    tls_crt:
+      c.c:
+        - a.a
+        - b.b
+        - c.c
+      d.d:
+        - d.d
