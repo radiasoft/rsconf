@@ -626,7 +626,7 @@ def _find_tls_crt(j2_ctx, domain):
     ):
         src = d.join(s)
         # due to dots in domain, we can't use ext=
-        if (src + tls.KEY_EXT).check():
+        if (src + tls.CRT_EXT).check():
             return src, domain
     assert j2_ctx.component.tls_crt_create, f"{domain}: tls crt for domain not found"
     src = d.join(domain)

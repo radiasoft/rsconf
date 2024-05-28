@@ -7,6 +7,7 @@
 from pykern import pkcompat
 from pykern import pkconfig
 from pykern import pkio
+from pykern import pkyaml
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdp, pkdlog, pkdformat
 import cryptography.x509
@@ -40,6 +41,19 @@ def check_expiring(authority_urn_re=None):
         tuple: names of expiring crts or None
     """
     return tuple(e.path.purebasename for e in _expiring(authority_urn_re)) or None
+
+
+def db_yaml(path):
+    """Generate yml from all certs in tls_d
+
+    Args:
+        path (str): where to write yml, e.g. db/tls.yml
+    """
+
+    def _map():
+        return PKDict({p.purebasename: sorted(c.domains) for p, c in _read_tls_d()})
+
+    pkyaml.dump_pretty(PKDict(default=PKDict(tls_crt=_map())), filename=path)
 
 
 def download_first_crt(domain, as_dict=True):
@@ -294,11 +308,8 @@ def _crt_as_dict(value):
 
 
 def _expiring(authority_urn_re):
-    from rsconf import db
-
     e = datetime.datetime.utcnow() + datetime.timedelta(days=_cfg.expire_days)
-    for p in pkio.sorted_glob(db.global_path("tls_d").join("*" + CRT_EXT)):
-        rv = read_crt_as_dict(p)
+    for p, rv in _read_tls_d():
         # The logic here is complicated to allow for self-signed
         # and authority_urn_re. The former is mostly for testing,
         # but is applicable if we want to re-issue self-signed
@@ -397,6 +408,13 @@ CN = {domains[0]}"""
 
 def _is_self_signed_crt(crt):
     return crt.issuer == crt.subject
+
+
+def _read_tls_d():
+    from rsconf import db
+
+    for p in pkio.sorted_glob(db.global_path("tls_d").join("*" + CRT_EXT)):
+        yield p, read_crt_as_dict(p)
 
 
 def _run(cmd, stderr=subprocess.STDOUT):
