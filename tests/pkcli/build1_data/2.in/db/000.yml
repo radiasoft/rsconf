@@ -1,4 +1,11 @@
 ---
+fconf_macros:
+  postfix_base():
+    aliases:
+      root: root@v4.radia.run
+      errors: errors@v4.radia.run
+      critical-errors: critical-errors@v4.radia.run
+
 default:
   base_os:
     ip_forward: false
@@ -66,8 +73,15 @@ host:
     v4.radia.run:
       docker:
         tls_host: v4.radia.run
+      postfix:
+        aliases:
+          # root and errors gets delivered locally so we replace
+          blackhole: /dev/null
+        virtual_aliases:
+          wp1.v4.radia.run:
+            vagrant: vagrant
       rsconf_db:
-        components: [ sirepo ]
+        components: [ sirepo, postfix ]
       sirepo:
         job_driver:
           docker:
