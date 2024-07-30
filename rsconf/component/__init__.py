@@ -508,7 +508,7 @@ class T(PKDict):
                 file_contents is None
             ), "{}: do not pass both file_contents and file_src".format(host_path)
             file_contents = file_src.read_binary()
-        if file_contents:
+        if file_contents is not None:
             md5 = _md5(self._write_binary(dst, file_contents))
         self._bash_append(host_path, md5=md5)
         return dst
