@@ -3,7 +3,7 @@ postfix_rsconf_component() {
 rsconf_yum_install postfix procmail cyrus-sasl cyrus-sasl-plain
 rsconf_service_prepare 'postfix' '/etc/systemd/system/postfix.service' '/etc/systemd/system/postfix.service.d' '/etc/postfix'
 rsconf_install_access '440' 'root' 'mail'
-rsconf_install_file '/etc/postfix/sender_access'
+rsconf_install_file '/etc/postfix/sender_access' 'd41d8cd98f00b204e9800998ecf8427e'
 rsconf_install_access '400' 'root' 'root'
 rsconf_install_file '/etc/sasl2/smtpd-sasldb.conf' '7d9b2345cc4447364639bbd15af40f2e'
 rsconf_install_access '440' 'root' 'mail'
