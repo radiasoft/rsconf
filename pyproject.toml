@@ -19,7 +19,7 @@ classifiers = [
 dependencies = [
     "acme>=2.10",
     "bcrypt>=3.1",
-    "cryptography",
+    "cryptography>=42",
     "ipaddress",
     "pykern",
 ]
