@@ -46,7 +46,7 @@ docker_main() {
             install_yum update "$_docker_pkg" "$_docker_pkg"-cli
         fi
     else
-        rsconf_radia_run_as_user root redhat-docker
+        redhat_docker_no_local_setup=1 rsconf_radia_run_as_user root redhat-docker
     fi
     if ! docker_up_to_date; then
         install_err "Installed docker=$(docker_version) is < min_software_version=1.0.0 after install."
