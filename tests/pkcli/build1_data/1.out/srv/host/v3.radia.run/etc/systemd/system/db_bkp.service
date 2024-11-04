@@ -8,6 +8,3 @@ Group=root
 SyslogIdentifier=db_bkp
 Type=oneshot
 User=root
-
-[Install]
-WantedBy=multi-user.target
