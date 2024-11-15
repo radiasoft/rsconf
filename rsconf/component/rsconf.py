@@ -57,6 +57,7 @@ class T(component.T):
 def host_init(j2_ctx, host):
     from rsconf import db
 
+    f, h = _vhost(j2_ctx)[1]
     jf = db.secret_path(j2_ctx, _PASSWD_SECRET_JSON_F, visibility=db.VISIBILITY_GLOBAL)
     if jf.check():
         with jf.open() as f:
@@ -71,10 +72,10 @@ machine {} login {} password {}
 EOF
 curl {} | install_server={} bash -s {}
 # On {}: ssh {} true""".format(
-        _vhost(j2_ctx)[1],
+        h,
         host,
         y[host],
-        j2_ctx.rsconf_db.http_host,
+        j2_ctx.rsconf_db.http_host + "/index.sh" if f else "",
         j2_ctx.rsconf_db.http_host,
         host,
         j2_ctx.bkp.primary,
