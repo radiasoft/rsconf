@@ -36,9 +36,13 @@ class T(component.T):
         from rsconf import db
 
         jc = self.j2_ctx
+
+        f, h = _vhost(jc)
+        if f:
+            return
         nginx.install_vhost(
             self,
-            vhost=_vhost(jc),
+            vhost=h,
             j2_ctx=jc,
         )
         nginx.install_auth(
@@ -53,6 +57,9 @@ class T(component.T):
 def host_init(j2_ctx, host):
     from rsconf import db
 
+    f, h = _vhost(j2_ctx)
+    if f:
+        return "no .netrc install for file:// db_host"
     jf = db.secret_path(j2_ctx, _PASSWD_SECRET_JSON_F, visibility=db.VISIBILITY_GLOBAL)
     if jf.check():
         with jf.open() as f:
@@ -67,7 +74,7 @@ machine {} login {} password {}
 EOF
 curl {} | install_server={} bash -s {}
 # On {}: ssh {} true""".format(
-        _vhost(j2_ctx),
+        h,
         host,
         y[host],
         j2_ctx.rsconf_db.http_host,
@@ -104,4 +111,4 @@ def _passwd_entry(j2_ctx, host):
 
 def _vhost(j2_ctx):
     u = urlparse(j2_ctx.rsconf_db.http_host)
-    return u.hostname
+    return u.scheme == "file", u.hostname
