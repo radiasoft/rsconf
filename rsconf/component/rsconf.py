@@ -58,7 +58,7 @@ class T(component.T):
 def host_init(j2_ctx, host):
     from rsconf import db
 
-    f, h = _vhost(j2_ctx)
+    s, h = _vhost(j2_ctx)
     jf = db.secret_path(j2_ctx, _PASSWD_SECRET_JSON_F, visibility=db.VISIBILITY_GLOBAL)
     if jf.check():
         with jf.open() as f:
@@ -68,8 +68,8 @@ def host_init(j2_ctx, host):
     if not host in y:
         y[host] = _passwd_entry(j2_ctx, host)
         pkjson.dump_pretty(y, filename=jf)
-    c = f'curl {j2_ctx.rsconf_db.http_host + "/index.sh" if f else ""} | install_server={j2_ctx.rsconf_db.http_host} bash -s {host}'
-    if f:
+    c = f'curl {j2_ctx.rsconf_db.http_host + "/index.sh" if s else ""} | install_server={j2_ctx.rsconf_db.http_host} bash -s {host}'
+    if s:
         return f"""Bootstrapping build server
 Run:
 {c}
