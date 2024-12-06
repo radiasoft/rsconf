@@ -36,9 +36,14 @@ class T(component.T):
         from rsconf import db
 
         jc = self.j2_ctx
+
+        f, h = _vhost(jc)
+        if f:
+            self.append_root_bash(": nothing to do")
+            return
         nginx.install_vhost(
             self,
-            vhost=_vhost(jc),
+            vhost=h,
             j2_ctx=jc,
         )
         nginx.install_auth(
@@ -53,6 +58,7 @@ class T(component.T):
 def host_init(j2_ctx, host):
     from rsconf import db
 
+    s, h = _vhost(j2_ctx)
     jf = db.secret_path(j2_ctx, _PASSWD_SECRET_JSON_F, visibility=db.VISIBILITY_GLOBAL)
     if jf.check():
         with jf.open() as f:
@@ -62,20 +68,17 @@ def host_init(j2_ctx, host):
     if not host in y:
         y[host] = _passwd_entry(j2_ctx, host)
         pkjson.dump_pretty(y, filename=jf)
-    return """install -m 600 /dev/stdin /root/.netrc <<'EOF'
-machine {} login {} password {}
+    c = f'curl {j2_ctx.rsconf_db.http_host + "/index.sh" if s else ""} | install_server={j2_ctx.rsconf_db.http_host} bash -s {host}'
+    if s:
+        return f"""Bootstrapping build server
+Run:
+{c}
+Then update http_host in db/000.yml and run host init again"""
+    return f"""install -m 600 /dev/stdin /root/.netrc <<'EOF'
+machine {h} login {host} password {y[host]}
 EOF
-curl {} | install_server={} bash -s {}
-# On {}: ssh {} true""".format(
-        _vhost(j2_ctx),
-        host,
-        y[host],
-        j2_ctx.rsconf_db.http_host,
-        j2_ctx.rsconf_db.http_host,
-        host,
-        j2_ctx.bkp.primary,
-        host,
-    )
+{c}
+# On {j2_ctx.bkp.primary}: ssh {host} true"""
 
 
 def passwd_secret_f(j2_ctx):
@@ -104,4 +107,4 @@ def _passwd_entry(j2_ctx, host):
 
 def _vhost(j2_ctx):
     u = urlparse(j2_ctx.rsconf_db.http_host)
-    return u.hostname
+    return u.scheme == "file", u.hostname
