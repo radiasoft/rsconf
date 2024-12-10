@@ -68,7 +68,7 @@ def host_init(j2_ctx, host):
     if not host in y:
         y[host] = _passwd_entry(j2_ctx, host)
         pkjson.dump_pretty(y, filename=jf)
-    c = f'curl {j2_ctx.rsconf_db.http_host + "/index.sh" if s else ""} | install_server={j2_ctx.rsconf_db.http_host} bash -s {host}'
+    c = f'curl {j2_ctx.rsconf_db.http_host + ("/index.sh" if s else "")} | install_server={j2_ctx.rsconf_db.http_host} bash -s {host}'
     if s:
         return f"""Bootstrapping build server
 Run:
