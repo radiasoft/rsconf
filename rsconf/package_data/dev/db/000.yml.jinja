@@ -175,7 +175,9 @@ default:
   postgrey:
     port: 10023
     whitelist_recipients: []
-  rsconf: {}
+  rsconf:
+    kickstart_hosts:
+      - 10.10.10.0/24
   rsconf_db:
     #TODO(robnagler) POSIT dev/nginx/nginx.conf.jinja
     # defunct elvin_server https://en.wikipedia.org/wiki/Elvin

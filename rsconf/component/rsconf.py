@@ -4,10 +4,10 @@
 :copyright: Copyright (c) 2018 Bivio Software, Inc.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from pykern.pkcollections import PKDict
-from pykern.pkdebug import pkdp
 from pykern import pkcompat
+from pykern import pkio
 from pykern import pkjson
+from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from rsconf import component
 from urllib.parse import urlparse
@@ -22,13 +22,15 @@ class T(component.T):
         from rsconf import db
 
         # docker is required to build container-perl
-        self.buildt.require_component("docker", "nginx")
+        self.buildt.require_component("docker", "network", "nginx")
         self.j2_ctx = self.hdb.j2_ctx_copy()
         jc = self.j2_ctx
+        nc = self.buildt.get_component("network")
         jc.rsconf = PKDict(
             auth_f=nginx.CONF_D.join(PASSWD_SECRET_F),
             srv_d=jc.rsconf_db.srv_d,
             host_subdir=jc.rsconf_db.srv_host_d.basename,
+            kickstart_hosts=jc.rsconf.get("kickstart_hosts", []),
         )
 
     def internal_build_write(self):
