@@ -4,10 +4,10 @@
 :copyright: Copyright (c) 2018 Bivio Software, Inc.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from pykern.pkcollections import PKDict
-from pykern.pkdebug import pkdp
 from pykern import pkcompat
+from pykern import pkio
 from pykern import pkjson
+from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from rsconf import component
 from urllib.parse import urlparse
@@ -29,6 +29,10 @@ class T(component.T):
             auth_f=nginx.CONF_D.join(PASSWD_SECRET_F),
             srv_d=jc.rsconf_db.srv_d,
             host_subdir=jc.rsconf_db.srv_host_d.basename,
+            kickstart_hosts=[
+                l.split(":")[0]
+                for l in pkio.read_text(passwd_secret_f(jc)).splitlines()
+            ],
         )
 
     def internal_build_write(self):
