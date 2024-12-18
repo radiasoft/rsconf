@@ -177,7 +177,10 @@ default:
     whitelist_recipients: []
   raydata_scan_monitor:
     docker_image: radiasoft/sirepo
-  rsconf: {}
+  rsconf:
+    kickstart_hosts:
+      - 10.10.10.0/24
+      - 192.168.1.22
   rsconf_db:
     #TODO(robnagler) POSIT dev/nginx/nginx.conf.jinja
     # defunct elvin_server https://en.wikipedia.org/wiki/Elvin

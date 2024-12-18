@@ -30,7 +30,7 @@ class T(component.T):
             auth_f=nginx.CONF_D.join(PASSWD_SECRET_F),
             srv_d=jc.rsconf_db.srv_d,
             host_subdir=jc.rsconf_db.srv_host_d.basename,
-            kickstart_hosts=[*nc.trusted_nets(), *jc.get("kickstart_hosts", [])],
+            kickstart_hosts=jc.rsconf.get("kickstart_hosts", []),
         )
 
     def internal_build_write(self):
