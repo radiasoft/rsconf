@@ -22,17 +22,15 @@ class T(component.T):
         from rsconf import db
 
         # docker is required to build container-perl
-        self.buildt.require_component("docker", "nginx")
+        self.buildt.require_component("docker", "network", "nginx")
         self.j2_ctx = self.hdb.j2_ctx_copy()
         jc = self.j2_ctx
+        nc = self.buildt.get_component("network")
         jc.rsconf = PKDict(
             auth_f=nginx.CONF_D.join(PASSWD_SECRET_F),
             srv_d=jc.rsconf_db.srv_d,
             host_subdir=jc.rsconf_db.srv_host_d.basename,
-            kickstart_hosts=[
-                l.split(":")[0]
-                for l in pkio.read_text(passwd_secret_f(jc)).splitlines()
-            ],
+            kickstart_hosts=[*nc.trusted_nets(), *jc.get("kickstart_hosts", [])],
         )
 
     def internal_build_write(self):
