@@ -30,4 +30,12 @@ server {
         }
         root {{ rsconf.srv_d }};
     }
+
+    location /kickstart {
+        {% for i in rsconf.kickstart_hosts %}
+        allow {{ i }};
+        {% endfor %}
+
+        deny all;
+    }
 }
