@@ -13,7 +13,7 @@ from rsconf import component
 from urllib.parse import urlparse
 
 PASSWD_SECRET_F = "rsconf_auth"
-_KICKSTART_ROOT_D = "/srv/kickstart"
+_KICKSTART_D = "kickstart"
 _PASSWD_SECRET_JSON_F = "rsconf_auth.json"
 
 
@@ -32,7 +32,7 @@ class T(component.T):
             srv_d=jc.rsconf_db.srv_d,
             host_subdir=jc.rsconf_db.srv_host_d.basename,
             kickstart_hosts=jc.rsconf.get("kickstart_hosts", []),
-            kickstart_root_d=_KICKSTART_ROOT_D,
+            kickstart_root_d=jc.rsconf_db.host_run_d.join(_KICKSTART_D),
         )
 
     def internal_build_write(self):
