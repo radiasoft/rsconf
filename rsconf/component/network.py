@@ -1,10 +1,9 @@
 """create network config
 
-We disable NetworkManager, because we are managing the network now.
-It's unnecessary complexity. NetworkManager (NM) create
-``network-scripts`` files.
+Network configuration supports both network-scripts (for CentOS 7) and NetworkManager
+(for newer systems). The choice is made based on the OS version.
 
-:copyright: Copyright (c) 2018-2022 RadiaSoft LLC.  All Rights Reserved.
+:copyright: Copyright (c) 2018-2024 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 
@@ -22,6 +21,7 @@ import socket
 _SCRIPTS = pkio.py_path("/etc/sysconfig/network-scripts")
 _RESOLV_CONF = pkio.py_path("/etc/resolv.conf")
 _IPTABLES = pkio.py_path("/etc/sysconfig/iptables")
+_NM_CONNECTIONS = pkio.py_path("/etc/NetworkManager/system-connections")
 
 
 class T(rsconf.component.T):
@@ -43,6 +43,9 @@ class T(rsconf.component.T):
 
     def internal_build_compile(self):
         self.buildt.require_component("base_os")
+        # Determine if we should use NetworkManager based on OS
+        self.use_network_manager = self.hdb.base_os.os_release.get('ID') != 'centos' or \
+                                 int(self.hdb.base_os.os_release.get('VERSION_ID', '0').split('.')[0]) > 7
         self.j2_ctx = self.hdb.j2_ctx_copy()
         jc = self.j2_ctx
         z = jc.network
@@ -67,7 +70,10 @@ class T(rsconf.component.T):
         self.__untrusted_nets = self._nets(jc, z.untrusted)
         if not self.hdb.network.devices:
             return
-        self.service_prepare((_SCRIPTS, _RESOLV_CONF))
+        if self.use_network_manager:
+            self.service_prepare((_NM_CONNECTIONS, _RESOLV_CONF))
+        else:
+            self.service_prepare((_SCRIPTS, _RESOLV_CONF))
         self._devices(jc)
         if z.defroute:
             assert (
@@ -123,9 +129,16 @@ class T(rsconf.component.T):
                 if isinstance(v, bool):
                     d[k] = "yes" if v else "no"
             z.dev = d
-            self.install_resource(
-                "network/ifcfg-en", jc, _SCRIPTS.join("ifcfg-" + d.name)
-            )
+            if self.use_network_manager:
+                self.install_resource(
+                    "network/nm-connection", jc,
+                    _NM_CONNECTIONS.join(d.name + ".nmconnection"),
+                    mode="600"
+                )
+            else:
+                self.install_resource(
+                    "network/ifcfg-en", jc, _SCRIPTS.join("ifcfg-" + d.name)
+                )
         if z.iptables_enable:
             assert (
                 not jc.docker.iptables

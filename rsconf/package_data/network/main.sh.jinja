@@ -15,15 +15,29 @@ network_iptables() {
 }
 
 network_main() {
-    if [[ $(systemctl is-active NetworkManager) == active ]]; then
-        systemctl stop NetworkManager
-    fi
-    systemctl disable NetworkManager >& /dev/null || true
     if [[ $(systemctl is-active firewalld) == active ]]; then
         systemctl stop firewalld
     fi
     systemctl disable firewalld >& /dev/null || true
     systemctl mask firewalld >& /dev/null || true
+
+    {% if use_network_manager %}
+    # Enable and configure NetworkManager
+    if ! rpm -q NetworkManager &>/dev/null; then
+        rsconf_yum_install NetworkManager
+    fi
+    systemctl enable NetworkManager
+    systemctl start NetworkManager
+    # Reload configuration after changes
+    nmcli connection reload
+    {% else %}
+    # Use traditional network-scripts for CentOS 7
+    if [[ $(systemctl is-active NetworkManager) == active ]]; then
+        systemctl stop NetworkManager
+    fi
+    systemctl disable NetworkManager >& /dev/null || true
+    {% endif %}
+
     {% if network.iptables_enable %}
     network_iptables
     {% endif %}

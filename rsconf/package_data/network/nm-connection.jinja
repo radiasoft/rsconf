@@ -1,0 +1,17 @@
+[connection]
+id={{ network.dev.name }}
+type=ethernet
+interface-name={{ network.dev.name }}
+
+[ethernet]
+mac-address-blacklist=
+
+[ipv4]
+method=manual
+addresses={{ network.dev.ip }}/{{ network.dev.net.netmask }}
+gateway={{ network.dev.net.gateway }}
+dns-search={{ network.defroute.net.search|join(';') if network.defroute and network.defroute.net.search else '' }}
+dns={{ network.defroute.net.nameservers|join(';') if network.defroute and network.defroute.net.nameservers else '' }}
+
+[ipv6]
+method=ignore
