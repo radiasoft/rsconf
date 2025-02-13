@@ -5,7 +5,7 @@ vm_devbox_main
 #!/bin/bash
 
 vm_devbox_main() {
-    if rpm -q libvirt-devel &> /dev/null 2>&1; then
+    if rpm -q libvirt-devel &> /dev/null; then
         return
     fi
     yum-config-manager --set-enabled crb
