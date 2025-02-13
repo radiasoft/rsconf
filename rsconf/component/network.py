@@ -44,9 +44,11 @@ class T(rsconf.component.T):
     def internal_build_compile(self):
         self.buildt.require_component("base_os")
         self.j2_ctx = self.hdb.j2_ctx_copy()
+        jc = self.j2_ctx
         # Use NetworkManager for Alma Linux hosts, network-scripts for others
         self.use_network_manager = self.hdb.rsconf_db.host in self.hdb.alma_hosts
-        jc = self.j2_ctx
+        # Add use_network_manager to template context
+        jc.use_network_manager = self.use_network_manager
         z = jc.network
         z.trusted_nets = tuple(sorted(z.trusted.keys()))
         z.pksetdefault(
