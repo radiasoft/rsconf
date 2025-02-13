@@ -45,11 +45,10 @@ class T(rsconf.component.T):
         self.buildt.require_component("base_os")
         self.j2_ctx = self.hdb.j2_ctx_copy()
         jc = self.j2_ctx
-        # Use NetworkManager for Alma Linux hosts, network-scripts for others
-        self.use_network_manager = self.hdb.rsconf_db.host in self.hdb.alma_hosts
-        # Add use_network_manager to template context
-        jc.use_network_manager = self.use_network_manager
         z = jc.network
+        z.use_network_manager = self.hdb.rsconf_db.host in self.hdb.get(
+            "alma_hosts", []
+        )
         z.trusted_nets = tuple(sorted(z.trusted.keys()))
         z.pksetdefault(
             blocked_ips=[],
@@ -71,7 +70,7 @@ class T(rsconf.component.T):
         self.__untrusted_nets = self._nets(jc, z.untrusted)
         if not self.hdb.network.devices:
             return
-        if self.use_network_manager:
+        if z.use_network_manager:
             self.service_prepare((_NM_CONNECTIONS, _RESOLV_CONF))
         else:
             self.service_prepare((_SCRIPTS, _RESOLV_CONF))
@@ -130,11 +129,13 @@ class T(rsconf.component.T):
                 if isinstance(v, bool):
                     d[k] = "yes" if v else "no"
             z.dev = d
-            if self.use_network_manager:
+            if z.use_network_manager:
                 self.install_resource(
-                    "network/nm-connection", jc,
+                    "network/nm-connection",
+                    jc,
                     _NM_CONNECTIONS.join(d.name + ".nmconnection"),
-                    mode="600"
+                    # TODO(e-carlin): this param doesn't exist. Need to figure out what mode is correct.
+                    mode="600",
                 )
             else:
                 self.install_resource(
