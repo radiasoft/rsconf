@@ -135,7 +135,7 @@ class T(rsconf.component.T):
                     jc,
                     _NM_CONNECTIONS.join(d.name + ".nmconnection"),
                     # TODO(e-carlin): this param doesn't exist. Need to figure out what mode is correct.
-                    mode="600",
+                    # mode="600",
                 )
             else:
                 self.install_resource(
