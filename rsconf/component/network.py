@@ -43,10 +43,9 @@ class T(rsconf.component.T):
 
     def internal_build_compile(self):
         self.buildt.require_component("base_os")
-        # Determine if we should use NetworkManager based on OS
-        self.use_network_manager = self.hdb.base_os.os_release.get('ID') != 'centos' or \
-                                 int(self.hdb.base_os.os_release.get('VERSION_ID', '0').split('.')[0]) > 7
         self.j2_ctx = self.hdb.j2_ctx_copy()
+        # Use NetworkManager for Alma Linux hosts, network-scripts for others
+        self.use_network_manager = self.hdb.rsconf_db.host in self.hdb.alma_hosts
         jc = self.j2_ctx
         z = jc.network
         z.trusted_nets = tuple(sorted(z.trusted.keys()))
