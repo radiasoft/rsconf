@@ -10,5 +10,5 @@ vm_devbox_main() {
     rsconf_yum_install vagrant
     systemctl enable --now libvirtd
     systemctl start libvirtd
-    usermod --append --groups libvirt vagrant
+    usermod --append --groups libvirt '{{ this.run_u }}'
 }
