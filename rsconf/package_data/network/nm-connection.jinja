@@ -15,3 +15,26 @@ dns={{ network.defroute.net.nameservers|join(';') if network.defroute and networ
 
 [ipv6]
 method=ignore
+
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+nnection]
+id=eno1.132
+type=vlan
+
+[vlan]
+parent=eno1
+id=132
+
+[ethernet]
+mac-address-blacklist=
+
+[ipv4]
+method=manual
+addresses=216.46.165.92/27
+gateway=216.46.165.65
+dns-search=bivio.biz
+dns=209.170.216.5;216.87.64.2
+
+[ipv6]
+method=ignore

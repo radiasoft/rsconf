@@ -134,6 +134,8 @@ class T(rsconf.component.T):
                     "network/nm-connection",
                     jc,
                     _NM_CONNECTIONS.join(d.name + ".nmconnection"),
+this is required. must set 600 for things to work
+also see nm-connection.jinja
                     # TODO(e-carlin): this param doesn't exist. Need to figure out what mode is correct.
                     # mode="600",
                 )
