@@ -71,7 +71,7 @@ class T(rsconf.component.T):
         if not self.hdb.network.devices:
             return
         if z.use_network_manager:
-            self.service_prepare((_NM_CONNECTIONS, _RESOLV_CONF))
+            self.service_prepare((_NM_CONNECTIONS, _RESOLV_CONF), name="NetworkManager")
         else:
             self.service_prepare((_SCRIPTS, _RESOLV_CONF))
         self._devices(jc)
