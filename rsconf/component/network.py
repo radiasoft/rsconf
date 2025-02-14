@@ -124,6 +124,8 @@ class T(rsconf.component.T):
         self.install_access(mode="444", owner=self.hdb.rsconf_db.root_u)
         if z.defroute:
             self.install_resource("network/resolv.conf", jc, _RESOLV_CONF)
+        if z.use_network_manager:
+            self.install_access(mode="600", owner=self.hdb.rsconf_db.root_u)
         for d in z._devs:
             for k, v in d.items():
                 if isinstance(v, bool):
@@ -134,10 +136,6 @@ class T(rsconf.component.T):
                     "network/nm-connection",
                     jc,
                     _NM_CONNECTIONS.join(d.name + ".nmconnection"),
-this is required. must set 600 for things to work
-also see nm-connection.jinja
-                    # TODO(e-carlin): this param doesn't exist. Need to figure out what mode is correct.
-                    # mode="600",
                 )
             else:
                 self.install_resource(
@@ -149,6 +147,7 @@ also see nm-connection.jinja
             ), "{}: docker.iptables not allowed on a public ip".format(
                 z.defroute.ip,
             )
+            self.install_access(mode="444", owner=self.hdb.rsconf_db.root_u)
             self.install_resource("network/iptables", jc, _IPTABLES)
         self.append_root_bash_with_main(jc)
 

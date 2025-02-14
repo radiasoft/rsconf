@@ -1,7 +1,13 @@
 [connection]
 id={{ network.dev.name }}
-type=ethernet
+type={{ 'vlan' if network.dev.vlan else 'ethernet' }}
 interface-name={{ network.dev.name }}
+
+{% if network.dev.vlan %}
+[vlan]
+parent={{ network.dev.name.split('.')[0] }}
+id={{ network.dev.name.split('.')[1] }}
+{% endif %}
 
 [ethernet]
 mac-address-blacklist=
@@ -12,29 +18,6 @@ addresses={{ network.dev.ip }}/{{ network.dev.net.netmask }}
 gateway={{ network.dev.net.gateway }}
 dns-search={{ network.defroute.net.search if network.defroute and network.defroute.net.search else '' }}
 dns={{ network.defroute.net.nameservers|join(';') if network.defroute and network.defroute.net.nameservers else '' }}
-
-[ipv6]
-method=ignore
-
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-nnection]
-id=eno1.132
-type=vlan
-
-[vlan]
-parent=eno1
-id=132
-
-[ethernet]
-mac-address-blacklist=
-
-[ipv4]
-method=manual
-addresses=216.46.165.92/27
-gateway=216.46.165.65
-dns-search=bivio.biz
-dns=209.170.216.5;216.87.64.2
 
 [ipv6]
 method=ignore
