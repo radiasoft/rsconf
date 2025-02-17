@@ -44,6 +44,9 @@ server {
     location = /robots.txt {
         rewrite (.*) /static/robots.txt;
     }
+    location = /security.txt {
+        rewrite (.*) /static/security.txt;
+    }
 {% if sirepo.wordpress_host %}
 {# legacy redirects #}
     location = /en/xray-beamlines.html {
