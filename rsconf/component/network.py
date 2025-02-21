@@ -210,7 +210,15 @@ class T(rsconf.component.T):
         def _dns(z):
             if d.defroute:
                 return (d.net.get("search", ""), ";".join(d.net.get("nameservers", ())))
-            return ('', '')
+            return ("", "")
+
+        def _init(name, z):
+            d = copy.deepcopy(z.devices[name])
+            if z.use_network_manager:
+                d.nm = PKDict()
+            z._devs.append(d)
+            d.name = name
+            return d
 
         def _nat(device, z):
             for x in "input", "output":
@@ -221,10 +229,21 @@ class T(rsconf.component.T):
                     raise AssertionError(f"{n}: duplicate {device.name} ({z[n].name})")
                 z[n] = device
 
-        def _vlan(device, name, use_network_manager):
-            x = name.split(".")
+        def _net(device, z):
+            device.net = self._net_check(device.ip)
+            if device.net.gateway:
+                routes.append(device)
+            if device.setdefault("defroute", False):
+                if z.defroute:
+                    raise AssertionError(
+                        f"{defroute} & {z.defroute}: both declared as default routes"
+                    )
+                z.defroute = defroute
+
+        def _vlan(device):
+            x = device.name.split(".")
             device.vlan = len(x) > 1
-            if not use_network_manager:
+            if "nm" not in device:
                 return
             device.nm.connection_type = "vlan" if device.vlan else "ethernet"
             if not device.vlan:
@@ -237,22 +256,10 @@ class T(rsconf.component.T):
         z.defroute = None
         z.nat_input_dev = None
         for dn in sorted(z.devices):
-            d = copy.deepcopy(z.devices[dn])
-            if z.use_network_manager:
-                d.nm = PKDict()
-            z._devs.append(d)
-            d.name = dn
-            _vlan(d, dn, z.use_network_manager)
-            d.net = self._net_check(d.ip)
-            if d.net.gateway:
-                routes.append(d)
-            if d.setdefault("defroute", False):
-                if z.defroute:
-                    raise AssertionError(
-                        f"{d} & {z.defroute}: both declared as default routes"
-                    )
-                z.defroute = d
+            d = _init(dn, z)
+            _net(d, z)
             _nat(d, z)
+            _vlan(d)
         if not z.defroute:
             z.defroute = self._defroute(routes)
         z.defroute.defroute = True
