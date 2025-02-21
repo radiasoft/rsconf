@@ -16,8 +16,8 @@ import rsconf.systemd
 _DEFAULT_VAGRANT_CPUS = 4
 # Allowable pattern enforced by vagrant
 _VM_HOSTNAME_RE = "[a-z0-9][a-z0-9.-]*"
-_LIB_VIRT_D = "libvirt"
-_VAR_LIBVIRT_D = "/var/lib/libvirt"
+_LIB_VIRT_SUB_D = "libvirt"
+_VAR_LIBVIRT_D = pkio.py_path("/var/lib/libvirt")
 
 
 class T(rsconf.component.T):
@@ -37,8 +37,7 @@ class T(rsconf.component.T):
 
         jc, z = self.j2_ctx_init()
         z.root_u = jc.rsconf_db.root_u
-        z.libvirt_d = self.j2_ctx.rsconf_db.host_run_d.join(_LIB_VIRT_D)
-        z.var_libvirt_d = _VAR_LIBVIRT_D
+        z.libvirt_d = self.j2_ctx.rsconf_db.host_run_d.join(_LIB_VIRT_SUB_D)
         if self._is_main_instance():
             _create_user_instances()
             return
@@ -65,6 +64,7 @@ class T(rsconf.component.T):
         if self._is_main_instance():
             self.install_access(mode="755", owner=z.root_u)
             self.install_directory(z.libvirt_d)
+            self.install_symlink(z.libvirt_d, _VAR_LIBVIRT_D)
             self.append_root_bash_with_main()
             return
         self.install_access(mode="700", owner=z.run_u)

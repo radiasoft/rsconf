@@ -2,6 +2,7 @@
 vm_devbox_rsconf_component() {
 rsconf_install_access '755' 'root' 'root'
 rsconf_install_directory '/srv/libvirt'
+rsconf_install_symlink '../../../srv/libvirt' '/var/lib/libvirt'
 vm_devbox_main
 }
 #!/bin/bash
@@ -11,7 +12,6 @@ vm_devbox_main() {
         return
     fi
     yum-config-manager --set-enabled crb
-    ln -s '/srv/libvirt' '/var/lib/libvirt'
     rsconf_yum_install '@Virtualization Hypervisor' '@Virtualization Tools' '@Development Tools' libvirt-devel
     yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
     rsconf_yum_install vagrant
