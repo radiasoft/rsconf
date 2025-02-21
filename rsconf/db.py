@@ -104,7 +104,6 @@ class Host(PKDict):
                     "value={} must not begin with RSCONF_DB_".format(value),
                 )
 
-
     def _before_defaults(self, common):
         self.pkmerge(
             PKDict(
