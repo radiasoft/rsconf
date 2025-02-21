@@ -12,7 +12,15 @@ network_main
 }
 #!/bin/bash
 
-network_iptables() {
+network_firewalld_disable() {
+    if [[ $(systemctl is-active firewalld) == active ]]; then
+        systemctl stop firewalld
+    fi
+    systemctl disable firewalld >& /dev/null || true
+    systemctl mask firewalld >& /dev/null || true
+}
+
+network_iptables_enable() {
     if [[ $(systemctl is-active iptables 2>&1 || true) == active ]]; then
         # Just in case, make sure enabled
         systemctl enable iptables
@@ -27,20 +35,20 @@ network_iptables() {
 }
 
 network_main() {
-    if [[ $(systemctl is-active firewalld) == active ]]; then
-        systemctl stop firewalld
-    fi
-    systemctl disable firewalld >& /dev/null || true
-    systemctl mask firewalld >& /dev/null || true
-
-    network_manager
-    network_iptables
+    network_firewalld_disable
+    network_manager_disable; network_iptables_enable
 }
 
-network_manager() {
+network_manager_disable() {
     if [[ $(systemctl is-active NetworkManager) == active ]]; then
         systemctl stop NetworkManager
     fi
     systemctl disable NetworkManager >& /dev/null || true
 }
+
+network_manager_enable() {
+    rsconf_yum_install NetworkManager
+    # enable happens in rsconf_systemctl
+}
+
 

@@ -2,11 +2,12 @@
 id={{ network.dev.name }}
 type={{ network.dev.nm.connection_type }}
 interface-name={{ network.dev.name }}
+autoconnect=true
 
 {% if network.dev.vlan %}
 [vlan]
 parent={{ network.dev.nm.vlan_parent }}
-id={{ network.dev.name.nm.vlan_id }}
+id={{ network.dev.nm.vlan_id }}
 {% endif %}
 
 [ethernet]
@@ -15,6 +16,7 @@ mac-address-blacklist=
 [ipv4]
 method=manual
 addresses={{ network.dev.ip }}/{{ network.dev.net.netmask }}
+never-default={{ network.dev.nm.ipv4_never_default }}
 gateway={{ network.dev.net.gateway }}
 dns-search={{ network.dev.nm.ipv4_dns_search }}
 dns={{ network.dev.nm.ipv4_dns }}

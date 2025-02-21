@@ -9,6 +9,7 @@ fconf_macros:
       - poorly-configured-mailer.com
 
 default:
+  alma_hosts: [ v5.radia.run ]
   base_os:
     ip_forward: false
     volume_groups: {}
@@ -418,6 +419,13 @@ host:
         mounts:
           v4.radia.run:
             - /srv/mpi_worker/user
+      network:
+        devices:
+          eth0:
+            ip: 10.10.10.5
+          eth1:
+            ip: 216.17.132.33
+            defroute: True
       postfix:
         postfix_base():
         smart_host: v4.radia.run
