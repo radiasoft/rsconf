@@ -1,5 +1,8 @@
 #!/bin/bash
 vm_devbox_rsconf_component() {
+rsconf_install_access '755' 'root' 'root'
+rsconf_install_directory '/srv/libvirt'
+rsconf_install_symlink '../../../srv/libvirt' '/var/lib/libvirt'
 vm_devbox_main
 }
 #!/bin/bash

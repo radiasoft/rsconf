@@ -40,8 +40,95 @@ _GLOBAL_PATHS = None
 
 
 class Host(PKDict):
+    def __init__(self, raw, channel, host):
+        c = global_paths_as_dict().pkupdate(
+            channel=channel,
+            host=host.lower(),
+        )
+        self._before_defaults(c)
+        self._merge_levels(raw, c)
+        self._after_defaults(c)
+        self._assert_no_rsconf_db_values(self)
+        self._update_paths(self)
+        pkio.unchecked_remove(self.rsconf_db.tmp_d)
+        pkio.mkdir_parent(self.rsconf_db.tmp_d)
+        pkjson.dump_pretty(self, filename=self.rsconf_db.tmp_d.join("db.json"))
+
     def j2_ctx_copy(self):
         return copy.deepcopy(self)
+
+    def _after_defaults(self, common):
+        self.pkmerge(
+            PKDict(
+                rsconf_db=PKDict(
+                    # make sure has some value, base_os expects this
+                    local_dirs=PKDict(),
+                    local_files=_init_local_files(common),
+                    resource_paths=_init_resource_paths(common),
+                    # https://jnovy.fedorapeople.org/pxz/node1.html
+                    # compression with 8 threads and max compression
+                    # Useful (random) constants
+                    compress_cmd="pxz -T8 -9",
+                )
+                .pkupdate(common)
+                .pkupdate(
+                    # overrides the global tmp_d
+                    tmp_d=common.tmp_d.join(common.host),
+                ),
+            ),
+        )
+        # POSIT: required component defaults
+        self.pksetdefault(
+            component=PKDict,
+        ).component.pksetdefault(
+            tls_crt_create=pkconfig.in_dev_mode(),
+            tls_crt=PKDict,
+        )
+
+    def _assert_no_rsconf_db_values(self, value, path=""):
+        """If any value begins with RSCONF_DB_, should fail.
+
+        Args:
+            value (object): should not contain RSCONF_DB_.
+        """
+        if isinstance(value, dict):
+            for k, v in value.items():
+                self._assert_no_rsconf_db_values(k)
+                self._assert_no_rsconf_db_values(v)
+        elif isinstance(value, list):
+            for v in value:
+                self._assert_no_rsconf_db_values(v)
+        elif isinstance(value, pkconfig.STRING_TYPES):
+            if value.startswith("RSCONF_DB_"):
+                raise AssertionError(
+                    "value={} must not begin with RSCONF_DB_".format(value),
+                )
+
+    def _before_defaults(self, common):
+        self.pkmerge(
+            PKDict(
+                rsconf_db=PKDict(
+                    # Common defaults we allow overrides for
+                    host_run_d="/srv",
+                    run_u="vagrant",
+                    root_u="root",
+                    installer_url="https://radia.run",
+                ).pkupdate(common)
+            ),
+        )
+
+    def _merge_levels(self, raw, common):
+        for l in LEVELS:
+            v = raw[l]
+            if l != LEVELS[0]:
+                v = v.get(common.channel)
+                if not v:
+                    continue
+                if l == LEVELS[2]:
+                    v = v.get(common.host)
+                    if not v:
+                        continue
+            self.pkmerge(copy.deepcopy(v))
 
     def __str(self, v):
         if isinstance(v, dict):
@@ -52,6 +139,18 @@ class Host(PKDict):
         if isinstance(v, (list, tuple)):
             return [self.__str(x) for x in v]
         return str(v)
+
+    def _update_paths(self, base):
+        """If a path ends with ``_f`` or ``_d``, make it a py.path
+
+        Args:
+            base (dict): may contain paths
+        """
+        for k in list(base.keys()):
+            if k.endswith(("_d", "_f")):
+                base[k] = pkio.py_path(base[k])
+            elif isinstance(base[k], dict):
+                self._update_paths(base[k])
 
 
 class T(PKDict):
@@ -70,58 +169,8 @@ class T(PKDict):
             )
         return res
 
-    def host_db(self, channel, host):
-        c = global_paths_as_dict().pkupdate(
-            channel=channel,
-            host=host.lower(),
-        )
-        res = Host().pkmerge(
-            PKDict(
-                rsconf_db=PKDict(
-                    # Common defaults we allow overrides for
-                    host_run_d="/srv",
-                    run_u="vagrant",
-                    root_u="root",
-                    installer_url="https://radia.run",
-                ).pkupdate(c)
-            ),
-        )
-        for l in LEVELS:
-            v = self.base[l]
-            if l != LEVELS[0]:
-                v = v.get(channel)
-                if not v:
-                    continue
-                if l == LEVELS[2]:
-                    v = v.get(host)
-                    if not v:
-                        continue
-            res.pkmerge(copy.deepcopy(v))
-        res.pkmerge(
-            PKDict(
-                rsconf_db=PKDict(
-                    # make sure has some value, base_os expects this
-                    local_dirs=PKDict(),
-                    local_files=_init_local_files(c),
-                    resource_paths=_init_resource_paths(c),
-                    # https://jnovy.fedorapeople.org/pxz/node1.html
-                    # compression with 8 threads and max compression
-                    # Useful (random) constants
-                    compress_cmd="pxz -T8 -9",
-                )
-                .pkupdate(c)
-                .pkupdate(
-                    # overrides the global tmp_d
-                    tmp_d=c.tmp_d.join(host),
-                ),
-            ),
-        )
-        _assert_no_rsconf_db_values(res)
-        _update_paths(res)
-        pkio.unchecked_remove(res.rsconf_db.tmp_d)
-        pkio.mkdir_parent(res.rsconf_db.tmp_d)
-        pkjson.dump_pretty(res, filename=res.rsconf_db.tmp_d.join("db.json"))
-        return res
+    def host_db(self, *args, **kwargs):
+        return Host(self.base, *args, **kwargs)
 
     def _init_fconf(self, base_vars):
         from pykern import fconf
@@ -290,26 +339,6 @@ def user_home_path(user):
     return USER_HOME_ROOT_D.join(user)
 
 
-def _assert_no_rsconf_db_values(value, path=""):
-    """If any value begins with RSCONF_DB_, should fail.
-
-    Args:
-        value (object): should not contain RSCONF_DB_.
-    """
-    if isinstance(value, dict):
-        for k, v in value.items():
-            _assert_no_rsconf_db_values(k)
-            _assert_no_rsconf_db_values(v)
-    elif isinstance(value, list):
-        for v in value:
-            _assert_no_rsconf_db_values(v)
-    elif isinstance(value, pkconfig.STRING_TYPES):
-        if value.startswith("RSCONF_DB_"):
-            raise AssertionError(
-                "value={} must not begin with RSCONF_DB_".format(value),
-            )
-
-
 @pkconfig.parse_none
 def _cfg_root(value):
     """Parse root directory"""
@@ -365,19 +394,6 @@ def _init_resource_paths(rsconf_db):
     for i in rsconf_db.channel, rsconf_db.host:
         res.insert(0, res[0].join(i))
     return res
-
-
-def _update_paths(base):
-    """If a path ends with ``_f`` or ``_d``, make it a py.path
-
-    Args:
-        base (dict): may contain paths
-    """
-    for k in list(base.keys()):
-        if k.endswith(("_d", "_f")):
-            base[k] = pkio.py_path(base[k])
-        elif isinstance(base[k], dict):
-            _update_paths(base[k])
 
 
 cfg = pkconfig.init(
