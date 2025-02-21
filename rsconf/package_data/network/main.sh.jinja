@@ -21,10 +21,15 @@ network_main() {
     systemctl disable firewalld >& /dev/null || true
     systemctl mask firewalld >& /dev/null || true
 
+    network_manager
+    {% if network.iptables_enable %}
+    network_iptables
+    {% endif %}
+}
+
+network_manager() {
     {% if network.use_network_manager %}
-    if ! rpm -q NetworkManager &>/dev/null; then
-        rsconf_yum_install NetworkManager
-    fi
+    rsconf_yum_install NetworkManager
     systemctl enable NetworkManager
     systemctl start NetworkManager
     nmcli connection reload
@@ -33,9 +38,5 @@ network_main() {
         systemctl stop NetworkManager
     fi
     systemctl disable NetworkManager >& /dev/null || true
-    {% endif %}
-
-    {% if network.iptables_enable %}
-    network_iptables
     {% endif %}
 }

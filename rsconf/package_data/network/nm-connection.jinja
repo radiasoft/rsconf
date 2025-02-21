@@ -1,12 +1,12 @@
 [connection]
 id={{ network.dev.name }}
-type={{ 'vlan' if network.dev.vlan else 'ethernet' }}
+type={{ network.dev.nm.connection_type }}
 interface-name={{ network.dev.name }}
 
 {% if network.dev.vlan %}
 [vlan]
-parent={{ network.dev.name.split('.')[0] }}
-id={{ network.dev.name.split('.')[1] }}
+parent={{ network.dev.nm.vlan_parent }}
+id={{ network.dev.name.nm.vlan_id }}
 {% endif %}
 
 [ethernet]
@@ -16,8 +16,8 @@ mac-address-blacklist=
 method=manual
 addresses={{ network.dev.ip }}/{{ network.dev.net.netmask }}
 gateway={{ network.dev.net.gateway }}
-dns-search={{ network.defroute.net.search if network.defroute and network.defroute.net.search else '' }}
-dns={{ network.defroute.net.nameservers|join(';') if network.defroute and network.defroute.net.nameservers else '' }}
+dns-search={{ network.dev.nm.ipv4_dns_search }}
+dns={{ network.dev.nm.ipv4_dns }}
 
 [ipv6]
 method=ignore

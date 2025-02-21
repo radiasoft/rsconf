@@ -46,6 +46,7 @@ class T(rsconf.component.T):
         self.j2_ctx = self.hdb.j2_ctx_copy()
         jc = self.j2_ctx
         z = jc.network
+        # TODO(robnagler) Generalize this check in db after #548 is merged
         z.use_network_manager = self.hdb.rsconf_db.host in self.hdb.get(
             "alma_hosts", []
         )
@@ -125,6 +126,7 @@ class T(rsconf.component.T):
         if z.defroute:
             self.install_resource("network/resolv.conf", jc, _RESOLV_CONF)
         if z.use_network_manager:
+            # TODO(robnagler) does this have to be writable?
             self.install_access(mode="600", owner=self.hdb.rsconf_db.root_u)
         for d in z._devs:
             for k, v in d.items():
@@ -205,6 +207,30 @@ class T(rsconf.component.T):
         return defroute
 
     def _devices(self, jc):
+        def _dns(z):
+            if d.defroute:
+                return (d.net.get("search", ""), ";".join(d.net.get("nameservers", ())))
+            return ('', '')
+
+        def _nat(device, z):
+            for x in "input", "output":
+                if not device.setdefault("is_nat_" + x, False):
+                    continue
+                n = f"nat_{x}_dev"
+                if z.get(n):
+                    raise AssertionError(f"{n}: duplicate {device.name} ({z[n].name})")
+                z[n] = device
+
+        def _vlan(device, name, use_network_manager):
+            x = name.split(".")
+            device.vlan = len(x) > 1
+            if not use_network_manager:
+                return
+            device.nm.connection_type = "vlan" if device.vlan else "ethernet"
+            if not device.vlan:
+                return
+            (device.nm.vlan_parent, device.nm.vlan_id) = x
+
         z = jc.network
         z._devs = []
         routes = []
@@ -212,27 +238,27 @@ class T(rsconf.component.T):
         z.nat_input_dev = None
         for dn in sorted(z.devices):
             d = copy.deepcopy(z.devices[dn])
+            if z.use_network_manager:
+                d.nm = PKDict()
             z._devs.append(d)
             d.name = dn
-            d.vlan = "." in dn
+            _vlan(d, dn, z.use_network_manager)
             d.net = self._net_check(d.ip)
             if d.net.gateway:
                 routes.append(d)
             if d.setdefault("defroute", False):
-                assert (
-                    not z.defroute
-                ), "{} & {}: both declared as default routes".format(d, z.defroute)
-                z.defroute = d
-            for x in "input", "output":
-                if d.setdefault("is_nat_" + x, False):
-                    ad = "nat_{}_dev".format(x)
-                    assert not z.get(ad), "{}: duplicate {} ({})".format(
-                        ad, d.name, z.get("ad").name
+                if z.defroute:
+                    raise AssertionError(
+                        f"{d} & {z.defroute}: both declared as default routes"
                     )
-                    z[ad] = d
+                z.defroute = d
+            _nat(d, z)
         if not z.defroute:
             z.defroute = self._defroute(routes)
         z.defroute.defroute = True
+        if z.use_network_manager:
+            for d in sorted(z.devices):
+                (d.nm.ipv4_dns_search, d.nm.ipv4_dns) = _dns(d)
 
     def _nets(self, jc, spec):
         nets = pkcollections.Dict()
