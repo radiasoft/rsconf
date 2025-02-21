@@ -614,7 +614,7 @@ def _find_tls_crt(j2_ctx, domain):
     from rsconf import db
 
     d = j2_ctx.rsconf_db.tls_d
-    for crt, domains in j2_ctx.component.get("tls_crt", PKDict()).items():
+    for crt, domains in j2_ctx.component.tls_crt.items():
         if domain in domains:
             return d.join(crt), domains
     for s in (
