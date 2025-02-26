@@ -5,7 +5,7 @@ vm_devbox_create_vm() {
     if [[ -e Vagrantfile ]]; then
         return
     fi
-    curl 'https://radia.run' | vagrant_dev_vm_devbox=1 vagrant_dev_cpus=8 bash -s vagrant-sirepo-dev 'user-1.radia.run'
+    curl 'https://radia.run' | vagrant_dev_vm_devbox=1 vagrant_dev_cpus=8 vagrant_dev_memory=8192 bash -s vagrant-sirepo-dev 'user-1.radia.run'
 }
 
 vm_devbox_main() {
