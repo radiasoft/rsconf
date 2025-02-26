@@ -5,7 +5,7 @@ vm_devbox_create_vm() {
     if [[ -e Vagrantfile ]]; then
         return
     fi
-    curl '{{ rsconf_db.installer_url }}' | vagrant_dev_vm_devbox=1 vagrant_dev_cpus={{ this.vagrant_cpus }} bash -s vagrant-sirepo-dev '{{ this.vm_hostname}}'
+    curl '{{ rsconf_db.installer_url }}' | vagrant_dev_vm_devbox=1 vagrant_dev_cpus={{ this.vagrant_cpus }} vagrant_dev_memory={{ this.vagrant_memory }} bash -s vagrant-sirepo-dev '{{ this.vm_hostname}}'
 }
 
 vm_devbox_main() {
