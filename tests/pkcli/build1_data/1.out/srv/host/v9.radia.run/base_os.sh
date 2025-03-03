@@ -27,7 +27,7 @@ rsconf_install_access '400' 'root' 'root'
 rsconf_install_file '/etc/duo/pam_duo.conf' '5717fc698953812c8f9e86bb674d33bd'
 rsconf_install_file '/etc/pam.d/sshd' '0e1c42ba763cb8eaae0275aea35b7c16'
 rsconf_install_access '400' 'root' 'root'
-rsconf_install_file '/etc/ssh/sshd_config' 'd971c91e7dea6b9b5ae435e6a06582d6'
+rsconf_install_file '/etc/ssh/sshd_config' '384d4b70bfed0a0c7f29223c3be309c0'
 base_os_main
 }
 #!/bin/bash

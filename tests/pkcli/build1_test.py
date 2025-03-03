@@ -5,7 +5,19 @@
 """
 
 
-def test_build():
+def test_build(monkeypatch):
+    import socket
+
+    original_gethostbyname = socket.gethostbyname
+
+    def _gethostbyname(host):
+        if host == "user-1.radia.run":
+            # Must be valid ip
+            return "10.10.10.99"
+        return original_gethostbyname(host)
+
+    monkeypatch.setattr(socket, "gethostbyname", _gethostbyname)
+
     from pykern import pkconfig, pkunit, pkio
     from pykern.pkdebug import pkdlog
     from pykern.pkcollections import PKDict
