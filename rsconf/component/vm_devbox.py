@@ -42,7 +42,10 @@ class T(rsconf.component.T):
         if self._is_main_instance():
             _create_user_instances()
             return
-        self.buildt.require_component("network")
+        n = self.buildt.get_component("network")
+        z.vm_hostname = n.assert_host(
+            f"{self._user}.{jc[self.module_name].vm_parent_domain}",
+        )
         z.run_d = rsconf.systemd.unit_run_d(jc, self.name)
         z.run_u = jc.rsconf_db.run_u
         z.local_ip = rsconf.db.LOCAL_IP
@@ -52,7 +55,6 @@ class T(rsconf.component.T):
         z.start_f = z.run_d.join("start")
         z.stop_f = z.run_d.join("stop")
         z.timeout_start_min = jc[self.module_name].get("timeout_start_min", 15)
-        z.vm_hostname = f"{self._user}.{jc[self.module_name].vm_parent_domain}"
         z.vagrant_cpus = jc[self.module_name].get("vagrant_cpus", _DEFAULT_VAGRANT_CPUS)
         z.vagrant_memory = jc[self.module_name].get(
             "vagrant_memory", _DEFAULT_VAGRANT_MEMORY

@@ -138,3 +138,9 @@ Subsystem	sftp	/usr/libexec/openssh/sftp-server
 #	AllowTcpForwarding no
 #	PermitTTY no
 #	ForceCommand cvs server
+Match User joeblow
+    AllowTcpForwarding yes
+    ForceCommand /bin/echo 'Restricted access: Only jump allowed'
+    GatewayPorts no
+    PermitTTY no
+    X11Forwarding no

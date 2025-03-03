@@ -108,14 +108,20 @@ class T(component.T):
             self.install_abspath(v._source, t, ignore_exists=True)
 
     def _pam_duo_and_sshd(self):
+        def _jump(z):
+            x = z.get("sshd_jump_users")
+            return ",".join(x) if x else ""
+
         jc = self.j2_ctx
         z = jc.base_os
-        if "pam_duo" in z:
+        z.want_sshd_pam_duo = "pam_duo" in z
+        if z.want_sshd_pam_duo:
             self.install_resource2("duosecurity.repo", "/etc/yum.repos.d", access="444")
             self.install_rpm_key("gpg-pubkey-ff696172-62979e51")
             self.append_root_bash("rsconf_yum_install duo_unix")
             # These are read dynamically by sshd so don't need to be watched files
             self.install_resource2("pam_duo.conf", "/etc/duo", access="400")
+        z.sshd_jump_users_match = _jump(z)
         # Must be after pam_duo in case duo is installed so that sshd is not broken
         self.install_resource2("sshd", "/etc/pam.d")
         self.install_resource2("sshd_config", _SSHD_CONF_D, access="400")
