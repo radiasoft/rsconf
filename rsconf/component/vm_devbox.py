@@ -36,6 +36,7 @@ class T(rsconf.component.T):
                     )
                 )
 
+        self.buildt.require_component("network")
         jc, z = self.j2_ctx_init()
         z.root_u = jc.rsconf_db.root_u
         z.libvirt_d = self.j2_ctx.rsconf_db.host_run_d.join(_LIB_VIRT_SUB_D)
