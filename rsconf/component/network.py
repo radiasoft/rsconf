@@ -67,8 +67,7 @@ class T(rsconf.component.T):
                 blocked_ips=tuple(str(ipaddress.ip_network(n)) for n in z.blocked_ips),
                 trusted_nets=tuple(sorted(z.trusted.keys())),
                 # TODO(robnagler) Generalize this check in db after #548 is merged
-                use_network_scripts=self.hdb.is_centos7(),
-
+                use_network_scripts=self.hdb.rsconf_db.is_centos7,
             )
             z.pksetdefault(
                 trusted_public_nets=lambda: sorted(

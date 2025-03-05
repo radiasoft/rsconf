@@ -52,16 +52,13 @@ class Host(PKDict):
         self._update_paths(self)
         pkio.unchecked_remove(self.rsconf_db.tmp_d)
         pkio.mkdir_parent(self.rsconf_db.tmp_d)
+        self.rsconf_db.is_centos7 = self.rsconf_db.host in raw.pkunchecked_nested_get(
+            "rsconf_db.centos7_hosts", ()
+        )
         pkjson.dump_pretty(self, filename=self.rsconf_db.tmp_d.join("db.json"))
-
-    def is_centos7(self):
-        if x := self.rsconf_db.get("centos7_hosts", ()):
-            return self.rsconf_db.host in x
-        return False
 
     def j2_ctx_copy(self):
         return copy.deepcopy(self)
-
 
     def _after_defaults(self, common):
         self.pkmerge(
