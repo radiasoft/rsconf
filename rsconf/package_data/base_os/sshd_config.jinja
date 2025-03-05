@@ -44,7 +44,7 @@ SyslogFacility AUTHPRIV
 #LogLevel INFO
 
 # Authentication:
-{% if 'pam_duo' in base_os and base_os.pam_duo -%}
+{% if base_os.want_sshd_pam_duo -%}
 AuthenticationMethods publickey,keyboard-interactive
 PermitRootLogin yes
 ChallengeResponseAuthentication yes
@@ -150,3 +150,11 @@ Subsystem	sftp	/usr/libexec/openssh/sftp-server
 #	AllowTcpForwarding no
 #	PermitTTY no
 #	ForceCommand cvs server
+{% if base_os.sshd_jump_users_match -%}
+Match User {{ base_os.sshd_jump_users_match }}
+    AllowTcpForwarding yes
+    ForceCommand /bin/echo 'Restricted access: Only jump allowed'
+    GatewayPorts no
+    PermitTTY no
+    X11Forwarding no
+{% endif %}

@@ -462,6 +462,7 @@ host:
           host: sample-host.duosecurity.com
         pam_limits:
           nproc: 9999
+        sshd_jump_users: [ joeblow ]
       base_users:
         add:
           - joeblow

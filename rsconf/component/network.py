@@ -34,6 +34,15 @@ class T(rsconf.component.T):
     def add_trusted_tcp_ports(self, ports):
         self._add_ports("trusted_tcp_ports", ports)
 
+    def assert_host(self, host):
+        try:
+            if i := self.ip_and_net_for_host(host)[0]:
+                return host
+            m = f"unexpected gethostbyname ip={i}"
+        except Exception as e:
+            m = f"error={e}"
+        raise ValueError(f"invalid host={host} {m}")
+
     def ip_and_net_for_host(self, host):
         ip = socket.gethostbyname(host)
         return ip, self._net_check(ip)
