@@ -54,8 +54,14 @@ class Host(PKDict):
         pkio.mkdir_parent(self.rsconf_db.tmp_d)
         pkjson.dump_pretty(self, filename=self.rsconf_db.tmp_d.join("db.json"))
 
+    def is_centos7(self):
+        if x := self.rsconf_db.get("centos7_hosts", ()):
+            return self.rsconf_db.host in x
+        return False
+
     def j2_ctx_copy(self):
         return copy.deepcopy(self)
+
 
     def _after_defaults(self, common):
         self.pkmerge(

@@ -67,8 +67,8 @@ class T(rsconf.component.T):
                 blocked_ips=tuple(str(ipaddress.ip_network(n)) for n in z.blocked_ips),
                 trusted_nets=tuple(sorted(z.trusted.keys())),
                 # TODO(robnagler) Generalize this check in db after #548 is merged
-                use_network_manager=self.hdb.rsconf_db.host
-                in self.hdb.get("alma_hosts", []),
+                use_network_scripts=self.hdb.is_centos7(),
+
             )
             z.pksetdefault(
                 trusted_public_nets=lambda: sorted(
@@ -115,13 +115,13 @@ class T(rsconf.component.T):
                 )
 
         def _service_and_iptables_watch_file(z):
-            if z.use_network_manager:
-                self.service_prepare((_NM_CONNECTIONS,), name="NetworkManager")
-                z.main_function_calls = "network_manager_enable"
-                return _NM_CONNECTIONS
-            self.service_prepare((_SCRIPTS, _RESOLV_CONF))
-            z.main_function_calls = "network_manager_disable"
-            return _SCRIPTS
+            if z.use_network_scripts:
+                self.service_prepare((_SCRIPTS, _RESOLV_CONF))
+                z.main_function_calls = "network_manager_disable"
+                return _SCRIPTS
+            self.service_prepare((_NM_CONNECTIONS,), name="NetworkManager")
+            z.main_function_calls = "network_manager_enable"
+            return _NM_CONNECTIONS
 
         self.buildt.require_component("base_os")
         _, z = self.j2_ctx_init()
@@ -141,15 +141,15 @@ class T(rsconf.component.T):
                     device[k] = "yes" if v else "no"
             # global state
             z.dev = device
-            if z.use_network_manager:
+            if z.use_network_scripts:
+                self.install_resource(
+                    "network/ifcfg-en", jc, _SCRIPTS.join("ifcfg-" + device.name)
+                )
+            else:
                 self.install_resource(
                     "network/nm-connection",
                     jc,
                     _NM_CONNECTIONS.join(device.name + ".nmconnection"),
-                )
-            else:
-                self.install_resource(
-                    "network/ifcfg-en", jc, _SCRIPTS.join("ifcfg-" + device.name)
                 )
             z.pkdel("dev")
 
@@ -168,11 +168,11 @@ class T(rsconf.component.T):
         # Only for jupyterhub, explicitly set, and not on a machine
         # with a public address
         self.install_access(mode="444", owner=self.hdb.rsconf_db.root_u)
-        if z.defroute and not z.use_network_manager:
-            self.install_resource("network/resolv.conf", jc, _RESOLV_CONF)
-        if z.use_network_manager:
+        if not z.use_network_scripts:
             # TODO(robnagler) does this have to be writable?
             self.install_access(mode="600", owner=self.hdb.rsconf_db.root_u)
+        elif z.defroute:
+            self.install_resource("network/resolv.conf", jc, _RESOLV_CONF)
         for d in z._devs:
             # destructive
             _device(copy.deepcopy(d), jc, z)
@@ -243,7 +243,7 @@ class T(rsconf.component.T):
     def _devices(self):
         def _init(name, z):
             d = copy.deepcopy(z.devices[name])
-            if z.use_network_manager:
+            if not z.use_network_scripts:
                 d.nm = PKDict()
             z._devs.append(d)
             d.name = name
@@ -270,7 +270,7 @@ class T(rsconf.component.T):
                 z.defroute = device
 
         def _nm_ipv4_vars(z):
-            if not z.use_network_manager:
+            if z.use_network_scripts:
                 return
             for d in z._devs:
                 n = d.net if d.defroute else None

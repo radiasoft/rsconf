@@ -9,7 +9,6 @@ fconf_macros:
       - poorly-configured-mailer.com
 
 default:
-  alma_hosts: [ v5.radia.run ]
   base_os:
     ip_forward: false
     volume_groups: {}
@@ -183,6 +182,7 @@ default:
       - 10.10.10.0/24
       - 192.168.1.22
   rsconf_db:
+    centos7_hosts: 'map(lambda n: f"v{n}.radia.run", (3, 4, 6, 9))'
     #TODO(robnagler) POSIT dev/nginx/nginx.conf.jinja
     # defunct elvin_server https://en.wikipedia.org/wiki/Elvin
     http_host: http://v3.radia.run:2916
