@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 """sirepo.job_supervisor
 
 :copyright: Copyright (c) 2019 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from __future__ import absolute_import, division, print_function
+
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from rsconf import component
@@ -12,6 +11,7 @@ from rsconf import db
 from rsconf import systemd
 import base64
 import os
+import re
 
 
 class T(component.T):
@@ -36,7 +36,9 @@ class T(component.T):
             self,
             jc,
             image=z.docker_image,
-            env=self.buildt.get_component("sirepo").sirepo_unit_env(self),
+            env=self.buildt.get_component("sirepo").sirepo_unit_env(
+                self, exclude_re="^(?:sirepo_pkcli_service)"
+            ),
             # TODO(robnagler) wanted by nginx
             volumes=[jc.sirepo.srdb.root],
         )

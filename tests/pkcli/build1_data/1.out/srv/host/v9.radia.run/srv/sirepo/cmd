@@ -8,4 +8,4 @@ source ./env
 if [[ $@ ]]; then
     exec "$@"
 fi
-exec sirepo service uwsgi
+exec sirepo service tornado
