@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 """JupyterHub under Sirepo configuration
 
 :copyright: Copyright (c) 2020 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from __future__ import absolute_import, division, print_function
+
 from pykern import pkjson, pkio, pkconfig
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
@@ -58,6 +57,7 @@ class T(rsconf.component.jupyterhub.T):
             env=PKDict(
                 filter(
                     _env_ok,
+                    # Should have better filtering
                     self.buildt.get_component("sirepo").sirepo_unit_env(self).items(),
                 ),
                 **pkconfig.to_environ(

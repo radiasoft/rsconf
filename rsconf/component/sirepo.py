@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 """create sirepo configuration
 
 :copyright: Copyright (c) 2017-2023 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
+
 from pykern.pkcollections import PKDict
 from pykern import pkcompat
 from pykern import pkconfig
@@ -60,9 +60,8 @@ class T(component.T):
                         ),
                         pkcli=PKDict(
                             service=PKDict(
-                                ip=db.LOCAL_IP if self.__tornado else db.ANY_IP,
+                                ip=db.LOCAL_IP,
                                 run_dir=self.__run_d,
-                                tornado=self.__tornado,
                             ),
                         ),
                         srdb=PKDict(root=self.__run_d.join(_DB_SUBDIR)),
@@ -104,8 +103,9 @@ class T(component.T):
 
         def _tornado(jc, z):
             z._first_port = int(z.pknested_get("pkcli.service_port"))
-            z._last_port = z._first_port + int(z.pknested_get("num_api_servers")) - 1
+            z._last_port = z._first_port + int(z.num_api_servers) - 1
             assert z._first_port <= z._last_port
+            z.pkcli_service_tornado_primary_port = z._first_port
             self.__instance_spec = systemd.InstanceSpec(
                 base=self.name,
                 env_var="SIREPO_PKCLI_SERVICE_PORT",
@@ -125,16 +125,7 @@ class T(component.T):
         self.__docker_vols = []
         self.buildt.require_component("docker", "nginx", "db_bkp")
         jc, z = self.j2_ctx_init()
-        self.__tornado = bool(z.pkunchecked_nested_get("num_api_servers"))
-        if self.__tornado:
-            _tornado(jc, z)
-        else:
-            self.__static_files_gen_f = None
-            self.__run_d = systemd.docker_unit_prepare(
-                self,
-                jc,
-                docker_exec="sirepo service uwsgi",
-            )
+        _tornado(jc, z)
         z._run_u = jc.rsconf_db.run_u
         _defaults_1(jc)
         self._raydata()
@@ -155,24 +146,6 @@ class T(component.T):
         from rsconf.component import nginx
         from rsconf.component import docker
 
-        def _uwsgi(jc, z):
-            nginx.install_vhost(
-                self,
-                vhost=z.vhost,
-                backend_host=jc.rsconf_db.host,
-                backend_port=z.pkcli.service_port,
-                resource_f="sirepo/flask_nginx.conf",
-                j2_ctx=jc,
-            )
-            systemd.docker_unit_enable(
-                self,
-                jc,
-                image=z.docker_image,
-                env=self.sirepo_unit_env(),
-                after=self.__docker_unit_enable_after,
-                volumes=self.__docker_vols,
-            )
-
         def _tornado(jc, z):
             nginx.install_vhost(
                 self,
@@ -184,7 +157,7 @@ class T(component.T):
                 self,
                 jc,
                 image=z.docker_image,
-                env=self.sirepo_unit_env(),
+                env=self.sirepo_unit_env(self, exclude_re="^(?:sirepo_job_driver)"),
                 after=self.__docker_unit_enable_after,
                 volumes=self.__docker_vols,
                 static_files_gen=self.__static_files_gen_f,
@@ -193,10 +166,7 @@ class T(component.T):
         jc = self.j2_ctx
         z = jc[self.name]
         self._install_dirs_and_files()
-        if self.__tornado:
-            _tornado(jc, z)
-        else:
-            _uwsgi(jc, z)
+        _tornado(jc, z)
         db_bkp.install_script_and_subdir(
             self,
             jc,
@@ -204,16 +174,15 @@ class T(component.T):
             run_d=self.__run_d,
         )
 
-    def sirepo_unit_env(self, compt=None):
-        if not compt:
-            compt = self
+    def sirepo_unit_env(self, compt, exclude_re=None):
         # Only variable that is required to be in the environment
         return self.python_service_env(
             values=PKDict(
                 (k, v) for k, v in compt.j2_ctx.items() if k in self.__env_components
             ),
             # local only values; exclude double under (__) which are "private" values, e.g. sirepo._run_u
-            exclude_re=r"^sirepo(?:_docker_image|_static_files|.*_vhost|.*_client_max_body|_num_api_servers|__|_raydata)",
+            exclude_re=r"^sirepo(?:_docker_image|_static_files|.*_vhost|.*_client_max_body|_num_api_servers|__|_raydata)"
+            + ("|" + exclude_re if exclude_re else ""),
         )
 
     def _install_dirs_and_files(self):
