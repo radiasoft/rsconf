@@ -382,7 +382,7 @@ rsconf_main() {
     install_script_eval 000.sh
     rsconf_at_end=1 rsconf_service_restart
     if [[ $rsconf_rerun_required ]]; then
-        echo "$rsconf_rerun_required
+        install_info "$rsconf_rerun_required
 
 You need to rerun this command"
     fi
@@ -565,10 +565,10 @@ rsconf_setup_dev() {
 }
 
 rsconf_systemctl() {
-    # Handles multi-instance services (sirepo{1..3}) and regular services
     declare op=$1
     declare service=$2
     declare s=$service
+    # Handles multi-instance services (sirepo@{1..3}) and regular services
     if [[ $service =~ (.*)@ ]]; then
         s=${BASH_REMATCH[1]}
     fi
@@ -579,13 +579,16 @@ rsconf_systemctl() {
     # This handles switching from single instance to several instances (and back).
     case $op in
         enable)
+            # disable works, because it matches enabled services
             systemctl disable "$s" /etc/systemd/system/multi-user.target.wants/"$s"@* &> /dev/null || true
+            # do not quote for sirepo@{1..3} case
             eval systemctl enable $service
             rsconf_systemctl_clean_unit "$s" "$service"
             ;;
         is-active)
             # is-active doesn't do the right thing so test individually
             declare x
+            # do not quote for sirepo@{1..3} case
             for x in $(eval echo $service); do
                 if ! systemctl is-active $x &> /dev/null; then
                     return 1
@@ -594,10 +597,20 @@ rsconf_systemctl() {
             return 0
             ;;
         restart)
-            systemctl stop "$s" "$s@*" &> /dev/null || true
-            # fall through
+            # Handle special case restarts, like NetworkManager
+            declare n=rsconf_systemctl_restart_${s//-/_}
+            if type -f "$n"; then
+                install_info "Executing: $n"
+                "$n"
+                return
+            else
+                # stop works, because it matches running services
+                systemctl stop "$s" "$s@*" &> /dev/null || true
+            fi
+            # fall through to start
             ;&
         start)
+            # do not quote for sirepo@{1..3} case
             eval systemctl start $service
             ;;
         *)

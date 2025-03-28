@@ -1,10 +1,9 @@
 """create network config
 
-We disable NetworkManager, because we are managing the network now.
-It's unnecessary complexity. NetworkManager (NM) create
-``network-scripts`` files.
+Network configuration supports both network-scripts (for CentOS 7) and NetworkManager
+(for newer systems). The choice is made based on the OS version.
 
-:copyright: Copyright (c) 2018-2022 RadiaSoft LLC.  All Rights Reserved.
+:copyright: Copyright (c) 2018-2024 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 
@@ -22,6 +21,7 @@ import socket
 _SCRIPTS = pkio.py_path("/etc/sysconfig/network-scripts")
 _RESOLV_CONF = pkio.py_path("/etc/resolv.conf")
 _IPTABLES = pkio.py_path("/etc/sysconfig/iptables")
+_NM_CONNECTIONS = pkio.py_path("/etc/NetworkManager/system-connections")
 
 
 class T(rsconf.component.T):
@@ -51,65 +51,107 @@ class T(rsconf.component.T):
         return socket.gethostbyname(self.j2_ctx.rsconf_db.host)
 
     def internal_build_compile(self):
-        self.buildt.require_component("base_os")
-        self.j2_ctx = self.hdb.j2_ctx_copy()
-        jc = self.j2_ctx
-        z = jc.network
-        z.trusted_nets = tuple(sorted(z.trusted.keys()))
-        z.pksetdefault(
-            blocked_ips=[],
-            drop_ssh_probes=True,
-            pci_scanner_net=None,
-            public_ssh_ports=[],
-            public_tcp_ports=[],
-            public_udp_ports=[],
-            restricted_public_tcp_ports=PKDict,
-            trusted_tcp_ports=[],
-        )
-        self.__trusted_nets = self._nets(jc, z.trusted)
-        z.blocked_ips = [str(ipaddress.ip_network(n)) for n in z.blocked_ips]
-        z.pksetdefault(
-            trusted_public_nets=lambda: sorted(
-                [n.name for n in self.__trusted_nets.values() if n.is_global]
-            ),
-        )
-        self.__untrusted_nets = self._nets(jc, z.untrusted)
-        if not self.hdb.network.devices:
-            return
-        self.service_prepare((_SCRIPTS, _RESOLV_CONF))
-        self._devices(jc)
-        if z.defroute:
-            assert (
-                z.defroute.net.search and z.defroute.net.nameservers
-            ), "{}: defroute needs search and nameservers".format(z.defroute.net)
-        if z.get("iptables_enable", False) and len(z._devs) == 1:
-            z.update(
-                inet_dev=z.defroute,
-                private_devs=["lo"],
+        def _init(z):
+            z.pksetdefault(
+                blocked_ips=[],
+                drop_ssh_probes=True,
+                pci_scanner_net=None,
+                public_ssh_ports=[],
+                public_tcp_ports=[],
+                public_udp_ports=[],
+                restricted_public_tcp_ports=PKDict,
+                trusted_tcp_ports=[],
             )
-        else:
-            z.update(
-                inet_dev=z.defroute if z.defroute.net.is_global else None,
+            self.__trusted_nets = self._nets(self.j2_ctx, z.trusted)
+            z.pkupdate(
+                blocked_ips=tuple(str(ipaddress.ip_network(n)) for n in z.blocked_ips),
+                trusted_nets=tuple(sorted(z.trusted.keys())),
+                # TODO(robnagler) Generalize this check in db after #548 is merged
+                use_network_scripts=self.hdb.rsconf_db.is_centos7,
             )
             z.pksetdefault(
-                private_devs=lambda: ["lo"]
-                + [d.name for d in z._devs if d.net.is_private],
-                # No public addresses, no iptables,
-                iptables_enable=lambda: bool(z.inet_dev),
+                trusted_public_nets=lambda: sorted(
+                    [n.name for n in self.__trusted_nets.values() if n.is_global]
+                ),
             )
-        if z.iptables_enable:
-            # Only restart iptables service if we have iptables
-            self.service_prepare((_IPTABLES, _SCRIPTS), name="iptables")
-        if z.inet_dev:
+            self.__untrusted_nets = self._nets(self.j2_ctx, z.untrusted)
+
+        def _inet_and_private_devs(z):
+            if z.defroute:
+                assert (
+                    z.defroute.net.search and z.defroute.net.nameservers
+                ), "{}: defroute needs search and nameservers".format(z.defroute.net)
+            if z.get("iptables_enable", False) and len(z._devs) == 1:
+                z.update(
+                    inet_dev=z.defroute,
+                    private_devs=["lo"],
+                )
+            else:
+                z.update(
+                    inet_dev=z.defroute if z.defroute.net.is_global else None,
+                )
+                z.pksetdefault(
+                    private_devs=lambda: ["lo"]
+                    + [d.name for d in z._devs if d.net.is_private],
+                    # No public addresses, no iptables,
+                    iptables_enable=lambda: bool(z.inet_dev),
+                )
+
+        def _iptables(device_dir, z):
+            if not z.iptables_enable:
+                return
+            self.service_prepare((_IPTABLES, device_dir), name="iptables")
+
+        def _public_ip(z):
+            if not z.inet_dev:
+                return
             # TODO(robnagler) update other uses and remove self.hdb mod
             z.primary_public_ip = z.inet_dev.ip
             self.hdb.network.primary_public_ip = z.inet_dev.ip
-            if z.nat_input_dev:
-                assert z.get(
-                    "nat_output_dev"
-                ), "nat_input_dev and nat_output_dev both have to be defined"
+            if z.nat_input_dev and not z.get("nat_output_dev"):
+                raise AssertionError(
+                    "nat_input_dev and nat_output_dev both have to be defined"
+                )
+
+        def _service_and_iptables_watch_file(z):
+            if z.use_network_scripts:
+                self.service_prepare((_SCRIPTS, _RESOLV_CONF))
+                z.main_function_calls = "network_manager_disable"
+                return _SCRIPTS
+            self.service_prepare((_NM_CONNECTIONS,), name="NetworkManager")
+            z.main_function_calls = "network_manager_enable"
+            return _NM_CONNECTIONS
+
+        self.buildt.require_component("base_os")
+        _, z = self.j2_ctx_init()
+        _init(z)
+        if not z.devices:
+            return
+        w = _service_and_iptables_watch_file(z)
+        self._devices()
+        _inet_and_private_devs(z)
+        _iptables(w, z)
+        _public_ip(z)
 
     def internal_build_write(self):
+        def _device(device, jc, z):
+            for k, v in device.items():
+                if isinstance(v, bool):
+                    device[k] = "yes" if v else "no"
+            # global state
+            z.dev = device
+            if z.use_network_scripts:
+                self.install_resource(
+                    "network/ifcfg-en", jc, _SCRIPTS.join("ifcfg-" + device.name)
+                )
+            else:
+                self.install_resource(
+                    "network/nm-connection",
+                    jc,
+                    _NM_CONNECTIONS.join(device.name + ".nmconnection"),
+                )
+            z.pkdel("dev")
+
         jc = self.j2_ctx
         z = jc.network
         # Order matters: _restricted_public_tcp_ports modifed public_tcp_ports
@@ -125,23 +167,23 @@ class T(rsconf.component.T):
         # Only for jupyterhub, explicitly set, and not on a machine
         # with a public address
         self.install_access(mode="444", owner=self.hdb.rsconf_db.root_u)
-        if z.defroute:
+        if not z.use_network_scripts:
+            # TODO(robnagler) does this have to be writable?
+            self.install_access(mode="600", owner=self.hdb.rsconf_db.root_u)
+        elif z.defroute:
             self.install_resource("network/resolv.conf", jc, _RESOLV_CONF)
         for d in z._devs:
-            for k, v in d.items():
-                if isinstance(v, bool):
-                    d[k] = "yes" if v else "no"
-            z.dev = d
-            self.install_resource(
-                "network/ifcfg-en", jc, _SCRIPTS.join("ifcfg-" + d.name)
-            )
+            # destructive
+            _device(copy.deepcopy(d), jc, z)
         if z.iptables_enable:
             assert (
                 not jc.docker.iptables
             ), "{}: docker.iptables not allowed on a public ip".format(
                 z.defroute.ip,
             )
+            self.install_access(mode="444", owner=self.hdb.rsconf_db.root_u)
             self.install_resource("network/iptables", jc, _IPTABLES)
+            z.main_function_calls += "; network_iptables_enable"
         self.append_root_bash_with_main(jc)
 
     def trusted_nets(self):
@@ -197,35 +239,69 @@ class T(rsconf.component.T):
                 defroute = r
         return defroute
 
-    def _devices(self, jc):
-        z = jc.network
+    def _devices(self):
+        def _init(name, z):
+            d = copy.deepcopy(z.devices[name])
+            if not z.use_network_scripts:
+                d.nm = PKDict()
+            z._devs.append(d)
+            d.name = name
+            return d
+
+        def _nat(device, z):
+            for x in "input", "output":
+                if not device.setdefault("is_nat_" + x, False):
+                    continue
+                n = f"nat_{x}_dev"
+                if z.get(n):
+                    raise AssertionError(f"{n}: duplicate {device.name} ({z[n].name})")
+                z[n] = device
+
+        def _net(device, z):
+            device.net = self._net_check(device.ip)
+            if device.net.gateway:
+                routes.append(device)
+            if device.setdefault("defroute", False):
+                if z.defroute:
+                    raise AssertionError(
+                        f"{defroute} & {z.defroute}: both declared as default routes"
+                    )
+                z.defroute = device
+
+        def _nm_ipv4_vars(z):
+            if z.use_network_scripts:
+                return
+            for d in z._devs:
+                n = d.net if d.defroute else None
+                d.nm.ipv4_never_default = not n
+                (d.nm.ipv4_dns_search, d.nm.ipv4_dns) = (
+                    (n.get("search", ""), ";".join(map(str, n.get("nameservers", ()))))
+                    if n
+                    else ("", "")
+                )
+
+        def _vlan(device):
+            x = device.name.split(".")
+            device.vlan = len(x) > 1
+            if "nm" not in device:
+                return
+            device.nm.connection_type = "vlan" if device.vlan else "ethernet"
+            (device.nm.vlan_parent, device.nm.vlan_id) = x if device.vlan else ("", "")
+
+        z = self.j2_ctx.network
         z._devs = []
         routes = []
         z.defroute = None
         z.nat_input_dev = None
         for dn in sorted(z.devices):
-            d = copy.deepcopy(z.devices[dn])
-            z._devs.append(d)
-            d.name = dn
-            d.vlan = "." in dn
-            d.net = self._net_check(d.ip)
-            if d.net.gateway:
-                routes.append(d)
-            if d.setdefault("defroute", False):
-                assert (
-                    not z.defroute
-                ), "{} & {}: both declared as default routes".format(d, z.defroute)
-                z.defroute = d
-            for x in "input", "output":
-                if d.setdefault("is_nat_" + x, False):
-                    ad = "nat_{}_dev".format(x)
-                    assert not z.get(ad), "{}: duplicate {} ({})".format(
-                        ad, d.name, z.get("ad").name
-                    )
-                    z[ad] = d
+            d = _init(dn, z)
+            _net(d, z)
+            _nat(d, z)
+            _vlan(d)
         if not z.defroute:
             z.defroute = self._defroute(routes)
         z.defroute.defroute = True
+        _nm_ipv4_vars(z)
 
     def _nets(self, jc, spec):
         nets = pkcollections.Dict()

@@ -8,6 +8,9 @@ fconf_macros:
     whitelist_senders:
       - poorly-configured-mailer.com
 
+rsconf_db:
+  centos7_hosts: 'map(lambda n: f"v{n}.radia.run", (3, 4, 6, 9))'
+
 default:
   base_os:
     ip_forward: false
@@ -417,6 +420,13 @@ host:
         mounts:
           v4.radia.run:
             - /srv/mpi_worker/user
+      network:
+        devices:
+          eth0:
+            ip: 10.10.10.5
+          eth1:
+            ip: 216.17.132.33
+            defroute: True
       postfix:
         postfix_base():
         smart_host: v4.radia.run
