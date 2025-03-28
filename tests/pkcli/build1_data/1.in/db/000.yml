@@ -206,9 +206,8 @@ default:
         expiry_days: 1
     job:
       max_message_bytes: 333m
+    num_api_servers: 2
     pkcli:
-      service_processes: 1
-      service_threads: 20
       service_port: 7000
       job_supervisor:
         port: 7001
