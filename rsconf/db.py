@@ -55,6 +55,12 @@ class Host(PKDict):
         self.rsconf_db.is_centos7 = self.rsconf_db.host in raw.pkunchecked_nested_get(
             "rsconf_db.centos7_hosts", ()
         )
+        if self.rsconf_db.is_centos7:
+            self.rsconf_db.os_release_id = "centos"
+            self.rsconf_db.os_release_version_id = "7"
+        else:
+            self.rsconf_db.os_release_id = "almalinux"
+            self.rsconf_db.os_release_version_id = "9"
         pkjson.dump_pretty(self, filename=self.rsconf_db.tmp_d.join("db.json"))
 
     def j2_ctx_copy(self):

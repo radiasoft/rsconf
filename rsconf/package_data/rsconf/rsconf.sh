@@ -564,6 +564,19 @@ rsconf_setup_dev() {
     chmod 400 /root/.netrc
 }
 
+rsconf_setup_vars() {
+    declare channel=$1
+    declare id=$2
+    declare version=$3
+    export install_channel=$channel
+    if [[ $install_os_release_id != $id ]]; then
+        install_err "invalid os_release_id=$install_os_release_id expecting=$id"
+    fi
+    if  [[ $install_os_release_version_id == $version ]]; then
+        install_err "invalid os_release_version_id=$install_os_release_version_id expecting=$version"
+    fi
+}
+
 rsconf_systemctl() {
     declare op=$1
     declare service=$2
@@ -599,7 +612,7 @@ rsconf_systemctl() {
         restart)
             # Handle special case restarts, like NetworkManager
             declare n=rsconf_systemctl_restart_${s//-/_}
-            if type -f "$n"; then
+            if type -f "$n" &> /dev/null; then
                 install_info "Executing: $n"
                 "$n"
                 return
