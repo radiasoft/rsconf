@@ -572,7 +572,7 @@ rsconf_setup_vars() {
     if [[ $install_os_release_id != $id ]]; then
         install_err "invalid os_release_id=$install_os_release_id expecting=$id"
     fi
-    if  [[ $install_os_release_version_id == $version ]]; then
+    if  [[ $install_os_release_version_id != $version ]]; then
         install_err "invalid os_release_version_id=$install_os_release_version_id expecting=$version"
     fi
 }
