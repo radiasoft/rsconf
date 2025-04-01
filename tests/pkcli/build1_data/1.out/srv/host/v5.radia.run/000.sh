@@ -1,5 +1,5 @@
 #!/bin/bash
-export install_channel=dev
+rsconf_setup_vars 'dev' 'almalinux' '9'
 rsconf_require base_os
 rsconf_require network
 rsconf_require base_users

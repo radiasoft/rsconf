@@ -53,11 +53,14 @@ class T(PKDict):
             pkio.mkdir_parent(dst_d)
             self.hdb.build = PKDict(dst_d=dst_d)
             self._write_queue = []
-            self.require_component(*self.hdb.rsconf_db.components)
+            d = self.hdb.rsconf_db
+            self.require_component(*d.components)
             self._do_write_queue()
             self.write_root_bash(
                 "000",
-                ["export install_channel={}".format(self.hdb.rsconf_db.channel)]
+                [
+                    f"rsconf_setup_vars '{d.channel}' '{d.os_release_id}' '{d.os_release_version_id }'"
+                ]
                 + ["rsconf_require " + x for x in self.components_required],
             )
         except Exception:

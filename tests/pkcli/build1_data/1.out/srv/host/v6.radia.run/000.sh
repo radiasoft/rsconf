@@ -1,5 +1,5 @@
 #!/bin/bash
-export install_channel=dev
+rsconf_setup_vars 'dev' 'centos' '7'
 rsconf_require base_os
 rsconf_require network
 rsconf_require base_users
