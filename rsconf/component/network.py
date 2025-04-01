@@ -134,10 +134,22 @@ class T(rsconf.component.T):
         _public_ip(z)
 
     def internal_build_write(self):
+        def _fixup_bools(device, z):
+            def _do(to_fix):
+                for k, v in list(to_fix.items()):
+                    if isinstance(v, bool):
+                        to_fix[f"{k}_bool"] = v
+                        if z.use_network_scripts:
+                            to_fix[k] = "yes" if v else "no"
+                        else:
+                            to_fix[k] = "true" if v else "false"
+
+            _do(device)
+            if not z.use_network_scripts:
+                _do(device.nm)
+
         def _device(device, jc, z):
-            for k, v in device.items():
-                if isinstance(v, bool):
-                    device[k] = "yes" if v else "no"
+            _fixup_bools(device, z)
             # global state
             z.dev = device
             if z.use_network_scripts:
