@@ -4,7 +4,7 @@ type={{ network.dev.nm.connection_type }}
 interface-name={{ network.dev.name }}
 autoconnect=true
 
-{% if network.dev.vlan %}
+{% if network.dev.vlan_bool %}
 [vlan]
 parent={{ network.dev.nm.vlan_parent }}
 id={{ network.dev.nm.vlan_id }}

@@ -60,7 +60,7 @@ class Host(PKDict):
             self.rsconf_db.os_release_version_id = "7"
         else:
             self.rsconf_db.os_release_id = "almalinux"
-            self.rsconf_db.os_release_version_id = "9"
+            self.rsconf_db.os_release_version_id = "9.5"
         pkjson.dump_pretty(self, filename=self.rsconf_db.tmp_d.join("db.json"))
 
     def j2_ctx_copy(self):
