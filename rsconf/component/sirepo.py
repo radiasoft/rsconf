@@ -219,7 +219,7 @@ class T(component.T):
             )
 
     def _jupyterhublogin(self, z):
-        z.jupyterhub_enabled = self._in_sim_types("jupyterhublogin")
+        z.jupyterhub_enabled = not z.get("disable_sirepo_jupyterhub", False)
         if not z.jupyterhub_enabled:
             return
         self.__docker_vols.append(z.sim_api.jupyterhublogin.user_db_root_d)
