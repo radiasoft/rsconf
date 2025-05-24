@@ -77,7 +77,7 @@ def default_command():
             try:
                 pkjinja.render_file(f, j2_ctx, output=dst, strict_undefined=True)
             except Exception:
-                pkdlog("ERROR in jinja file={} j2_ctx=", f, j2_ctx)
+                pkdlog("ERROR in jinja file={} j2_ctx={}", f, j2_ctx)
                 raise
     subprocess.check_call(
         ["bash", str(db.global_path("secret_d").join("setup_dev.sh"))]

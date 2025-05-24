@@ -227,6 +227,8 @@ def global_paths_as_dict():
         PKDict: new copy of all paths
     """
     rv = PKDict(
+        # TODO(robnagler) introduce concept of const
+        bash_curl_cmd="curl --fail --silent --show-error --location",
         root_d=pkio.py_path() if cfg.root_d == _UNIT_TEST_ROOT_D else cfg.root_d,
     )
     rv.pkupdate(

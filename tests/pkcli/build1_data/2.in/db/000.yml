@@ -64,7 +64,7 @@ host:
       docker:
         tls_host: v4.radia.run
       rsconf_db:
-        components: [ sirepo ]
+        components: [ sirepo, vm_devbox ]
       sirepo:
         job_driver:
           docker:
@@ -72,6 +72,12 @@ host:
         num_api_servers: 10
         pkcli:
           service_port: 7777
+      vm_devbox:
+        users:
+          - devuser1
+        vm_parent_domain: radia.run
+      vm_devbox_user:
+        fedora_version: 42
 #Local Variables:
 #mode:yaml
 #End:

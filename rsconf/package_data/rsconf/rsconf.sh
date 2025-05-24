@@ -367,7 +367,7 @@ rsconf_main() {
     if [[ $setup_dev == setup_dev ]]; then
         rsconf_setup_dev "$host"
     fi
-    install_curl_flags+=( -n )
+    install_curl_flags+=( --netrc )
     install_info "$host: rsconf begin"
     install_url host/$host
     # Dynamically scoped; must be inline here
@@ -560,7 +560,7 @@ rsconf_service_trigger_restart() {
 rsconf_setup_dev() {
     declare host=$1
     export install_channel=dev
-    curl "$install_server/$host-netrc" > /root/.netrc
+    install_download "$install_server/$host-netrc" > /root/.netrc
     chmod 400 /root/.netrc
 }
 

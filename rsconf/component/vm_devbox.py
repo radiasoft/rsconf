@@ -36,6 +36,25 @@ class T(rsconf.component.T):
                     )
                 )
 
+        def _installer_cmd(z):
+            v = PKDict(
+                cmd="vagrant-sirepo-dev",
+                vagrant_dev_cpus=z.vagrant_cpus,
+                vagrant_dev_memory=z.vagrant_memory,
+                vagrant_dev_vm_devbox=1,
+            )
+            if z.fedora_version:
+                z.cmd = "vagrant-dev fedora"
+                z.install_version_fedora = z.fedora_version
+            # Not quoted properly for bash. None of the values needs
+            # to be escaped, because they should not contain specials and
+            # the source is trusted.
+            c = [f"bash -s {v.pkdel('cmd')} {z.vm_hostname}"]
+            return " ".join(_join_items(v) + c)
+
+        def _join_items(pairs):
+            return [f"{k}={pairs[k]}" for k in sorted(pairs.keys())]
+
         self.buildt.require_component("network")
         jc, z = self.j2_ctx_init()
         z.root_u = jc.rsconf_db.root_u
@@ -44,22 +63,25 @@ class T(rsconf.component.T):
             _create_user_instances()
             return
         n = self.buildt.get_component("network")
-        z.vm_hostname = n.assert_host(
-            f"{self._user}.{jc[self.module_name].vm_parent_domain}",
+        z.pksetdefault(
+            **jc[self.module_name],
         )
+        z.pksetdefault(
+            fedora_version=None,
+            timeout_start_min=15,
+            vagrant_cpus=_DEFAULT_VAGRANT_CPUS,
+            vagrant_memory=_DEFAULT_VAGRANT_MEMORY,
+        )
+        z.vm_hostname = n.assert_host(f"{self._user}.{z.vm_parent_domain}")
         z.run_d = rsconf.systemd.unit_run_d(jc, self.name)
         z.run_u = jc.rsconf_db.run_u
         z.local_ip = rsconf.db.LOCAL_IP
         z.ssh_port = jc.vm_devbox_users.spec[self._user].ssh_port
         z.ssh_guest_host_key_f = "/etc/ssh/host_key"
-        z.ssh_guest_identity_pub_f = "/etc/ssh/identity.pub"
+        z.ssh_guest_authorized_keys_f = f"/home/{z.run_u}/.ssh/authorized_keys"
         z.start_f = z.run_d.join("start")
         z.stop_f = z.run_d.join("stop")
-        z.timeout_start_min = jc[self.module_name].get("timeout_start_min", 15)
-        z.vagrant_cpus = jc[self.module_name].get("vagrant_cpus", _DEFAULT_VAGRANT_CPUS)
-        z.vagrant_memory = jc[self.module_name].get(
-            "vagrant_memory", _DEFAULT_VAGRANT_MEMORY
-        )
+        z.installer_cmd = _installer_cmd(z)
         rsconf.systemd.unit_prepare(
             self, self.j2_ctx, watch_files=(z.start_f, z.stop_f)
         )
