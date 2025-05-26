@@ -44,8 +44,8 @@ class T(rsconf.component.T):
                 vagrant_dev_vm_devbox=1,
             )
             if z.fedora_version:
-                z.cmd = "vagrant-dev fedora"
-                z.install_version_fedora = z.fedora_version
+                v.cmd = "vagrant-dev fedora"
+                v.install_version_fedora = z.fedora_version
             # Not quoted properly for bash. None of the values needs
             # to be escaped, because they should not contain specials and
             # the source is trusted.
