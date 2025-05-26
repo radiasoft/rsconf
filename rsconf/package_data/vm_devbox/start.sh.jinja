@@ -107,10 +107,11 @@ _install_stdin '{{ this.ssh_guest_host_key_f }}' <<'EOF_SSH_KEY'
 {{ this.ssh_host_key }}
 EOF_SSH_KEY
 
+# SECURITY: dev-mode so ok to delete passwords for root & run user
 for u in {{ this.root_u }} {{ this.run_u }}; do
     # hacky but better than updating password every time
-    if ! grep -q "^$f::" /etc/shadow; then
-        passwd -d "$f"
+    if ! grep -q "^$u::" /etc/shadow; then
+        passwd -d "$u"
     fi
 done
 
