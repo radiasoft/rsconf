@@ -103,7 +103,7 @@ if ! fgrep --quiet '{{ this.ssh_identity_pub_key }}' '{{ this.ssh_guest_authoriz
     echo '{{ this.ssh_identity_pub_key }}' >> '{{ this.ssh_guest_authorized_keys_f }}'
 fi
 
-_install_stdin '{{ this.ssh_guest_host_key_f }} <<'EOF_SSH_KEY'
+_install_stdin '{{ this.ssh_guest_host_key_f }}' <<'EOF_SSH_KEY'
 {{ this.ssh_host_key }}
 EOF_SSH_KEY
 
