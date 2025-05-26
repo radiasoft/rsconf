@@ -1,6 +1,8 @@
 #!/bin/bash
 set -eou pipefail
 
+export install_server='{{ rsconf_db.http_host }}'
+
 vm_devbox_create_vm() {
     if [[ -e Vagrantfile ]]; then
         return
