@@ -15,10 +15,10 @@ rsconf_append() {
     fi
     # Assumes file must exist or be writable
     if [[ $egrep ]]; then
-        if egrep -s -q -- "$egrep" "$file"; then
+        if grep -E -s -q -- "$egrep" "$file"; then
             return ${rsconf_edit_no_change_res:-1}
         fi
-    elif fgrep -s -q -x -- "$line" "$file"; then
+    elif grep -F -s -q -x -- "$line" "$file"; then
         return ${rsconf_edit_no_change_res:-1}
     fi
     echo "$line" >> "$file"
@@ -79,7 +79,7 @@ rsconf_edit() {
         return ${rsconf_edit_no_change_res:-1}
     fi
     perl -pi -e "$edit_perl" "$file"
-    g=$( egrep -s -q -- "$need_egrep" "$file" && echo 1 || true )
+    g=$( grep -E -s -q -- "$need_egrep" "$file" && echo 1 || true )
     if [[ $g == $need ]]; then
         install_err "$edit_perl: failed to modify: $file"
     fi

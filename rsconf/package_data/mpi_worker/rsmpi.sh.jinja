@@ -35,7 +35,7 @@ rsmpi_exec() {
     declare a=
     declare x
     declare e=
-    for x in $(compgen -A variable | egrep "($rsmpi_pass_env)"); do
+    for x in $(compgen -A variable | grep -E "($rsmpi_pass_env)"); do
         a+=$x,
     done
     declare i=$(rsmpi_local_ip)
