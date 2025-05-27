@@ -1,13 +1,13 @@
 #!/bin/bash
+set +e
+source ~/.bashrc
 set -eou pipefail
-
-export install_server='http://v3.radia.run:2916'
 
 vm_devbox_create_vm() {
     if [[ -e Vagrantfile ]]; then
         return
     fi
-    curl --fail --location --show-error --silent 'https://radia.run' | vagrant_dev_cpus=8 vagrant_dev_memory=8192 vagrant_dev_vm_devbox=1 bash -s vagrant-sirepo-dev user-1.radia.run
+    vagrant_dev_cpus=8 vagrant_dev_memory=8192 vagrant_dev_vm_devbox=1 radia_run vagrant-sirepo-dev user-1.radia.run
 }
 
 vm_devbox_main() {
@@ -100,23 +100,19 @@ Match User vagrant Address 127.0.0.1
     PasswordAuthentication yes
 EOF_SSH_CONFIG
 
-# has to exist so no redirect necessary or permissions
-if ! fgrep --quiet 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKe3wWXD3GUVd/5viGVhf6L/ttJJfmksXauPSpC8zWru v9.radia.run
-' '/home/vagrant/.ssh/authorized_keys'; then
-    echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKe3wWXD3GUVd/5viGVhf6L/ttJJfmksXauPSpC8zWru v9.radia.run
-' >> '/home/vagrant/.ssh/authorized_keys'
+# authorized_keys has to exist so permissions correct
+if ! grep -F --quiet 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKe3wWXD3GUVd/5viGVhf6L/ttJJfmksXauPSpC8zWru v9.radia.run' '/home/vagrant/.ssh/authorized_keys'; then
+    echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKe3wWXD3GUVd/5viGVhf6L/ttJJfmksXauPSpC8zWru v9.radia.run' >> '/home/vagrant/.ssh/authorized_keys'
 fi
 
-_install_stdin '/etc/ssh/host_key' <<'EOF_SSH_KEY'
------BEGIN OPENSSH PRIVATE KEY-----
+_install_stdin '/etc/ssh/host_key' <<< '-----BEGIN OPENSSH PRIVATE KEY-----
 b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
 QyNTUxOQAAACCT/PsL9/XcOTmEXAvGVhJj5+MlLl/UBUNDiC+H84AAHQAAAJBriK60a4iu
 tAAAAAtzc2gtZWQyNTUxOQAAACCT/PsL9/XcOTmEXAvGVhJj5+MlLl/UBUNDiC+H84AAHQ
 AAAEBVP+MksqPH64Pi3Rfb8lieY9ofTRBWZqvKWk2oYjuqsJP8+wv39dw5OYRcC8ZWEmPn
 4yUuX9QFQ0OIL4fzgAAdAAAADHY5LnJhZGlhLnJ1bgE=
 -----END OPENSSH PRIVATE KEY-----
-
-EOF_SSH_KEY
+'
 
 # SECURITY: dev-mode so ok to delete passwords for root & run user
 for u in root vagrant; do

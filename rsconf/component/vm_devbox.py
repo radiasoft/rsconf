@@ -49,7 +49,7 @@ class T(rsconf.component.T):
             # Not quoted properly for bash. None of the values needs
             # to be escaped, because they should not contain specials and
             # the source is trusted.
-            c = [f"bash -s {v.pkdel('cmd')} {z.vm_hostname}"]
+            c = [f"radia_run {v.pkdel('cmd')} {z.vm_hostname}"]
             return " ".join(_join_items(v) + c)
 
         def _join_items(pairs):

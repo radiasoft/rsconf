@@ -1,4 +1,5 @@
 #!/bin/bash
+set +e
 source ~/.bashrc
 set -eou pipefail
 
@@ -6,7 +7,7 @@ vm_devbox_create_vm() {
     if [[ -e Vagrantfile ]]; then
         return
     fi
-    {{ rsconf_db.bash_curl_cmd }} '{{ rsconf_db.installer_url }}' | {{ this.installer_cmd }}
+    {{ this.installer_cmd }}
 }
 
 vm_devbox_main() {
@@ -104,7 +105,7 @@ if ! grep -F --quiet '{{ this.ssh_identity_pub_key }}' '{{ this.ssh_guest_author
     echo '{{ this.ssh_identity_pub_key }}' >> '{{ this.ssh_guest_authorized_keys_f }}'
 fi
 
-_install_stdin '{{ this.ssh_guest_host_key_f }}' < '{{ this.ssh_host_key }}'
+_install_stdin '{{ this.ssh_guest_host_key_f }}' <<< '{{ this.ssh_host_key }}'
 
 # SECURITY: dev-mode so ok to delete passwords for root & run user
 for u in {{ this.root_u }} {{ this.run_u }}; do
