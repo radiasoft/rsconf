@@ -32,6 +32,7 @@ class T(rsconf.component.T):
                         f"{self.module_name}_{u}",
                         self.buildt,
                         _user=u,
+                        module_name=self.module_name,
                     )
                 )
 
@@ -111,7 +112,11 @@ class T(rsconf.component.T):
 
     def _ssh(self, jc, z):
         z.sshd_config_f = z.run_d.join("sshd_config")
-        s = self.gen_identity_and_host_ssh_keys(jc, "host", encrypt_identity=True)
+        s = self.gen_identity_and_host_ssh_keys(
+            ident_name=self._user,
+            visibility="host",
+            encrypt_identity=True,
+        )
         z.pkupdate(
             PKDict(
                 ssh_identity_pub_key=pkio.read_text(s.identity_pub_f),
