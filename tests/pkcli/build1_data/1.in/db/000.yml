@@ -232,7 +232,7 @@ default:
       mpi_worker:
         shm-size: "1G"
     timezone: America/Phoenix
-  vm_devbox_"user-1":
+  vm_devbox_user-1:
     ssh_port: 11110
 
 channel:

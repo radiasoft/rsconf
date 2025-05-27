@@ -57,7 +57,6 @@ class T(rsconf.component.T):
 
         self.buildt.require_component("network")
         jc, z = self.j2_ctx_init()
-        pkdp(z)
         z.root_u = jc.rsconf_db.root_u
         z.libvirt_d = self.j2_ctx.rsconf_db.host_run_d.join(_LIB_VIRT_SUB_D)
         if self._is_main_instance():
@@ -119,7 +118,7 @@ class T(rsconf.component.T):
         )
         z.pkupdate(
             PKDict(
-                ssh_identity_pub_key=pkio.read_text(s.identity_pub_f),
+                ssh_identity_pub_key=pkio.read_text(s.identity_pub_f).rstrip("\n"),
                 ssh_host_key=pkio.read_text(s.host_key_f),
             )
         )

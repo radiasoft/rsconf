@@ -1,7 +1,6 @@
 #!/bin/bash
+source ~/.bashrc
 set -eou pipefail
-
-export install_server='{{ rsconf_db.http_host }}'
 
 vm_devbox_create_vm() {
     if [[ -e Vagrantfile ]]; then
@@ -100,14 +99,12 @@ Match User {{ this.run_u }} Address {{ this.local_ip }}
     PasswordAuthentication yes
 EOF_SSH_CONFIG
 
-# has to exist so no redirect necessary or permissions
-if ! fgrep --quiet '{{ this.ssh_identity_pub_key }}' '{{ this.ssh_guest_authorized_keys_f }}'; then
+# authorized_keys has to exist so permissions correct
+if ! grep -F --quiet '{{ this.ssh_identity_pub_key }}' '{{ this.ssh_guest_authorized_keys_f }}'; then
     echo '{{ this.ssh_identity_pub_key }}' >> '{{ this.ssh_guest_authorized_keys_f }}'
 fi
 
-_install_stdin '{{ this.ssh_guest_host_key_f }}' <<'EOF_SSH_KEY'
-{{ this.ssh_host_key }}
-EOF_SSH_KEY
+_install_stdin '{{ this.ssh_guest_host_key_f }}' < '{{ this.ssh_host_key }}'
 
 # SECURITY: dev-mode so ok to delete passwords for root & run user
 for u in {{ this.root_u }} {{ this.run_u }}; do

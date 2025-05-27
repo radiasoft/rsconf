@@ -73,10 +73,11 @@ host:
         pkcli:
           service_port: 7777
       vm_devbox:
+        ssh_port: 999
         users:
           - user-1
         vm_parent_domain: radia.run
-      "vm_devbox_user-1":
+      vm_devbox_user-1:
         fedora_version: 42
 #Local Variables:
 #mode:yaml
