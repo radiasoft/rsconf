@@ -74,9 +74,9 @@ host:
           service_port: 7777
       vm_devbox:
         users:
-          - devuser1
+          - user-1
         vm_parent_domain: radia.run
-      vm_devbox_user:
+      "vm_devbox_user-1":
         fedora_version: 42
 #Local Variables:
 #mode:yaml

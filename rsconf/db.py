@@ -23,7 +23,8 @@ VISIBILITY_GLOBAL = VISIBILITY_LIST[0]
 
 ZERO_YML = "0*.yml"
 
-USER_HOME_ROOT_D = pkio.py_path("/home")
+_USER_HOME_ROOT_D = pkio.py_path("/home")
+_ROOT_HOME_ROOT_D = pkio.py_path("/root")
 
 LOCAL_IP = "127.0.0.1"
 ANY_IP = "0.0.0.0"
@@ -228,7 +229,7 @@ def global_paths_as_dict():
     """
     rv = PKDict(
         # TODO(robnagler) introduce concept of const
-        bash_curl_cmd="curl --fail --silent --show-error --location",
+        bash_curl_cmd="curl --fail --location --show-error --silent",
         root_d=pkio.py_path() if cfg.root_d == _UNIT_TEST_ROOT_D else cfg.root_d,
     )
     rv.pkupdate(
@@ -347,7 +348,9 @@ def secret_path(hdb, filename, visibility=None, qualifier=None, directory=False)
 
 
 def user_home_path(user):
-    return USER_HOME_ROOT_D.join(user)
+    if user == "root":
+        return _ROOT_HOME_ROOT_D
+    return _USER_HOME_ROOT_D.join(user)
 
 
 @pkconfig.parse_none

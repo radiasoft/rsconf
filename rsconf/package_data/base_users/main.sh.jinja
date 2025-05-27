@@ -1,11 +1,11 @@
 #!/bin/bash
 
 base_users_add() {
-    local name=$1
-    local uid=$2
-    local gid=$3
-    local want_shell=$4
-    local curr_gid=$(rsconf_unchecked_gid "$name")
+    declare name=$1
+    declare uid=$2
+    declare gid=$3
+    declare want_shell=$4
+    declare curr_gid=$(rsconf_unchecked_gid "$name")
     if [[ $curr_gid ]]; then
         if [[ $curr_gid != $gid ]]; then
             install_err "$curr_gid: expecting group $name=$gid"
@@ -13,7 +13,7 @@ base_users_add() {
     else
         groupadd -g "$gid" "$name"
     fi
-    local curr_uid=$(id -u "$name" 2>/dev/null || true)
+    declare curr_uid=$(id -u "$name" 2>/dev/null || true)
     if [[ $curr_uid ]]; then
         if [[ $curr_uid != $uid ]]; then
             install_err "$curr_uid: expecting user $name=$uid"
@@ -23,7 +23,7 @@ base_users_add() {
             install_err "$curr_gid: expecing gid=$gid for user $name"
         fi
     else
-        local shell=
+        declare shell=
         if [[ ! $want_shell ]]; then
             shell=--shell=/sbin/nologin
         fi
@@ -38,7 +38,4 @@ base_users_add() {
 base_users_main() {
     rsconf_radia_run_as_user {{ rsconf_db.root_u }} home
 {{ base_users.add_cmds }}
-    set +euo pipefail
-    . ~/.bashrc
-    set -euo pipefail
 }

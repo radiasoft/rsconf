@@ -1,3 +1,4 @@
+#!/bin/bash
 export SYSTEMD_COLORS=0
 # --quit-if-one-screen --quit-on-intr --no-init
 export SYSTEMD_LESS=FKX
@@ -7,7 +8,7 @@ rsc() {
     if (( ! ${#args[@]} )); then
         args=( "$(hostname -f)" setup_dev )
     fi
-    curl http://v3.radia.run:2916 | install_server=http://v3.radia.run:2916 bash ${install_debug:+-x} -s rsconf.sh ${args+"${args[@]}"}
+    radia_run rsconf.sh "${args[@]:-}"
 }
 
 bivio() {

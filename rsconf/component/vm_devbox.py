@@ -32,7 +32,6 @@ class T(rsconf.component.T):
                         f"{self.module_name}_{u}",
                         self.buildt,
                         _user=u,
-                        module_name=self.module_name,
                     )
                 )
 
@@ -57,6 +56,7 @@ class T(rsconf.component.T):
 
         self.buildt.require_component("network")
         jc, z = self.j2_ctx_init()
+        pkdp(z)
         z.root_u = jc.rsconf_db.root_u
         z.libvirt_d = self.j2_ctx.rsconf_db.host_run_d.join(_LIB_VIRT_SUB_D)
         if self._is_main_instance():
@@ -66,6 +66,8 @@ class T(rsconf.component.T):
         z.pksetdefault(
             **jc[self.module_name],
         )
+        if "ssh_port" not in z:
+            raise AssertionError(f"missing vm_devbox.ssh_port for user={self._user}")
         z.pksetdefault(
             fedora_version=None,
             timeout_start_min=15,
@@ -76,9 +78,10 @@ class T(rsconf.component.T):
         z.run_d = rsconf.systemd.unit_run_d(jc, self.name)
         z.run_u = jc.rsconf_db.run_u
         z.local_ip = rsconf.db.LOCAL_IP
-        z.ssh_port = jc.vm_devbox_users.spec[self._user].ssh_port
         z.ssh_guest_host_key_f = "/etc/ssh/host_key"
-        z.ssh_guest_authorized_keys_f = f"/home/{z.run_u}/.ssh/authorized_keys"
+        z.ssh_guest_authorized_keys_f = rsconf.db.user_home_path(z.run_u).join(
+            ".ssh/authorized_keys"
+        )
         z.start_f = z.run_d.join("start")
         z.stop_f = z.run_d.join("stop")
         z.installer_cmd = _installer_cmd(z)
