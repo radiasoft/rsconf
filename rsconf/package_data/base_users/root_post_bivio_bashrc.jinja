@@ -3,13 +3,13 @@ export SYSTEMD_COLORS=0
 # --quit-if-one-screen --quit-on-intr --no-init
 export SYSTEMD_LESS=FKX
 rsc() {
-    local args=( "$@" )
+    declare args=( "$@" )
     {% if rsconf_db.channel == "dev" %}{% raw %}
     if (( ! ${#args[@]} )); then
         args=( "$(hostname -f)" setup_dev )
     fi
     {% endraw %}{% endif %}
-    radia_run rsconf.sh "${args[@]:-}"
+    radia_run rsconf.sh "${args[@]}"
 }
 
 bivio() {

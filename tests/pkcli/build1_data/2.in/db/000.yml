@@ -28,10 +28,8 @@ default:
       dev_mode: False
   rsconf: {}
   rsconf_db:
-    #TODO(robnagler) POSIT dev/nginx/nginx.conf.jinja
-    # defunct elvin_server https://en.wikipedia.org/wiki/Elvin
-    http_host: http://v3.radia.run:2916
     host_run_d: /srv
+    install_serve: http://v3.radia.run:2916
     root_u: root
     run_u: vagrant
     run_uid: 1000

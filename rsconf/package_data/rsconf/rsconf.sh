@@ -694,5 +694,3 @@ _rsconf_yum_install() {
         install_err "FAILED: yum $cmd ${todo[*]}";
     fi
 }
-
-rsconf_main ${install_extra_args[@]+"${install_extra_args[@]}"}

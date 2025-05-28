@@ -1,13 +1,9 @@
 #!/bin/bash
 base_users_rsconf_component() {
 rsconf_install_access '400' 'root' 'root'
-rsconf_install_file '/root/.post_bivio_bashrc' '624e332905f1d4b6a346bc7422c2ce80'
+rsconf_install_file '/root/.post_bivio_bashrc' '37de2d1e71a321152988224e1e2fb419'
 rsconf_append_authorized_key 'root' 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIB3mhGsrxFV4KnHjDtBaaU7ZdlNhwxIEPZ3/+Bv1xZY v3.radia.run'
 base_users_main
-rsconf_install_access '400' 'root' 'root'
-rsconf_install_file '/root/.pre_bivio_bashrc' 'c7c2357cff0656face5ff98d7bbb7222'
-rsconf_install_access '400' 'vagrant' '1000'
-rsconf_install_file '/home/vagrant/.pre_bivio_bashrc' 'c7c2357cff0656face5ff98d7bbb7222'
 install_source_bashrc
 }
 #!/bin/bash
