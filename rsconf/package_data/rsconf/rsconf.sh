@@ -434,7 +434,9 @@ rsconf_run() {
         return
     fi
     rsconf_install_access=()
-    "$f" "$@"
+    if ! "$f" "$@"; then
+        install_err "rsconf failed function=$f"
+    fi
 }
 
 rsconf_service_docker_pull() {
