@@ -51,6 +51,8 @@ rsconf_clone_repo() {
 }
 
 rsconf_edit() {
+    # ERREXIT: ok
+    #
     # Update $file with $edit_perl if $need_egrep is not found
     #
     # $need_egrep is an egrep regex. If found, then $rsconf_edit_no_change_res
@@ -78,6 +80,7 @@ rsconf_edit() {
     if [[ $g != $need ]]; then
         return ${rsconf_edit_no_change_res:-1}
     fi
+    # errexit no needed checking, due to test after perl
     perl -pi -e "$edit_perl" "$file"
     g=$( grep -E -s -q -- "$need_egrep" "$file" && echo 1 || true )
     if [[ $g == $need ]]; then
@@ -434,9 +437,7 @@ rsconf_run() {
         return
     fi
     rsconf_install_access=()
-    if ! "$f" "$@"; then
-        install_err "rsconf failed function=$f"
-    fi
+    $f "$@"
 }
 
 rsconf_service_docker_pull() {
@@ -530,6 +531,7 @@ rsconf_service_restart() {
             # https://askubuntu.com/a/836155
             # don't use "status", b/c reports "bad" for sysv init
             # scripts (e.g. network)
+            # POSIT: errexit ok, because short path
             if ! rsconf_systemctl is-active "$s"; then
                 install_info "$s: starting"
                 rsconf_systemctl start "$s"
@@ -580,6 +582,7 @@ rsconf_setup_vars() {
 }
 
 rsconf_systemctl() {
+    # ERREXIT: ok for is-active
     declare op=$1
     declare service=$2
     declare s=$service
@@ -616,7 +619,7 @@ rsconf_systemctl() {
             declare n=rsconf_systemctl_restart_${s//-/_}
             if type -f "$n" &> /dev/null; then
                 install_info "Executing: $n"
-                "$n"
+                $n
                 return
             else
                 # stop works, because it matches running services
