@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 """create base os configuration
 
 :copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
+
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from rsconf import component
@@ -17,6 +17,7 @@ class T(component.T):
         z.email_aliases = PKDict()
         z.added = PKDict()
         z.setdefault("root_bashrc_aux", "")
+        z.setdefault("radia_run_branch_home_env", "")
         mailboxes = (
             set(
                 jc.dovecot.alias_users + list(jc.dovecot.pop_users.keys()),
@@ -47,6 +48,7 @@ class T(component.T):
 
     def internal_build_write(self):
         from rsconf.component import bkp
+
         jc = self.j2_ctx
         self.install_access(mode="400", owner=jc.rsconf_db.root_u)
         self.install_resource(

@@ -42,6 +42,7 @@ class T(rsconf.component.T):
                 vagrant_dev_cpus=z.vagrant_cpus,
                 vagrant_dev_memory=z.vagrant_memory,
                 vagrant_dev_vm_devbox=1,
+                RADIA_RUN_BRANCH_HOME_ENV=radia_run_branch_home_env
             )
             if z.fedora_version:
                 v.cmd = "vagrant-dev fedora"
@@ -55,7 +56,7 @@ class T(rsconf.component.T):
         def _join_items(pairs):
             return [f"{k}={pairs[k]}" for k in sorted(pairs.keys())]
 
-        self.buildt.require_component("network")
+        self.buildt.require_component("network", "base_users")
         jc, z = self.j2_ctx_init()
         z.root_u = jc.rsconf_db.root_u
         z.libvirt_d = self.j2_ctx.rsconf_db.host_run_d.join(_LIB_VIRT_SUB_D)
@@ -63,6 +64,7 @@ class T(rsconf.component.T):
             _create_user_instances()
             return
         n = self.buildt.get_component("network")
+        z.radia_run_branch_home_env = self.buildt.get_component("base_users").j2_ctx.base_users.radia_run_branch_home_env
         z.pksetdefault(
             **jc[self.module_name],
         )
