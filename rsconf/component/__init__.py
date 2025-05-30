@@ -91,7 +91,9 @@ class T(PKDict):
 
         def _pass():
             s = db.secret_path(
-                self.j2_ctx, f"{self.module_name}_ssh_passphrase.json", visibility=visibility
+                self.j2_ctx,
+                f"{self.module_name}_ssh_passphrase.json",
+                visibility=visibility,
             )
             o = pkjson.load_any(s) if s.exists() else PKDict()
             p = o.get(ident_name)

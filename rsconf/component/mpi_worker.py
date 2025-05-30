@@ -101,7 +101,9 @@ class T(component.T):
         return res
 
     def _gen_secrets(self):
-        return self.gen_identity_and_host_ssh_keys(ident_name=self._user, visibility="channel")
+        return self.gen_identity_and_host_ssh_keys(
+            ident_name=self._user, visibility="channel"
+        )
 
     def _prepare_hosts(self, jc, z):
         nc = self.buildt.get_component("network")
