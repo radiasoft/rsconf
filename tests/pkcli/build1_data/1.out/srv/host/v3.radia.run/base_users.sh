@@ -39,7 +39,7 @@ base_users_add() {
     fi
     if [[ $want_shell ]]; then
         # Keep up to date in case needed by later code
-        rsconf_radia_run_as_user "$name" home
+        RADIA_RUN_BRANCH_HOME_ENV='' rsconf_radia_run_as_user "$name" home
     fi
 }
 
