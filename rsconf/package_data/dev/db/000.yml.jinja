@@ -180,17 +180,16 @@ default:
       - 10.10.10.0/24
   rsconf_db:
     #TODO(robnagler) POSIT dev/nginx/nginx.conf.jinja
-    # defunct elvin_server https://en.wikipedia.org/wiki/Elvin
-    http_host: http://{{ master }}:{{ port }}
     host_run_d: /srv
-    root_u: root
-    run_u: {{ user }}
-    run_uid: {{ uid }}
+    install_server: http://{{ master }}:{{ port }}
     local_files:
       "/etc/base.rsconf":
         mode: 0o700
         owner: nobody
         group: {{ user }}
+    root_u: root
+    run_u: {{ user }}
+    run_uid: {{ uid }}
   sirepo:
     docker_image: radiasoft/sirepo
     auth:

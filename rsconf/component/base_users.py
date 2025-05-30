@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 """create base os configuration
 
 :copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
+
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 from rsconf import component
@@ -13,12 +13,11 @@ import copy
 class T(component.T):
     def internal_build_compile(self):
         self.buildt.require_component("base_os", "network")
-        jc = self.j2_ctx = self.hdb.j2_ctx_copy()
-        z = jc.base_users
-        z.add_cmds = ""
+        jc, z = self.j2_ctx_init()
         z.email_aliases = PKDict()
         z.added = PKDict()
         z.setdefault("root_bashrc_aux", "")
+        z.setdefault("radia_run_branch_home_env", "")
         mailboxes = (
             set(
                 jc.dovecot.alias_users + list(jc.dovecot.pop_users.keys()),
@@ -26,6 +25,7 @@ class T(component.T):
             if "dovecot" in jc
             else set()
         )
+        z.add_cmds = ""
         for u in z.add:
             assert not u in z.added, "{}: duplicate user".format(u)
             i = copy.deepcopy(z.spec[u])
@@ -50,7 +50,7 @@ class T(component.T):
         from rsconf.component import bkp
 
         jc = self.j2_ctx
-        self.install_access(mode="400", owner=self.hdb.rsconf_db.root_u)
+        self.install_access(mode="400", owner=jc.rsconf_db.root_u)
         self.install_resource(
             "base_users/root_post_bivio_bashrc",
             jc,
@@ -58,6 +58,8 @@ class T(component.T):
         )
         bkp.append_authorized_key(self, jc)
         self.append_root_bash_with_main(jc)
+        # latest bash environment used by other scripts
+        self.append_root_bash("install_source_bashrc")
 
     def _ssh_key(self, user):
         if not self.buildt.get_component("network").j2_ctx.pkunchecked_nested_get(

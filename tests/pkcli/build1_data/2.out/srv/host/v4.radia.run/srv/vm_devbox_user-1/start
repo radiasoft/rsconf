@@ -7,7 +7,7 @@ vm_devbox_create_vm() {
     if [[ -e Vagrantfile ]]; then
         return
     fi
-    RADIA_RUN_BRANCH_HOME_ENV= vagrant_dev_cpus=8 vagrant_dev_memory=8192 vagrant_dev_vm_devbox=1 radia_run vagrant-sirepo-dev user-1.radia.run
+    RADIA_RUN_BRANCH_HOME_ENV= install_version_fedora=42 vagrant_dev_cpus=4 vagrant_dev_memory=8192 vagrant_dev_vm_devbox=1 radia_run vagrant-dev fedora user-1.radia.run
 }
 
 vm_devbox_main() {
@@ -25,7 +25,7 @@ import subprocess
 _FILE = "Vagrantfile"
 _FORWARDED_PORT_PREAMBLE = 'config.vm.network "forwarded_port"'
 _FORWARDED_PORT_FULL = (
-    "{}, guest: 11110, host: 11110".format(
+    "{}, guest: 999, host: 999".format(
         _FORWARDED_PORT_PREAMBLE
     )
 )
@@ -91,7 +91,7 @@ _install_stdin /etc/ssh/sshd_config <<'EOF_SSHD_CONFIG'
 Include /etc/ssh/sshd_config.d/*.conf
 
 HostKey /etc/ssh/host_key
-ListenAddress 0.0.0.0:11110
+ListenAddress 0.0.0.0:999
 
 AuthorizedKeysFile .ssh/authorized_keys
 
@@ -109,16 +109,16 @@ Match User vagrant Address 127.0.0.1
 EOF_SSHD_CONFIG
 
 # authorized_keys has to exist so permissions correct
-if ! grep -F --quiet 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKe3wWXD3GUVd/5viGVhf6L/ttJJfmksXauPSpC8zWru v9.radia.run' '/home/vagrant/.ssh/authorized_keys'; then
-    echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKe3wWXD3GUVd/5viGVhf6L/ttJJfmksXauPSpC8zWru v9.radia.run' >> '/home/vagrant/.ssh/authorized_keys'
+if ! grep -F --quiet 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN+rsnN+weGfoIyJhJrPSeXLkZ8fKIMIo72KIaeXqI8M v4.radia.run' '/home/vagrant/.ssh/authorized_keys'; then
+    echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN+rsnN+weGfoIyJhJrPSeXLkZ8fKIMIo72KIaeXqI8M v4.radia.run' >> '/home/vagrant/.ssh/authorized_keys'
 fi
 
 _install_stdin '/etc/ssh/host_key' <<<'-----BEGIN OPENSSH PRIVATE KEY-----
 b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
-QyNTUxOQAAACCT/PsL9/XcOTmEXAvGVhJj5+MlLl/UBUNDiC+H84AAHQAAAJBriK60a4iu
-tAAAAAtzc2gtZWQyNTUxOQAAACCT/PsL9/XcOTmEXAvGVhJj5+MlLl/UBUNDiC+H84AAHQ
-AAAEBVP+MksqPH64Pi3Rfb8lieY9ofTRBWZqvKWk2oYjuqsJP8+wv39dw5OYRcC8ZWEmPn
-4yUuX9QFQ0OIL4fzgAAdAAAADHY5LnJhZGlhLnJ1bgE=
+QyNTUxOQAAACCDLz8I1qGJLtaocDj86Cfl4bzt+lXYD6mV3l/l8I9htgAAAJBTG3H3Uxtx
+9wAAAAtzc2gtZWQyNTUxOQAAACCDLz8I1qGJLtaocDj86Cfl4bzt+lXYD6mV3l/l8I9htg
+AAAECchxxZs/Hs2xTbDuUvtJ5wzIQm4W7K03OGYdzzMmR73IMvPwjWoYku1qhwOPzoJ+Xh
+vO36VdgPqZXeX+Xwj2G2AAAADHY0LnJhZGlhLnJ1bgE=
 -----END OPENSSH PRIVATE KEY-----
 '
 

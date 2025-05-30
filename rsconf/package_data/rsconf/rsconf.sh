@@ -15,10 +15,10 @@ rsconf_append() {
     fi
     # Assumes file must exist or be writable
     if [[ $egrep ]]; then
-        if egrep -s -q -- "$egrep" "$file"; then
+        if grep -E -s -q -- "$egrep" "$file"; then
             return ${rsconf_edit_no_change_res:-1}
         fi
-    elif fgrep -s -q -x -- "$line" "$file"; then
+    elif grep -F -s -q -x -- "$line" "$file"; then
         return ${rsconf_edit_no_change_res:-1}
     fi
     echo "$line" >> "$file"
@@ -51,6 +51,8 @@ rsconf_clone_repo() {
 }
 
 rsconf_edit() {
+    # ERREXIT: ok
+    #
     # Update $file with $edit_perl if $need_egrep is not found
     #
     # $need_egrep is an egrep regex. If found, then $rsconf_edit_no_change_res
@@ -78,8 +80,9 @@ rsconf_edit() {
     if [[ $g != $need ]]; then
         return ${rsconf_edit_no_change_res:-1}
     fi
+    # errexit no needed checking, due to test after perl
     perl -pi -e "$edit_perl" "$file"
-    g=$( egrep -s -q -- "$need_egrep" "$file" && echo 1 || true )
+    g=$( grep -E -s -q -- "$need_egrep" "$file" && echo 1 || true )
     if [[ $g == $need ]]; then
         install_err "$edit_perl: failed to modify: $file"
     fi
@@ -367,7 +370,7 @@ rsconf_main() {
     if [[ $setup_dev == setup_dev ]]; then
         rsconf_setup_dev "$host"
     fi
-    install_curl_flags+=( -n )
+    install_curl_flags+=( --netrc )
     install_info "$host: rsconf begin"
     install_url host/$host
     # Dynamically scoped; must be inline here
@@ -434,7 +437,7 @@ rsconf_run() {
         return
     fi
     rsconf_install_access=()
-    "$f" "$@"
+    $f "$@"
 }
 
 rsconf_service_docker_pull() {
@@ -528,6 +531,7 @@ rsconf_service_restart() {
             # https://askubuntu.com/a/836155
             # don't use "status", b/c reports "bad" for sysv init
             # scripts (e.g. network)
+            # POSIT: errexit ok, because short path
             if ! rsconf_systemctl is-active "$s"; then
                 install_info "$s: starting"
                 rsconf_systemctl start "$s"
@@ -560,7 +564,7 @@ rsconf_service_trigger_restart() {
 rsconf_setup_dev() {
     declare host=$1
     export install_channel=dev
-    curl "$install_server/$host-netrc" > /root/.netrc
+    install_download "$install_server/$host-netrc" > /root/.netrc
     chmod 400 /root/.netrc
 }
 
@@ -578,6 +582,7 @@ rsconf_setup_vars() {
 }
 
 rsconf_systemctl() {
+    # ERREXIT: ok for is-active
     declare op=$1
     declare service=$2
     declare s=$service
@@ -614,7 +619,7 @@ rsconf_systemctl() {
             declare n=rsconf_systemctl_restart_${s//-/_}
             if type -f "$n" &> /dev/null; then
                 install_info "Executing: $n"
-                "$n"
+                $n
                 return
             else
                 # stop works, because it matches running services
@@ -694,5 +699,3 @@ _rsconf_yum_install() {
         install_err "FAILED: yum $cmd ${todo[*]}";
     fi
 }
-
-rsconf_main ${install_extra_args[@]+"${install_extra_args[@]}"}

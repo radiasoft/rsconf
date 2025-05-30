@@ -104,7 +104,7 @@ primary_rsync() {
         # rsync error: some files/attrs were not transferred
         out=$(
             "${cmd[@]}" 2>&1 |
-            egrep -v -i "${args[-2]}\".*no such file|some files.*not transfer|skipping non-regular file" || true
+            grep -E -v -i "${args[-2]}\".*no such file|some files.*not transfer|skipping non-regular file" || true
         )
         if [[ ! $out ]]; then
             return
