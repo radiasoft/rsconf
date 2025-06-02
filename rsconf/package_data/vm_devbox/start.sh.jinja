@@ -4,9 +4,10 @@ source ~/.bashrc
 set -eou pipefail
 
 vm_devbox_create_vm() {
-    if [[ -e Vagrantfile ]]; then
+    if [[ -e Vagrantfile ]] && ! vagrant status --machine-readable | grep -q default,state,not_created; then
         return
     fi
+    rm -f Vagrantfile
     {{ this.installer_cmd }}
 }
 
