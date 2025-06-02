@@ -23,7 +23,7 @@ class T(component.T):
         z.host_d = z.host_root_d.join(z.user)
         z.setdefault("volumes", {})
         z.setdefault("user_groups", {})
-        z.secrets = self._gen_secrets(jc)
+        z.secrets = self._gen_secrets()
         for x in "guest", "host":
             z[x] = self._gen_paths(jc, z, z.get(x + "_d"))
         z.run_u = jc.rsconf_db.run_u
@@ -100,8 +100,10 @@ class T(component.T):
             res[k] = d.join(v.basename)
         return res
 
-    def _gen_secrets(self, jc):
-        return self.gen_identity_and_host_ssh_keys(jc, visibility="channel")
+    def _gen_secrets(self):
+        return self.gen_identity_and_host_ssh_keys(
+            ident_name=self._user, visibility="channel"
+        )
 
     def _prepare_hosts(self, jc, z):
         nc = self.buildt.get_component("network")
@@ -119,7 +121,7 @@ class T(component.T):
                 )
             else:
                 z.net = net
-            s = self._gen_secrets(jc)
+            s = self._gen_secrets()
             res.append(
                 PKDict(
                     host=h,

@@ -85,25 +85,27 @@ class T(PKDict):
         self.buildt.write_root_bash(self.name, self._root_bash)
 
     def gen_identity_and_host_ssh_keys(
-        self, j2_ctx, visibility, encrypt_identity=False
+        self, ident_name, visibility, encrypt_identity=False
     ):
         from rsconf import db
 
         def _pass():
             s = db.secret_path(
-                j2_ctx, f"{self.module_name}_ssh_passphrase.json", visibility=visibility
+                self.j2_ctx,
+                f"{self.module_name}_ssh_passphrase.json",
+                visibility=visibility,
             )
             o = pkjson.load_any(s) if s.exists() else PKDict()
-            p = o.get(self._user)
+            p = o.get(ident_name)
             if p is None:
-                o[self._user] = p = db.random_string()
+                o[ident_name] = p = db.random_string()
                 pkjson.dump_pretty(o, filename=s)
             return p
 
         res = PKDict()
         b = db.secret_path(
-            j2_ctx,
-            f"{self.module_name}/{self._user}",
+            self.j2_ctx,
+            f"{self.module_name}/{ident_name}",
             visibility=visibility,
             directory=True,
         )
@@ -125,7 +127,7 @@ class T(PKDict):
                             else ""
                         ),
                         "-C",
-                        j2_ctx.rsconf_db.host,
+                        self.j2_ctx.rsconf_db.host,
                         "-f",
                         str(f),
                     ],

@@ -28,10 +28,8 @@ default:
       dev_mode: False
   rsconf: {}
   rsconf_db:
-    #TODO(robnagler) POSIT dev/nginx/nginx.conf.jinja
-    # defunct elvin_server https://en.wikipedia.org/wiki/Elvin
-    http_host: http://v3.radia.run:2916
     host_run_d: /srv
+    install_serve: http://v3.radia.run:2916
     root_u: root
     run_u: vagrant
     run_uid: 1000
@@ -64,7 +62,7 @@ host:
       docker:
         tls_host: v4.radia.run
       rsconf_db:
-        components: [ sirepo ]
+        components: [ sirepo, vm_devbox ]
       sirepo:
         job_driver:
           docker:
@@ -72,6 +70,13 @@ host:
         num_api_servers: 10
         pkcli:
           service_port: 7777
+      vm_devbox:
+        ssh_port: 999
+        users:
+          - user-1
+        vm_parent_domain: radia.run
+      vm_devbox_user-1:
+        fedora_version: 42
 #Local Variables:
 #mode:yaml
 #End:

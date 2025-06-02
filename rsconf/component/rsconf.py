@@ -72,12 +72,12 @@ def host_init(j2_ctx, host):
     if not host in y:
         y[host] = _passwd_entry(j2_ctx, host)
         pkjson.dump_pretty(y, filename=jf)
-    c = f'curl {j2_ctx.rsconf_db.http_host + ("/index.sh" if s else "")} | install_server={j2_ctx.rsconf_db.http_host} bash -s {host}'
+    c = f"curl {j2_ctx.rsconf_db.install_server + ('/index.sh' if s else '')} | install_server={j2_ctx.rsconf_db.install_server} bash -s rsconf.sh {host}"
     if s:
         return f"""Bootstrapping build server
 Run:
 {c}
-Then update http_host in db/000.yml and run host init again"""
+Then update install_server in db/000.yml and run host init again"""
     return f"""install -m 600 /dev/stdin /root/.netrc <<'EOF'
 machine {h} login {host} password {y[host]}
 EOF
@@ -110,5 +110,5 @@ def _passwd_entry(j2_ctx, host):
 
 
 def _vhost(j2_ctx):
-    u = urlparse(j2_ctx.rsconf_db.http_host)
+    u = urlparse(j2_ctx.rsconf_db.install_server)
     return u.scheme == "file", u.hostname

@@ -56,7 +56,7 @@ def default_command():
     hosts = [h for h in j2_ctx.values() if str(h).endswith(".radia.run")]
     # bootstrap
     j2_ctx.update(rsconf_db=db.global_paths_as_dict().pkupdate(channel="dev"))
-    j2_ctx.rsconf_db.http_host = "http://{}:{}".format(j2_ctx.master, j2_ctx.port)
+    j2_ctx.rsconf_db.install_server = "http://{}:{}".format(j2_ctx.master, j2_ctx.port)
     j2_ctx.bkp = PKDict(primary=j2_ctx.host)
     j2_ctx.passwd_f = rsconf.component.rsconf.passwd_secret_f(j2_ctx)
     for h in hosts:
@@ -77,7 +77,7 @@ def default_command():
             try:
                 pkjinja.render_file(f, j2_ctx, output=dst, strict_undefined=True)
             except Exception:
-                pkdlog("ERROR in jinja file={} j2_ctx=", f, j2_ctx)
+                pkdlog("ERROR in jinja file={} j2_ctx={}", f, j2_ctx)
                 raise
     subprocess.check_call(
         ["bash", str(db.global_path("secret_d").join("setup_dev.sh"))]

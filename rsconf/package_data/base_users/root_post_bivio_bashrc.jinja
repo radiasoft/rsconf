@@ -1,14 +1,15 @@
+#!/bin/bash
 export SYSTEMD_COLORS=0
 # --quit-if-one-screen --quit-on-intr --no-init
 export SYSTEMD_LESS=FKX
 rsc() {
-    local args=( "$@" )
+    declare args=( "$@" )
     {% if rsconf_db.channel == "dev" %}{% raw %}
     if (( ! ${#args[@]} )); then
         args=( "$(hostname -f)" setup_dev )
     fi
     {% endraw %}{% endif %}
-    curl {{ rsconf_db.http_host }} | install_server={{ rsconf_db.http_host }} bash ${install_debug:+-x} -s rsconf.sh ${args+"${args[@]}"}
+    radia_run rsconf.sh "${args[@]}"
 }
 
 bivio() {
