@@ -4,9 +4,10 @@ source ~/.bashrc
 set -eou pipefail
 
 vm_devbox_create_vm() {
-    if [[ -e Vagrantfile ]]; then
+    if [[ -e Vagrantfile ]] && ! vagrant status --machine-readable | grep -q default,state,not_created; then
         return
     fi
+    rm -f Vagrantfile
     RADIA_RUN_BRANCH_HOME_ENV= vagrant_dev_cpus=8 vagrant_dev_memory=8192 vagrant_dev_vm_devbox=1 radia_run vagrant-sirepo-dev user-1.radia.run
 }
 
