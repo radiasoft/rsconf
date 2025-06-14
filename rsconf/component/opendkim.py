@@ -92,7 +92,7 @@ class T(component.T):
             yield d, z._keys[d]
 
     def _iter_key_rows(self, key):
-        for k in sorted(key.rows, key=lambda x: x.subdomain):
+        for k in sorted(key.rows, key=lambda x: x.subdomain.txt):
             yield k
 
     def _read_keys(self, jc, z):
