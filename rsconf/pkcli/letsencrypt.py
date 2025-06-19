@@ -6,6 +6,7 @@
 
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
+import acme.errors
 import acme.messages
 import os.path
 import pykern.pkcli
@@ -42,16 +43,29 @@ def finalize_orders():
 
     c = _client()
     rv = []
+    err = ""
     for o in _iter_orders():
-        for g in _iter_challenges(o):
-            c.answer_challenge(g.resource, g.resource.response(c.net.key))
-        p = _remove_csr_and_return_crt(o)
-        pykern.pkio.write_text(
-            p,
-            c.poll_and_finalize(o.resource).fullchain_pem,
-        )
-        pykern.pkio.unchecked_remove(o.path)
-        rv.append(p)
+        try:
+            for g in _iter_challenges(o):
+                try:
+                    c.answer_challenge(g.resource, g.resource.response(c.net.key))
+                    assert 0
+                except Exception:
+                    err = f" challenge={g.get('domain')}"
+                    raise
+            p = _remove_csr_and_return_crt(o)
+            pykern.pkio.write_text(
+                p,
+                c.poll_and_finalize(o.resource).fullchain_pem,
+            )
+            pykern.pkio.unchecked_remove(o.path)
+            rv.append(p)
+        except Exception as e:
+            err += f" order={o.path.basename}"
+            if isinstance(e, acme.errors.ValidationError):
+                err += "; check if domain expired"
+            pkdlog("ERROR{}", err)
+            raise
     pykern.pkio.unchecked_remove(global_path("named_conf_f"))
     return rv
 
