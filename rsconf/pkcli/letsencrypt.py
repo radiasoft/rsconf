@@ -49,7 +49,6 @@ def finalize_orders():
             for g in _iter_challenges(o):
                 try:
                     c.answer_challenge(g.resource, g.resource.response(c.net.key))
-                    assert 0
                 except Exception:
                     err = f" challenge={g.get('domain')}"
                     raise
