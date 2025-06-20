@@ -53,6 +53,7 @@ class T(PKDict):
             pkio.mkdir_parent(dst_d)
             self.hdb.build = PKDict(dst_d=dst_d)
             self._write_queue = []
+            self._done_components = PKDict()
             d = self.hdb.rsconf_db
             self.require_component(*d.components)
             self._do_write_queue()
@@ -67,10 +68,14 @@ class T(PKDict):
             pkdlog("{}: host failed:", h)
             raise
 
-    def get_component(self, name):
+    def get_component(self, name, in_write_queue=True):
         if c := self._get_component(name):
             return c
-        raise AssertionError("component not in write_queue: {}".format(name))
+        if in_write_queue:
+            raise AssertionError(f"component not in write_queue: {name}")
+        if c := self._done_components.get(name):
+            return c
+        raise AssertionError(f"component not found: {name}")
 
     def has_component(self, name):
         return bool(self._get_component(name))
@@ -95,6 +100,7 @@ class T(PKDict):
     def _do_write_queue(self):
         while self._write_queue:
             c = self._write_queue.pop(0)
+            self._done_components[c.name] = c
             try:
                 c.build_write()
             except Exception:
