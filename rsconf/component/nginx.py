@@ -64,6 +64,7 @@ def install_vhost(
     j2_ctx=None,
     resource_f=None,
 ):
+    _assert_host(compt, vhost)
     update_j2_ctx_and_install_access(compt, j2_ctx)
     kc = compt.install_tls_key_and_crt(vhost, CONF_D)
     a = j2_ctx.get(compt.name)
@@ -96,6 +97,7 @@ def render_redirects(compt, j2_ctx, server_names, host_or_uri, status=301):
         kw.redirect_uri = "http{}://{}$request_uri".format(s, host_or_uri)
     res = ""
     for s in server_names:
+        _assert_host(compt, s)
         kw.server_name = s
         res += _REDIRECT_FMT.format(**kw)
         if compt.has_tls(j2_ctx, s):
@@ -164,3 +166,7 @@ class T(component.T):
                 (302 if r.get("is_temporary") else 301),
             )
         return res
+
+
+def _assert_host(compt, vhost):
+    compt.buildt.get_component("network", in_write_queue=False).assert_host(vhost)
