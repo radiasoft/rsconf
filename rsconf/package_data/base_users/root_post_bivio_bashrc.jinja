@@ -9,7 +9,7 @@ rsc() {
         args=( "$(hostname -f)" setup_dev )
     fi
     {% endraw %}{% endif %}
-    radia_run rsconf.sh "${args[@]}"
+    radia_run rsconf.sh "${args[@]+"${args[@]}"}"
 }
 
 bivio() {
