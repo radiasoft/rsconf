@@ -1,7 +1,7 @@
 #!/bin/bash
 base_users_rsconf_component() {
 rsconf_install_access '400' 'root' 'root'
-rsconf_install_file '/root/.post_bivio_bashrc' '37de2d1e71a321152988224e1e2fb419'
+rsconf_install_file '/root/.post_bivio_bashrc' '9edabd44ff5674ef5e593c8034489f5a'
 rsconf_append_authorized_key 'root' 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIB3mhGsrxFV4KnHjDtBaaU7ZdlNhwxIEPZ3/+Bv1xZY v3.radia.run'
 base_users_main
 install_source_bashrc
