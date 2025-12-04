@@ -76,7 +76,7 @@ rsconf_edit() {
         need=1
         egrep=${BASH_REMATCH[1]}
     fi
-    declare g=$( egrep -s -q -- "$need_egrep" "$file" && echo 1 || true )
+    declare g=$( grep -E -s -q -- "$need_egrep" "$file" && echo 1 || true )
     if [[ $g != $need ]]; then
         return ${rsconf_edit_no_change_res:-1}
     fi
