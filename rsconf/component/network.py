@@ -10,18 +10,23 @@ Network configuration supports both network-scripts (for CentOS 7) and NetworkMa
 from pykern import pkcollections
 from pykern import pkcompat
 from pykern import pkio
+from pykern import pkjson
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdp
 import rsconf
+import rsconf.db
 import copy
 import ipaddress
 import socket
+import uuid
 
 
 _SCRIPTS = pkio.py_path("/etc/sysconfig/network-scripts")
 _RESOLV_CONF = pkio.py_path("/etc/resolv.conf")
 _IPTABLES = pkio.py_path("/etc/sysconfig/iptables")
-_NM_CONNECTIONS = pkio.py_path("/etc/NetworkManager/system-connections")
+_NM_ROOT = pkio.py_path("/etc/NetworkManager")
+_NM_CONNECTIONS = _NM_ROOT.join("system-connections")
+_DEVICE_UUID_F = "network_device_uuid.json"
 
 
 class T(rsconf.component.T):
@@ -118,7 +123,7 @@ class T(rsconf.component.T):
                 self.service_prepare((_SCRIPTS, _RESOLV_CONF))
                 z.main_function_calls = "network_manager_disable"
                 return _SCRIPTS
-            self.service_prepare((_NM_CONNECTIONS,), name="NetworkManager")
+            self.service_prepare((_NM_ROOT,), name="NetworkManager")
             z.main_function_calls = "network_manager_enable"
             return _NM_CONNECTIONS
 
@@ -258,6 +263,7 @@ class T(rsconf.component.T):
                 d.nm = PKDict()
             z._devs.append(d)
             d.name = name
+            d.uuid = self._uuid(name)
             return d
 
         def _nat(device, z):
@@ -353,3 +359,15 @@ class T(rsconf.component.T):
 
     def _net_or_ip(self, val):
         return ipaddress.ip_network(val) if "/" in val else ipaddress.ip_address(val)
+
+    def _uuid(self, device_name):
+        p = rsconf.db.secret_path(self.j2_ctx, _DEVICE_UUID_F, visibility="host")
+        if p.check():
+            with p.open() as f:
+                c = pkjson.load_any(f)
+        else:
+            c = PKDict()
+        if device_name not in c:
+            c[device_name] = str(uuid.uuid4())
+            pkjson.dump_pretty(c, filename=p)
+        return c[device_name]

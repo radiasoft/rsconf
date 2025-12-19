@@ -286,11 +286,18 @@ host:
           - docker
           - rsconf
           - docker_registry
+          - vm_devbox
         local_dirs:
           "/srv/home":
             mode: 0o700
             owner: vagrant
             group: vagrant
+      vm_devbox:
+        timeout_start_min: 5
+        users:
+          - user-1
+        vagrant_cpus: 8
+        vm_parent_domain: radia.run
     v4.radia.run:
       base_users:
         add:
@@ -581,7 +588,6 @@ host:
           - sirepo_job_supervisor
           - sirepo_jupyterhub
           - sirepo_test_http
-          - vm_devbox
       rsiviz:
         index_vhost: rsiviz.v9.radia.run
       sirepo:
@@ -628,12 +634,6 @@ host:
           v9.radia.run: sirepo.v9.radia.run
       sirepo_test_http:
         on_calendar: "9:00"
-      vm_devbox:
-        timeout_start_min: 5
-        users:
-          - user-1
-        vagrant_cpus: 8
-        vm_parent_domain: radia.run
 
 # testing named needs build-perl-rpms.sh
 #          - bivio_named

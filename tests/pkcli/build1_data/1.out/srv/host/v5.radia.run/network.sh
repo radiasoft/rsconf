@@ -1,11 +1,11 @@
 #!/bin/bash
 network_rsconf_component() {
-rsconf_service_prepare 'NetworkManager' '/etc/NetworkManager/system-connections'
+rsconf_service_prepare 'NetworkManager' '/etc/NetworkManager'
 rsconf_service_prepare 'iptables' '/etc/sysconfig/iptables' '/etc/NetworkManager/system-connections'
 rsconf_install_access '444' 'root' 'root'
 rsconf_install_access '600' 'root' 'root'
-rsconf_install_file '/etc/NetworkManager/system-connections/eth0.nmconnection' 'd6f338c3e799fe69154d2d21d0104783'
-rsconf_install_file '/etc/NetworkManager/system-connections/eth1.nmconnection' 'ac97fadc1027c3c569999db2d3048a57'
+rsconf_install_file '/etc/NetworkManager/system-connections/eth0.nmconnection' 'c35c6493535893570ccf5dd8ac8e8aa6'
+rsconf_install_file '/etc/NetworkManager/system-connections/eth1.nmconnection' '7ca8690dcd446e089a545a6ec63a96c1'
 rsconf_install_access '444' 'root' 'root'
 rsconf_install_file '/etc/sysconfig/iptables' 'c37b29b17e21479ffac43b7829d24f4a'
 network_main

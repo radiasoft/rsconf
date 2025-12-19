@@ -12,7 +12,7 @@ vm_devbox_main() {
         return
     fi
     rsconf_yum_install '@Virtualization Hypervisor' '@Virtualization Tools' '@Development Tools' libvirt-devel
-    yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+    install_yum_add_repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
     rsconf_yum_install vagrant
     systemctl enable --now libvirtd
     systemctl start libvirtd

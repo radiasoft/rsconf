@@ -64,6 +64,10 @@ class T(rsconf.component.T):
             _create_user_instances()
             return
         n = self.buildt.get_component("network")
+        # SECURITY: vm_devbox machines have to be on a backnet, because they need ip forwarding
+        if n.unchecked_public_ip():
+            raise AssertionError("vm_devbox hosts may not be on the Internet")
+        jc.base_os.ip_forward = True
         z.radia_run_branch_home_env = self.buildt.get_component(
             "base_users"
         ).j2_ctx.base_users.radia_run_branch_home_env

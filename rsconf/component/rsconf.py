@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 """rsconf server config
 
 :copyright: Copyright (c) 2018 Bivio Software, Inc.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
+
 from pykern import pkcompat
 from pykern import pkio
 from pykern import pkjson
@@ -69,7 +69,7 @@ def host_init(j2_ctx, host):
             y = pkjson.load_any(f)
     else:
         y = PKDict()
-    if not host in y:
+    if host not in y:
         y[host] = _passwd_entry(j2_ctx, host)
         pkjson.dump_pretty(y, filename=jf)
     c = f"curl {j2_ctx.rsconf_db.install_server + ('/index.sh' if s else '')} | install_server={j2_ctx.rsconf_db.install_server} bash -s rsconf.sh {host}"

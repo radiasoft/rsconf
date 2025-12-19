@@ -1,15 +1,17 @@
 [connection]
 id={{ network.dev.name }}
+uuid={{ network.dev.uuid }}
 type={{ network.dev.nm.connection_type }}
 interface-name={{ network.dev.name }}
 autoconnect=true
 
 {% if network.dev.vlan_bool %}
 [vlan]
+interface-name={{ network.dev.name }}
 parent={{ network.dev.nm.vlan_parent }}
 id={{ network.dev.nm.vlan_id }}
-{% endif %}
 
+{% endif %}
 [ethernet]
 mac-address-blacklist=
 

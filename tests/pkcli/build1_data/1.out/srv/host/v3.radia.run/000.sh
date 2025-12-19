@@ -10,3 +10,5 @@ rsconf_require docker
 rsconf_require nginx
 rsconf_require rsconf
 rsconf_require docker_registry
+rsconf_require vm_devbox_user-1
+rsconf_require vm_devbox
