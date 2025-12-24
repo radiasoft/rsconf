@@ -3,14 +3,13 @@ from rsdockerspawner import rsdockerspawner
 import binascii
 
 c.Authenticator.admin_users = set(['vagrant'])
+c.Authenticator.allow_all = True
 import oauthenticator
 c.JupyterHub.authenticator_class = oauthenticator.GitHubOAuthenticator
 c.GitHubOAuthenticator.client_id = 'xyzzy'
 c.GitHubOAuthenticator.client_secret = 'big-secret'
 c.GitHubOAuthenticator.oauth_callback_url = 'https://jupyter.v9.radia.run/hub/oauth_callback'
 c.JupyterHub.cleanup_servers = False
-#TODO(robnagler) DEPRECATED remove after prod release
-c.JupyterHub.confirm_no_ssl = True
 c.JupyterHub.cookie_secret = binascii.a2b_hex('7cca36e11924ee491289c16db96751a5069fb838b4e68be34a62a4c1bbe37b37')
 c.ConfigurableHTTPProxy.api_url = 'http://10.10.10.90:8113'
 c.JupyterHub.hub_ip = '10.10.10.90'
