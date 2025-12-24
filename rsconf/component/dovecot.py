@@ -1,17 +1,20 @@
-# -*- coding: utf-8 -*-
 """create dovecot configuration
 
 :copyright: Copyright (c) 2018 Bivio Software, Inc.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
-from __future__ import absolute_import, division, print_function
+
 from pykern import pkcollections
+from pykern import pkcompat
 from pykern import pkio
 from pykern import pkjson
 from pykern.pkdebug import pkdp
 from rsconf import component
 from rsconf import db
 from rsconf import systemd
+import hashlib
+import secrets
+
 
 CONF_ROOT_D = pkio.py_path("/etc/dovecot")
 CONF_D = CONF_ROOT_D.join("conf.d")
@@ -144,7 +147,9 @@ class T(component.T):
 
 
 def _sha512_crypt(password):
-    from rsconf import db
-    import crypt
+    from rsconf import db, shacrypt512
 
-    return crypt.crypt(password, "$6$" + db.random_string(length=16))
+    return shacrypt512.shacrypt(
+        pkcompat.to_bytes(password),
+        pkcompat.to_bytes("$6$" + db.random_string(length=16)),
+    )

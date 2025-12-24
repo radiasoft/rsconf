@@ -3,6 +3,7 @@ from rsdockerspawner import rsdockerspawner
 import binascii
 
 c.Authenticator.admin_users = set([{{ jupyterhub.admin_users_str }}])
+c.Authenticator.allow_all = True
 {% if 'github' in jupyterhub %}
 import oauthenticator
 c.JupyterHub.authenticator_class = oauthenticator.GitHubOAuthenticator
@@ -21,8 +22,6 @@ class _Auth(jupyterhub.auth.Authenticator):
 c.JupyterHub.authenticator_class = _Auth
 {% endif %}
 c.JupyterHub.cleanup_servers = False
-#TODO(robnagler) DEPRECATED remove after prod release
-c.JupyterHub.confirm_no_ssl = True
 c.JupyterHub.cookie_secret = binascii.a2b_hex('{{ jupyterhub.cookie_secret_hex }}')
 c.ConfigurableHTTPProxy.api_url = 'http://{{ jupyterhub.hub_ip }}:{{ jupyterhub.configurable_http_proxy_api_port }}'
 c.JupyterHub.hub_ip = '{{ jupyterhub.hub_ip }}'
