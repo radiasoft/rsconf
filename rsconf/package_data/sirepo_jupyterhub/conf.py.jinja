@@ -6,40 +6,38 @@ import sirepo.jupyterhub
 
 
 c.Authenticator.admin_users = set([{{sirepo_jupyterhub.admin_users_str}}])
-
-# ip/port for the http_proxy. Nginx will proxy requests to this.
-c.JupyterHub.ip = '{{ sirepo_jupyterhub.hub_ip }}'
-c.JupyterHub.port = {{sirepo_jupyterhub.configurable_http_proxy_port}}
+c.Authenticator.allow_all = True
 
 # url for hub api access to proxy
 c.ConfigurableHTTPProxy.api_url = 'http://{{ sirepo_jupyterhub.hub_ip }}:{{ sirepo_jupyterhub.configurable_http_proxy_api_port }}'
 c.ConfigurableHTTPProxy.pid_file = '{{ sirepo_jupyterhub.proxy_pid_f }}'
-
-# ip/port hub binds to. User servers and proxy will use this to
-# communicate with the hub.
-c.JupyterHub.hub_ip = '{{ sirepo_jupyterhub.hub_ip }}'
-c.JupyterHub.hub_port = {{ sirepo_jupyterhub.api_port }}
-
 c.ConfigurableHTTPProxy.auth_token = '{{ sirepo_jupyterhub.proxy_auth_token }}'
+
 c.DockerSpawner.http_timeout = {{sirepo_jupyterhub.http_timeout}}
 c.DockerSpawner.image = '{{ sirepo_jupyterhub.jupyter_docker_image }}'
 # https://github.com/radiasoft/rsconf/issues/54
 c.DockerSpawner.image_whitelist = []
 c.DockerSpawner.network_name = 'host'
 c.DockerSpawner.use_internal_ip = True
-{% if not sirepo_jupyterhub.get('use_authenticator') %}
+
+# ip/port for the http_proxy. Nginx will proxy requests to this.
+c.JupyterHub.ip = '{{ sirepo_jupyterhub.hub_ip }}'
+c.JupyterHub.port = {{sirepo_jupyterhub.configurable_http_proxy_port}}
+# ip/port hub binds to. User servers and proxy will use this to
+# communicate with the hub.
+c.JupyterHub.hub_ip = '{{ sirepo_jupyterhub.hub_ip }}'
+c.JupyterHub.hub_port = {{ sirepo_jupyterhub.api_port }}
+
 c.JupyterHub.authenticator_class = sirepo.jupyterhub.SirepoAuthenticator
-c.SirepoAuthenticator.sirepo_uri = '{{ sirepo_jupyterhub.sirepo_uri }}'
-{% else %}
-{# TODO remove #}
-c.JupyterHub.authenticator_class = sirepo.jupyterhub.Authenticator
-{% endif %}
 c.JupyterHub.base_url = '/{{ sirepo_jupyterhub.uri_root }}'
 c.JupyterHub.cleanup_servers = False
 c.JupyterHub.cookie_secret = binascii.a2b_hex('{{ sirepo_jupyterhub.cookie_secret_hex }}')
 c.JupyterHub.spawner_class = rsdockerspawner.RSDockerSpawner
-if hasattr(rsdockerspawner.RSDockerSpawner, 'sirepo_template_dir'):
-    c.JupyterHub.template_paths = [rsdockerspawner.RSDockerSpawner.sirepo_template_dir()]
 c.JupyterHub.template_vars = {{ sirepo_jupyterhub.template_vars }}
 c.JupyterHub.upgrade_db = True
+
+if hasattr(rsdockerspawner.RSDockerSpawner, 'sirepo_template_dir'):
+    c.JupyterHub.template_paths = [rsdockerspawner.RSDockerSpawner.sirepo_template_dir()]
 c.RSDockerSpawner.cfg = '''{{ sirepo_jupyterhub.rsdockerspawner_cfg }}'''
+
+c.SirepoAuthenticator.sirepo_uri = '{{ sirepo_jupyterhub.sirepo_uri }}'
