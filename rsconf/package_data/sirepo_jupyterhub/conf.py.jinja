@@ -16,7 +16,7 @@ c.ConfigurableHTTPProxy.auth_token = '{{ sirepo_jupyterhub.proxy_auth_token }}'
 c.DockerSpawner.http_timeout = {{sirepo_jupyterhub.http_timeout}}
 c.DockerSpawner.image = '{{ sirepo_jupyterhub.jupyter_docker_image }}'
 # https://github.com/radiasoft/rsconf/issues/54
-c.DockerSpawner.image_whitelist = []
+c.DockerSpawner.allowed_images = []
 c.DockerSpawner.network_name = 'host'
 c.DockerSpawner.use_internal_ip = True
 
