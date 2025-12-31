@@ -21,7 +21,7 @@ c.JupyterHub.upgrade_db = True
 c.ConfigurableHTTPProxy.auth_token = 'a324e39d4ccc7ec21400def54ad25d3007282d8f9be7fdb731c327008cee258d'
 c.DockerSpawner.http_timeout = 30
 # https://github.com/radiasoft/rsconf/issues/54
-c.DockerSpawner.image_whitelist = []
+c.DockerSpawner.allowed_images = []
 c.DockerSpawner.image = 'radiasoft/custom-jupyter:latest'
 c.DockerSpawner.use_internal_ip = True
 c.DockerSpawner.network_name = 'host'
@@ -55,6 +55,7 @@ c.RSDockerSpawner.cfg = '''{
 c.JupyterHub.spawner_class = rsdockerspawner.RSDockerSpawner
 if hasattr(rsdockerspawner.RSDockerSpawner, 'sirepo_template_dir'):
     c.JupyterHub.template_paths = [rsdockerspawner.RSDockerSpawner.sirepo_template_dir()]
+
 #c.Application.log_level = 'DEBUG'
 # Might not want this, but for now it's useful to see everything
 #c.JupyterHub.debug_db = True
