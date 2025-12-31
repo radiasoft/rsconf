@@ -335,7 +335,10 @@ def _gen_req(which, basename, domains, is_ca=False, key=None):
             # signing intermediate certs.
             return """x509_extensions = x509_req
 [x509_req]
-basicConstraints=critical,CA:true,pathlen:0"""
+basicConstraints=critical,CA:true,pathlen:0
+keyUsage = critical,keyCertSign,cRLSign
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer"""
         # Must always provide subjectAltName except for is_ca
         # see https://github.com/urllib3/urllib3/issues/497
         # which points to RFC 2818:
