@@ -495,11 +495,6 @@ host:
           custom_image:
             docker_image: radiasoft/custom-image
             ssh_port: 3102
-          rsivizcoder:
-            rsiviz:
-              ip_base: 127.2.0.0
-              port_base: 20000
-            ssh_port: 3103
       systemd:
         extra_run_flags:
           devbox:
@@ -583,13 +578,10 @@ host:
           - opendkim
           - postfix
           - rsaccounting
-          - rsiviz
           - sirepo
           - sirepo_job_supervisor
           - sirepo_jupyterhub
           - sirepo_test_http
-      rsiviz:
-        index_vhost: rsiviz.v9.radia.run
       sirepo:
         activait_redirect: false
         auth:
@@ -604,7 +596,7 @@ host:
           deprecated_methods: [ github ]
         feature_config:
           enable_global_resources: true
-          proprietary_sim_types: [ myapp, zgoubi, viz3d ]
+          proprietary_sim_types: [ myapp ]
           proprietary_code_tarballs: [ myapp ]
         global_resources:
           public_ports_min: 12000

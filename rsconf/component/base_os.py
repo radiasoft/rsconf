@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 """create base os configuration
 
 :copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
+
 from pykern.pkcollections import PKDict
 from pykern import pkio
 from pykern.pkdebug import pkdp
@@ -11,6 +11,7 @@ from rsconf import component
 
 _JOURNAL_CONF_D = pkio.py_path("/etc/systemd/journald.conf.d")
 _SSHD_CONF_D = pkio.py_path("/etc/ssh")
+_JOURNAL_SYSTEMD_D = pkio.py_path("/etc/systemd/system/systemd-journald.service.d")
 
 
 class T(component.T):
@@ -64,6 +65,13 @@ class T(component.T):
             )
         self.install_resource2("hostname", "/etc", access="444")
         self.install_resource2("motd", "/etc")
+        if self.hdb.rsconf_db.is_almalinux9:
+            self.install_resource2(
+                "99-journald-rsconf.conf",
+                _JOURNAL_SYSTEMD_D,
+                access="444",
+                host_d_access="755",
+            )
         self._pam_duo_and_sshd()
         self.append_root_bash_with_main(jc)
 

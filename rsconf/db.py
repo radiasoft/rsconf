@@ -56,6 +56,8 @@ class Host(PKDict):
         self.rsconf_db.is_centos7 = self.rsconf_db.host in raw.pkunchecked_nested_get(
             "rsconf_db.centos7_hosts", ()
         )
+        # For now this works
+        self.rsconf_db.is_almalinux9 = not self.rsconf_db.is_centos7
         if self.rsconf_db.is_centos7:
             self.rsconf_db.os_release_id = "centos"
             self.rsconf_db.os_release_version_id = "7"
