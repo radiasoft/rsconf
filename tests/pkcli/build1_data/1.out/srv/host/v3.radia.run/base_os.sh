@@ -40,13 +40,13 @@ base_os_chrony() {
 }
 
 base_os_if_virtual_box() {
-    local x=$(dmidecode -s system-product-name 2>/dev/null)
+    declare x=$(dmidecode -s system-product-name 2>/dev/null)
     [[ $x =~ VirtualBox || -f /vagrant/Vagrantfile ]]
 }
 
 base_os_journal_persist() {
     # https://unix.stackexchange.com/a/159390
-    local d=/var/log/journal
+    declare d=/var/log/journal
     if [[ -d $d ]]; then
         return
     fi
@@ -57,14 +57,14 @@ base_os_journal_persist() {
 }
 
 base_os_logical_volume() {
-    local name=$1 gigabytes=$2 vg=$3 mount_d=$4 mode=$5
-    local dev="/dev/mapper/$vg-$name"
-    local x=$(lvs --units g --no-headings -o lv_size "$dev" 2>/dev/null)
+    declare name=$1 gigabytes=$2 vg=$3 mount_d=$4 mode=$5
+    declare dev="/dev/mapper/$vg-$name"
+    declare x=$(lvs --units g --no-headings -o lv_size "$dev" 2>/dev/null)
     if ! grep -s -q "^$dev " /etc/fstab; then
         rsconf_edit_no_change_res=0 rsconf_append /etc/fstab "^$dev " "$dev $mount_d xfs defaults 0 0"
     fi
     if [[ $x =~ ([0-9]+)(\.[0-9]+)?g ]]; then
-        local actual=${BASH_REMATCH[1]}
+        declare actual=${BASH_REMATCH[1]}
         # Account for the truncation and a little slop
         if (( $actual + 2 >= $gigabytes )); then
             return
@@ -99,7 +99,7 @@ base_os_main() {
         mkdir -p /srv
         chmod 755 /srv
     fi
-    local reboot=
+    declare reboot=
     if base_os_ipv4; then
         reboot=1
     fi
@@ -119,7 +119,7 @@ base_os_main() {
 }
 
 base_os_ipv4() {
-    local i= no_reboot=1
+    declare i= no_reboot=1
     if [[ -e /proc/sys/net/ipv6/conf/all/disable_ipv6 ]]; then
         i=$(sysctl -n net.ipv6.conf.all.disable_ipv6)
         if [[ ! $i ]]; then
@@ -169,11 +169,11 @@ base_os_pwquality() {
 base_os_rpcbind_patch() {
     # Binding to IPv6 address not available since kernel does not support IPv6.
     # https://bugzilla.redhat.com/show_bug.cgi?id=1402961
-    local old=/usr/lib/systemd/system/rpcbind.socket
+    declare old=/usr/lib/systemd/system/rpcbind.socket
     if [[ ! -e $old ]]; then
         return
     fi
-    local new=/etc/systemd/system/rpcbind.socket
+    declare new=/etc/systemd/system/rpcbind.socket
     if [[ ! -r "$new" || $old -nt $new ]]; then
         cp -a "$old" "$new"
     fi

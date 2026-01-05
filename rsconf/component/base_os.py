@@ -64,7 +64,8 @@ class T(component.T):
             )
         self.install_resource2("hostname", "/etc", access="444")
         self.install_resource2("motd", "/etc")
-        self.install_resource2("99-journald-rsconf.conf", _JOURNAL_SYSTEMD_D access="444", host_d_access="755")
+        if self.hdb.rsconf_db.is_almalinux9:
+            self.install_resource2("99-journald-rsconf.conf", _JOURNAL_SYSTEMD_D, access="444", host_d_access="755")
         self._pam_duo_and_sshd()
         self.append_root_bash_with_main(jc)
 
