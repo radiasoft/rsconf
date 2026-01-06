@@ -19,7 +19,9 @@ mac-address-blacklist=
 method=manual
 addresses={{ network.dev.ip }}/{{ network.dev.net.prefixlen }}
 never-default={{ network.dev.nm.ipv4_never_default }}
+{% if network.dev.net.gateway %}
 gateway={{ network.dev.net.gateway }}
+{% endif %}
 dns-search={{ network.dev.nm.ipv4_dns_search }}
 dns={{ network.dev.nm.ipv4_dns }}
 
