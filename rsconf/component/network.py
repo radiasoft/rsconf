@@ -329,6 +329,7 @@ class T(rsconf.component.T):
             v.name = n
             v.ip = str(n.network_address)
             v.netmask = str(n.netmask)
+            v.prefixlen = str(n.prefixlen)
             v.pksetdefault(
                 # only needed for debugging
                 gateway="",
