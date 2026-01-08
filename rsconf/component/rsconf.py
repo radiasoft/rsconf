@@ -24,15 +24,20 @@ class T(component.T):
 
         # docker is required to build container-perl
         self.buildt.require_component("docker", "network", "nginx")
-        self.j2_ctx = self.hdb.j2_ctx_copy()
-        jc = self.j2_ctx
-        nc = self.buildt.get_component("network")
-        jc.rsconf = PKDict(
+        jc, z = self.j2_ctx_init()
+        self.j2_ctx_pksetdefault(
+            PKDict(
+                rsconf=PKDict(
+                    alt_vhosts=[],
+                    kickstart_hosts=[],
+                ),
+            ),
+        )
+        z.pkupdate(
             auth_f=nginx.CONF_D.join(PASSWD_SECRET_F),
-            srv_d=jc.rsconf_db.srv_d,
             host_subdir=jc.rsconf_db.srv_host_d.basename,
-            kickstart_hosts=jc.rsconf.get("kickstart_hosts", []),
             kickstart_root_d=jc.rsconf_db.host_run_d.join(_KICKSTART_D),
+            srv_d=jc.rsconf_db.srv_d,
         )
 
     def internal_build_write(self):
@@ -40,16 +45,19 @@ class T(component.T):
         from rsconf import db
 
         jc = self.j2_ctx
-
+        z = jc.rsconf
         f, h = _vhost(jc)
         if f:
             self.append_root_bash(": nothing to do")
             return
-        nginx.install_vhost(
-            self,
-            vhost=h,
-            j2_ctx=jc,
-        )
+        # primary must be first, because of kickstart
+        for x in [h] + z.alt_vhosts:
+            nginx.install_vhost(
+                self,
+                vhost=x,
+                j2_ctx=jc,
+            )
+            z.kickstart_hosts = []
         nginx.install_auth(
             self,
             PASSWD_SECRET_F,
