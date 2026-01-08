@@ -2,7 +2,8 @@
 Description=db_bkp
 
 [Timer]
-OnCalendar=*-*-* 13:30:0
+Timezone=America/Phoenix
+OnCalendar=*-*-* 6:30:0
 
 [Install]
 WantedBy=timers.target

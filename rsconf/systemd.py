@@ -307,7 +307,7 @@ def timer_prepare(
     z.pkupdate(
         instance_spec=_NullInstanceSpec(n),
         is_timer=True,
-        on_calendar=_on_calendar(on_calendar, z.timezone),
+        on_calendar=_on_calendar(on_calendar, j2_ctx),
         run_d=run_d,
         docker_exec=docker_exec,
         is_docker=bool(docker_exec),
@@ -370,7 +370,7 @@ def _colon_format(flag, values):
     )
 
 
-def _on_calendar(value, tz, now=None):
+def _on_calendar(value, jc, now=None):
     """Simulation systemd timezones
 
     On CentOS, systemd does not support time zones.
@@ -381,14 +381,24 @@ def _on_calendar(value, tz, now=None):
 
     Args:
         value (str): format: ``DOW H:M``, ``D H:M``, ``H``, ``H:M``
-        tz (str): Olson time zone (e.g. ``America/Denver``)
+        jc (PKDict): context
         now (datetime): for testing only
     Returns:
         str: on_calendar format: ``[DOW] *-*-[D] H:M:S``
     """
-    if now is None:
-        # for unit testing
-        now = datetime.datetime.utcnow()
+
+    def _tz_adjustment():
+        if jc.rsconf_db.is_almalinux9:
+            return 0
+        return (
+            -int(
+                pytz.timezone(jc.systemd.timezone)
+                .utcoffset(now or datetime.datetime.utcnow())
+                .total_seconds()
+            )
+            // 3600
+        )
+
     x = str(value).split(" ")
     res = "*-*-*"
     d = None
@@ -399,28 +409,26 @@ def _on_calendar(value, tz, now=None):
         else:
             assert re.search(
                 r"^\w{3}(?:-\w{3})?$", d
-            ), "Only day or day of week for value={}".format(value)
+            ), f"Only day or day of week for value={value}"
             res = d + " " + res
     else:
-        assert len(x) == 1, 'only "day h:m" and "h:m" for value={}'.format(value)
+        assert len(x) == 1, f'only "day h:m" and "h:m" for value={value}'
     x = x[0].split(":")
     h = x[0]
     if h == "*":
-        assert len(x) == 2, "hour={} requires minutes value={}".format(value)
+        assert len(x) == 2, f"hour={h} requires minutes value={value}"
         m = x[1]
     else:
-        z = -int(pytz.timezone(tz).utcoffset(now).total_seconds()) // 3600
+        z = _tz_adjustment()
         h = (int(h) + z) % 24
         if d is not None:
             # Mon-Fri 17:0 works in Denver but not later
             # so we don't handle other cases. Value has to end in
             # the same day except h=0 below or if d is not set (every day)
-            assert h == 0 or h >= z, "hour={} ends after midnight for value={}".format(
-                h, value
-            )
+            assert h == 0 or h >= z, f"hour={h} ends after midnight for value={value}"
         m = "0"
         if len(x) >= 2:
-            assert len(x) == 2, "seconds not supported for value={}".format(value)
+            assert len(x) == 2, f"seconds not supported for value={value}"
             # may be of the form 0/5
             m = x[1]
         if h == 0 and d is not None:
@@ -428,7 +436,7 @@ def _on_calendar(value, tz, now=None):
             # special case midnight to work (see above about 17:0)
             h = 23
             m = "59"
-    return res + " {}:{}:0".format(h, m)
+    return f"{res} {h}:{m}:0"
 
 
 def _prepare_scripts(z, scripts):
