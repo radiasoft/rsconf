@@ -281,6 +281,8 @@ host:
                 mount_d: /srv/docker
       docker:
         tls_host: v3.radia.run
+      rsconf:
+        alt_vhosts: [ other.v3.radia.run ]
       rsconf_db:
         components:
           - docker
