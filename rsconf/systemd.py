@@ -388,8 +388,6 @@ def _on_calendar(value, jc, now=None):
     """
 
     def _tz_adjustment():
-        if jc.rsconf_db.is_almalinux9:
-            return 0
         return (
             -int(
                 pytz.timezone(jc.systemd.timezone)

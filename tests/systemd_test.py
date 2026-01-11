@@ -36,5 +36,3 @@ def test_on_calendar():
         _on_calendar("1 18", jc, s)
     with pkexcept("midnight"):
         _on_calendar("1 18:30", jc, s)
-    jc.rsconf_db.is_almalinux9 = True
-    pkeq("*-*-* 21:30:0", _on_calendar("21:30", jc, s))
