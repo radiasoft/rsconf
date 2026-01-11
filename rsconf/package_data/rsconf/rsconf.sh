@@ -617,7 +617,7 @@ rsconf_systemctl() {
         restart)
             # Handle special case restarts, like NetworkManager
             declare n=rsconf_systemctl_restart_${s//-/_}
-            if type -f "$n" &> /dev/null; then
+            if type "$n" &> /dev/null; then
                 install_info "Executing: $n"
                 $n
                 return
