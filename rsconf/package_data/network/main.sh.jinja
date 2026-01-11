@@ -43,7 +43,7 @@ network_manager_enable() {
 rsconf_systemctl_restart_NetworkManager() {
     nmcli connection reload
     {% for d in network.devices %}
-    nmcli device reapply {{ d }}
+    nmcli connection reapply {{ d }} || nmcli connection up {{ d }}
     {% endfor %}
 }
 {% endif %}

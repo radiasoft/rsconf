@@ -53,7 +53,7 @@ network_manager_enable() {
 
 rsconf_systemctl_restart_NetworkManager() {
     nmcli connection reload
-    nmcli device reapply eth0
-    nmcli device reapply eth1
+    nmcli connection reapply eth0 || nmcli connection up eth0
+    nmcli connection reapply eth1 || nmcli connection up eth1
 }
 
