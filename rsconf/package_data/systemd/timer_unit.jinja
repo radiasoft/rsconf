@@ -2,9 +2,6 @@
 Description={{ systemd.service_name }}
 
 [Timer]
-{% if rsconf_db.is_almalinux9 %}
-Timezone={{ systemd.timezone }}
-{% endif %}
 OnCalendar={{ systemd.on_calendar }}
 
 [Install]
