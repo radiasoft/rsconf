@@ -2,7 +2,7 @@
 Description=logrotate
 
 [Timer]
-OnCalendar=*-*-* 14:30:0
+OnCalendar=*-*-* 7:30:0 America/Phoenix
 
 [Install]
 WantedBy=timers.target

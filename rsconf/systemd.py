@@ -388,6 +388,8 @@ def _on_calendar(value, jc, now=None):
     """
 
     def _tz_adjustment():
+        if jc.rsconf_db.is_almalinux9:
+            return 0
         return (
             -int(
                 pytz.timezone(jc.systemd.timezone)
@@ -398,17 +400,17 @@ def _on_calendar(value, jc, now=None):
         )
 
     x = str(value).split(" ")
-    res = "*-*-*"
+    rv = "*-*-*"
     d = None
     if len(x) == 2:
         d = x.pop(0)
         if d.isdigit():
-            res = "*-*-" + d
+            rv = "*-*-" + d
         else:
             assert re.search(
                 r"^\w{3}(?:-\w{3})?$", d
             ), f"Only day or day of week for value={value}"
-            res = d + " " + res
+            rv = d + " " + rv
     else:
         assert len(x) == 1, f'only "day h:m" and "h:m" for value={value}'
     x = x[0].split(":")
@@ -434,7 +436,10 @@ def _on_calendar(value, jc, now=None):
             # special case midnight to work (see above about 17:0)
             h = 23
             m = "59"
-    return f"{res} {h}:{m}:0"
+    rv = f"{rv} {h}:{m}:0"
+    if jc.rsconf_db.is_almalinux9:
+        rv += f" {jc.systemd.timezone}"
+    return rv
 
 
 def _prepare_scripts(z, scripts):
