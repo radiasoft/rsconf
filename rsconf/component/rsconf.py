@@ -14,6 +14,7 @@ from urllib.parse import urlparse
 
 PASSWD_SECRET_F = "rsconf_auth"
 _KICKSTART_D = "kickstart"
+_HOST_INIT_F = "rsconf-init.sh"
 _PASSWD_SECRET_JSON_F = "rsconf_auth.json"
 
 
@@ -81,16 +82,18 @@ def host_init(j2_ctx, host):
         y[host] = _passwd_entry(j2_ctx, host)
         pkjson.dump_pretty(y, filename=jf)
     c = f"curl {j2_ctx.rsconf_db.install_server + ('/index.sh' if s else '')} | install_server={j2_ctx.rsconf_db.install_server} bash -s rsconf.sh {host}"
+    rv = f"""install -m 600 /dev/stdin /root/.netrc <<'EOF'
+machine {h} login {host} password {y[host]}
+EOF
+{c}
+"""
+    pkio.write_text(db.secret_path(j2_ctx, _HOST_INIT_F, visibility="host"), rv)
     if s:
         return f"""Bootstrapping build server
 Run:
 {c}
 Then update install_server in db/000.yml and run host init again"""
-    return f"""install -m 600 /dev/stdin /root/.netrc <<'EOF'
-machine {h} login {host} password {y[host]}
-EOF
-{c}
-# On {j2_ctx.bkp.primary}: ssh {host} true"""
+    return f"{rv}# On {j2_ctx.bkp.primary}: ssh {host} true"
 
 
 def passwd_secret_f(j2_ctx):

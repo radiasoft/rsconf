@@ -119,10 +119,14 @@ def _add_host(j2_ctx, host):
     from rsconf.component import rsconf
 
     def _netrc():
-        for l in re.compile("(?<=\n)").split(rsconf.host_init(j2_ctx, host)):
-            if l.startswith("machine"):
-                return l
-        raise AssertionError("format of host_init changed no machine line found")
+        try:
+            j2_ctx.rsconf_db.host = host
+            for l in re.compile("(?<=\n)").split(rsconf.host_init(j2_ctx, host)):
+                if l.startswith("machine"):
+                    return l
+            raise AssertionError("format of host_init changed no machine line found")
+        finally:
+            j2_ctx.rsconf_db.pkdel("host")
 
     pkio.write_text(j2_ctx.rsconf_db.srv_d.join(host + "-netrc"), _netrc())
     if host == j2_ctx.master:
