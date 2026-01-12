@@ -30,6 +30,11 @@ class T(component.T):
         from rsconf.component import nginx
         from rsconf.component import docker
 
+        def _hosts(docker):
+            return docker.get("hosts", []) + docker.pkunchecked_nested_get(
+                "enterprise.hosts", []
+            )
+
         jc = self.j2_ctx
         z = jc[self.name]
         systemd.docker_unit_enable(
@@ -44,7 +49,7 @@ class T(component.T):
         )
         docker.setup_cluster(
             self,
-            jc.sirepo.job_driver.docker.hosts,
+            _hosts(jc.sirepo.job_driver.docker),
             jc.sirepo.job_driver.docker.tls_dir,
             run_u=self.__run_u,
             j2_ctx=self.j2_ctx,
