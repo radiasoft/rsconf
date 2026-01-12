@@ -31,7 +31,9 @@ class T(component.T):
         from rsconf.component import docker
 
         def _hosts(docker):
-            return docker.get("hosts", []) + docker.pkunchecked_nested_get("enterprise.hosts", [])
+            return docker.get("hosts", []) + docker.pkunchecked_nested_get(
+                "enterprise.hosts", []
+            )
 
         jc = self.j2_ctx
         z = jc[self.name]
