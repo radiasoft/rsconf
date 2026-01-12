@@ -36,3 +36,8 @@ def test_on_calendar():
         _on_calendar("1 18", jc, s)
     with pkexcept("midnight"):
         _on_calendar("1 18:30", jc, s)
+    jc = PKDict(
+        rsconf_db=PKDict(is_almalinux9=False), systemd=PKDict(timezone="America/Denver")
+    )
+    jc.rsconf_db.is_almalinux9 = True
+    pkeq("*-*-* 3:0:0 America/Denver", _on_calendar("3", jc, d))

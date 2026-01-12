@@ -2,7 +2,7 @@
 Description=db_bkp
 
 [Timer]
-OnCalendar=*-*-* 13:30:0
+OnCalendar=*-*-* 6:30:0 America/Phoenix
 
 [Install]
 WantedBy=timers.target
