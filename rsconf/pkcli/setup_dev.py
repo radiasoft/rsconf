@@ -55,8 +55,15 @@ def default_command():
     )
     hosts = [h for h in j2_ctx.values() if str(h).endswith(".radia.run")]
     # bootstrap
-    j2_ctx.update(rsconf_db=db.global_paths_as_dict().pkupdate(channel="dev"))
-    j2_ctx.rsconf_db.install_server = "http://{}:{}".format(j2_ctx.master, j2_ctx.port)
+    j2_ctx.pkupdate(
+        rsconf_db=db.global_paths_as_dict().pkupdate(
+            # TODO(robnagler) copied from rsconf.db
+            # TODO(robnagler) introduce concept of const
+            bash_curl_cmd="curl --fail --location --show-error --silent",
+            channel="dev",
+            install_server="http://{}:{}".format(j2_ctx.master, j2_ctx.port),
+        ),
+    )
     j2_ctx.bkp = PKDict(primary=j2_ctx.host)
     j2_ctx.passwd_f = rsconf.component.rsconf.passwd_secret_f(j2_ctx)
     for h in hosts:
