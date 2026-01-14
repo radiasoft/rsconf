@@ -158,7 +158,9 @@ class T(component.T):
                 self,
                 jc,
                 image=z.docker_image,
-                env=self.sirepo_unit_env(self, exclude_re="^(?:sirepo_job_driver|sirepo__)"),
+                env=self.sirepo_unit_env(
+                    self, exclude_re="^(?:sirepo_job_driver|sirepo__)"
+                ),
                 after=self.__docker_unit_enable_after,
                 volumes=self.__docker_vols,
                 static_files_gen=self.__static_files_gen_f,
