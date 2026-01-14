@@ -43,6 +43,8 @@ _GLOBAL_PATHS = None
 class Host(PKDict):
     def __init__(self, raw, channel, host):
         c = global_paths_as_dict().pkupdate(
+            # TODO(robnagler) introduce concept of const
+            bash_curl_cmd="curl --fail --location --show-error --silent",
             channel=channel,
             host=host.lower(),
         )
@@ -230,8 +232,6 @@ def global_paths_as_dict():
         PKDict: new copy of all paths
     """
     rv = PKDict(
-        # TODO(robnagler) introduce concept of const
-        bash_curl_cmd="curl --fail --location --show-error --silent",
         root_d=pkio.py_path() if cfg.root_d == _UNIT_TEST_ROOT_D else cfg.root_d,
     )
     rv.pkupdate(

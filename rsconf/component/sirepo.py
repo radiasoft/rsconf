@@ -58,6 +58,9 @@ class T(component.T):
                         job=PKDict(
                             max_message_bytes="200m",
                         ),
+                        # POSIT: sirepo/package_data/static/img/SirepoLog.png
+                        _logo_uri="/static/img/SirepoLogo.png",
+                        _maintenance_uri="/static/html/maintenance.html",
                         pkcli=PKDict(
                             service=PKDict(
                                 ip=db.LOCAL_IP,
@@ -130,8 +133,6 @@ class T(component.T):
         _defaults_1(jc)
         self._raydata()
         self._jupyterhublogin(z)
-        # Must come before sirepo_job_supervisor. This sets config that supervisor needs.
-        self._viz3d()
         _defaults_2(jc)
         # server connects locally only so go direct to tornado.
         # supervisor has different uri to pass to agents.
@@ -157,7 +158,9 @@ class T(component.T):
                 self,
                 jc,
                 image=z.docker_image,
-                env=self.sirepo_unit_env(self, exclude_re="^(?:sirepo_job_driver)"),
+                env=self.sirepo_unit_env(
+                    self, exclude_re="^(?:sirepo_job_driver|sirepo__)"
+                ),
                 after=self.__docker_unit_enable_after,
                 volumes=self.__docker_vols,
                 static_files_gen=self.__static_files_gen_f,
@@ -241,20 +244,3 @@ class T(component.T):
             if "sim_types" in k and to_check in v:
                 return True
         return False
-
-    def _viz3d(self):
-        if (
-            self.j2_ctx.sirepo.feature_config.get("enable_global_resources", False)
-            and "viz3d" in self.j2_ctx.sirepo.feature_config.proprietary_sim_types
-        ):
-            n = self.buildt.get_component("network")
-            n.add_public_tcp_ports(
-                list(
-                    range(
-                        self.j2_ctx.sirepo.global_resources.public_ports_min,
-                        self.j2_ctx.sirepo.global_resources.public_ports_max,
-                    )
-                )
-            )
-            self._set_sirepo_config("rsiviz", is_docker_component=False)
-            self.__env_components += ["rsiviz"]
