@@ -18,7 +18,7 @@ server {
     ssl_certificate {{ nginx.tls_crt }};
     ssl_certificate_key {{ nginx.tls_key }};
     client_max_body_size {{ sirepo.client_max_body_size }};
-    error_page 502 503 {{ sirepo._maintenance_uri }};
+    error_page 502 503 504 {{ sirepo._maintenance_uri }};
 
     # Only one try on requests. The servers are either busy or not.
     proxy_next_upstream off;
@@ -35,6 +35,12 @@ server {
     location /static/html {
         allow all;
         proxy_pass http://sirepo_api;
+    }
+    location = {{ sirepo._maintenance_uri }} {
+         # Don't proxy maintenance page, and if can't find, it's an error.
+         expires 1d;
+         add_header Cache-Control "public";
+         try_files $uri =500;
     }
     location = /favicon.ico {
         rewrite (.*) /static/img/favicon.ico;
