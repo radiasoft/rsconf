@@ -1,30 +1,62 @@
 #!/bin/bash
 set -eou pipefail
 
-_static_files_gen_prog=$0
+_prog=$0
 
-static_files_gen_do() {
+_do() {
     declare nginx_d=$1
     # POSIT: mounted inside the container and writable
     declare d='/srv/sirepo/static_files_gen_tmp'
     rm -rf "$d"
     install -o 'vagrant' -d "$d"
     /srv/sirepo/start sirepo static_files gen "$d"
+    _maintenance_page "$d"
     chown -R vagrant: "$d"
     find "$d" -type d -print0 | xargs -0 chmod 711
     find "$d" -type f -print0 | xargs -0 chmod 444
-    static_files_gen_mv "$nginx_d" "$d"
+    _mv "$nginx_d" "$d"
 }
 
-static_files_gen_main() {
+_main() {
     declare nginx_d='/srv/www/sirepo'
-    if static_files_gen_needed "$nginx_d"; then
+    if _needed "$nginx_d"; then
         echo "Generating: $nginx_d" 1>&2
-        static_files_gen_do "$nginx_d"
+        _do "$nginx_d"
     fi
 }
 
-static_files_gen_mv() {
+_maintenance_page() {
+    declare gen_d=$1
+    cat <<'EOF' > "$gen_d//static/html/maintenance.html"
+<html>
+  <head>
+  <title>Site Maintenance</title>
+    <style type="text/css">
+    body {font-family: arial, sans-serif; font-size: 15px}
+    .logo {
+      background-image: url(/static/img/SirepoLogo.png);
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+      height: 150px;
+      width: 100%;
+    }
+    .center {text-align: center}
+    </style>
+  </head>
+  <body>
+    <div class="center">
+    <div class="logo"></div>
+      <h1>Our site is undergoing maintenance.</h1>
+      <p>We will be back online shortly.</p>
+      <p>We apologize for the inconvenience.</p>
+    </div>
+  </body>
+</html>
+EOF
+}
+
+_mv() {
     declare nginx_d=$1
     declare gen_d=$2
     declare t=$nginx_d.tmp
@@ -39,12 +71,12 @@ static_files_gen_mv() {
     rm -rf "$o"
 }
 
-static_files_gen_needed() {
+_needed() {
     declare nginx_d=$1
     if [[ ${static_files_gen_force:+1} || ! -d $nginx_d ]]; then
         return 0
     fi
-    [[ $(find "$nginx_d" -type f -newer "$_static_files_gen_prog" -print -quit) ]]
+    [[ $(find "$nginx_d" -type f -newer "$_prog" -print -quit) ]]
 }
 
-static_files_gen_main "$@"
+_main "$@"

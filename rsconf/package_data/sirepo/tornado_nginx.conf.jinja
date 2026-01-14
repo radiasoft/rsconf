@@ -18,6 +18,7 @@ server {
     ssl_certificate {{ nginx.tls_crt }};
     ssl_certificate_key {{ nginx.tls_key }};
     client_max_body_size {{ sirepo.client_max_body_size }};
+    error_page 502 503 {{ sirepo._maintenance_uri }};
 
     # Only one try on requests. The servers are either busy or not.
     proxy_next_upstream off;
