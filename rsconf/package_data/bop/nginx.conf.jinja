@@ -11,7 +11,7 @@ server {
     ssl_certificate {{ nginx.tls_crt }};
     ssl_certificate_key {{ nginx.tls_key }};
     client_max_body_size {{ bop.client_max_body_size }};
-    error_page 502 503 {{ bop.maintenance_uri }};
+    error_page 502 503 504 {{ bop.maintenance_uri }};
 
     location ~ ^/_ {
         deny all;
