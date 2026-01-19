@@ -56,6 +56,7 @@ base_os_logical_volume() {
     declare x=$(lvs --units g --no-headings -o lv_size "$dev" 2>/dev/null)
     if ! grep -s -q "^$dev " /etc/fstab; then
         rsconf_edit_no_change_res=0 rsconf_append /etc/fstab "^$dev " "$dev $mount_d xfs defaults 0 0"
+        systemctl daemon-reload
     fi
     if [[ $x =~ ([0-9]+)(\.[0-9]+)?g ]]; then
         declare actual=${BASH_REMATCH[1]}
