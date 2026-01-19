@@ -19,6 +19,7 @@ c.JupyterHub.hub_port = 7913
 c.JupyterHub.template_vars = {}
 c.JupyterHub.upgrade_db = True
 c.ConfigurableHTTPProxy.auth_token = 'a324e39d4ccc7ec21400def54ad25d3007282d8f9be7fdb731c327008cee258d'
+c.DockerSpawner.escape = 'legacy'
 c.DockerSpawner.http_timeout = 30
 # https://github.com/radiasoft/rsconf/issues/54
 c.DockerSpawner.allowed_images = []
