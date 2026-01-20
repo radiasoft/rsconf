@@ -371,7 +371,7 @@ rsconf_main() {
         rsconf_setup_dev "$host"
     fi
     install_curl_flags+=( --netrc )
-    install_info "$host: rsconf begin"
+    install_info "$host: rsconf-start"
     install_url host/$host
     # Dynamically scoped; must be inline here
     declare -A rsconf_file_hash=()
@@ -381,14 +381,9 @@ rsconf_main() {
     declare -A rsconf_service_status=()
     declare -A rsconf_service_watch=()
     declare -a rsconf_service_order=()
-    declare rsconf_rerun_required=
     install_script_eval 000.sh
     rsconf_at_end=1 rsconf_service_restart
-    if [[ $rsconf_rerun_required ]]; then
-        install_info "$rsconf_rerun_required
-
-You need to rerun this command"
-    fi
+    install_info "$host: rsconf-end"
 }
 
 rsconf_mkdir() {
@@ -415,16 +410,11 @@ rsconf_radia_run_as_user() {
 }
 
 rsconf_reboot() {
-    install_err "Reboot required"
+    install_err 'rsconf-reboot-required'
 }
 
 rsconf_require() {
     rsconf_only_once=1 rsconf_run "$1"
-}
-
-rsconf_rerun_required() {
-    rsconf_rerun_required="$rsconf_rerun_required$1
-"
 }
 
 rsconf_run() {
