@@ -50,7 +50,7 @@ def _assert_challenge(named_conf, sld, subdomain=""):
         # May be multiple so keep checking
         if k == s:
             i += 1
-            pkunit.pkre("^[\w_-]+$", v)
+            pkunit.pkre(r"^[\w_-]+$", v)
     if i <= 0:
         pkunit.pkfail("subdomain={} not in list={}", s, named_conf[sld])
 
