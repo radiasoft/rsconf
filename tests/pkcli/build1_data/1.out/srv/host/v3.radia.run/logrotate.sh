@@ -25,7 +25,7 @@ logrotate_main() {
         ln -r -s '/srv/logrotate' /var/lib/logrotate
     fi
     # These don't have sensible defaults. See our logrotate.conf.jinja
-    rm -f /etc/logrotate.d/{bootlog,yum}
+    rm -f /etc/logrotate.d/{bootlog,yum,wtmp}
     if [[ -e /etc/logrotate.d/nginx ]]; then
         # This retention policy should be global
         rsconf_edit_no_change_res=0 rsconf_edit /etc/logrotate.d/nginx '#rotate' \
