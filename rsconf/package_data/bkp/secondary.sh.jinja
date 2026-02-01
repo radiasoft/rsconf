@@ -38,10 +38,13 @@ secondary_main() {
         rm "$snap"/RESTART
         secondary_msg "Reusing snapshot $snap"
     else
-        secondary_assert_copy_d
+        if [[ -e $snap]] && (( $(stat -c %Y /bkp/mirror/current) - $(stat -c %Y "$snap") < 7 * 24 * 60 * 60 )); then
+            secondary_err "snapshot is too new, remove it or set touch $snap/RESTART"
+        fi
         rm -rf "$snap"
         cp -al '/bkp/mirror/current' "$snap"
     fi
+    secondary_assert_copy_d
     (
         # */* matches host.com/{var,etc,...} since these are
         # the first level to write
