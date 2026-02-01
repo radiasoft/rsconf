@@ -1,60 +1,51 @@
 #!/bin/bash
 set -euo pipefail
 
-secondary_mirror_d='{{ bkp.mirror_d }}'
-secondary_copy_d='{{ bkp.secondary_copy_d }}'
+_mirror_d='{{ bkp.mirror_d }}'
+_current_d='{{ bkp.mirror_d }}/current'
+_copy_d='{{ bkp._copy_d }}'
+_snap_root_d=$_mirror_d/secondary_snap
+_restart_f=$_snap_root_d/RESTART
 
-secondary_assert_copy_d() {
-    if [[ ! -d $secondary_copy_d ]]; then
-        secondary_err "$secondary_copy_d does not exist"
+_assert_copy_d() {
+    if [[ ! -d $_copy_d ]]; then
+        _err "$_copy_d does not exist"
     fi
-    if [[ $(secondary_file_sys "$secondary_copy_d") == $(secondary_file_sys "$(dirname "$secondary_copy_d")") ]]; then
-        secondary_err "$secondary_copy_d is not on a separate file system; need to run secondary_setup"
+    if [[ $(_file_sys "$_copy_d") == $(_file_sys "$(dirname "$_copy_d")") ]]; then
+        _err "$_copy_d is not on a separate file system; need to run secondary_setup"
     fi
-    if [[ $(ls $secondary_copy_d) ]]; then
-        secondary_err "$secondary_copy_d is not empty"
+    if [[ $(ls $_copy_d) ]]; then
+        _err "$_copy_d is not empty"
     fi
 }
 
-secondary_err() {
+_err() {
     echo "$@" 1>&2
     return 1
 }
 
-secondary_file_sys() {
+_file_sys() {
     declare file=$1
     declare x=( $(df "$file" | tail -1) )
     echo "${x[0]}"
 }
 
-secondary_main() {
+_main() {
     umask 077
-    declare snap=$secondary_mirror_d/secondary_snap
     declare dst_d snap_d base_d copy_txz copy_tmp
     declare -i retries
-    declare is_restart=
-    if [[ -e $snap/RESTART ]]; then
-        is_restart=1
-        rm "$snap"/RESTART
-        secondary_msg "Reusing snapshot $snap"
-    else
-        if [[ -e $snap]] && (( $(stat -c %Y /bkp/mirror/current) - $(stat -c %Y "$snap") < 7 * 24 * 60 * 60 )); then
-            secondary_err "snapshot is too new, remove it or set touch $snap/RESTART"
-        fi
-        rm -rf "$snap"
-        cp -al '/bkp/mirror/current' "$snap"
-    fi
-    secondary_assert_copy_d
+    declare is_restart_rv=
+    _snapshot
     (
         # */* matches host.com/{var,etc,...} since these are
         # the first level to write
-        cd "$snap" && find */* -type d -print0
+        cd "$_snap_root_d" && find */* -type d -print0
     ) | while IFS= read -r -d $'\0' base_d; do
         if [[ ! $base_d =~ /.*/ ]]; then
-            secondary_msg "Starting $base_d"
+            _msg "Starting $base_d"
         fi
-        snap_d=$snap/$base_d
-        copy_d=$secondary_copy_d/$base_d
+        snap_d=$_snap/$base_d
+        copy_d=$_copy_d/$base_d
         copy_txz=$copy_d/0.txz
         copy_tmp=$copy_txz.tmp
         if [[ $base_d =~ srv/github_bkp/db/ ]]; then
@@ -63,7 +54,7 @@ secondary_main() {
         elif [[ $base_d =~ srv/github_bkp/db$ ]]; then
             # github_bkp is already compressed so just copy
             # must be at this level to copy hard-links
-            secondary_msg "Simple copy: $base_d"
+            _msg "Simple copy: $base_d"
             # handles restarts properly
             rsync -a --hard-links --sparse "$snap_d" "$(dirname "$copy_d")"
             continue
@@ -73,7 +64,7 @@ secondary_main() {
             # empty directory
             continue
         fi
-        if [[ $is_restart && -s $copy_txz ]]; then
+        if [[ $is_restart_rv && -s $copy_txz ]]; then
             # Reusing $copy_txz if it is non-zero size
             rm -f "$copy_tmp"
             continue
@@ -98,19 +89,39 @@ secondary_main() {
             rm -f "$copy_tmp"
             i+=-1
             if (( i < 0 )); then
-                secondary_msg "FAILED COPY $copy_d, continuing"
+                _msg "FAILED COPY $copy_d, continuing"
                 break
             fi
             sleep 60
-            secondary_msg "Retrying $copy_d"
+            _msg "Retrying $copy_d"
         done
     done
-    chmod -R a-w "$secondary_copy_d"
+    chmod -R a-w "$_copy_d"
     {{ bkp.secondary_copy_unmount_cmds }}
 }
 
-secondary_msg() {
+_msg() {
     echo "$@" 1>&2
 }
 
-secondary_main "$@"
+_snapshot() {
+    if [[ -e $_restart_f ]]; then
+        is_restart_rv=1
+        rm "$_restart_f"
+        _msg "Reusing snapshot $_snap_root_d"
+        return
+    fi
+    if [[ -e $_snap_root_d ]] && (( $(date -u +%s) - $(stat -c %Y "$_snap_root_d") < 7 * 24 * 60 * 60 )); then
+        _err "snapshot is too new, do one of:
+A. rm -rf $_snap_root_d
+B. touch $_restart_f
+and
+systemctl start bkp.service"
+    fi
+    rm -rf "$_snap_root_d"
+    cp -al "$_current_d" "$_snap_root_d"
+    touch "$_sentinel_f"
+    _assert_copy_d
+}
+
+_main "$@"
