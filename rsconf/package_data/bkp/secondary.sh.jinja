@@ -3,7 +3,7 @@ set -euo pipefail
 
 _mirror_d='{{ bkp.mirror_d }}'
 _current_d='{{ bkp.mirror_d }}/current'
-_copy_d='{{ bkp._copy_d }}'
+_copy_d='{{ bkp.secondary_copy_d }}'
 _snap_root_d=$_mirror_d/secondary_snap
 _restart_f=$_snap_root_d/RESTART
 
