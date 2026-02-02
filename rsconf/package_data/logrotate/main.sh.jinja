@@ -1,4 +1,5 @@
 #!/bin/bash
+shopt -s nullglob
 
 logrotate_main() {
     # We use a systemd timer so can have output in the journal, and not emailed (anacron requires email)
@@ -15,6 +16,12 @@ logrotate_main() {
         rsconf_edit_no_change_res=0 rsconf_edit /etc/logrotate.d/nginx '#rotate' \
             's/\brotate/#rotate/'
     fi
+    for f in /etc/logrotate.d/*; do
+        if grep --no-messages --quiet ' delaycompress' "$f"; then
+            rsconf_edit_no_change_res=0 rsconf_edit "$f" '#delaycompress' \
+               's/\bdelaycompress/#delaycompress/'
+        fi
+    done
     # Must exist for logrotate.conf.jinja to export and rotate the journal
     if [[ ! -e /var/log/journal.export ]]; then
         install -m 600 -o root -g root /dev/null /var/log/journal.export
