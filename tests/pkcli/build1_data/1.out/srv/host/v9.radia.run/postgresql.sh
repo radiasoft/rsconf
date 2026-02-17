@@ -14,6 +14,10 @@ rsconf_install_file '/srv/postgresql/data/pg_hba.conf' 'f4fd85b06b4b4872ea041fea
 rsconf_install_access '400' 'root' 'root'
 rsconf_install_access '400' 'root' 'root'
 rsconf_install_file '/etc/logrotate.d/postgresql' 'cf86c6bc140606e3cba328f4a4fb2ea4'
+rsconf_install_access '755' 'root' 'root'
+rsconf_install_directory '/etc/systemd/system/postgresql.service.d'
+rsconf_install_access '444' 'root' 'root'
+rsconf_install_file '/etc/systemd/system/postgresql.service.d/99-rsconf.conf' 'd6755161df7d1dba92e3ffc6052850a4'
 rsconf_service_restart
 }
 #!/bin/bash
