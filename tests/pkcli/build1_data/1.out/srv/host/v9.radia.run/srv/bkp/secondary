@@ -8,13 +8,14 @@ _snap_root_d=$_mirror_d/secondary_snap
 _restart_f=$_snap_root_d/RESTART
 
 _assert_copy_d() {
+    declare is_restart=$1
     if [[ ! -d $_copy_d ]]; then
         _err "$_copy_d does not exist"
     fi
     if [[ $(_file_sys "$_copy_d") == $(_file_sys "$(dirname "$_copy_d")") ]]; then
         _err "$_copy_d is not on a separate file system; need to run secondary_setup"
     fi
-    if [[ $(ls $_copy_d) ]]; then
+    if [[ ! $is_restart && $(ls $_copy_d) ]]; then
         _err "$_copy_d is not empty"
     fi
 }
@@ -121,7 +122,7 @@ systemctl start bkp.service"
     rm -rf "$_snap_root_d"
     cp -al "$_current_d" "$_snap_root_d"
     touch "$_sentinel_f"
-    _assert_copy_d
+    _assert_copy_d "$is_restart_rv"
 }
 
 _main "$@"

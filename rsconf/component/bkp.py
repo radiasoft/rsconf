@@ -29,22 +29,16 @@ class T(component.T):
         z = jc.bkp
         z.run_u = jc.rsconf_db.root_u
         z.run_d = systemd.unit_run_d(jc, self.name)
-        secondary_setup = None
         if jc.rsconf_db.host == z.primary:
             self._primary(jc, z)
             n = "primary"
         else:
-            secondary_setup = self._secondary(jc, z)
+            self._secondary(jc, z)
             n = "secondary"
         te = z.run_d.join(n)
         systemd.timer_prepare(self, jc, timer_exec=te, on_calendar=z.on_calendar)
         self.install_access(mode="500", owner=z.run_u)
         self.install_resource("bkp/{}.sh".format(n), jc, te)
-        if secondary_setup:
-            self.install_abspath(
-                secondary_setup,
-                z.run_d.join(secondary_setup.purebasename),
-            )
         systemd.timer_enable(self, j2_ctx=jc, run_u=z.run_u)
 
     def _primary(self, jc, z):
@@ -88,4 +82,3 @@ class T(component.T):
 
     def _secondary(self, jc, z):
         z.setdefault("secondary_copy_unmount_cmds", "")
-        return z.setdefault("secondary_setup_f", None)
