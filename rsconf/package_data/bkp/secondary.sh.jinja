@@ -45,7 +45,7 @@ _main() {
         if [[ ! $base_d =~ /.*/ ]]; then
             _msg "Starting $base_d"
         fi
-        snap_d=$_snap/$base_d
+        snap_d=$_snap_root_d/$base_d
         copy_d=$_copy_d/$base_d
         copy_txz=$copy_d/0.txz
         copy_tmp=$copy_txz.tmp
