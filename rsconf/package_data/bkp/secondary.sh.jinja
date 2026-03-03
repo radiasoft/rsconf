@@ -121,7 +121,7 @@ systemctl start bkp.service"
     fi
     rm -rf "$_snap_root_d"
     cp -al "$_current_d" "$_snap_root_d"
-    touch "$_sentinel_f"
+    touch "$_restart_f"
     _assert_copy_d "$is_restart_rv"
 }
 
