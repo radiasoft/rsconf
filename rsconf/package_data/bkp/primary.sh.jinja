@@ -74,6 +74,7 @@ primary_rsync() {
         rsync
         --archive
         --delete
+        --force
         # https://gist.github.com/KartikTalwar/4393116
         # rsync (Everyone seems to like -z [--compress], but it is much slower for me)
         # --compress
