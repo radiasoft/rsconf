@@ -1,0 +1,5 @@
+$TTL 1D
+$ORIGIN local.
+@ IN SOA local. hostmaster.local. ( 2023111502 1D 1D 1D 1D )
+@ IN NS local.
+local. IN A 127.0.0.1
