@@ -6,6 +6,7 @@ _current_d='/srv/bkp/mirror/current'
 _copy_d='/bkp_copy'
 _snap_root_d=$_mirror_d/secondary_snap
 _restart_f=$_snap_root_d/RESTART
+: ${_compress:=pxz -T4 -9}
 
 _assert_copy_d() {
     declare is_restart=$1
@@ -83,7 +84,7 @@ _main() {
                 find . -maxdepth 1 ! -type d -print0 \
                     | grep --text --null --null-data -v --perl-regexp '\\' \
                     | tar --create --null --files-from=- --file=-
-            ) | pxz -T8 -9 > "$copy_tmp"; then
+            ) | $_compress > "$copy_tmp"; then
                 mv "$copy_tmp" "$copy_txz"
                 break
             fi
