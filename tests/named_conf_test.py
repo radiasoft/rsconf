@@ -6,17 +6,20 @@
 
 
 def test_build():
-    from pykern import pkunit, pkio
+    from pykern import pkunit, pkio, pkdebug
     from rsconf import named_conf
     import shutil, subprocess
 
     for d in pkunit.case_dirs():
-        named_conf.generate(
-            str(d),
-            d.join("in.py"),
-            pkio.sorted_glob("*.json"),
-            test_serial="2023111502",
-        )
+        with pkunit.ExceptToFile():
+            named_conf.generate(
+                str(d),
+                d.join("in.py"),
+                pkio.sorted_glob("*.json"),
+                test_serial=2023111502,
+            )
+        if "-dev" in d.basename:
+            continue
         if x := shutil.which("named-checkconf"):
             subprocess.check_call([x, "-z", "named.conf"])
         f = d.join("named.conf")

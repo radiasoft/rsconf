@@ -1,0 +1,1 @@
+Command '['dig', 'soa', 'ns1.no-such-domain.tld.', '@ns1.no-such-domain.tld.']' returned non-zero exit status 1.

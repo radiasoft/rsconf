@@ -408,12 +408,21 @@ def _generate(root_dir, cfg, txt_json_paths, test_serial):
     def _root_file():
         return requests.get(INTERNIC_ROOT_URL).text
 
+    def _test_serial(serial):
+        if not test_serial:
+            return serial
+        if test_serial > serial:
+            raise AssertionError(
+                f"test_serial={test_serial} > computed serial={serial}"
+            )
+        return test_serial
+
     def _write(files):
         for n, c in files.items():
             pykern.pkio.write_text(n, c)
 
     _local_cfg(cfg)
-    cfg.serial = test_serial or _serial(cfg)
+    cfg.serial = _test_serial(_serial(cfg))
     cfg.txt_json = _txt_json_parse(txt_json_paths)
     zones = cfg.pop("zones", PKDict())
     nets = cfg.pop("nets", PKDict())
