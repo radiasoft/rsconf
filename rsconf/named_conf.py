@@ -1,27 +1,36 @@
-#!/usr/bin/env python3
-"""
-named_conf.py - Generate BIND named.conf and zone files from a config dict.
+"""Generate named.conf and zone files
 
-Converted from Bivio::Util::NamedConf (Perl) to Python.
-
-Usage:
-    python named_conf.py generate [txt1.json ...]  < config.py
-    python named_conf.py root_file
+:copyright: Copyright (c) 2026 RadiaSoft LLC.  All Rights Reserved.
+:license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 
+from pykern.pkcollections import PKDict
+from pykern.pkdebug import pkdc, pkdlog, pkdp
+import datetime
 import ipaddress
 import json
 import os
+import pykern.pkcollections
+import pykern.pkio
+import pykern.pkrunpy
 import re
 import subprocess
 import sys
-import urllib.request
-from datetime import date
-from pathlib import Path
+import requests
 
-ZONE_DIR = Path("var/named")
-ROOT_FILE = "named.root"
+
 INTERNIC_ROOT_URL = "https://www.internic.net/zones/named.root"
+
+
+def generate(root_dir, cfg_py, txt_json_paths, test_serial=None):
+    _generate(
+        root_dir,
+        pykern.pkcollections.canonicalize(
+            pykern.pkrunpy.run_path_as_module(cfg_py).RESULT,
+        ),
+        txt_json_paths,
+        test_serial,
+    )
 
 
 def _dot(name, origin=""):
@@ -77,34 +86,26 @@ def _map_host_addresses(cidr, callback):
 
 
 def _serial(cfg):
-    server = cfg["servers"][0]
-    try:
-        out = subprocess.check_output(
-            ["dig", "soa", server, f"@{server}"],
-            text=True, stderr=subprocess.DEVNULL,
-        )
-    except (FileNotFoundError, subprocess.CalledProcessError) as e:
-        raise RuntimeError(f"{server}: dig failed: {e}") from e
+    def _check(curr, today):
+        m = today + 99
+        rv = curr + 1 if curr >= today else today
+        if rv >= m:
+            raise RuntimeError(f"too many updates today curr={curr} new={rv} max={m}")
+        return rv
 
-    for line in out.splitlines():
-        if line.startswith(";"):
+    def _dig():
+        s = cfg.servers[0]
+        return ["dig", "soa", s, "@" + s]
+
+    o = subprocess.check_output(_dig(), text=True)
+    for x in o.splitlines():
+        if x.startswith(";"):
             continue
-        m = re.match(
-            r"^\S+\s+\d+\s+IN\s+SOA\s+\S+\s+\S+\s+(\d{1,10})\s+\d", line
-        )
-        if m:
-            s = int(m.group(1))
-            today = date.today().strftime("%Y%m%d")
-            n = int(today + "00")
-            max_n = n + 99
-            n = s + 1 if s >= n else n
-            if n >= max_n:
-                raise RuntimeError(
-                    f"Too many updates today: curr={s} new={n} max={max_n}"
-                )
-            return n
-
-    raise RuntimeError(f"{server}: could not find SOA")
+        if m := re.match(r"^\S+\s+\d+\s+IN\s+SOA\s+\S+\.\s+\S+\.\s+(\d{1,10})\s+\d", x):
+            return _check(
+                int(m.group(1)), int(datetime.date.today().strftime("%Y%m%d00"))
+            )
+    raise RuntimeError(f"could not find SOA cmd={_dig()} out={o}")
 
 
 def _zone_header(zone_dot, cfg):
@@ -123,11 +124,11 @@ def _zone_header(zone_dot, cfg):
 
 
 def _zone_ipv4_map_array(ipv4_list):
-    res = {}
+    res = PKDict()
     it = iter(ipv4_list)
     for key, val in zip(it, it):
         cidr, num = key
-        cidr_dict = res.setdefault(cidr, {})
+        cidr_dict = res.setdefault(cidr, PKDict())
         if num in cidr_dict:
             raise ValueError(f"Duplicate host cidr={cidr} num={num}")
         cidr_dict[num] = val
@@ -136,10 +137,10 @@ def _zone_ipv4_map_array(ipv4_list):
 
 def _normalize_host_entry(entry, cfg):
     if isinstance(entry, (list, tuple)):
-        host, hcfg = entry[0], dict(entry[1]) if len(entry) > 1 else {}
+        host, hcfg = entry[0], PKDict(entry[1]) if len(entry) > 1 else PKDict()
     else:
         host = entry
-        hcfg = {}
+        hcfg = PKDict()
 
     if isinstance(host, str) and re.match(r"^@(?=[\w@])", host):
         host = host[1:]
@@ -191,10 +192,11 @@ def _zone_ipv4_map(zone, cfg, ptr_map, op):
 
 def _zone_a(zone, cfg, ptr_map):
     def op(host, host_cfg, ip, cidr):
-        entry = ptr_map.setdefault(cidr, {}).setdefault(ip, {"yes": [], "no": []})
+        entry = ptr_map.setdefault(cidr, PKDict()).setdefault(ip, {"yes": [], "no": []})
         key = "yes" if host_cfg.get("ptr") else "no"
         entry[key].append(_dot(host, zone))
         return f"{host} IN A {ip}"
+
     return _zone_ipv4_map(zone, cfg, ptr_map, op)
 
 
@@ -213,6 +215,7 @@ def _zone_mx(zone, cfg, ptr_map):
                 mx_pref = host_cfg.get("mx_pref", 10)
             out.append(f"{host} IN MX {mx_pref} {mx_host}")
         return out
+
     return _zone_ipv4_map(zone, cfg, ptr_map, op)
 
 
@@ -224,6 +227,7 @@ def _zone_spf1(zone, cfg, ptr_map):
         global_spf1 = cfg.get("spf1", "")
         spf1 = spf1.replace("+", global_spf1)
         return f'{host} IN TXT "v=spf1 a mx {spf1} -all"'
+
     return _zone_ipv4_map(zone, cfg, ptr_map, op)
 
 
@@ -261,6 +265,7 @@ def _zone_dkim1(zone, cfg, ptr_map):
                 "use opendkim.json for longer records"
             )
         return res
+
     return _zone_literal("dkim1", "txt", dkim_transform, zone, cfg)
 
 
@@ -270,7 +275,7 @@ def _zone_txt_json(zone_dot, txt_json, ptr_map):
     return [f"{host} IN TXT {val}" for host, val in records]
 
 
-def _zone(self_state, zone, zone_cfg, common, ptr_map):
+def _zone(all_cfg, zone, zone_cfg, common, ptr_map):
     zone_dot = _dot(zone)
     cfg = {**common, **zone_cfg, "_zone_dot": zone_dot}
     records = sorted(
@@ -281,7 +286,7 @@ def _zone(self_state, zone, zone_cfg, common, ptr_map):
         + _zone_spf1(zone_dot, cfg, ptr_map)
         + _zone_srv(zone_dot, cfg, ptr_map)
         + _zone_txt(zone_dot, cfg, ptr_map)
-        + _zone_txt_json(zone_dot, self_state.get("txt_json", {}), ptr_map)
+        + _zone_txt_json(zone_dot, all_cfg.txt_json, ptr_map)
     )
     content = _newlines(*_zone_header(zone_dot, cfg), *records)
     return zone, content
@@ -289,7 +294,7 @@ def _zone(self_state, zone, zone_cfg, common, ptr_map):
 
 def _net_ptr(zone_dot, cfg, ptr_map):
     cidr = cfg["cidr"]
-    ptr = ptr_map.get(cidr, {})
+    ptr = ptr_map.get(cidr, PKDict())
 
     def make_ptr(ip_str):
         num = _address_to_host_key(cidr, ip_str)
@@ -321,64 +326,73 @@ def _net(zone_label, net_cfg, common, ptr_map):
 
 
 def _conf_zones(cfg):
-    zone_names = (
-        [f"{k}.in-addr.arpa" for k in sorted(cfg.get("nets", {}))]
-        + sorted(cfg.get("zones", {}))
-    )
+    zone_names = [
+        f"{k}.in-addr.arpa" for k in sorted(cfg.get("nets", PKDict()))
+    ] + sorted(cfg.get("zones", PKDict()))
     blocks = []
     for name in zone_names:
-        blocks.append(
-            f'zone "{name}" in {{\n  type master;\n  file "{name}";\n}};\n'
-        )
+        blocks.append(f'zone "{name}" in {{\n  type primary;\n  file "{name}";\n}};\n')
     return "".join(blocks)
 
 
-def _conf(cfg):
-    header = (
-        f'options {{\n'
-        f'  directory "/{ZONE_DIR}";\n'
-        f'  allow-transfer {{ none; }};\n'
-        f'  query-source address * port 53;\n'
-        f'  recursion no;\n'
-        f'  version "n/a";\n'
-        f'}};\n'
-        f'logging {{\n'
-        f'  category lame-servers {{ null; }};\n'
-        f'}};\n'
-        f'zone "." in {{\n'
-        f'  type hint;\n'
-        f'  file "{ROOT_FILE}";\n'
-        f'}};\n'
-    )
-    return header + _conf_zones(cfg)
+def _conf(root_dir, root_file, cfg):
+    def _header():
+        return """options {
+  directory "root_dir";
+  allow-transfer { none; };
+  recursion no;
+  version "n/a";
+};
+logging {
+  category lame-servers { null; };
+};
+zone "." in {
+  type hint;
+  file "root_file";
+};
+""".replace(
+            "root_dir", root_dir
+        ).replace(
+            "root_file", root_file
+        )
+
+    return _header() + _conf_zones(cfg)
 
 
 def _local_cfg(cfg):
-    common = {
-        "expiry": "1D",
-        "hostmaster": "hostmaster.local.",
-        "servers": ["local."],
-        "minimum": "1D",
-        "mx": None,
-        "refresh": "1D",
-        "retry": "1D",
-        "spf1": None,
-        "ttl": "1D",
-    }
+    common = PKDict(
+        {
+            "expiry": "1D",
+            "hostmaster": "hostmaster.local.",
+            "servers": ["local."],
+            "minimum": "1D",
+            "mx": None,
+            "refresh": "1D",
+            "retry": "1D",
+            "spf1": None,
+            "ttl": "1D",
+        }
+    )
     net = "127.0.0.0/31"
-    cfg.setdefault("nets", {})["0.0.127"] = {**common, "cidr": net}
-    cfg.setdefault("zones", {})["local"] = {
-        **common,
-        "ipv4": {
-            net: {
-                1: [["@", {"mx": None, "spf1": None, "ptr": True}]],
-            }
-        },
-    }
+    cfg.setdefault("nets", PKDict())["0.0.127"] = {**common, "cidr": net}
+    cfg.setdefault("zones", PKDict())["local"] = PKDict(
+        {
+            **common,
+            "ipv4": PKDict(
+                {
+                    net: PKDict(
+                        {
+                            1: [["@", {"mx": None, "spf1": None, "ptr": True}]],
+                        }
+                    ),
+                }
+            ),
+        }
+    )
 
 
 def _txt_json_parse(paths):
-    res = {}
+    res = PKDict()
     for path in paths:
         with open(path) as f:
             data = json.load(f)
@@ -393,88 +407,37 @@ def _txt_json_parse(paths):
 
 
 def _write(files):
-    for name, content in files.items():
-        path = Path(name) if "/" in name else ZONE_DIR / name
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content)
+    for n, c in files.items():
+        pykern.pkio.write_text(n, c)
 
-
-def root_file():
-    import requests
+def _root_file():
     return requests.get(INTERNIC_ROOT_URL).text
 
 
-def generate(cfg, txt_json_paths=None):
-    self_state = {
-        "txt_json": _txt_json_parse(txt_json_paths or []),
-    }
-
+def _generate(root_dir, cfg, txt_json_paths, test_serial):
     _local_cfg(cfg)
-    Path("etc").mkdir(parents=True, exist_ok=True)
-    ZONE_DIR.mkdir(parents=True, exist_ok=True)
-
-    cfg["serial"] = _serial(cfg)
-
-    zones = cfg.pop("zones", {})
-    nets = cfg.pop("nets", {})
-    ptr_map = {}
-
-    zone_files = {}
+    cfg.serial = test_serial or _serial(cfg)
+    cfg.txt_json = _txt_json_parse(txt_json_paths)
+    zones = cfg.pop("zones", PKDict())
+    nets = cfg.pop("nets", PKDict())
+    ptr_map = PKDict()
+    zone_files = PKDict()
     for zone_name in sorted(zones):
-        name, content = _zone(self_state, zone_name, zones[zone_name], cfg, ptr_map)
+        name, content = _zone(cfg, zone_name, zones[zone_name], cfg, ptr_map)
         zone_files[name] = content
-
     for net_label in sorted(nets):
         name, content = _net(net_label, nets[net_label], cfg, ptr_map)
         zone_files[name] = content
-
-    _write({
-        "etc/named.conf": _conf({**cfg, "zones": zones, "nets": nets}),
-        ROOT_FILE: root_file(),
-        **zone_files,
-    })
-
-
-def _load_config(path):
-    import runpy
-    if path.endswith(".json"):
-        with open(path) as f:
-            return json.load(f)
-    ns = runpy.run_path(path)
-    return ns["RESULT"]
-
-
-def main(argv=None):
-    if argv is None:
-        argv = sys.argv[1:]
-
-    if not argv:
-        print(__doc__)
-        sys.exit(1)
-
-    cmd = argv[0]
-
-    if cmd == "root_file":
-        print(root_file(), end="")
-
-    elif cmd == "generate":
-        txt_json_paths = argv[1:]
-        import runpy, tempfile
-        raw = sys.stdin.read().strip()
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
-            f.write(f"RESULT = {raw}\n")
-            tmp_path = f.name
-        try:
-            ns = runpy.run_path(tmp_path)
-            cfg = ns["RESULT"]
-        finally:
-            os.unlink(tmp_path)
-        generate(cfg, txt_json_paths)
-
-    else:
-        print(f"Unknown command: {cmd}", file=sys.stderr)
-        sys.exit(1)
-
-
-if __name__ == "__main__":
-    main()
+    n = "named.root"
+    return _write(
+        zone_files.pkupdate(
+            {
+                "named.conf": _conf(
+                    root_dir,
+                    n,
+                    cfg.pkupdate(nets=nets, zones=zones),
+                ),
+                n: _root_file(),
+            }
+        ),
+    )

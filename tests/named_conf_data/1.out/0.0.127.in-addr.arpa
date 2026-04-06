@@ -1,0 +1,5 @@
+$TTL 1D
+$ORIGIN 0.0.127.in-addr.arpa.
+@ IN SOA local. hostmaster.local. ( 2023111502 1D 1D 1D 1D )
+@ IN NS local.
+1 IN PTR local.

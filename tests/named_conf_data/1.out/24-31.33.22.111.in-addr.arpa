@@ -1,0 +1,9 @@
+$TTL 9M
+$ORIGIN 24-31.33.22.111.in-addr.arpa.
+@ IN SOA ns1.bivio.biz. hostmaster.example.com. ( 2023111502 7M 8M 5M 6M )
+@ IN NS ns1.bivio.biz.
+@ IN NS ns2.bivio.biz.
+24 IN PTR mail.example.com.
+25 IN PTR ns2.example.com.
+26 IN PTR two.level.example.com.
+27 IN PTR net1.27.example2.com.

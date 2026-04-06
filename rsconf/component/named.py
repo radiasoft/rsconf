@@ -19,9 +19,10 @@ class T(component.T):
         # need bind installed
         self.append_root_bash("rsconf_yum_install bind")
         self.j2_ctx = self.hdb.j2_ctx_copy()
+        generate("/etc/sysconfig/named", NAMEDCONF=/srv/named/db/named.conf)
+        systemd.unit_prepare(self, j2_ctx, [z.run_d])
         jc = self.j2_ctx
-        rpm = self.install_perl_rpm(jc, "bivio-named")
-        run_d = systemd.custom_unit_prepare(self, jc, watch_files=[rpm])
+        run_d = systemd.custom_unit_prepare(self, jc)
         jc.setdefault("named", PKDict()).update(
             dbdir=run_d.join("db"),
             etc=run_d.join("etc"),
