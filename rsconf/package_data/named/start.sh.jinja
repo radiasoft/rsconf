@@ -1,0 +1,10 @@
+#!/bin/bash
+set -eu -o pipefail
+{# reduce the noise in the logs by ignoring output unless an error #}
+if ! named-checkconf -z '{{ bivio_named.conf_f }}' >& /dev/null; then
+    named-checkconf -z '{{ bivio_named.conf_f }}'
+fi
+exec named -c '{{ bivio_named.conf_f }}' \
+    -n '{{ bivio_named.num_threads }}' \
+    -S '{{ bivio_named.max_sockets }}' \
+    -u '{{ bivio_named.run_group }}'
