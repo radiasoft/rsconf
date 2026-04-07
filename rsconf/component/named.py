@@ -1,6 +1,6 @@
 """create bivio_named configuration
 
-:copyright: Copyright (c) 2018 RadiaSoft LLC.  All Rights Reserved.
+:copyright: Copyright (c) 2018-2026 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 
@@ -13,19 +13,11 @@ class T(component.T):
     def internal_build(self):
         from rsconf import db
         from rsconf import systemd
-        from rsconf.component import bop
-
         self.buildt.require_component("base_all")
         # need bind installed
         self.append_root_bash("rsconf_yum_install bind")
-        self.j2_ctx = self.hdb.j2_ctx_copy()
-        jc = self.j2_ctx
+        jc, z = self.j2_ctx_init()
         run_d = systemd.custom_unit_prepare(self, jc)
-        jc.setdefault("named", PKDict()).update(
-            dbdir=run_d.join("db"),
-            etc=run_d.join("etc"),
-        )
-        z = jc.named
         z.listen_on = f"{db.LOCAL_IP};"
         nc = self.buildt.get_component("network")
         nc.add_public_tcp_ports(["domain"])
@@ -50,7 +42,7 @@ class T(component.T):
         import pykern.pkio
 
         jc = self.j2_ctx
-        z = jc.named
+        z = jc[self.name]
         # runtime_d (/run) set by custom_unit_prepare
         self.install_access(mode="750", owner=z.run_u, group=z.run_group)
         self.install_directory(z.db_d)
