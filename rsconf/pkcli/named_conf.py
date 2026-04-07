@@ -14,22 +14,30 @@ import pykern.pkcollections
 import pykern.pkio
 import pykern.pkrunpy
 import re
+import requests
 import subprocess
 import sys
-import requests
 
 
 INTERNIC_ROOT_URL = "https://www.internic.net/zones/named.root"
 
 
-def generate(root_dir, cfg_py, txt_json_paths, test_serial=None):
+def generate(root_dir, cfg_py, *txt_json_paths, test_serial=None):
+    """Generate named.conf and zone files in the current directory
+
+    Args:
+        root_dir (str): directory written to named.conf options.directory
+        cfg_py (str): path to Python config file defining RESULT
+        txt_json_paths (str): zero or more paths to TXT record JSON files
+        test_serial (int): override SOA serial for testing [None]
+    """
     _generate(
         root_dir,
         pykern.pkcollections.canonicalize(
             pykern.pkrunpy.run_path_as_module(cfg_py).RESULT,
         ),
         txt_json_paths,
-        test_serial,
+        int(test_serial) if test_serial is not None else None,
     )
 
 
@@ -54,39 +62,30 @@ def _cidr_hosts(cidr):
     return ipaddress.IPv4Network(cidr, strict=False)
 
 
-def _conf(root_dir, root_file, cfg):
-    def _header():
-        return """options {
-  directory "root_dir";
-  allow-transfer { none; };
+def _conf(root_dir, root_file):
+    return f"""options {{
+  directory "{root_dir}";
+  allow-transfer {{ none; }};
   recursion no;
   version "n/a";
-};
-logging {
-  category lame-servers { null; };
-};
-zone "." in {
-  type hint;
-  file "root_file";
-};
-""".replace(
-            "root_dir", root_dir
-        ).replace(
-            "root_file", root_file
+}};
+logging {{
+  category lame-servers {{ null; }};
+}};
+include "zones.conf";
+"""
+
+
+def _zones_conf(root_file, cfg):
+    zone_names = [
+        f"{k}.in-addr.arpa" for k in sorted(cfg.get("nets", PKDict()))
+    ] + sorted(cfg.get("zones", PKDict()))
+    blocks = [f'zone "." in {{\n  type hint;\n  file "{root_file}";\n}};\n']
+    for name in zone_names:
+        blocks.append(
+            f'zone "{name}" in {{\n  type primary;\n  file "{name}";\n}};\n'
         )
-
-    def _zones(cfg):
-        zone_names = [
-            f"{k}.in-addr.arpa" for k in sorted(cfg.get("nets", PKDict()))
-        ] + sorted(cfg.get("zones", PKDict()))
-        blocks = []
-        for name in zone_names:
-            blocks.append(
-                f'zone "{name}" in {{\n  type primary;\n  file "{name}";\n}};\n'
-            )
-        return "".join(blocks)
-
-    return _header() + _zones(cfg)
+    return "".join(blocks)
 
 
 def _dot(name, origin=""):
@@ -435,14 +434,12 @@ def _generate(root_dir, cfg, txt_json_paths, test_serial):
         name, content = _net(net_label, nets[net_label], cfg, ptr_map)
         zone_files[name] = content
     n = "named.root"
+    cfg.pkupdate(nets=nets, zones=zones)
     return _write(
         zone_files.pkupdate(
             {
-                "named.conf": _conf(
-                    root_dir,
-                    n,
-                    cfg.pkupdate(nets=nets, zones=zones),
-                ),
+                "named.conf": _conf(root_dir, n),
+                "zones.conf": _zones_conf(n, cfg),
                 n: _root_file(),
             }
         ),

@@ -203,6 +203,10 @@ class T(PKDict):
         return fconf.Parser(files=f, base_vars=base_vars).result
 
 
+def db_path(hdb, filename, visibility=None, directory=False):
+    return _visibility_path(hdb.rsconf_db.db_d, hdb, filename, visibility, directory)
+
+
 def global_path(name):
     """Get global path by name
 
@@ -328,25 +332,10 @@ def resource_path(hdb, filename):
     return pkresource.file_path(filename)
 
 
-def secret_path(hdb, filename, visibility=None, qualifier=None, directory=False):
-    if visibility:
-        assert (
-            visibility in VISIBILITY_LIST
-        ), "{}: invalid visibility, must be {}".format(
-            visibility,
-            VISIBILITY_LIST,
-        )
-    else:
-        visibility = VISIBILITY_DEFAULT
-    p = (
-        []
-        if visibility == VISIBILITY_GLOBAL
-        else [qualifier or hdb.rsconf_db[visibility]]
+def secret_path(hdb, filename, visibility=None, directory=False):
+    return _visibility_path(
+        hdb.rsconf_db.secret_d, hdb, filename, visibility, directory
     )
-    p.append(filename)
-    res = hdb.rsconf_db.secret_d.join(*p)
-    pkio.mkdir_parent(res) if directory else pkio.mkdir_parent_only(res)
-    return res
 
 
 def user_home_path(user):
@@ -409,6 +398,20 @@ def _init_resource_paths(rsconf_db):
     res = [rsconf_db.resource_base_d]
     for i in rsconf_db.channel, rsconf_db.host:
         res.insert(0, res[0].join(i))
+    return res
+
+
+def _visibility_path(base_d, hdb, filename, visibility, directory):
+    if visibility:
+        assert (
+            visibility in VISIBILITY_LIST
+        ), "{}: invalid visibility, must be {}".format(visibility, VISIBILITY_LIST)
+    else:
+        visibility = VISIBILITY_DEFAULT
+    p = [] if visibility == VISIBILITY_GLOBAL else [hdb.rsconf_db[visibility]]
+    p.append(filename)
+    res = base_d.join(*p)
+    pkio.mkdir_parent(res) if directory else pkio.mkdir_parent_only(res)
     return res
 
 

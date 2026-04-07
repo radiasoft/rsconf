@@ -7,7 +7,7 @@
 
 def test_build():
     from pykern import pkunit, pkio, pkdebug
-    from rsconf import named_conf
+    from rsconf.pkcli import named_conf
     import shutil, subprocess
 
     for d in pkunit.case_dirs():
@@ -15,7 +15,7 @@ def test_build():
             named_conf.generate(
                 str(d),
                 d.join("in.py"),
-                pkio.sorted_glob("*.json"),
+                *pkio.sorted_glob("*.json"),
                 test_serial=2023111502,
             )
         if "-dev" in d.basename:
