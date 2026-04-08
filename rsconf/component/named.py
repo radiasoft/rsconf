@@ -6,19 +6,18 @@
 
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
-import rsconf.component
+from rsconf import component
 
 
-class T(rsconf.component.T):
+class T(component.T):
     def internal_build(self):
         from rsconf import db
         from rsconf import systemd
 
-        def _listen_on():
-            if z.get("listen_on")}
+        def _listen_on(jc, z, nc):
             rv = db.LOCAL_IP + ";"
-            if ip := = nc.unchecked_public_ip():
-                return  f"{rv} {ip};"
+            if ip := nc.unchecked_public_ip():
+                return f"{rv} {ip};"
             if jc.rsconf_db.channel != "dev":
                 raise AssertionError("must have a public ip to run named")
             return rv
@@ -28,26 +27,27 @@ class T(rsconf.component.T):
         self.append_root_bash("rsconf_yum_install bind")
         jc, z = self.j2_ctx_init()
         run_d = systemd.custom_unit_prepare(self, jc)
+        nc = self.buildt.get_component("network")
+        nc.add_public_tcp_ports(["domain"])
+        nc.add_public_udp_ports(["domain"])
         self.j2_ctx_pksetdefault(
             PKDict(
                 named=PKDict(
-                    db_d=run_d.join("db"),
-                    db_path_d=lambda: db.db_path("named", directory=True),
-                    listen_on=_listen_on,
+                    # POSIT: same paths used in the build server
+                    db_path_d=lambda: db.db_path(jc, "named", directory=True),
                     # Default is 10K+
                     max_sockets=1024,
                     # Default is number of cores, which is ridiculous
                     num_threads=4,
                     run_group="named",
                     run_u=jc.rsconf_db.root_u,
+                    listen_on=lambda: _listen_on(jc, z, nc),
                 ),
             ),
         )
-        # POSIT: same paths used in the build server
+        z.db_d = run_d.join("db")
         z.conf_f = z.db_d.join("named.conf")
-        nc = self.buildt.get_component("network")
-        nc.add_public_tcp_ports(["domain"])
-        nc.add_public_udp_ports(["domain"])
+        z.zones_f = z.db_d.join("zones.conf")
 
     def internal_build_write(self):
         from rsconf import systemd
@@ -62,7 +62,7 @@ class T(rsconf.component.T):
         for f in pkio.sorted_glob(z.db_path_d.join("*")):
             self.install_abspath(f, z.db_d.join(f.basename))
         self.install_resource("named/named.conf", jc, z.conf_f)
-        self.install_access(mode="440", owner=z.root_u, group=z.root_u)
+        self.install_access(mode="440", owner=jc.rsconf_db.root_u, group=jc.rsconf_db.root_u)
         self.install_joined_lines(
             [f'OPTIONS="-c {z.conf_f}"'],
             "/etc/sysconfig/named",
