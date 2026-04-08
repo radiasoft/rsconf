@@ -14,30 +14,40 @@ class T(component.T):
         from rsconf import db
         from rsconf import systemd
 
+        def _listen_on():
+            if z.get("listen_on")}
+            rv = db.LOCAL_IP + ";"
+            if ip := = nc.unchecked_public_ip():
+                return  f"{rv} {ip};"
+            if jc.rsconf_db.channel != "dev":
+                raise AssertionError("must have a public ip to run named")
+            return rv
+
         self.buildt.require_component("base_all")
         # need bind installed
         self.append_root_bash("rsconf_yum_install bind")
         jc, z = self.j2_ctx_init()
         run_d = systemd.custom_unit_prepare(self, jc)
-        z.listen_on = f"{db.LOCAL_IP};"
-        z.run_group = "named"
-        # Default is 10K+
-        z.setdefault("max_sockets", 1024)
-        # Default is number of cores, which is ridiculous
-        z.setdefault("num_threads", 4)
-        z.run_u = jc.rsconf_db.root_u
+        self.j2_ctx_pksetdefault(
+            PKDict(
+                named=PKDict(
+                    db_d=run_d.join("db"),
+                    db_path_d=lambda: self.db_path("named", directory=True),
+                    listen_on=_listen_on,
+                    # Default is 10K+
+                    max_sockets=1024,
+                    # Default is number of cores, which is ridiculous
+                    num_threads=4,
+                    run_group="named",
+                    run_u=jc.rsconf_db.root_u,
+                ),
+            ),
+        )
         # POSIT: same paths used in the build server
-        z.db_path_d = self.db_path("named", directory=True)
-        z.db_d = run_d.join("db")
         z.conf_f = z.db_d.join("named.conf")
         nc = self.buildt.get_component("network")
         nc.add_public_tcp_ports(["domain"])
         nc.add_public_udp_ports(["domain"])
-        ip = nc.unchecked_public_ip()
-        if ip:
-            z.listen_on += " " + ip + ";"
-        elif jc.rsconf_db.channel != "dev":
-            raise AssertionError("must have a public ip to run named")
 
     def internal_build_write(self):
         from rsconf import systemd
