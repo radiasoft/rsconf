@@ -6,10 +6,10 @@
 
 from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
-from rsconf import component
+import rsconf.component
 
 
-class T(component.T):
+class T(rsconf.component.T):
     def internal_build(self):
         from rsconf import db
         from rsconf import systemd
@@ -32,7 +32,7 @@ class T(component.T):
             PKDict(
                 named=PKDict(
                     db_d=run_d.join("db"),
-                    db_path_d=lambda: self.db_path("named", directory=True),
+                    db_path_d=lambda: db.db_path("named", directory=True),
                     listen_on=_listen_on,
                     # Default is 10K+
                     max_sockets=1024,
@@ -51,7 +51,7 @@ class T(component.T):
 
     def internal_build_write(self):
         from rsconf import systemd
-        import pykern.pkio
+        from pykern import pkio
 
         jc = self.j2_ctx
         z = jc[self.name]
@@ -59,7 +59,7 @@ class T(component.T):
         self.install_access(mode="750", owner=z.run_u, group=z.run_group)
         self.install_directory(z.db_d)
         self.install_access(mode="440")
-        for f in pykern.pkio.sorted_glob(z.db_path_d.join("*")):
+        for f in pkio.sorted_glob(z.db_path_d.join("*")):
             self.install_abspath(f, z.db_d.join(f.basename))
         self.install_resource("named/named.conf", jc, z.conf_f)
         self.install_access(mode="440", owner=z.root_u, group=z.root_u)

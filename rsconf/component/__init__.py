@@ -84,16 +84,6 @@ class T(PKDict):
         self._root_bash.extend(self._root_bash_aux)
         self.buildt.write_root_bash(self.name, self._root_bash)
 
-    def db_path(self, filename, visibility=None, directory=False):
-        from rsconf import db
-
-        return db.db_path(
-            self.j2_ctx,
-            filename,
-            visibility=visibility,
-            directory=directory,
-        )
-
     def gen_identity_and_host_ssh_keys(
         self, ident_name, visibility, encrypt_identity=False
     ):
