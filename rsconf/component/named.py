@@ -1,4 +1,4 @@
-"""create bivio_named configuration
+"""Create named configuration
 
 :copyright: Copyright (c) 2018-2026 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
@@ -13,12 +13,23 @@ class T(component.T):
     def internal_build(self):
         from rsconf import db
         from rsconf import systemd
+
         self.buildt.require_component("base_all")
         # need bind installed
         self.append_root_bash("rsconf_yum_install bind")
         jc, z = self.j2_ctx_init()
         run_d = systemd.custom_unit_prepare(self, jc)
         z.listen_on = f"{db.LOCAL_IP};"
+        z.run_group = "named"
+        # Default is 10K+
+        z.setdefault("max_sockets", 1024)
+        # Default is number of cores, which is ridiculous
+        z.setdefault("num_threads", 4)
+        z.run_u = jc.rsconf_db.root_u
+        # POSIT: same paths used in the build server
+        z.db_path_d = self.db_path("named", directory=True)
+        z.db_d = run_d.join("db")
+        z.conf_f = z.db_d.join("named.conf")
         nc = self.buildt.get_component("network")
         nc.add_public_tcp_ports(["domain"])
         nc.add_public_udp_ports(["domain"])
@@ -27,15 +38,6 @@ class T(component.T):
             z.listen_on += " " + ip + ";"
         elif jc.rsconf_db.channel != "dev":
             raise AssertionError("must have a public ip to run named")
-        z.run_group = "named"
-        # Default is 10K+
-        z.setdefault("max_sockets", 1024)
-        # Default is number of cores, which is ridiculous
-        z.setdefault("num_threads", 4)
-        z.run_u = jc.rsconf_db.root_u
-        # POSIT: same directory as in update.sh
-        z.db_d = run_d.join("db")
-        z.conf_f = z.db_d.join("named.conf")
 
     def internal_build_write(self):
         from rsconf import systemd
@@ -46,15 +48,15 @@ class T(component.T):
         # runtime_d (/run) set by custom_unit_prepare
         self.install_access(mode="750", owner=z.run_u, group=z.run_group)
         self.install_directory(z.db_d)
-        self.install_access(mode="440", owner=z.run_u, group=z.run_group)
-        for f in pykern.pkio.sorted_glob(self.db_path("named", directory=True).join("*")):
+        self.install_access(mode="440")
+        for f in pykern.pkio.sorted_glob(z.db_path_d.join("*")):
             self.install_abspath(f, z.db_d.join(f.basename))
-        self.install_access(mode="444", owner="root", group="root")
+        self.install_resource("named/named.conf", jc, z.conf_f)
+        self.install_access(mode="440", owner=z.root_u, group=z.root_u)
         self.install_joined_lines(
             [f'OPTIONS="-c {z.conf_f}"'],
             "/etc/sysconfig/named",
         )
-        self.install_resource("named/named.conf", jc, z.conf_f)
         systemd.custom_unit_enable(
             self,
             jc,
