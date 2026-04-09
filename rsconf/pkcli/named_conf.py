@@ -8,35 +8,32 @@ from pykern.pkcollections import PKDict
 from pykern.pkdebug import pkdc, pkdlog, pkdp
 import datetime
 import ipaddress
-import json
+import pykern.pkjson
 import os
+import pykern.fconf
 import pykern.pkcollections
 import pykern.pkio
-import pykern.pkrunpy
 import re
 import requests
 import subprocess
-import sys
 
 
 INTERNIC_ROOT_URL = "https://www.internic.net/zones/named.root"
 
 
-def generate(root_dir, cfg_py, *txt_json_paths, test_serial=None):
+def generate(root_dir, cfg_dir, test_serial=None):
     """Generate named.conf and zone files in the current directory
 
     Args:
         root_dir (str): directory written to named.conf options.directory
-        cfg_py (str): path to Python config file defining RESULT
-        txt_json_paths (str): zero or more paths to TXT record JSON files
+        cfg_dir (str): directory containing .py and .yml fconf input files
         test_serial (int): override SOA serial for testing [None]
     """
+    d = pykern.pkio.py_path(cfg_dir)
     _generate(
         root_dir,
-        pykern.pkcollections.canonicalize(
-            pykern.pkrunpy.run_path_as_module(cfg_py).RESULT,
-        ),
-        txt_json_paths,
+        pykern.fconf.parse_all(d),
+        d,
         int(test_serial) if test_serial is not None else None,
     )
 
@@ -82,9 +79,7 @@ def _zones_conf(root_file, cfg):
     ] + sorted(cfg.get("zones", PKDict()))
     blocks = [f'zone "." in {{\n  type hint;\n  file "{root_file}";\n}};\n']
     for name in zone_names:
-        blocks.append(
-            f'zone "{name}" in {{\n  type primary;\n  file "{name}";\n}};\n'
-        )
+        blocks.append(f'zone "{name}" in {{\n  type primary;\n  file "{name}";\n}};\n')
     return "".join(blocks)
 
 
@@ -100,6 +95,23 @@ def _dot(name, origin=""):
     if not name.endswith("."):
         name += "."
     return name
+
+
+def _deflatten(lst):
+    """Re-pair items that fconf flattened from inner lists.
+
+    fconf merges inner lists into outer lists. For host entries, a string host
+    followed by a dict config was originally [host, config]. For mx entries, a
+    string host followed by an int priority was originally [host, pref]. This
+    function reassembles those pairs.
+    """
+    r = []
+    for v in lst:
+        if r and isinstance(v, (dict, int)) and isinstance(r[-1], str):
+            r[-1] = [r[-1], v]
+        else:
+            r.append(v)
+    return r
 
 
 def _map_host_addresses(cidr, callback):
@@ -158,7 +170,7 @@ def _normalize_host_entry(entry, cfg):
     return [host, merged]
 
 
-def _zone(all_cfg, zone, zone_cfg, common, ptr_map):
+def _zone(zone, zone_cfg, common, ptr_map):
     zone_dot = _dot(zone)
     cfg = PKDict({**common, **zone_cfg, "_zone_dot": zone_dot})
     records = sorted(
@@ -169,7 +181,7 @@ def _zone(all_cfg, zone, zone_cfg, common, ptr_map):
         + _zone_spf1(zone_dot, cfg, ptr_map)
         + _zone_srv(zone_dot, cfg, ptr_map)
         + _zone_txt(zone_dot, cfg, ptr_map)
-        + _zone_txt_json(zone_dot, all_cfg.txt_json, ptr_map)
+        + _zone_txt_json(zone_dot, common.get("txt_json", PKDict()), ptr_map)
     )
     return zone, _newlines(*_zone_header(zone_dot, cfg), *records)
 
@@ -211,7 +223,6 @@ def _zone_header(zone_dot, cfg):
         h = _dot(cfg.hostmaster, zone_dot.rstrip(".") + ".")
         return f"@ IN SOA {s} {h} ( {cfg.serial} {cfg.refresh} {cfg.retry} {cfg.expiry} {cfg.minimum} )"
 
-    pkdp(cfg)
     return (f"$TTL {cfg.ttl}", f"$ORIGIN {zone_dot}", _soa(), *_records())
 
 
@@ -238,7 +249,7 @@ def _zone_ipv4_map(zone, cfg, ptr_map, op):
                 hosts = [hosts]
             out = []
             for entry in sorted(
-                [_normalize_host_entry(e, cfg) for e in hosts],
+                [_normalize_host_entry(e, cfg) for e in _deflatten(hosts)],
                 key=lambda x: x[0],
             ):
                 r = op(entry[0], entry[1], ip_str, _cidr)
@@ -266,16 +277,18 @@ def _zone_ipv4_map_array(ipv4_list):
 
 
 def _zone_literal(cfg_which, dns_which, transform, zone, cfg):
-    values = cfg.get(cfg_which, [])
+    def _pairs(values):
+        for k, v in sorted(values.items()):
+            if isinstance(v, list):
+                for i in v:
+                    yield k, transform(i)
+            else:
+                yield k, transform(v)
+
+    values = cfg.get(cfg_which, PKDict())
     dns_type = (dns_which or cfg_which).upper()
     transform = transform or (lambda v: v)
-
-    if isinstance(values, dict):
-        values = [[k, transform(v)] for k, v in sorted(values.items())]
-    elif isinstance(values, list):
-        values = [[item[0], transform(item[1])] for item in values]
-
-    return [f"{host} IN {dns_type} {val}" for host, val in values]
+    return [f"{host} IN {dns_type} {val}" for host, val in _pairs(values)]
 
 
 def _zone_mx(zone, cfg, ptr_map):
@@ -283,7 +296,7 @@ def _zone_mx(zone, cfg, ptr_map):
         mx = host_cfg.get("mx", host)
         if not mx:
             return None
-        mx_list = mx if isinstance(mx, list) else [mx]
+        mx_list = _deflatten(mx if isinstance(mx, list) else [mx])
         out = []
         for entry in mx_list:
             if isinstance(entry, (list, tuple)):
@@ -391,8 +404,7 @@ def _local_cfg(cfg):
 def _txt_json_parse(paths):
     res = PKDict()
     for path in paths:
-        with open(path) as f:
-            data = json.load(f)
+        data = pykern.pkjson.load_any(pykern.pkio.read_text(path))
         for domain, subdomains in data.items():
             entries = res.setdefault(domain, [])
             if isinstance(subdomains, dict):
@@ -403,7 +415,7 @@ def _txt_json_parse(paths):
     return res
 
 
-def _generate(root_dir, cfg, txt_json_paths, test_serial):
+def _generate(root_dir, cfg, cfg_dir, test_serial):
     def _root_file():
         return requests.get(INTERNIC_ROOT_URL).text
 
@@ -422,13 +434,13 @@ def _generate(root_dir, cfg, txt_json_paths, test_serial):
 
     _local_cfg(cfg)
     cfg.serial = _test_serial(_serial(cfg))
-    cfg.txt_json = _txt_json_parse(txt_json_paths)
+    cfg.txt_json = _txt_json_parse(pykern.pkio.sorted_glob(cfg_dir.join("*.json")))
     zones = cfg.pop("zones", PKDict())
     nets = cfg.pop("nets", PKDict())
     ptr_map = PKDict()
     zone_files = PKDict()
     for zone_name in sorted(zones):
-        name, content = _zone(cfg, zone_name, zones[zone_name], cfg, ptr_map)
+        name, content = _zone(zone_name, zones[zone_name], cfg, ptr_map)
         zone_files[name] = content
     for net_label in sorted(nets):
         name, content = _net(net_label, nets[net_label], cfg, ptr_map)

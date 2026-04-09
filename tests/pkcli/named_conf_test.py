@@ -14,8 +14,7 @@ def test_build():
         with pkunit.ExceptToFile():
             named_conf.generate(
                 str(d),
-                d.join("in.py"),
-                *pkio.sorted_glob("*.json"),
+                d,
                 test_serial=2023111502,
             )
         if "-dev" in d.basename:
