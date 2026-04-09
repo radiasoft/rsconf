@@ -1,0 +1,9 @@
+#!/bin/bash
+set -eu -o pipefail
+if ! named-checkconf -z '/srv/named/db/named.conf' >& /dev/null; then
+    named-checkconf -z '/srv/named/db/named.conf'
+fi
+exec named -c '/srv/named/db/named.conf' \
+    -n '4' \
+    -S '1024' \
+    -u 'named'

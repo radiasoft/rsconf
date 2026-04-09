@@ -5,33 +5,48 @@
 """
 
 from pykern.pkcollections import PKDict
-from pykern import pkio
-from pykern.pkdebug import pkdp
-from rsconf import component
+from pykern.pkdebug import pkdc, pkdlog, pkdp
+import pykern.pkio
+import rsconf.component
 
-_JOURNAL_CONF_D = pkio.py_path("/etc/systemd/journald.conf.d")
-_SSHD_CONF_D = pkio.py_path("/etc/ssh")
-_JOURNAL_SYSTEMD_D = pkio.py_path("/etc/systemd/system/systemd-journald.service.d")
+_JOURNAL_CONF_D = pykern.pkio.py_path("/etc/systemd/journald.conf.d")
+_JOURNAL_SYSTEMD_D = pykern.pkio.py_path(
+    "/etc/systemd/system/systemd-journald.service.d"
+)
+_SSHD_CONF_D = pykern.pkio.py_path("/etc/ssh")
 
 
-class T(component.T):
+class T(rsconf.component.T):
     def internal_build_compile(self):
-        self.j2_ctx = self.hdb.j2_ctx_copy()
-        jc = self.j2_ctx
-        z = jc.base_os
-        vgs = z.setdefault("volume_groups", PKDict())
-        cmds = ""
-        for vgn in sorted(vgs.keys()):
-            vg = vgs[vgn]
-            for lv in self._sorted_logical_volumes(vg):
-                cmds += "base_os_logical_volume '{}' '{}' '{}' '{}' '{}'\n".format(
-                    lv.name,
-                    lv.gigabytes,
-                    vgn,
-                    lv.mount_d,
-                    lv.get("mode", 700),
-                )
-        z.logical_volume_cmds = cmds
+        def _logical_volumes(vg):
+            for k, v in vg.logical_volumes.items():
+                if v.gigabytes == 0:
+                    continue
+                v = PKDict(v)
+                v.name = k
+                yield v
+
+        def _volume_group_cmds(volume_groups):
+            for n in sorted(volume_groups):
+                for v in sorted(
+                    _logical_volumes(volume_groups[n]), key=lambda x: x.mount_d
+                ):
+                    yield f"base_os_logical_volume '{v.name}' '{v.gigabytes}' '{n}' '{v.mount_d}' '{v.get('mode', 700)}'"
+
+        jc, z = self.j2_ctx_init()
+        self.j2_ctx_pksetdefault(
+            PKDict(
+                base_os=PKDict(
+                    ip_forward=False,
+                    volume_groups=PKDict(),
+                ),
+            ),
+        )
+        z.logical_volume_cmds = (
+            "\n".join(_volume_group_cmds(z.volume_groups)) + "\n"
+            if z.volume_groups
+            else ""
+        )
         self.service_prepare([_JOURNAL_CONF_D], name="systemd-journald")
         self.service_prepare([_SSHD_CONF_D], name="sshd")
 
@@ -39,8 +54,7 @@ class T(component.T):
         jc = self.j2_ctx
         z = jc.base_os
         # POSIT: postfix depends on base_os so build_write will not
-        # execute postfix before base_os (this)
-        # build_write. Otherwise, component will not be found.
+        # execute postfix before base_os (this) build_write.
         z.has_component_postfix = self.buildt.has_component("postfix")
         self._install_local_dirs(jc.rsconf_db.local_dirs)
         self._install_local_files(jc.rsconf_db.local_files)
@@ -76,44 +90,32 @@ class T(component.T):
         self.append_root_bash_with_main(jc)
 
     def _install_local_dirs(self, values):
-        x = PKDict(
-            mode=0o400,
-            owner=self.j2_ctx.rsconf_db.root_u,
-            group=self.j2_ctx.rsconf_db.root_u,
-        )
-        for t in sorted(values.keys()):
+        x = self._local_file_defaults()
+        for t in sorted(values):
             v = values[t].copy()
             v.pksetdefault(**x)
-            self.install_access(
-                mode="{:o}".format(v.mode),
-                owner=v.owner,
-                group=v.group,
-            )
+            self.install_access(mode=f"{v.mode:o}", owner=v.owner, group=v.group)
             self.install_directory(t)
 
     def _install_local_files(self, values):
         # TODO(robnagler) do we have to create directories and/or trigger on
         #  directory creation? For example, nginx rpm installs conf.d, which
         #  we will want to have local files for.
-        x = PKDict(
-            mode=0o400,
-            owner=self.j2_ctx.rsconf_db.root_u,
-            group=self.j2_ctx.rsconf_db.root_u,
-        )
-        for t in sorted(values.keys()):
+        x = self._local_file_defaults()
+        for t in sorted(values):
             v = values[t].copy()
             if v._source.basename.endswith(".sh.jinja"):
                 self.append_root_bash_with_file(v._source, self.j2_ctx)
                 continue
             v.pksetdefault(**x)
-            self.install_access(
-                mode="{:o}".format(v.mode),
-                owner=v.owner,
-                group=v.group,
-            )
+            self.install_access(mode=f"{v.mode:o}", owner=v.owner, group=v.group)
             # Local files overwrite existing (distro) files but if a component tries
             # to overwrite a local file, and error will occur.
             self.install_abspath(v._source, t, ignore_exists=True)
+
+    def _local_file_defaults(self):
+        r = self.j2_ctx.rsconf_db.root_u
+        return PKDict(mode=0o400, owner=r, group=r)
 
     def _pam_duo_and_sshd(self):
         def _jump(z):
@@ -133,13 +135,3 @@ class T(component.T):
         # Must be after pam_duo in case duo is installed so that sshd is not broken
         self.install_resource2("sshd", "/etc/pam.d")
         self.install_resource2("sshd_config", _SSHD_CONF_D, access="400")
-
-    def _sorted_logical_volumes(self, vg):
-        res = []
-        for k, v in vg.logical_volumes.items():
-            if v.gigabytes == 0:
-                continue
-            v = PKDict(v)
-            v.name = k
-            res.append(v)
-        return iter(sorted(res, key=lambda x: x.mount_d))
