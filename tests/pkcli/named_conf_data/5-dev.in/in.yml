@@ -1,0 +1,13 @@
+expiry: 5M
+hostmaster: hostmaster.example.com.
+minimum: 6M
+mx_pref: 10
+servers:
+  - ns1.no-such-domain.tld.
+refresh: 7M
+retry: 8M
+spf1: include:aspmx.googlemail.com
+ttl: 9M
+nets:
+  24-31.33.22.111: 111.22.33.24/29
+zones: {}

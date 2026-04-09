@@ -98,6 +98,7 @@ def _dot(name, origin=""):
 
 
 def _deflatten(lst):
+    return lst
     """Re-pair items that fconf flattened from inner lists.
 
     fconf merges inner lists into outer lists. For host entries, a string host
