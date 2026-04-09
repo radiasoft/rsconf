@@ -62,11 +62,6 @@ class T(component.T):
         for f in pkio.sorted_glob(z.db_path_d.join("*")):
             self.install_abspath(f, z.db_d.join(f.basename))
         self.install_resource("named/named.conf", jc, z.conf_f)
-        self.install_access(mode="440", owner=jc.rsconf_db.root_u, group=jc.rsconf_db.root_u)
-        self.install_joined_lines(
-            [f'OPTIONS="-c {z.conf_f}"'],
-            "/etc/sysconfig/named",
-        )
         systemd.custom_unit_enable(
             self,
             jc,

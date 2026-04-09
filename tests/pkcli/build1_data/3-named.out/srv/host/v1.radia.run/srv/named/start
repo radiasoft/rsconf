@@ -1,7 +1,8 @@
 #!/bin/bash
-set -eu -o pipefail
-if ! named-checkconf -z '/srv/named/db/named.conf' >& /dev/null; then
-    named-checkconf -z '/srv/named/db/named.conf'
+set -euo pipefail
+if ! out=$(named-checkconf -z '/srv/named/db/named.conf' 2>&1); then
+    echo "$out" 1>&2
+    exit 1
 fi
 exec named -c '/srv/named/db/named.conf' \
     -n '4' \

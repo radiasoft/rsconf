@@ -1,8 +1,8 @@
 #!/bin/bash
-set -eu -o pipefail
-{# reduce the noise in the logs by ignoring output unless an error #}
-if ! named-checkconf -z '{{ named.conf_f }}' >& /dev/null; then
-    named-checkconf -z '{{ named.conf_f }}'
+set -euo pipefail
+if ! out=$(named-checkconf -z '{{ named.conf_f }}' 2>&1); then
+    echo "$out" 1>&2
+    exit 1
 fi
 exec named -c '{{ named.conf_f }}' \
     -n '{{ named.num_threads }}' \
