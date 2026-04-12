@@ -19,7 +19,7 @@ zones:
           - '@mail'
           - ns1
           - name: example.com.
-            spf1: '+ include:mail.yahoo.com'
+            spf1: 'GLOBAL include:mail.yahoo.com'
             mx:
               - mail
               - [mail.other.com., 20]

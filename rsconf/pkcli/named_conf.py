@@ -20,6 +20,8 @@ import subprocess
 
 INTERNIC_ROOT_URL = "https://www.internic.net/zones/named.root"
 
+_GLOBAL_REPLACE = "GLOBAL"
+
 
 def gen(root_dir, cfg_dir, test_serial=None):
     """Generate named.conf and zone files in the current directory
@@ -288,7 +290,7 @@ def _zone_spf1(zone, cfg, ptr_map):
             spf1 = ""
         elif not spf1:
             return None
-        spf1 = spf1.replace("+", cfg.get("spf1") or "")
+        spf1 = spf1.replace(_GLOBAL_REPLACE, cfg.get("spf1") or "")
         return f'{host} IN TXT "v=spf1 a mx {spf1} -all"'
 
     return _zone_ipv4_map(zone, cfg, ptr_map, op)
