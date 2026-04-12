@@ -196,7 +196,6 @@ def _zone_ipv4_map(zone, cfg, ptr_map, op):
         merged = PKDict({**cfg, **hcfg})
         if host == "@":
             host = cfg.get("_zone_dot", "@")
-            pkdp(host)
         return [host, merged]
 
     def _process_ip(ip_str, cidr, host_map):
@@ -204,7 +203,6 @@ def _zone_ipv4_map(zone, cfg, ptr_map, op):
         hosts = host_map.get(key)
         if hosts is None:
             return None
-        pkdp([ip_str, key, hosts])
         if not isinstance(hosts, list):
             hosts = [hosts]
         out = []
@@ -249,7 +247,6 @@ def _zone_ipv4_map_array(ipv4_list):
 
 def _zone_literal(cfg_which, zone, cfg):
     def _pairs(values):
-        pkdp(values)
         for k, v in values.items() if isinstance(values, PKDict) else values:
             yield k, v
 
@@ -281,7 +278,7 @@ def _zone_spf1(zone, cfg, ptr_map):
         spf1 = host_cfg.get("spf1")
         if not spf1:
             return None
-        global_spf1 = cfg.get("spf1", "")
+        global_spf1 = cfg.get("spf1") or ""
         spf1 = spf1.replace("+", global_spf1)
         return f'{host} IN TXT "v=spf1 a mx {spf1} -all"'
 
