@@ -17,8 +17,8 @@ zones:
           - dkim
           - dkim.multi.level
         2:
-          - - example.com.
-            - spf1: 1.2.3.10
+          name: example.com.
+          spf1: 1.2.3.10
   example2.com:
     ipv4:
       1.2.3.0/24:

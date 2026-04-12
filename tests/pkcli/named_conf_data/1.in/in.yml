@@ -22,12 +22,15 @@ zones:
             spf1: '+ include:mail.yahoo.com'
             mx:
               - mail
-              - mail.other.com. 20
+              - [mail.other.com., 20]
         25:
           - name: ns2
-            ptr: 1
+            ptr: true
           - www
         26: two.level
+        27:
+          name: dict1
+          mx: mail
       10.10.1.0/29:
         1: ski
       192.168.128.0/17:
@@ -36,17 +39,16 @@ zones:
     cname:
       ftp: www
       alias: example.other.com.
-    dkim1:
-      mydkimhost._domainkey: PXWifNHWcbJ8y/Q1AQAB
     txt:
       - [key1, value1]
+      - [key2, value2]
   example2.com:
     txt:
       - ['@', key1=abc]
       - ['@', key2=123]
     ipv4:
       111.22.33.24/29:
-        27: net1.27
+        27: "@net1.27"
       2.3.4.24/29:
         27: net2-27
         28: net2-28

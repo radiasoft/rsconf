@@ -16,11 +16,11 @@ zones:
     ipv4:
       111.22.33.24/29:
         25:
-          - - mail
-            - ptr: 1
+          name: mail
+          ptr: 1
   example2.com:
     ipv4:
       111.22.33.24/29:
         25:
-          - - mail
-            - ptr: 1
+          name: mail
+          ptr: 1

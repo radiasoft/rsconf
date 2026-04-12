@@ -97,24 +97,6 @@ def _dot(name, origin=""):
     return name
 
 
-def _deflatten(lst):
-    return lst
-    """Re-pair items that fconf flattened from inner lists.
-
-    fconf merges inner lists into outer lists. For host entries, a string host
-    followed by a dict config was originally [host, config]. For mx entries, a
-    string host followed by an int priority was originally [host, pref]. This
-    function reassembles those pairs.
-    """
-    r = []
-    for v in lst:
-        if r and isinstance(v, (dict, int)) and isinstance(r[-1], str):
-            r[-1] = [r[-1], v]
-        else:
-            r.append(v)
-    return r
-
-
 def _map_host_addresses(cidr, callback):
     results = []
     for addr in _cidr_hosts(cidr):
@@ -154,30 +136,12 @@ def _serial(cfg):
     raise RuntimeError(f"could not find SOA cmd={_dig()} out={o}")
 
 
-def _normalize_host_entry(entry, cfg):
-    if isinstance(entry, (list, tuple)):
-        host, hcfg = entry[0], PKDict(entry[1]) if len(entry) > 1 else PKDict()
-    else:
-        host = entry
-        hcfg = PKDict()
-
-    if isinstance(host, str) and re.match(r"^@(?=[\w@])", host):
-        host = host[1:]
-        hcfg["ptr"] = True
-
-    merged = PKDict({**cfg, **hcfg})
-    if host == "@":
-        host = cfg.get("_zone_dot", "@")
-    return [host, merged]
-
-
 def _zone(zone, zone_cfg, common, ptr_map):
     zone_dot = _dot(zone)
     cfg = PKDict({**common, **zone_cfg, "_zone_dot": zone_dot})
     records = sorted(
         _zone_a(zone_dot, cfg, ptr_map)
         + _zone_cname(zone_dot, cfg, ptr_map)
-        + _zone_dkim1(zone_dot, cfg, ptr_map)
         + _zone_mx(zone_dot, cfg, ptr_map)
         + _zone_spf1(zone_dot, cfg, ptr_map)
         + _zone_srv(zone_dot, cfg, ptr_map)
@@ -198,20 +162,7 @@ def _zone_a(zone, cfg, ptr_map):
 
 
 def _zone_cname(zone, cfg, ptr_map):
-    return _zone_literal("cname", None, None, zone, cfg)
-
-
-def _zone_dkim1(zone, cfg, ptr_map):
-    def dkim_transform(value):
-        res = f'"v=DKIM1; k=rsa; p={value};"'
-        if len(res) > 255:
-            raise ValueError(
-                f"dkim1 only supports 1024-bit keys (p={value}); "
-                "use opendkim.json for longer records"
-            )
-        return res
-
-    return _zone_literal("dkim1", "txt", dkim_transform, zone, cfg)
+    return _zone_literal("cname", zone, cfg)
 
 
 def _zone_header(zone_dot, cfg):
@@ -228,40 +179,59 @@ def _zone_header(zone_dot, cfg):
 
 
 def _zone_ipv4_map(zone, cfg, ptr_map, op):
+
+    def _normalize_host_entry(entry):
+        if isinstance(entry, PKDict):
+            if (host := entry.get("name")) is None:
+                raise ValueError(f"missing name in entry={entry}")
+            hcfg = entry
+        elif isinstance(entry, str):
+            host = entry
+            hcfg = PKDict()
+        else:
+            raise ValueError(f"invalid entry={entry}")
+        if isinstance(host, str) and re.match(r"^@(?=[\w@])", host):
+            host = host[1:]
+            hcfg["ptr"] = True
+        merged = PKDict({**cfg, **hcfg})
+        if host == "@":
+            host = cfg.get("_zone_dot", "@")
+            pkdp(host)
+        return [host, merged]
+
+    def _process_ip(ip_str, cidr, host_map):
+        key = _address_to_host_key(cidr, ip_str)
+        hosts = host_map.get(key)
+        if hosts is None:
+            return None
+        pkdp([ip_str, key, hosts])
+        if not isinstance(hosts, list):
+            hosts = [hosts]
+        out = []
+        for entry in sorted(
+            [_normalize_host_entry(e) for e in hosts],
+            key=lambda x: x[0],
+        ):
+            r = op(entry[0], entry[1], ip_str, cidr)
+            if r is not None:
+                if isinstance(r, list):
+                    out.extend(r)
+                else:
+                    out.append(r)
+        return out or None
+
     ipv4 = cfg.get("ipv4")
     if ipv4 is None:
         return []
-    if isinstance(ipv4, list):
-        ipv4 = _zone_ipv4_map_array(ipv4)
-    if not isinstance(ipv4, dict):
-        raise ValueError(f"Invalid ipv4 config: {ipv4!r}")
-
+    if not isinstance(ipv4, PKDict):
+        raise ValueError(f"invalid input ipv4={ipv4}")
     results = []
     for cidr in sorted(ipv4):
         host_map = ipv4[cidr]
         net = ipaddress.IPv4Network(cidr, strict=False)
-
-        def process_ip(ip_str, _cidr=cidr, _host_map=host_map):
-            key = _address_to_host_key(_cidr, ip_str)
-            hosts = _host_map.get(key)
-            if hosts is None:
-                return None
-            if not isinstance(hosts, list):
-                hosts = [hosts]
-            out = []
-            for entry in sorted(
-                [_normalize_host_entry(e, cfg) for e in _deflatten(hosts)],
-                key=lambda x: x[0],
-            ):
-                r = op(entry[0], entry[1], ip_str, _cidr)
-                if r is not None:
-                    if isinstance(r, list):
-                        out.extend(r)
-                    else:
-                        out.append(r)
-            return out or None
-
-        results.extend(_map_host_addresses(cidr, process_ip))
+        results.extend(
+            _map_host_addresses(cidr, lambda ip: _process_ip(ip, cidr, host_map))
+        )
     return results
 
 
@@ -277,18 +247,14 @@ def _zone_ipv4_map_array(ipv4_list):
     return res
 
 
-def _zone_literal(cfg_which, dns_which, transform, zone, cfg):
+def _zone_literal(cfg_which, zone, cfg):
     def _pairs(values):
-        for k, v in sorted(values.items()):
-            if isinstance(v, list):
-                for i in v:
-                    yield k, transform(i)
-            else:
-                yield k, transform(v)
+        pkdp(values)
+        for k, v in values.items() if isinstance(values, PKDict) else values:
+            yield k, v
 
     values = cfg.get(cfg_which, PKDict())
-    dns_type = (dns_which or cfg_which).upper()
-    transform = transform or (lambda v: v)
+    dns_type = cfg_which.upper()
     return [f"{host} IN {dns_type} {val}" for host, val in _pairs(values)]
 
 
@@ -297,9 +263,8 @@ def _zone_mx(zone, cfg, ptr_map):
         mx = host_cfg.get("mx", host)
         if not mx:
             return None
-        mx_list = _deflatten(mx if isinstance(mx, list) else [mx])
         out = []
-        for entry in mx_list:
+        for entry in mx if isinstance(mx, list) else [mx]:
             if isinstance(entry, (list, tuple)):
                 mx_host, mx_pref = entry[0], entry[1]
             else:
@@ -324,11 +289,11 @@ def _zone_spf1(zone, cfg, ptr_map):
 
 
 def _zone_srv(zone, cfg, ptr_map):
-    return _zone_literal("srv", None, None, zone, cfg)
+    return _zone_literal("srv", zone, cfg)
 
 
 def _zone_txt(zone, cfg, ptr_map):
-    return _zone_literal("txt", None, None, zone, cfg)
+    return _zone_literal("txt", zone, cfg)
 
 
 def _zone_txt_json(zone_dot, txt_json, ptr_map):
@@ -393,7 +358,7 @@ def _local_cfg(cfg):
                 {
                     net: PKDict(
                         {
-                            1: [["@", PKDict({"mx": None, "spf1": None, "ptr": True})]],
+                            1: [PKDict(name="@", mx=None, spf1=None, ptr=True)],
                         }
                     ),
                 }
