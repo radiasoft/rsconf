@@ -12,11 +12,7 @@ def test_build():
 
     for d in pkunit.case_dirs():
         with pkunit.ExceptToFile():
-            named_conf.generate(
-                str(d),
-                d,
-                test_serial=2023111502,
-            )
+            named_conf.gen(str(d), d, test_serial=2023111502)
         if "-dev" in d.basename:
             continue
         if x := shutil.which("named-checkconf"):

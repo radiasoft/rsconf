@@ -21,7 +21,7 @@ import subprocess
 INTERNIC_ROOT_URL = "https://www.internic.net/zones/named.root"
 
 
-def generate(root_dir, cfg_dir, test_serial=None):
+def gen(root_dir, cfg_dir, test_serial=None):
     """Generate named.conf and zone files in the current directory
 
     Args:
@@ -30,7 +30,7 @@ def generate(root_dir, cfg_dir, test_serial=None):
         test_serial (int): override SOA serial for testing [None]
     """
     d = pykern.pkio.py_path(cfg_dir)
-    _generate(
+    _gen(
         root_dir,
         pykern.fconf.parse_all(d),
         d,
@@ -137,6 +137,14 @@ def _serial(cfg):
 
 
 def _zone(zone, zone_cfg, common, ptr_map):
+    def _dedup(recs):
+        p = None
+        for k in recs:
+            if k == p:
+                continue
+            yield k
+            p = k
+
     zone_dot = _dot(zone)
     cfg = PKDict({**common, **zone_cfg, "_zone_dot": zone_dot})
     records = sorted(
@@ -148,7 +156,7 @@ def _zone(zone, zone_cfg, common, ptr_map):
         + _zone_txt(zone_dot, cfg, ptr_map)
         + _zone_txt_json(zone_dot, common.get("txt_json", PKDict()), ptr_map)
     )
-    return zone, _newlines(*_zone_header(zone_dot, cfg), *records)
+    return zone, _newlines(*_zone_header(zone_dot, cfg), *_dedup(records))
 
 
 def _zone_a(zone, cfg, ptr_map):
@@ -257,8 +265,9 @@ def _zone_literal(cfg_which, zone, cfg):
 
 def _zone_mx(zone, cfg, ptr_map):
     def op(host, host_cfg, ip, cidr):
-        mx = host_cfg.get("mx", host)
-        if not mx:
+        if (mx := host_cfg.get("mx")) is None:
+            mx = host
+        elif not mx:
             return None
         out = []
         for entry in mx if isinstance(mx, list) else [mx]:
@@ -275,11 +284,11 @@ def _zone_mx(zone, cfg, ptr_map):
 
 def _zone_spf1(zone, cfg, ptr_map):
     def op(host, host_cfg, ip, cidr):
-        spf1 = host_cfg.get("spf1")
-        if not spf1:
+        if (spf1 := host_cfg.get("spf1")) is None:
+            spf1 = ""
+        elif not spf1:
             return None
-        global_spf1 = cfg.get("spf1") or ""
-        spf1 = spf1.replace("+", global_spf1)
+        spf1 = spf1.replace("+", cfg.get("spf1") or "")
         return f'{host} IN TXT "v=spf1 a mx {spf1} -all"'
 
     return _zone_ipv4_map(zone, cfg, ptr_map, op)
@@ -339,10 +348,10 @@ def _local_cfg(cfg):
             "hostmaster": "hostmaster.local.",
             "servers": ["local."],
             "minimum": "1D",
-            "mx": None,
+            "mx": "",
             "refresh": "1D",
             "retry": "1D",
-            "spf1": None,
+            "spf1": "",
             "ttl": "1D",
         }
     )
@@ -355,7 +364,7 @@ def _local_cfg(cfg):
                 {
                     net: PKDict(
                         {
-                            1: [PKDict(name="@", mx=None, spf1=None, ptr=True)],
+                            1: [PKDict(name="@", mx="", spf1="", ptr=True)],
                         }
                     ),
                 }
@@ -378,7 +387,7 @@ def _txt_json_parse(paths):
     return res
 
 
-def _generate(root_dir, cfg, cfg_dir, test_serial):
+def _gen(root_dir, cfg, cfg_dir, test_serial):
     def _root_file():
         return requests.get(INTERNIC_ROOT_URL).text
 
