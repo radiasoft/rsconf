@@ -23,13 +23,13 @@ INTERNIC_ROOT_URL = "https://www.internic.net/zones/named.root"
 _GLOBAL_REPLACE = "GLOBAL"
 
 
-def gen(root_dir, cfg_dir, out_dir=".", test_serial=None):
+def gen(cfg_dir, root_dir, out_dir, test_serial=None):
     """Generate named.conf and zone files in the current directory
 
     Args:
         root_dir (str): directory written to named.conf options.directory
         cfg_dir (str): directory containing .py and .yml fconf input files
-        out_dir (str): where to write the output [.]
+        out_dir (str): where to write the output
         test_serial (int): override SOA serial for testing [None]
     """
     d = pykern.pkio.py_path(cfg_dir)
