@@ -40,8 +40,8 @@ _UNIT_TEST_ROOT_D = "UNIT TEST"
 _GLOBAL_PATHS = None
 
 
-class Host(PKDict):
-    def __init__(self, raw, channel, host):
+class _Host(PKDict):
+    def __init__(self, dbt, channel, host):
         c = global_paths_as_dict().pkupdate(
             # TODO(robnagler) introduce concept of const
             bash_curl_cmd="curl --fail --location --show-error --silent",
@@ -49,14 +49,15 @@ class Host(PKDict):
             host=host.lower(),
         )
         self._before_defaults(c)
-        self._merge_levels(raw, c)
+        self._merge_levels(dbt.base, c)
         self._after_defaults(c)
         self._assert_no_rsconf_db_values(self)
         self._update_paths(self)
         pkio.unchecked_remove(self.rsconf_db.tmp_d)
         pkio.mkdir_parent(self.rsconf_db.tmp_d)
-        self.rsconf_db.is_centos7 = self.rsconf_db.host in raw.pkunchecked_nested_get(
-            "rsconf_db.centos7_hosts", ()
+        self.rsconf_db.is_centos7 = (
+            self.rsconf_db.host
+            in dbt.base.pkunchecked_nested_get("rsconf_db.centos7_hosts", ())
         )
         # For now this works
         self.rsconf_db.is_almalinux9 = not self.rsconf_db.is_centos7
@@ -67,6 +68,10 @@ class Host(PKDict):
             self.rsconf_db.os_release_id = "almalinux"
             self.rsconf_db.os_release_version_id = "9"
         pkjson.dump_pretty(self, filename=self.rsconf_db.tmp_d.join("db.json"))
+        self.dbt = dbt
+
+    def channel_hosts(self):
+        return self.dbt.channel_hosts[self.rsconf_db.channel]
 
     def j2_ctx_copy(self):
         return copy.deepcopy(self)
@@ -169,22 +174,19 @@ class Host(PKDict):
 
 class T(PKDict):
     def __init__(self, *args, **kwargs):
+        def _channel_hosts():
+            for c in pkconfig.VALID_CHANNELS:
+                yield c, tuple(sorted((self.base.host.get(c) or PKDict()).keys()))
+
         super(T, self).__init__(*args, **kwargs)
         b = global_paths_as_dict()
         self.pkupdate(copy.deepcopy(b))
         pkio.mkdir_parent(self.tmp_d)
         self.base = self._init_fconf(PKDict(rsconf_db=b))
-
-    def channel_hosts(self):
-        res = PKDict()
-        for c in pkconfig.VALID_CHANNELS:
-            res[c] = sorted(
-                self.base.host.get(c, PKDict()).keys(),
-            )
-        return res
+        self.channel_hosts = PKDict(_channel_hosts())
 
     def host_db(self, *args, **kwargs):
-        return Host(self.base, *args, **kwargs)
+        return _Host(self, *args, **kwargs)
 
     def _init_fconf(self, base_vars):
         from pykern import fconf
@@ -201,6 +203,10 @@ class T(PKDict):
         if not f:
             raise ValueError(f"no files in db_d={self.db_d}")
         return fconf.Parser(files=f, base_vars=base_vars).result
+
+
+def db_path(hdb, filename, visibility=None, directory=False):
+    return _db_path(hdb.rsconf_db.db_d, hdb, filename, visibility, directory)
 
 
 def global_path(name):
@@ -328,25 +334,8 @@ def resource_path(hdb, filename):
     return pkresource.file_path(filename)
 
 
-def secret_path(hdb, filename, visibility=None, qualifier=None, directory=False):
-    if visibility:
-        assert (
-            visibility in VISIBILITY_LIST
-        ), "{}: invalid visibility, must be {}".format(
-            visibility,
-            VISIBILITY_LIST,
-        )
-    else:
-        visibility = VISIBILITY_DEFAULT
-    p = (
-        []
-        if visibility == VISIBILITY_GLOBAL
-        else [qualifier or hdb.rsconf_db[visibility]]
-    )
-    p.append(filename)
-    res = hdb.rsconf_db.secret_d.join(*p)
-    pkio.mkdir_parent(res) if directory else pkio.mkdir_parent_only(res)
-    return res
+def secret_path(hdb, filename, visibility=None, directory=False):
+    return _db_path(hdb.rsconf_db.secret_d, hdb, filename, visibility, directory)
 
 
 def user_home_path(user):
@@ -410,6 +399,25 @@ def _init_resource_paths(rsconf_db):
     for i in rsconf_db.channel, rsconf_db.host:
         res.insert(0, res[0].join(i))
     return res
+
+
+def _db_path(base_d, hdb, filename, visibility, directory):
+    if visibility is None:
+        visibility = VISIBILITY_DEFAULT
+    p = []
+    if visibility in VISIBILITY_LIST:
+        if visibility != VISIBILITY_GLOBAL:
+            p.append(hdb.rsconf_db[visibility])
+    elif visibility in pkconfig.VALID_CHANNELS or visibility in hdb.channel_hosts():
+        p.append(visibility)
+    else:
+        raise AssertionError(
+            f"{visibility}: invalid visibility, must be {VISIBILITY_LIST}, valid channel, or host in {hdb.channel}"
+        )
+    p.append(filename)
+    rv = base_d.join(*p)
+    pkio.mkdir_parent(rv) if directory else pkio.mkdir_parent_only(rv)
+    return rv
 
 
 cfg = pkconfig.init(

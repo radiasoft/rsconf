@@ -1,0 +1,31 @@
+options {
+    allow-transfer { none; };
+    directory "{{ named.db_d }}";
+    key-directory "{{ systemd.runtime_d }}";
+    hostname none;
+    listen-on { {{ named.listen_on }} };
+    pid-file "{{ systemd.pid_file }}";
+    {#
+      Avoid DOS attacks
+      http://www.zytrax.com/books/dns/ch7/hkpng.html#rate-limit
+    #}
+    rate-limit {
+        responses-per-second 5;
+        window 5;
+    };
+    recursion no;
+    {# http://www.zytrax.com/books/dns/ch7/hkpng.html#version #}
+    version "none";
+};
+{#
+   do not enable rndc; do not needed it for authoritative name server. There's
+   no need for this unless we are managing dynamic dns or other stuff where the
+   server needs to write files.
+#}
+controls {
+};
+logging {
+    {# buggy servers or bad actors will fill the log file #}
+    category lame-servers { null; };
+};
+include "{{ named.zones_f }}";

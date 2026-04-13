@@ -1,0 +1,10 @@
+#!/bin/bash
+set -euo pipefail
+if ! out=$(named-checkconf -z '{{ named.conf_f }}' 2>&1); then
+    echo "$out" 1>&2
+    exit 1
+fi
+exec named -c '{{ named.conf_f }}' \
+    -n '{{ named.num_threads }}' \
+    -S '{{ named.max_sockets }}' \
+    -u '{{ named.run_group }}'

@@ -119,25 +119,6 @@ def default_command():
     from rsconf import db
     from pykern import pkunit
 
-    def _instantiate():
-        rv = []
-        for c, hosts in dbt.channel_hosts().items():
-            p = None
-            for h in hosts:
-                t = T(dbt, c, h)
-                if "rsconf" in t.hdb.rsconf_db.components:
-                    if p != None:
-                        raise AssertionError(f"duplicate rsconf_host={h} first={p}")
-                    p = t
-                else:
-                    rv.append(t)
-        if not p:
-            raise AssertionError(
-                f"rsconf_host not found; one host must have 'rsconf' as component"
-            )
-        rv.insert(0, p)
-        return rv
-
     if pkconfig.in_dev_mode():
         from rsconf.pkcli import setup_dev
 
@@ -156,7 +137,7 @@ def default_command():
         new_d = tmp_d + "-new"
         pkio.unchecked_remove(new_d, old_d)
         pkio.mkdir_parent(new_d)
-        for c, hosts in dbt.channel_hosts().items():
+        for c, hosts in tuple(dbt.channel_hosts.items()):
             for h in hosts:
                 t = T(dbt, c, h)
                 t.create_host(new_d)

@@ -1,0 +1,11 @@
+{
+    "example.com": {
+        "20240328._domainkey": "old key1",
+        "20240429._domainkey": "\"v=DKIM1; k=rsa; \" \"p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4H9UesDWFWbnr2OCRcvmpB7l0YbnTzn7Cu4jufbifTushykN8mmkSZqu/aNfZSWruj/awGRv/8ge6povbj7prILu0n3PeStjvIQBz05XKjssGPsLzYw6sX8AQpJqAD4EB671AY8oWl9bl5rAUmILbKuCiXGSilPpsAei80AK3wZK7y5OWy0bW2WmQdusvR/NRa63JdTyC1Uk/n\" \"2wce4EJCsk2WwP3eeGGp7J7bAThGXYX8LrVwb9Oc2PLMhlnWKThOyxvST5sury/+ickLMqwnBN0z7Mi27TwZcfN34hBJvJdc4bfizUBbK+TJiHrU9XIWEI4Sf5Z3j3CAjdOELAnQIDAQAB\"",
+        "20240429._domainkey.dkim": "key2",
+        "20240429._domainkey.dkim.multi.level": "key3"
+    },
+    "example2.com": [
+        ["20240328._domainkey.dkim", "key4"]
+    ]
+}

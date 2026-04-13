@@ -181,27 +181,14 @@ def _self_signed_crt(j2_ctx, host):
     from rsconf.pkcli import tls
     from rsconf import db
 
-    b = db.secret_path(
-        j2_ctx,
-        _TLS_CA_BASENAME,
-        visibility="host",
-        qualifier=host,
-    )
+    b = db.secret_path(j2_ctx, _TLS_CA_BASENAME, visibility=host)
     ca = _crt_create(
         b,
         # certificate cannot match host so we just create an arbitrary name
         lambda: tls.gen_ca_crt("root-ca." + host, basename=b),
     )
-    b = db.secret_path(
-        j2_ctx,
-        _TLS_BASENAME,
-        visibility="host",
-        qualifier=host,
-    )
-    c = _crt_create(
-        b,
-        lambda: tls.gen_signed_crt(ca.key, host, basename=b),
-    )
+    b = db.secret_path(j2_ctx, _TLS_BASENAME, visibility=host)
+    c = _crt_create(b, lambda: tls.gen_signed_crt(ca.key, host, basename=b))
     return c, ca
 
 

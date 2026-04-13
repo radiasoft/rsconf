@@ -1,0 +1,22 @@
+[Unit]
+After=network.target remote-fs.target nss-lookup.target 
+Description=named
+
+[Service]
+Environment=TZ=:/etc/localtime
+ExecStart=/srv/named/start
+ExecStartPre=/bin/rm -f /run/named/named.pid
+Group=named
+PIDFile=/run/named/named.pid
+PrivateTmp=true
+Restart=on-failure
+RestartSec=10
+RuntimeDirectory=named
+RuntimeDirectoryMode=775
+SyslogIdentifier=named
+Type=forking
+User=root
+TimeoutStopSec=5
+
+[Install]
+WantedBy=multi-user.target

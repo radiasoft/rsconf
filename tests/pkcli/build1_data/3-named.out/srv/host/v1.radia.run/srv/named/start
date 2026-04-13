@@ -1,0 +1,10 @@
+#!/bin/bash
+set -euo pipefail
+if ! out=$(named-checkconf -z '/srv/named/db/named.conf' 2>&1); then
+    echo "$out" 1>&2
+    exit 1
+fi
+exec named -c '/srv/named/db/named.conf' \
+    -n '4' \
+    -S '1024' \
+    -u 'named'

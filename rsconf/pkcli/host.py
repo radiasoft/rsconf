@@ -25,8 +25,8 @@ def _init_do(host, comp):
 
     host = host.lower()
     dbt = db.T()
-    for c, hosts in dbt.channel_hosts().items():
+    for c, hosts in dbt.channel_hosts.items():
         for h in hosts:
-            if h == host.lower():
+            if h == host:
                 return comp.host_init(dbt.host_db(c, h), h)
     pkcli.command_error("{}: host not found in rsconf_db", host)

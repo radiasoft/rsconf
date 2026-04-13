@@ -1,0 +1,30 @@
+expiry: 5M
+hostmaster: hostmaster.example.com.
+minimum: 6M
+mx_pref: 10
+servers:
+  - ns1.bivio.biz.
+  - ns2.bivio.biz.
+refresh: 7M
+retry: 8M
+spf1: ""
+ttl: 9M
+zones:
+  example.com:
+    ipv4:
+      1.2.3.0/24:
+        1:
+          - no-dkim
+          - dkim
+          - dkim.multi.level
+        2:
+          name: example.com.
+          spf1: 1.2.3.10
+  example2.com:
+    ipv4:
+      1.2.3.0/24:
+        3:
+          - no-dkim
+          - dkim
+    txt:
+      dkim: key1=abc

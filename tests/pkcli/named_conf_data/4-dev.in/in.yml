@@ -1,0 +1,26 @@
+expiry: 5M
+hostmaster: hostmaster.example.com.
+minimum: 6M
+mx_pref: 10
+servers:
+  - ns1.bivio.biz.
+  - ns2.bivio.biz.
+refresh: 7M
+retry: 8M
+spf1: include:aspmx.googlemail.com
+ttl: 9M
+nets:
+  24-31.33.22.111: 111.22.33.24/29
+zones:
+  example.com:
+    ipv4:
+      111.22.33.24/29:
+        25:
+          name: mail
+          ptr: 1
+  example2.com:
+    ipv4:
+      111.22.33.24/29:
+        25:
+          name: mail
+          ptr: 1
