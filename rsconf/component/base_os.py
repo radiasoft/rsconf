@@ -34,7 +34,6 @@ class T(rsconf.component.T):
                     yield f"base_os_logical_volume '{v.name}' '{v.gigabytes}' '{n}' '{v.mount_d}' '{v.get('mode', 700)}'"
 
         jc, z = self.j2_ctx_init()
-        pkdp(z)
         self.j2_ctx_pksetdefault(
             PKDict(
                 base_os=PKDict(
@@ -43,7 +42,6 @@ class T(rsconf.component.T):
                 ),
             ),
         )
-        pkdp(z)
         z.logical_volume_cmds = (
             "\n".join(_volume_group_cmds(z.volume_groups)) + "\n"
             if z.volume_groups
