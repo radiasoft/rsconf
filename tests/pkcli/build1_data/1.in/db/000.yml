@@ -12,9 +12,6 @@ rsconf_db:
   centos7_hosts: 'map(lambda n: f"v{n}.radia.run", (3, 4, 6, 9))'
 
 default:
-  base_os:
-    ip_forward: false
-    volume_groups: {}
   base_users:
     add:
       - vagrant

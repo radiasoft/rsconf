@@ -23,12 +23,13 @@ INTERNIC_ROOT_URL = "https://www.internic.net/zones/named.root"
 _GLOBAL_REPLACE = "GLOBAL"
 
 
-def gen(root_dir, cfg_dir, test_serial=None):
+def gen(cfg_dir, root_dir, out_dir, test_serial=None):
     """Generate named.conf and zone files in the current directory
 
     Args:
         root_dir (str): directory written to named.conf options.directory
         cfg_dir (str): directory containing .py and .yml fconf input files
+        out_dir (str): where to write the output
         test_serial (int): override SOA serial for testing [None]
     """
     d = pykern.pkio.py_path(cfg_dir)
@@ -36,6 +37,7 @@ def gen(root_dir, cfg_dir, test_serial=None):
         root_dir,
         pykern.fconf.parse_all(d),
         d,
+        pykern.pkio.py_path(out_dir),
         int(test_serial) if test_serial is not None else None,
     )
 
@@ -59,20 +61,6 @@ def _address_to_host_key(cidr, ip):
 
 def _cidr_hosts(cidr):
     return ipaddress.IPv4Network(cidr, strict=False)
-
-
-def _conf(root_dir, root_file):
-    return f"""options {{
-  directory "{root_dir}";
-  allow-transfer {{ none; }};
-  recursion no;
-  version "n/a";
-}};
-logging {{
-  category lame-servers {{ null; }};
-}};
-include "zones.conf";
-"""
 
 
 def _zones_conf(root_file, cfg):
@@ -389,7 +377,7 @@ def _txt_json_parse(paths):
     return res
 
 
-def _gen(root_dir, cfg, cfg_dir, test_serial):
+def _gen(root_dir, cfg, cfg_dir, out_dir, test_serial):
     def _root_file():
         return requests.get(INTERNIC_ROOT_URL).text
 
@@ -403,8 +391,9 @@ def _gen(root_dir, cfg, cfg_dir, test_serial):
         return test_serial
 
     def _write(files):
+        pykern.pkio.mkdir_parent(out_dir)
         for n, c in files.items():
-            pykern.pkio.write_text(n, c)
+            pykern.pkio.write_text(out_dir.join(n), c)
 
     _local_cfg(cfg)
     cfg.serial = _test_serial(_serial(cfg))
@@ -424,7 +413,6 @@ def _gen(root_dir, cfg, cfg_dir, test_serial):
     return _write(
         zone_files.pkupdate(
             {
-                "named.conf": _conf(root_dir, n),
                 "zones.conf": _zones_conf(n, cfg),
                 n: _root_file(),
             }
