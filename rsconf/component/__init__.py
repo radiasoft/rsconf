@@ -357,7 +357,7 @@ class T(PKDict):
             defaults (dict): nested values
         """
 
-        return self._j2_ctx_set(defaults, "pksetdefault")
+        self._j2_ctx_set(defaults, "pksetdefault")
 
     def j2_ctx_pkupdate(self, updates):
         """Set updates on self.j2_ctx
@@ -370,7 +370,7 @@ class T(PKDict):
         Args:
             updates (dict): nested values to set
         """
-        return self._j2_ctx_set(updates, "__setitem__")
+        self._j2_ctx_set(updates, "__setitem__")
 
     def j2_ctx_pykern_defaults(self):
         """Set default pykern.pkconfig.channel, etc"""
@@ -519,18 +519,7 @@ class T(PKDict):
         return self.name == pkinspect.module_basename(pkinspect.caller_module())
 
     def _j2_ctx_set(self, values, method):
-        def f(prefix, values, method):
-            for k, v in values.items():
-                k = prefix + k.split(".")
-                if isinstance(v, dict):
-                    f(k, v, method)
-                    continue
-                n = self.j2_ctx
-                for y in k[:-1]:
-                    n = n.setdefault(y, PKDict())
-                getattr(n, method)(k[-1], v)
-
-        f([], values, method)
+        _j2_ctx_set_op(self.j2_ctx, [], values, method)
 
     def _render_file(self, path, j2_ctx):
         from pykern import pkjinja
@@ -635,6 +624,20 @@ def _find_tls_crt(j2_ctx, domain):
     pkio.mkdir_parent_only(src)
     tls.gen_self_signed_crt(*domain, basename=src)
     return src, domain
+
+
+def _j2_ctx_set_op(base, prefix, values, method):
+    pkdp(prefix)
+    for k, v in values.items():
+        k = prefix + k.split(".")
+        n = base
+        for y in k[:-1]:
+            n = n.setdefault(y, PKDict())
+        if isinstance(v, dict):
+            n.setdefault(k[-1], PKDict())
+            _j2_ctx_set_op(base, k, v, method)
+            continue
+        getattr(n, method)(k[-1], v)
 
 
 def _md5(data):
