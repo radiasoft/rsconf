@@ -15,7 +15,7 @@ def test_build():
             named_conf.gen(d, d, ".", test_serial=2023111502)
         if "-dev" in d.basename:
             continue
+        f = d.join("named.conf")
+        pkio.write_text(f, pkio.read_text(f).replace("/srv/named/db", str(d)))
         if x := shutil.which("named-checkconf"):
             subprocess.check_call([x, "-z", "named.conf"])
-        f = d.join("named.conf")
-        pkio.write_text(f, pkio.read_text(f).replace(str(d), "/srv/named/db"))

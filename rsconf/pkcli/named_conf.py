@@ -63,20 +63,6 @@ def _cidr_hosts(cidr):
     return ipaddress.IPv4Network(cidr, strict=False)
 
 
-def _conf(root_dir, root_file):
-    return f"""options {{
-  directory "{root_dir}";
-  allow-transfer {{ none; }};
-  recursion no;
-  version "n/a";
-}};
-logging {{
-  category lame-servers {{ null; }};
-}};
-include "zones.conf";
-"""
-
-
 def _zones_conf(root_file, cfg):
     zone_names = [
         f"{k}.in-addr.arpa" for k in sorted(cfg.get("nets", PKDict()))
@@ -427,7 +413,6 @@ def _gen(root_dir, cfg, cfg_dir, out_dir, test_serial):
     return _write(
         zone_files.pkupdate(
             {
-                "named.conf": _conf(root_dir, n),
                 "zones.conf": _zones_conf(n, cfg),
                 n: _root_file(),
             }
