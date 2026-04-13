@@ -26,7 +26,7 @@ class T(component.T):
         # need bind installed
         self.append_root_bash("rsconf_yum_install bind")
         jc, z = self.j2_ctx_init()
-        run_d = systemd.custom_unit_prepare(self, jc)
+        z.run_d = systemd.custom_unit_prepare(self, jc)
         nc = self.buildt.get_component("network")
         nc.add_public_tcp_ports(["domain"])
         nc.add_public_udp_ports(["domain"])
@@ -45,7 +45,7 @@ class T(component.T):
                 ),
             ),
         )
-        z.db_d = run_d.join("db")
+        z.db_d = z.run_d.join("db")
         z.conf_f = z.db_d.join("named.conf")
         z.zones_f = z.db_d.join("zones.conf")
 
@@ -55,7 +55,8 @@ class T(component.T):
 
         jc = self.j2_ctx
         z = jc[self.name]
-        # runtime_d (/run) set by custom_unit_prepare
+        self.install_access(mode="750", owner=z.run_u, group=z.run_u)
+        self.install_directory(z.run_d)
         self.install_access(mode="750", owner=z.run_u, group=z.run_group)
         self.install_directory(z.db_d)
         self.install_access(mode="440")
