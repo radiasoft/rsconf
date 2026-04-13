@@ -57,7 +57,7 @@ class T(component.T):
         z = jc[self.name]
         self.install_access(mode="750", owner=z.run_u, group=z.run_u)
         self.install_directory(z.run_d)
-        self.install_access(mode="750", owner=z.run_u, group=z.run_group)
+        self.install_access(mode="770", owner=z.run_u, group=z.run_group)
         self.install_directory(z.db_d)
         self.install_access(mode="440")
         for f in pkio.sorted_glob(z.db_path_d.join("*")):
