@@ -23,12 +23,13 @@ INTERNIC_ROOT_URL = "https://www.internic.net/zones/named.root"
 _GLOBAL_REPLACE = "GLOBAL"
 
 
-def gen(root_dir, cfg_dir, test_serial=None):
+def gen(root_dir, cfg_dir, out_dir=".", test_serial=None):
     """Generate named.conf and zone files in the current directory
 
     Args:
         root_dir (str): directory written to named.conf options.directory
         cfg_dir (str): directory containing .py and .yml fconf input files
+        out_dir (str): where to write the output [.]
         test_serial (int): override SOA serial for testing [None]
     """
     d = pykern.pkio.py_path(cfg_dir)
@@ -36,6 +37,7 @@ def gen(root_dir, cfg_dir, test_serial=None):
         root_dir,
         pykern.fconf.parse_all(d),
         d,
+        pykern.pkio.py_path(out_dir),
         int(test_serial) if test_serial is not None else None,
     )
 
@@ -389,7 +391,7 @@ def _txt_json_parse(paths):
     return res
 
 
-def _gen(root_dir, cfg, cfg_dir, test_serial):
+def _gen(root_dir, cfg, cfg_dir, out_dir, test_serial):
     def _root_file():
         return requests.get(INTERNIC_ROOT_URL).text
 
@@ -403,8 +405,9 @@ def _gen(root_dir, cfg, cfg_dir, test_serial):
         return test_serial
 
     def _write(files):
+        pykern.pkio.mkdir_parent(out_dir)
         for n, c in files.items():
-            pykern.pkio.write_text(n, c)
+            pykern.pkio.write_text(out_dir.join(n), c)
 
     _local_cfg(cfg)
     cfg.serial = _test_serial(_serial(cfg))
