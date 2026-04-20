@@ -137,9 +137,9 @@ default:
   petshop:
     cookie_tag: PSD
     filter_out_of_office: true
-    http_host: petshop.{{ host }}
+    http_host: www.{{ host }}
     listen_base: 8114
-    mail_host: petshop.{{ host }}
+    mail_host: www.{{ host }}
     nginx_aux_directives: ''
     num_servers: 4
     perl_rpm: perl-Bivio
@@ -151,8 +151,8 @@ default:
     vhosts:
       # first vhost is default mail_host
       - domains:
-          - petshop.{{ host }}
-          - bprog.{{ host }}
+          - www.{{ host }}
+          - redirect3.{{ host }}
         facade: petshop
         receive_mail: true
         nginx_aux_directives: |
@@ -160,10 +160,8 @@ default:
               return 301 $scheme://$host/$1;
           }
 
-      - facade: beforeother
-      - facade: m-petshop
-      - facade: other
-      - facade: requiresecure
+      - facade: redirect1
+      - facade: redirect2
   postgresql:
     # https://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server#effective_cache_size
     effective_cache_size: 244MB

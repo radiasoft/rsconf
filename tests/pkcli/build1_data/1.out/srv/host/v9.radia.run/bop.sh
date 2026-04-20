@@ -33,10 +33,8 @@ bop_facade_setup() {
 
 bop_main() {
     bop_facade_setup '/var/www/facades/petshop/plain' '/srv/petshop/srv/petshop' '/m/logo.png'
-    bop_facade_setup '/var/www/facades/beforeother/plain' '/srv/petshop/srv/beforeother' '/m/logo.png'
-    bop_facade_setup '/var/www/facades/m-petshop/plain' '/srv/petshop/srv/m-petshop' '/m/logo.png'
-    bop_facade_setup '/var/www/facades/other/plain' '/srv/petshop/srv/other' '/m/logo.png'
-    bop_facade_setup '/var/www/facades/requiresecure/plain' '/srv/petshop/srv/requiresecure' '/m/logo.png'
+    bop_facade_setup '/var/www/facades/redirect2/plain' '/srv/petshop/srv/redirect2' '/m/logo.png'
+    bop_facade_setup '/var/www/facades/redirect3/plain' '/srv/petshop/srv/redirect3' '/m/logo.png'
 
 }
 
