@@ -20,6 +20,29 @@ def test_read_crt_as_dict():
     )
 
 
+def test_expiring():
+    from pykern import pkunit, pkio
+    from pykern.pkdebug import pkdlog, pkdp
+    from rsconf.pkcli import tls
+    import re
+
+    with pkunit.save_chdir_work():
+        d = pkio.mkdir_parent(tls._tls_d())
+        pkunit.data_dir().join("radiasoft.net.crt").copy(d)
+        pkunit.pkeq(("radiasoft.net",), tls.check_expiring())
+        pkunit.pkeq(
+            ("radiasoft.net",),
+            tls.check_expiring(authority_urn_re=re.compile("sectigo")),
+        )
+        pkunit.pkeq(
+            None,
+            tls.check_expiring(authority_urn_re=re.compile("should not match")),
+        )
+        tls._cfg.ignore_expiring_re = re.compile("soft")
+        pkunit.data_dir().join("radiasoft.net.crt").copy(d)
+        pkunit.pkeq(None, tls.check_expiring())
+
+
 def test_self_signed_and_expiry():
     from pykern import pkunit, pkio
     from pykern.pkdebug import pkdlog, pkdp

@@ -272,6 +272,10 @@ def _alt_names(domains):
     )
 
 
+def _cfg_ignore_exiring_re(val):
+    return re.compile(val, flags=re.IGNORECASE)
+
+
 def _crt_as_dict(value):
 
     def _domains(crt):
@@ -312,6 +316,8 @@ def _crt_as_dict(value):
 def _expiring(authority_urn_re):
     e = datetime.datetime.utcnow() + datetime.timedelta(days=_cfg.expire_days)
     for p, rv in _read_tls_d():
+        if _cfg.ignore_expiring_re and _cfg.ignore_expiring_re.search(p.purebasename):
+            continue
         # The logic here is complicated to allow for self-signed
         # and authority_urn_re. The former is mostly for testing,
         # but is applicable if we want to re-issue self-signed
@@ -319,8 +325,7 @@ def _expiring(authority_urn_re):
         if rv.expiry <= e and (
             (
                 not rv.is_self_signed
-                and authority_urn_re
-                and authority_urn_re.search(rv.authority_urn)
+                and (not authority_urn_re or authority_urn_re.search(rv.authority_urn))
             )
             or (_cfg.expire_self_signed and rv.is_self_signed)
         ):
@@ -416,9 +421,7 @@ def _is_self_signed_crt(crt):
 
 
 def _read_tls_d():
-    from rsconf import db
-
-    for p in pkio.sorted_glob(db.global_path("tls_d").join("*" + CRT_EXT)):
+    for p in pkio.sorted_glob(_tls_d().join("*" + CRT_EXT)):
         yield p, read_crt_as_dict(p)
 
 
@@ -449,7 +452,18 @@ def _signing_args():
     ]
 
 
+def _tls_d():
+    from rsconf import db
+
+    return db.global_path("tls_d")
+
+
 _cfg = pkconfig.init(
     expire_days=(14, int, "gen_csr_for_all_expiring days"),
     expire_self_signed=(False, bool, "allow expiring self-signed certs"),
+    ignore_expiring_re=(
+        None,
+        _cfg_ignore_exiring_re,
+        "do not check expiry for certs matching this regex",
+    ),
 )
