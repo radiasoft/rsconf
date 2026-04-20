@@ -152,7 +152,7 @@ default:
       # first vhost is default mail_host
       - domains:
           - petshop.v4.radia.run
-          - bprog.v4.radia.run
+          - redirect1.v4.radia.run
         facade: petshop
         receive_mail: true
         nginx_aux_directives: |
@@ -160,10 +160,8 @@ default:
               return 301 $scheme://$host/$1;
           }
 
-      - facade: beforeother
-      - facade: m-petshop
-      - facade: other
-      - facade: requiresecure
+      - facade: redirect2
+      - facade: redirect3
   postgresql:
     # https://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server#effective_cache_size
     effective_cache_size: 244MB
@@ -279,7 +277,7 @@ host:
       docker:
         tls_host: v3.radia.run
       rsconf:
-        alt_vhosts: [ other.v3.radia.run ]
+        alt_vhosts: [ jupyter.v3.radia.run ]
       rsconf_db:
         components:
           - docker
@@ -517,7 +515,7 @@ host:
       mlflow:
         docker_image: radiasoft/mlops
         service_port: 8999
-        vhost: mlflow.v9.radia.run
+        vhost: redirect1.v9.radia.run
       network:
         restricted_public_tcp_ports:
           https: [ 192.168.1.0/24, 127.0.0.1 ]
