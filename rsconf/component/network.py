@@ -48,6 +48,9 @@ class T(rsconf.component.T):
             m = f"error={e}"
         raise ValueError(f"invalid host={host} {m}")
 
+    def has_public_ssh(self):
+        return bool(self.j2_ctx.pkunchecked_nested_get("network.public_ssh_ports"))
+
     def ip_and_net_for_host(self, host):
         ip = socket.gethostbyname(host)
         return ip, self._net_check(ip)

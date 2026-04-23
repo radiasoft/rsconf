@@ -26,6 +26,7 @@ class T(component.T):
             else set()
         )
         z.add_cmds = ""
+        p = self.buildt.get_component("network").has_public_ssh()
         for u in z.add:
             assert not u in z.added, "{}: duplicate user".format(u)
             i = copy.deepcopy(z.spec[u])
@@ -43,13 +44,19 @@ class T(component.T):
                 )
                 else i.email
             )
-            self._ssh_key(i)
+            i._ssh_key = p and i.get("public_ssh_key")
             z.added[u] = i
 
     def internal_build_write(self):
         from rsconf.component import bkp
 
+        def _user_keys():
+            for u in z.add:
+                if k := z.added[u]._ssh_key:
+                    self.append_root_bash(f"rsconf_append_authorized_key '{u}' '{k}'")
+
         jc = self.j2_ctx
+        z = jc.base_users
         self.install_access(mode="400", owner=jc.rsconf_db.root_u)
         self.install_resource(
             "base_users/root_post_bivio_bashrc",
@@ -58,15 +65,9 @@ class T(component.T):
         )
         bkp.append_authorized_key(self, jc)
         self.append_root_bash_with_main(jc)
+        _user_keys()
         # latest bash environment used by other scripts
         self.append_root_bash("install_source_bashrc")
-
-    def _ssh_key(self, user):
-        if not self.buildt.get_component("network").j2_ctx.pkunchecked_nested_get(
-            "network.public_ssh_ports"
-        ) or not (k := user.get("public_ssh_key")):
-            return
-        self.append_root_bash(f"rsconf_append_authorized_key '{user.name}' '{k}'")
 
     def user_spec(self, name):
         return copy.deepcopy(self.j2_ctx.base_users.added[name])
