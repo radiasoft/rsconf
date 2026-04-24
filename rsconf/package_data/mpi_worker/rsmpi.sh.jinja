@@ -44,7 +44,7 @@ if [[ $(hostname) != $1 ]]; then
 Please contact support for help with this issue.' 1>&2
     exit 1
 fi
-if ! [[ $(ps axwwe) =~ PMI_RANK=0 ]]; then
+if [[ ! $(ps axwwe) =~ PMI_RANK=0 ]]; then
     find /dev/shm -mindepth 1 -delete
 fi
 EOF
