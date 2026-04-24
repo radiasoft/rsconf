@@ -36,6 +36,7 @@ _check_host() {
         -o ConnectTimeout=2 \
         -o GlobalKnownHostsFile=/dev/null \
         -o IdentityFile="$_rsmpi_conf_d/$h"/identity \
+        -o LogLevel=ERROR \
         -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
         "$h" bash --norc --noprofile -s "$h" <<'EOF'
@@ -71,11 +72,11 @@ _exec_mpi() {
     for x in $(compgen -A variable | grep -E "($rsmpi_pass_env)"); do
         a+=$x,
     done
-    declare i=$(rsmpi_local_ip)
+    declare i=$(_local_ip)
     if [[ ! $i ]]; then
-        _err "cannot determine local ip address for network=$_rsmpi_net"
+        _err "cannot determine local ip for network=$_rsmpi_net"
     fi
-    exec mpiexec -f "$hostfile" -localhost "$(_local_ip)" -envlist "${a[@]:0:-1}" "$@"
+    exec mpiexec -f "$hostfile" -localhost "$i" -envlist "${a[@]:0:-1}" "$@"
 }
 
 _help() {
@@ -153,7 +154,6 @@ _local_ip() {
             return
         fi
     done
-    return 1
 }
 
 _main() {
