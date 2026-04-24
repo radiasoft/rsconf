@@ -39,13 +39,17 @@ _check_host() {
         -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
         "$h" bash --norc --noprofile -s "$h" <<'EOF'
+set -eou pipefail
+shopt -s nullglob
 if [[ $(hostname) != $1 ]]; then
     echo 'Your cluster has been reassigned or some nodes are down.
 Please contact support for help with this issue.' 1>&2
     exit 1
 fi
-if [[ ! $(ps axwwe) =~ PMI_RANK=0 ]]; then
-    find /dev/shm -mindepth 1 -delete
+if ! pgrep hydra_pmi_proxy >& /dev/null; then
+    # mpich4 orphans shm (sirepo#7741)
+    # make a best attempt, other processes may need shm
+    find /dev/shm -mindepth 1 -delete || true
 fi
 EOF
 }
