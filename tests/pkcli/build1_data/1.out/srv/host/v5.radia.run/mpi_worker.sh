@@ -16,7 +16,7 @@ rsconf_install_file '/srv/mpi_worker/user/vagrant/.rsmpi/known_hosts' '7ae6386df
 rsconf_install_access '700' 'vagrant' 'vagrant'
 rsconf_install_directory '/srv/mpi_worker/user/vagrant/bin'
 rsconf_install_access '500' 'vagrant' 'vagrant'
-rsconf_install_file '/srv/mpi_worker/user/vagrant/bin/rsmpi' '83078a52dd4868e12eb0b3583de85e0d'
+rsconf_install_file '/srv/mpi_worker/user/vagrant/bin/rsmpi' '1c69a818ef3ea3579b7c40d082f12df8'
 rsconf_install_access '700' 'vagrant' 'vagrant'
 rsconf_install_directory '/srv/mpi_worker'
 rsconf_install_access '500' 'vagrant' 'vagrant'

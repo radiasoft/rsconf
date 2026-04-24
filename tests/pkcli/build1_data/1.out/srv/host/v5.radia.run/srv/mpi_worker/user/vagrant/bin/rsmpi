@@ -2,7 +2,8 @@
 #
 # Starts mpiexec
 #
-set -euo pipefail
+set -eou pipefail
+shopt -s nullglob
 declare -a _rsmpi_ips=(
     '10.10.10.40'
     '10.10.10.50'
@@ -28,65 +29,45 @@ _rsmpi_ssh_config='/home/vagrant/jupyter/.rsmpi/ssh_config'
 : ${rsmpi_pass_env:='MODULE|^OMP_|PATH|PYENV|PYTHON|SYNERGIA|VIRTUAL'}
 declare -i _rsmpi_num_hosts=${#_rsmpi_ips[@]}
 
-rsmpi_exec() {
+_check_host() {
+    declare h=$1
+    declare x
+    x=$(ssh -F "$_rsmpi_ssh_config" \
+        -o BatchMode=yes \
+        -o ConnectTimeout=2 \
+        -o GlobalKnownHostsFile=/dev/null \
+        -o IdentityFile="$_rsmpi_conf_d/$h"/identity \
+        -o StrictHostKeyChecking=no \
+        -o UserKnownHostsFile=/dev/null \
+        "$h" 'find /dev/shm -mindepth 1 -delete 2>/dev/null || true; hostname' 2>/dev/null < /dev/null || true)
+    if [[ $x != $h ]]; then
+        _err "host $h is unavailable"
+    fi
+}
+
+_err() {
+    _msg "$@"
+    exit 1
+}
+
+_exec_mpi() {
     declare hostfile=$1
     shift
-    rsmpi_exec_ssh_config
+    _setup_ssh_config
     declare a=
     declare x
-    declare e=
     for x in $(compgen -A variable | grep -E "($rsmpi_pass_env)"); do
         a+=$x,
     done
-    declare i=$(rsmpi_local_ip)
-    if [[ ! $i ]]; then
-        echo "cannot determine local ip address for network=$_rsmpi_net" 1>&2
+    exec mpiexec -f "$hostfile" -localhost "$(_local_ip)" -envlist "${a[@]:0:-1}" "$@"
+}
+
+_help() {
+    if (( $# > 0 )); then
+        _msg "error: $*"
     fi
-    exec mpiexec -f "$hostfile" -localhost "$i" -envlist "${a[@]:0:-1}" "$@"
-}
-
-rsmpi_exec_ssh_config() {
-    declare d=$HOME/.ssh
-    declare l=$d.lock
-    declare i
-    for i in $(seq 1 10); do
-        if ! mkdir "$l" >& /dev/null; then
-            if (( i == 9 )); then
-                # remove the lock before last try, because
-                # something is wrong. If it fails again, we
-                # report the error
-                rm -rf "$l"
-            else
-                sleep 1
-            fi
-            continue
-        fi
-        if [[ ! -d $d ]]; then
-            install -d -m 700 "$d"
-        fi
-        rsmpi_exec_ssh_config_cp "$_rsmpi_ssh_config" "$d/config"
-        rsmpi_exec_ssh_config_cp "$_rsmpi_known_hosts" "$d/known_hosts"
-        rm -rf "$l"
-        return
-    done
-    echo "Unable to create lock=$l; rmdir failed?"
-}
-
-rsmpi_exec_ssh_config_cp() {
-    declare src=$1
-    declare dst=$2
-    if ! cmp "$src" "$dst" >& /dev/null; then
-        install -m 600 "$src" "$dst"
-    fi
-}
-
-rsmpi_help() {
-    {
-        if (( $# > 0 )); then
-            echo "error: $@"
-        fi
-        declare h=$(seq --separator=, 1 "$_rsmpi_num_hosts")
-        cat <<EOF
+    declare h=$(seq --separator=, 1 "$_rsmpi_num_hosts")
+    cat 1>&2 <<EOF
 usage: rsmpi [-n processes] [-h hosts] [-t tasks-per-host] <mpi-command args...>
 
 Starts mpiexec <mpi-command args...> with specified processes and hosts.
@@ -99,12 +80,17 @@ Options:
 For more information, please visit:
 
 https://github.com/radiasoft/devops/wiki/rsmpi
+
+Available hosts:
 EOF
-    }
-    return 1
+    declare i
+    for i in $(seq 1 "$_rsmpi_num_hosts"); do
+        _msg "$i ${_rsmpi_hosts[i-1]}"
+    done
+    exit 1
 }
 
-rsmpi_hosts() {
+_hostfile() {
     declare -i slots=$1
     shift
     declare -i tasks=$1
@@ -126,6 +112,7 @@ rsmpi_hosts() {
     fi
     declare s
     for i in "${hosts[@]}"; do
+        _check_host "${_rsmpi_hosts[i-1]}"
         slots=$(( slots - tasks ))
         s=$tasks
         if (( $slots < 0 )); then
@@ -139,7 +126,7 @@ rsmpi_hosts() {
     echo "$t"
 }
 
-rsmpi_local_ip() {
+_local_ip() {
     #TODO(robnagler) only works for class C
     declare n=${_rsmpi_net%0/*}
     n=^${n//./\\.}
@@ -150,10 +137,10 @@ rsmpi_local_ip() {
             return
         fi
     done
-    return 1
+    _err "cannot determine local ip for network=$_rsmpi_net"
 }
 
-rsmpi_main() {
+_main() {
     declare o OPTARG OPTIND=1 OPTERR h
     declare -i slots=0 tasks=0
     declare -a hosts=()
@@ -161,80 +148,92 @@ rsmpi_main() {
         case $o in
             h)
                 if [[ ! $OPTARG =~ ^[0-9,]+$ ]]; then
-                    rsmpi_help "invalid host spec: $OPTARG"
+                    _help "invalid host spec: $OPTARG"
                 fi
                 IFS=, read -ra hosts <<<$OPTARG
                 declare -A seen=()
                 for h in "${hosts[@]}"; do
                     if (( h < 1 || h > _rsmpi_num_hosts )); then
-                        rsmpi_help "invalid host number: $h"
+                        _help "invalid host number: $h"
                     fi
                     if [[ ${seen[h]+1} ]]; then
-                        rsmpi_help "duplicate host number: $h"
+                        _help "duplicate host number: $h"
                     fi
                     seen[$h]=1
                 done
                 if (( ${#hosts[@]} <= 0 )); then
-                    rsmpi_help "no hosts in: ${hosts[*]}"
+                    _help "no hosts in: ${hosts[*]}"
                 fi
                 ;;
             n)
                 if [[ ! $OPTARG =~ ^[0-9]+$ ]]; then
-                    rsmpi_help "process count must be a number: $OPTARG"
+                    _help "process count must be a number: $OPTARG"
                 fi
                 slots=$OPTARG
                 if (( slots < 1 || slots > _rsmpi_max_slots )); then
-                    rsmpi_help "invalid process count: $slots"
+                    _help "invalid process count: $slots"
                 fi
                 ;;
             t)
                 if [[ ! $OPTARG =~ ^[0-9]+$ ]]; then
-                    rsmpi_help "tasks-per-host count must be a number: $OPTARG"
+                    _help "tasks-per-host count must be a number: $OPTARG"
                 fi
                 tasks=$OPTARG
                 if (( tasks < 1 || tasks > _rsmpi_slots_per_host )); then
-                    rsmpi_help "invalid tasks-per-host count (max=$_rsmpi_slots_per_host): $tasks"
+                    _help "invalid tasks-per-host count (max=$_rsmpi_slots_per_host): $tasks"
                 fi
                 ;;
             *)
-                rsmpi_help
+                _help
                 ;;
         esac
     done
     shift $((OPTIND -1))
     if (( $# <= 0 )); then
-        rsmpi_help 'missing command argument'
+        _help 'missing command argument'
     fi
-    rsmpi_ping
-    rsmpi_exec "$(rsmpi_hosts "$slots" "$tasks" ${hosts[@]+"${hosts[@]}"})" "$@"
+    _exec_mpi "$(_hostfile "$slots" "$tasks" ${hosts[@]+"${hosts[@]}"})" "$@"
 }
 
-rsmpi_ping() {
-    declare h x
-    declare -i i=0 ok=0
-    for h in "${_rsmpi_hosts[@]}"; do
-        i+=1
-        x=$(ssh -F "$_rsmpi_ssh_config" \
-            -o BatchMode=yes \
-            -o ConnectTimeout=2 \
-            -o GlobalKnownHostsFile=/dev/null \
-            -o IdentityFile="$_rsmpi_conf_d/$h"/identity \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            "$h" hostname 2>/dev/null < /dev/null || true)
-        if [[ $x == $h ]]; then
-            ok+=1
-        else
-            echo "host $i ($h) is unavailable" 1>&2
+_msg() {
+    if (( $# )); then
+        echo "$*" 1>&2
+    fi
+}
+
+_setup_ssh_config() {
+    declare d=$HOME/.ssh
+    declare l=$d.lock
+    declare i
+    for i in $(seq 1 10); do
+        if ! mkdir "$l" >& /dev/null; then
+            if (( i == 9 )); then
+                # remove the lock before last try, because
+                # something is wrong. If it fails again, we
+                # report the error
+                rm -rf "$l"
+            else
+                sleep 1
+            fi
+            continue
         fi
-
+        if [[ ! -d $d ]]; then
+            install -d -m 700 "$d"
+        fi
+        _ssh_config_cp "$_rsmpi_ssh_config" "$d/config"
+        _ssh_config_cp "$_rsmpi_known_hosts" "$d/known_hosts"
+        rm -rf "$l"
+        return
     done
-    if (( ok != i )); then
-        echo '
-Your cluster has been reassigned or some nodes are down.
-Please contact support for help with this issue.' 1>&2
-        return 1
+    _err "unable to create lock=$l"
+}
+
+_ssh_config_cp() {
+    declare src=$1
+    declare dst=$2
+    if ! cmp "$src" "$dst" >& /dev/null; then
+        install -m 600 "$src" "$dst"
     fi
 }
 
-rsmpi_main "$@"
+_main "$@"
