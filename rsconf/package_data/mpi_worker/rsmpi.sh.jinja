@@ -38,13 +38,13 @@ _check_host() {
         -o IdentityFile="$_rsmpi_conf_d/$h"/identity \
         -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
-        "$h" bash -norc --noprofile -s "$h" <<'EOF'
+        "$h" bash --norc --noprofile -s "$h" <<'EOF'
 if [[ $(hostname) != $1 ]]; then
     echo 'Your cluster has been reassigned or some nodes are down.
 Please contact support for help with this issue.' 1>&2
     exit 1
 fi
-if [[ ! mpi_is_running ]]; then
+if ! [[ $(ps axwwe) =~ PMI_RANK=0 ]]; then
     find /dev/shm -mindepth 1 -delete
 fi
 EOF
