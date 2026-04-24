@@ -31,18 +31,23 @@ declare -i _rsmpi_num_hosts=${#_rsmpi_ips[@]}
 
 _check_host() {
     declare h=$1
-    declare x
-    x=$(ssh -F "$_rsmpi_ssh_config" \
+    ssh -F "$_rsmpi_ssh_config" \
         -o BatchMode=yes \
         -o ConnectTimeout=2 \
         -o GlobalKnownHostsFile=/dev/null \
         -o IdentityFile="$_rsmpi_conf_d/$h"/identity \
         -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
-        "$h" 'find /dev/shm -mindepth 1 -delete 2>/dev/null || true; hostname' 2>/dev/null < /dev/null || true)
-    if [[ $x != $h ]]; then
-        _err "host $h is unavailable"
-    fi
+        "$h" bash -norc --noprofile -s "$h" <<'EOF'
+if [[ $(hostname) != $1 ]]; then
+    echo 'Your cluster has been reassigned or some nodes are down.
+Please contact support for help with this issue.' 1>&2
+    exit 1
+fi
+if [[ ! mpi_is_running ]]; then
+    find /dev/shm -mindepth 1 -delete
+fi
+EOF
 }
 
 _err() {
@@ -53,12 +58,19 @@ _err() {
 _exec_mpi() {
     declare hostfile=$1
     shift
+    if [[ ! $hostfile ]]; then
+        _err 'unable to create host file'
+    fi
     _setup_ssh_config
     declare a=
     declare x
     for x in $(compgen -A variable | grep -E "($rsmpi_pass_env)"); do
         a+=$x,
     done
+    declare i=$(rsmpi_local_ip)
+    if [[ ! $i ]]; then
+        _err "cannot determine local ip address for network=$_rsmpi_net"
+    fi
     exec mpiexec -f "$hostfile" -localhost "$(_local_ip)" -envlist "${a[@]:0:-1}" "$@"
 }
 
@@ -87,7 +99,7 @@ EOF
     for i in $(seq 1 "$_rsmpi_num_hosts"); do
         _msg "$i ${_rsmpi_hosts[i-1]}"
     done
-    exit 1
+    return 1
 }
 
 _hostfile() {
@@ -137,7 +149,7 @@ _local_ip() {
             return
         fi
     done
-    _err "cannot determine local ip for network=$_rsmpi_net"
+    return 1
 }
 
 _main() {
