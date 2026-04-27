@@ -521,6 +521,8 @@ host:
           https: [ 192.168.1.0/24, 127.0.0.1 ]
         public_ssh_ports: [ 5555, 6666 ]
         public_tcp_ports: [ 9999 ]
+        trusted_hosts:
+          - redirect1.v.radia.run
         devices:
           em1:
             ip: 10.10.10.5

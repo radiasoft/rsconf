@@ -33,8 +33,8 @@
     -A INPUT -i {{ network.inet_dev.name }} -p tcp -m state --state NEW -m tcp --match multiport --dports {{ network.public_tcp_ports | join(',') }} -j ACCEPT
 {% endif %}
 {% if network.trusted_tcp_ports %}
-    {% for n in network.trusted_public_nets %}
-        -A INPUT -i {{ network.inet_dev.name }} -s {{ n }} -p tcp -m state --state NEW -m tcp --match multiport --dports {{ network.trusted_tcp_ports | join(',') }} -j ACCEPT
+    {% for s in network._trusted_sources %}
+        -A INPUT -i {{ network.inet_dev.name }} -s {{ s }} -p tcp -m state --state NEW -m tcp --match multiport --dports {{ network.trusted_tcp_ports | join(',') }} -j ACCEPT
     {% endfor %}
 {% endif %}
 {% if network.public_udp_ports %}
@@ -51,9 +51,9 @@
 -A INPUT -i {{ network.inet_dev.name }} -p tcp -m tcp --tcp-option 128 -j REJECT --reject-with icmp-port-unreachable
 
 {# ssh: Accept our networks always #}
-{% for n in network.trusted_public_nets %}
-    {% set s = ([ 22 ] + network.public_ssh_ports)|unique|join(',') %}
-    -A INPUT -i {{ network.inet_dev.name }} -s {{ n }} -p tcp -m tcp --match multiport --dports {{ s }} -j ACCEPT
+{% for s in network._trusted_sources %}
+    {% set ports = ([ 22 ] + network.public_ssh_ports)|unique|join(',') %}
+    -A INPUT -i {{ network.inet_dev.name }} -s {{ s }} -p tcp -m tcp --match multiport --dports {{ ports }} -j ACCEPT
 {% endfor %}
 {% if network.public_ssh_ports %}
     {% set s = '-A INPUT -i ' + network.inet_dev.name + ' -p tcp -m state --state NEW -m tcp --match multiport --dports ' +  (network.public_ssh_ports|join(',')) %}
