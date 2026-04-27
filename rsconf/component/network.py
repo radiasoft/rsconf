@@ -68,11 +68,15 @@ class T(rsconf.component.T):
                 public_tcp_ports=[],
                 public_udp_ports=[],
                 restricted_public_tcp_ports=PKDict,
+                trusted_hosts=[],
                 trusted_tcp_ports=[],
             )
             self.__trusted_nets = self._nets(self.j2_ctx, z.trusted)
             z.pkupdate(
                 blocked_ips=tuple(str(ipaddress.ip_network(n)) for n in z.blocked_ips),
+                trusted_host_ips=tuple(
+                    sorted(socket.gethostbyname(h) for h in z.trusted_hosts)
+                ),
                 trusted_nets=tuple(sorted(z.trusted.keys())),
                 # TODO(robnagler) Generalize this check in db after #548 is merged
                 use_network_scripts=self.hdb.rsconf_db.is_centos7,

@@ -19,6 +19,7 @@
 
     -A INPUT -i em2 -s 104.237.137.251/32 -p tcp -m tcp --match multiport --dports 22,5555,6666 -j ACCEPT
     -A INPUT -i em2 -s 216.17.132.32/27 -p tcp -m tcp --match multiport --dports 22,5555,6666 -j ACCEPT
+    -A INPUT -i em2 -s 10.10.10.10 -p tcp -m tcp --match multiport --dports 22,5555,6666 -j ACCEPT
     -A INPUT -i em2 -p tcp -m state --state NEW -m tcp --match multiport --dports 5555,6666 -m recent --set --name SSHPROBES --mask 255.255.255.0 --rsource
     -A INPUT -i em2 -p tcp -m state --state NEW -m tcp --match multiport --dports 5555,6666 -m recent --update --seconds 180 --hitcount 6 --name SSHPROBES --mask 255.255.255.0 --rsource -j DROP
     -A INPUT -i em2 -p tcp -m state --state NEW -m tcp --match multiport --dports 5555,6666 -j ACCEPT
