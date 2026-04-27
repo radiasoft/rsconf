@@ -54,16 +54,7 @@ server {
     location = /security.txt {
         rewrite (.*) /static/security.txt;
     }
-{% if not sirepo.wordpress_host %}
-    location = /en {
-        return 301 /en/;
-    }
-    location /en/ {
-        expires {{ sirepo.static_files_expires }};
-        add_header Cache-Control "public";
-        try_files $uri $uri/index.html =404;
-    }
-{% elif sirepo.wordpress_host %}
+{% if sirepo.wordpress_host %}
 {# legacy redirects #}
     location = /en/xray-beamlines.html {
         return 301 /en/apps/x-ray-beamlines/;
@@ -85,6 +76,15 @@ server {
     }
     location ~ ^/(wp-login\.php$|(wp-(admin|content|includes)|en)(/|$)) {
         proxy_pass https://{{ sirepo.wordpress_host }};
+    }
+{% else %}
+    location = /en {
+        return 301 /en/;
+    }
+    location /en/ {
+        expires {{ sirepo.static_files_expires }};
+        add_header Cache-Control "public";
+        try_files $uri $uri/index.html =404;
     }
 {% endif %}
 {% if sirepo.jupyterhub_enabled %}
