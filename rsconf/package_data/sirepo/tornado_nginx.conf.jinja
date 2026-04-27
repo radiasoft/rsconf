@@ -77,6 +77,15 @@ server {
     location ~ ^/(wp-login\.php$|(wp-(admin|content|includes)|en)(/|$)) {
         proxy_pass https://{{ sirepo.wordpress_host }};
     }
+{% else %}
+    location = /en {
+        return 301 /en/;
+    }
+    location /en/ {
+        expires {{ sirepo.static_files_expires }};
+        add_header Cache-Control "public";
+        try_files $uri $uri/index.html =404;
+    }
 {% endif %}
 {% if sirepo.jupyterhub_enabled %}
     location = /{{ sirepo_jupyterhub.uri_root }}/hub/logout {
