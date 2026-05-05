@@ -51,6 +51,7 @@ class T(component.T):
                         feature_config=PKDict(
                             api_modules=[],
                             default_proprietary_sim_types=tuple(),
+                            home_page_subdir="wp_en",
                             moderated_sim_types=tuple(),
                             proprietary_sim_types=tuple(),
                             proprietary_code_tarballs=tuple(),

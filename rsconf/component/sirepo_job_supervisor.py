@@ -42,7 +42,7 @@ class T(component.T):
             jc,
             image=z.docker_image,
             env=self.buildt.get_component("sirepo").sirepo_unit_env(
-                self, exclude_re="^(?:sirepo_pkcli_service|sirepo__)"
+                self, exclude_re="^(?:sirepo_pkcli_service|sirepo__)|home_page_subdir"
             ),
             # TODO(robnagler) wanted by nginx
             volumes=[jc.sirepo.srdb.root],
