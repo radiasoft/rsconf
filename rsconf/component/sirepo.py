@@ -58,6 +58,11 @@ class T(component.T):
                         job=PKDict(
                             max_message_bytes="200m",
                         ),
+                        job_api=PKDict,
+                        job_driver=PKDict(
+                            dev_source_dirs=tuple(),
+                            modules=["docker"],
+                        ),
                         # POSIT: sirepo/package_data/static/img/SirepoLog.png
                         _logo_uri="/static/img/SirepoLogo.png",
                         _maintenance_uri="/static/html/maintenance.html",
@@ -82,8 +87,6 @@ class T(component.T):
                         client_max_body_size=pkconfig.parse_bytes(
                             jc.sirepo.job.max_message_bytes
                         ),
-                        job_api=PKDict,
-                        job_driver=PKDict(modules=["docker"]),
                         job=PKDict(
                             server_secret=lambda: self.secret_path_value(
                                 _SERVER_SECRET,
@@ -134,6 +137,7 @@ class T(component.T):
         self._raydata()
         self._jupyterhublogin(z)
         _defaults_2(jc)
+        self.__docker_vols.extend(z.job_driver.dev_source_dirs)
         # server connects locally only so go direct to tornado.
         # supervisor has different uri to pass to agents.
         z.job_api.supervisor_uri = "http://{}:{}".format(
@@ -146,6 +150,11 @@ class T(component.T):
         from rsconf.component import db_bkp
         from rsconf.component import nginx
         from rsconf.component import docker
+
+        def _cmd_preamble(dev_source_dirs):
+            if not dev_source_dirs:
+                return ""
+            return "export PYTHONPATH='{}'\n".format(":".join(dev_source_dirs))
 
         def _tornado(jc, z):
             nginx.install_vhost(
@@ -164,6 +173,7 @@ class T(component.T):
                 after=self.__docker_unit_enable_after,
                 volumes=self.__docker_vols,
                 static_files_gen=self.__static_files_gen_f,
+                cmd_preamble=_cmd_preamble(z.job_driver.dev_source_dirs),
             )
 
         jc = self.j2_ctx

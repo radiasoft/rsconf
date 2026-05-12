@@ -162,6 +162,7 @@ def docker_unit_enable(
     run_u=None,
     ports=None,
     static_files_gen="",
+    cmd_preamble="",
 ):
     """Must be last call"""
     from rsconf.component import docker_registry
@@ -188,6 +189,7 @@ def docker_unit_enable(
     env.pksetdefault(TZ=":/etc/localtime")
     z.update(
         after=_after(after),
+        cmd_preamble=cmd_preamble,
         exports=_exports(z.instance_spec, env),
         extra_run_flags=_extra_run_flags(z.instance_spec),
         image=docker_registry.absolute_image(compt, j2_ctx, image),

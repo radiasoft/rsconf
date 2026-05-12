@@ -1,0 +1,95 @@
+---
+default:
+  base_os:
+    ip_forward: false
+    volume_groups: {}
+  base_users:
+    add:
+      - {{ user }}
+    spec:
+      {{ user }}:
+        uid: {{ uid }}
+        email: {{ user }}@localhost
+        want_shell: true
+  component:
+    tls_crt_create: true
+  db_bkp:
+    archive_d: /srv/bkp/archive
+    exclude:
+      - /etc/selinux
+    exclude_for_host:
+      localhost: [ /etc/passwd ]
+    hosts:
+      - localhost
+    include:
+      - /etc
+      - /var/log
+    log_dirs:
+      - /var/log
+      - /srv/*/log
+    max_copies: 2
+    max_try: 6
+    mirror_d: /srv/bkp/mirror
+    on_calendar: "8"
+    primary: localhost
+    secondaries: []
+    simple_mirrors: {}
+  docker:
+    iptables: false
+    min_software_version: "23.0.0"
+  logrotate:
+    on_calendar: "7:30"
+    verbose: true
+  network:
+    devices: {}
+    trusted: {}
+  nginx:
+    listen_any: true
+    worker_processes: 1
+  rsconf_db:
+    host_run_d: /srv
+    install_server: http://localhost:2916
+    root_u: root
+    run_u: {{ user }}
+    run_uid: {{ uid }}
+  sirepo:
+    auth:
+      methods:
+        - guest
+      guest:
+        expiry_days: 1
+    docker_image: radiasoft/sirepo
+    job:
+      max_message_bytes: 200m
+    pkcli:
+      service_port: 7000
+      job_supervisor:
+        port: 7001
+
+channel:
+  dev:
+    sirepo:
+      vhost: sirepo.localhost
+
+host:
+  dev:
+    localhost:
+      docker:
+        tls_host: localhost
+      rsconf_db:
+        components:
+          - docker
+          - nginx
+          - sirepo
+          - sirepo_job_supervisor
+      sirepo:
+        job_driver:
+          dev_source_dirs:
+            - /home/{{ user }}/src/radiasoft/sirepo
+            - /home/{{ user }}/src/radiasoft/pykern
+          docker:
+            dev_volumes: true
+            hosts:
+              - localhost
+          modules:
+            - docker

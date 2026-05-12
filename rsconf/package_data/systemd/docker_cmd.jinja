@@ -5,7 +5,7 @@ fi
 set -euo pipefail
 cd '{{ systemd.run_d }}'
 source ./env
-if [[ $@ ]]; then
+{{ systemd.cmd_preamble }}if [[ $@ ]]; then
     exec "$@"
 fi
 exec {{ systemd.docker_exec }}
