@@ -11,6 +11,9 @@ _do() {
     install -o '{{ sirepo._run_u }}' -d "$d"
     {{ systemd.start }} sirepo static_files gen "$d"
     _maintenance_page "$d"
+{% if sirepo.feature_config.home_page_subdir %}
+    ln -s 'static/{{ sirepo.feature_config.home_page_subdir }}' "$d/en"
+{% endif %}
     chown -R {{ sirepo._run_u }}: "$d"
     find "$d" -type d -print0 | xargs -0 chmod 711
     find "$d" -type f -print0 | xargs -0 chmod 444

@@ -11,6 +11,7 @@ _do() {
     install -o 'vagrant' -d "$d"
     /srv/sirepo/start sirepo static_files gen "$d"
     _maintenance_page "$d"
+    ln -s 'static/wp_en' "$d/en"
     chown -R vagrant: "$d"
     find "$d" -type d -print0 | xargs -0 chmod 711
     find "$d" -type f -print0 | xargs -0 chmod 444
