@@ -117,9 +117,11 @@ _hostfile() {
         hosts=( $(seq 1 $_rsmpi_num_hosts) )
     fi
     declare t=/tmp/rsmpi_hosts-
-    # Avoid collisions with parallel executions
-    find "$t"* -mmin +60 -exec rm -f {} \; >& /dev/null || true
     declare i
+    # Avoid collisions with parallel executions
+    for i in "$t"*; do
+        find "$i" -mmin +60 -delete >& /dev/null || true
+    done
     t+=$RANDOM$RANDOM
     if (( slots <= 0 )); then
         slots=$(( ${#hosts[@]} * _rsmpi_slots_per_host ))
