@@ -66,7 +66,7 @@ class _Host(PKDict):
             self.rsconf_db.os_release_version_id = "7"
         else:
             self.rsconf_db.os_release_id = "almalinux"
-            # TODO(schellj) update variable name to install_version_almalinux
+            # TODO(schellj) update variable name to install_version_rhel
             self.rsconf_db.os_release_version_id = os.environ.get(
                 "install_version_centos", "9"
             )
