@@ -388,16 +388,16 @@ def _on_calendar(value, jc, now=None):
     """
 
     def _tz_adjustment():
-        if jc.rsconf_db.is_centos7:
-            return (
-                -int(
-                    pytz.timezone(jc.systemd.timezone)
-                    .utcoffset(now or datetime.datetime.utcnow())
-                    .total_seconds()
-                )
-                // 3600
+        if not jc.rsconf_db.is_centos7:
+            return 0
+        return (
+            -int(
+                pytz.timezone(jc.systemd.timezone)
+                .utcoffset(now or datetime.datetime.utcnow())
+                .total_seconds()
             )
-        return 0
+            // 3600
+        )
 
     x = str(value).split(" ")
     rv = "*-*-*"
