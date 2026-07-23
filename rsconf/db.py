@@ -12,6 +12,7 @@ from pykern import pkresource
 from pykern.pkdebug import pkdc, pkdlog, pkdp, pkdpretty
 import collections
 import copy
+import os
 import random
 import re
 import string
@@ -65,7 +66,10 @@ class _Host(PKDict):
             self.rsconf_db.os_release_version_id = "7"
         else:
             self.rsconf_db.os_release_id = "almalinux"
-            self.rsconf_db.os_release_version_id = ""
+            # TODO(schellj) update variable name to install_version_almalinux
+            self.rsconf_db.os_release_version_id = os.environ.get(
+                "install_version_centos", "9"
+            )
         pkjson.dump_pretty(self, filename=self.rsconf_db.tmp_d.join("db.json"))
         self.dbt = dbt
 
