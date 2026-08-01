@@ -12,6 +12,7 @@ from pykern import pkresource
 from pykern.pkdebug import pkdc, pkdlog, pkdp, pkdpretty
 import collections
 import copy
+import os
 import random
 import re
 import string
@@ -60,13 +61,14 @@ class _Host(PKDict):
             in dbt.base.pkunchecked_nested_get("rsconf_db.centos7_hosts", ())
         )
         # For now this works
-        self.rsconf_db.is_almalinux9 = not self.rsconf_db.is_centos7
         if self.rsconf_db.is_centos7:
             self.rsconf_db.os_release_id = "centos"
             self.rsconf_db.os_release_version_id = "7"
         else:
             self.rsconf_db.os_release_id = "almalinux"
-            self.rsconf_db.os_release_version_id = "9"
+            self.rsconf_db.os_release_version_id = os.environ.get(
+                "install_version_rhel", "9"
+            )
         pkjson.dump_pretty(self, filename=self.rsconf_db.tmp_d.join("db.json"))
         self.dbt = dbt
 

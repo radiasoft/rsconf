@@ -12,7 +12,7 @@ def test_on_calendar():
     import datetime
 
     jc = PKDict(
-        rsconf_db=PKDict(is_almalinux9=False), systemd=PKDict(timezone="America/Denver")
+        rsconf_db=PKDict(is_centos7=True), systemd=PKDict(timezone="America/Denver")
     )
     d = datetime.datetime(2019, 8, 1)
     s = datetime.datetime(2019, 12, 1)
@@ -37,7 +37,6 @@ def test_on_calendar():
     with pkexcept("midnight"):
         _on_calendar("1 18:30", jc, s)
     jc = PKDict(
-        rsconf_db=PKDict(is_almalinux9=False), systemd=PKDict(timezone="America/Denver")
+        rsconf_db=PKDict(is_centos7=False), systemd=PKDict(timezone="America/Denver")
     )
-    jc.rsconf_db.is_almalinux9 = True
     pkeq("*-*-* 3:0:0 America/Denver", _on_calendar("3", jc, d))

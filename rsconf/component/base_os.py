@@ -79,7 +79,7 @@ class T(rsconf.component.T):
             )
         self.install_resource2("hostname", "/etc", access="444")
         self.install_resource2("motd", "/etc")
-        if self.hdb.rsconf_db.is_almalinux9:
+        if not self.hdb.rsconf_db.is_centos7:
             self.install_resource2(
                 "99-journald-rsconf.conf",
                 _JOURNAL_SYSTEMD_D,
