@@ -58,6 +58,10 @@ base_os_journal_persist() {
     rsconf_service_trigger_restart systemd-journald
 }
 
+base_os_kernel_modules_extra() {
+    : bash requires a non-empty body
+}
+
 base_os_logical_volume() {
     declare name=$1 gigabytes=$2 vg=$3 mount_d=$4 mode=$5
     declare dev="/dev/mapper/$vg-$name"
@@ -112,6 +116,7 @@ base_os_main() {
     fi
     base_os_chrony
     base_os_journal_persist
+    base_os_kernel_modules_extra
     rsconf_edit_no_change_res=0 rsconf_append /etc/screenrc 'escape ^^^^'
     base_os_logical_volumes
     base_os_postfix
