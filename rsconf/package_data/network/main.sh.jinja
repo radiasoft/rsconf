@@ -1,5 +1,17 @@
 #!/bin/bash
 
+network_assert_iptables_modules() {
+    # nft_compat is required for iptables-nft rules, xt_recent for --mask.
+    # Some releases have moved them from the base to kernel-modules-extra.
+    if modinfo nft_compat xt_recent >& /dev/null; then
+        return
+    fi
+    rsconf_yum_install "kernel-modules-extra-$(uname -r)"
+    if ! modinfo nft_compat xt_recent >& /dev/null; then
+        install_err "nft_compat or xt_recent missing for kernel $(uname -r)"
+    fi
+}
+
 network_firewalld_disable() {
     if [[ $(systemctl is-active firewalld) == active ]]; then
         systemctl stop firewalld
@@ -9,6 +21,7 @@ network_firewalld_disable() {
 }
 
 network_iptables_enable() {
+    network_assert_iptables_modules
     if [[ $(systemctl is-active iptables 2>&1 || true) == active ]]; then
         # Just in case, make sure enabled
         systemctl enable iptables
