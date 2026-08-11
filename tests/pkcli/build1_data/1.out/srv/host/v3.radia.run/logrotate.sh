@@ -15,7 +15,6 @@ rsconf_install_file '/etc/logrotate.conf' 'c59f3376adf6ef244541b8ae596cc304'
 logrotate_main
 }
 #!/bin/bash
-shopt -s nullglob
 
 logrotate_main() {
     # We use a systemd timer so can have output in the journal, and not emailed (anacron requires email)
@@ -33,7 +32,8 @@ logrotate_main() {
             's/\brotate/#rotate/'
     fi
     for f in /etc/logrotate.d/*; do
-        if grep --no-messages --quiet ' delaycompress' "$f"; then
+        # without nullglob f could be /etc/logrotate.d/* literal
+        if [[ -f $f ]] && grep --no-messages --quiet ' delaycompress' "$f"; then
             rsconf_edit_no_change_res=0 rsconf_edit "$f" '#delaycompress' \
                's/\bdelaycompress/#delaycompress/'
         fi
