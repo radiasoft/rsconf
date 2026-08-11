@@ -69,3 +69,4 @@ rsconf_systemctl_restart_NetworkManager() {
     nmcli connection reload eth0 || nmcli connection up eth0
     nmcli connection reload eth1 || nmcli connection up eth1
 }
+

@@ -63,3 +63,5 @@ network_manager_enable() {
     rsconf_yum_install NetworkManager
     # enable happens in rsconf_systemctl
 }
+
+
