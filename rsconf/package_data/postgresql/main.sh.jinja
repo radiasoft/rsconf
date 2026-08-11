@@ -29,8 +29,11 @@ postgresql_log() {
     if [[ ! -L $old ]]; then
         install -d -m 700 '{{ postgresql.log_d }}'
         # save the old logs, just in case
-        for f in $(ls -tr "$old"/*.log 2>/dev/null || true); do
-            cat $f >> '{{ postgresql.log_f }}'
+        # don't use glob with ls to prevent listing cwd if nullglob and old is missing/empty
+        for f in $(ls -tr "$old" 2>/dev/null || true); do
+            if [[ $f == *.log ]]; then
+                cat "$old/$f" >> '{{ postgresql.log_f }}'
+            fi
         done
         chown -R postgres:postgres '{{ postgresql.log_d }}'
         rm -rf "$old"
