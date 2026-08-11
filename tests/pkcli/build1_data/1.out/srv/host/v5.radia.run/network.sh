@@ -13,8 +13,8 @@ network_main
 #!/bin/bash
 
 network_assert_iptables_modules() {
-    # nft_compat is required by all iptables-nft rules, xt_recent by --mask.
-    # Some releases ship them in kernel-modules-extra, not the base kernel.
+    # nft_compat is required for iptables-nft rules, xt_recent for --mask.
+    # Some releases have moved them from the base to kernel-modules-extra.
     if modinfo nft_compat xt_recent >& /dev/null; then
         return
     fi
@@ -69,4 +69,3 @@ rsconf_systemctl_restart_NetworkManager() {
     nmcli connection reload eth0 || nmcli connection up eth0
     nmcli connection reload eth1 || nmcli connection up eth1
 }
-
