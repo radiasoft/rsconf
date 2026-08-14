@@ -51,12 +51,7 @@ postgresql_log() {
     if [[ ! -L $old ]]; then
         install -d -m 700 '/var/log/postgresql'
         # save the old logs, just in case
-        # don't use glob with ls to prevent listing cwd if nullglob and old is missing/empty
-        for f in $(ls -tr "$old" 2>/dev/null || true); do
-            if [[ $f == *.log ]]; then
-                cat "$old/$f" >> '/var/log/postgresql/postgresql.log'
-            fi
-        done
+        cat "$old"/*.log /dev/null >> '/var/log/postgresql/postgresql.log'
         chown -R postgres:postgres '/var/log/postgresql'
         rm -rf "$old"
         ln -r -s '/var/log/postgresql' "$old"
