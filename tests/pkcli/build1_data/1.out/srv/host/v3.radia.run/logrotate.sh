@@ -32,8 +32,7 @@ logrotate_main() {
             's/\brotate/#rotate/'
     fi
     for f in /etc/logrotate.d/*; do
-        # without nullglob f could be /etc/logrotate.d/* literal
-        if [[ -f $f ]] && grep --no-messages --quiet ' delaycompress' "$f"; then
+        if grep --no-messages --quiet ' delaycompress' "$f"; then
             rsconf_edit_no_change_res=0 rsconf_edit "$f" '#delaycompress' \
                's/\bdelaycompress/#delaycompress/'
         fi
