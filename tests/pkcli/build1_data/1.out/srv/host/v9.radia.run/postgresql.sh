@@ -48,6 +48,9 @@ postgresql_install() {
 
 postgresql_log() {
     local old=/var/lib/pgsql/data/pg_log
+    if [[ '/var/log/postgresql' == "$old" ]]; then
+        install_err "postgresql.log_d must not be $old, which is replaced with a symlink"
+    fi
     if [[ ! -L $old ]]; then
         install -d -m 700 '/var/log/postgresql'
         # save the old logs, just in case
