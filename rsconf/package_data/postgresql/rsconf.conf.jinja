@@ -23,7 +23,12 @@ ssl_key_file = '{{ postgresql.ssl_key_file }}'
 autovacuum_analyze_scale_factor = 0.2
 autovacuum_vacuum_scale_factor = 0.05
 checkpoint_completion_target = 0.9
+{# Centos7 is the only supported OS using < v9.5, where checkpoint_segments became max_wal_size #}
+{% if rsconf_db.is_centos7 %}
 checkpoint_segments = 64
+{% else %}
+max_wal_size = 3GB
+{% endif %}
 cpu_operator_cost = 0.5
 cpu_tuple_cost = 0.05
 maintenance_work_mem = 1GB

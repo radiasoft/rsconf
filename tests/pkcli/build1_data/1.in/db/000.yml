@@ -431,7 +431,7 @@ host:
         postfix_base():
         smart_host: v4.radia.run
       rsconf_db:
-        components: [ mpi_worker ]
+        components: [ mpi_worker, postgresql ]
     v6.radia.run:
       docker:
         tls_host: v6.radia.run
