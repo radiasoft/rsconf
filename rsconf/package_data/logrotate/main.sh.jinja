@@ -1,5 +1,4 @@
 #!/bin/bash
-shopt -s nullglob
 
 logrotate_main() {
     # We use a systemd timer so can have output in the journal, and not emailed (anacron requires email)

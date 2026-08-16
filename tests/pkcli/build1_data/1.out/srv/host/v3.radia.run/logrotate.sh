@@ -15,7 +15,6 @@ rsconf_install_file '/etc/logrotate.conf' 'c59f3376adf6ef244541b8ae596cc304'
 logrotate_main
 }
 #!/bin/bash
-shopt -s nullglob
 
 logrotate_main() {
     # We use a systemd timer so can have output in the journal, and not emailed (anacron requires email)
