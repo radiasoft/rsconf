@@ -1,6 +1,8 @@
 #!/bin/bash
 spamd_rsconf_component() {
 rsconf_service_prepare 'spamd' '/etc/systemd/system/spamd.service' '/etc/systemd/system/spamd.service.d' '/srv/spamd' 'bivio-perl-dev.rpm' 'perl-Bivio-dev.rpm' '/etc/mail/spamassassin'
+rsconf_install_access '755' 'root' 'root'
+rsconf_install_directory '/etc/mail'
 rsconf_install_access '755' 'vagrant' 'vagrant'
 rsconf_install_directory '/etc/mail/spamassassin'
 rsconf_install_directory '/run/spamd'
