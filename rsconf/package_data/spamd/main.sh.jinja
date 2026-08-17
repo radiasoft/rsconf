@@ -1,7 +1,7 @@
 #!/bin/bash
 
 spamd_main() {
-    find {{ spamd.sa_update_keys_d }} ! -user root \
+    find {{ spamd.conf_d }} -path '{{ spamd.sa_update_keys_d }}*' ! -user root \
         | xargs --no-run-if-empty chown root:root
     # replace logrotate, which limits rotations and restarts spamd
     # sought.conf is removed, but Red Hat won't fix:

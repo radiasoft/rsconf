@@ -26,7 +26,7 @@ rsconf_install_file '/etc/systemd/system/spamd.service' 'f42ec8d8a0eaa370b3853dc
 #!/bin/bash
 
 spamd_main() {
-    find /etc/mail/spamassassin/sa-update-keys ! -user root \
+    find /etc/mail/spamassassin -path '/etc/mail/spamassassin/sa-update-keys*' ! -user root \
         | xargs --no-run-if-empty chown root:root
     # replace logrotate, which limits rotations and restarts spamd
     # sought.conf is removed, but Red Hat won't fix:
