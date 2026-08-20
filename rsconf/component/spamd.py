@@ -17,8 +17,7 @@ class T(component.T):
 
         self.buildt.require_component("base_all")
         jc, z = self.j2_ctx_init()
-        z.mail_d = pkio.py_path("/etc/mail")
-        z.conf_d = z.mail_d.join("spamassassin")
+        z.conf_d = pkio.py_path("/etc/mail/spamassassin")
         z.sa_update_keys_d = z.conf_d.join("sa-update-keys")
         z.trusted_networks = " ".join(
             self.buildt.get_component("network").trusted_nets()
@@ -38,9 +37,7 @@ class T(component.T):
         systemd.custom_unit_prepare(
             self, jc, watch_files=bop.install_perl_rpms(self, jc) + [z.conf_d]
         )
-        self.install_access(mode="755", owner=jc.rsconf_db.root_u)
-        self.install_directory(z.mail_d)
-        self.install_access(owner=jc.rsconf_db.run_u)
+        self.install_access(mode="755", owner=jc.rsconf_db.run_u)
         self.install_directory(z.conf_d)
         self.install_directory(z.socket_d)
         # TODO: should be systemd since it knows the directory/perms
