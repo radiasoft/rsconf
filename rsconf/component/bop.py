@@ -30,6 +30,7 @@ class T(component.T):
         from rsconf.component import logrotate
         from rsconf.component import nginx
 
+        self.buildt.require_component("bop_perl")
         if self.name == "bop":
             self.hdb.bop.update(
                 pkcollections.Dict(
@@ -153,21 +154,22 @@ class T(component.T):
                 self.bopt.hdb.bop.mail_domains[m] = z.listen_base
 
 
-def install_perl_rpms(compt, j2_ctx, perl_root=None):
-    from rsconf import systemd
+def install_common_perl_rpms(compt, j2_ctx):
+    """Installs container-perl and `COMMON_RPMS` for `bop_perl`
 
-    if not compt.hdb.bop.setdefault("_perl_installed", False):
-        compt.hdb.bop._perl_installed = True
-        compt.append_root_bash("install_repo_eval biviosoftware/container-perl base")
+    Must be called during build_compile.
+    """
+    compt.append_root_bash("install_repo_eval biviosoftware/container-perl base")
+    return _install_perl_rpms(compt, j2_ctx, COMMON_RPMS)
+
+
+def install_perl_rpms(compt, j2_ctx, perl_root=None):
+    """Returns the rpms to watch; `bop_perl` installs `COMMON_RPMS`"""
     todo = list(COMMON_RPMS)
     if perl_root and perl_root != PETSHOP_ROOT:
         todo.append("perl-{}".format(perl_root))
     todo.extend(j2_ctx[compt.name].get("aux_perl_rpms", []))
-    watch = []
-    c = j2_ctx.bop.setdefault("perl_rpm_channel", j2_ctx.rsconf_db.channel)
-    for r in todo:
-        watch.append(compt.install_perl_rpm(j2_ctx, r, channel=c))
-    return watch
+    return _install_perl_rpms(compt, j2_ctx, todo)
 
 
 def merge_app_vars(j2_ctx, app_name):
@@ -198,6 +200,11 @@ def merge_app_vars(j2_ctx, app_name):
     z.httpd_cmd = "/usr/sbin/httpd -d '{}' -f '{}'".format(z.run_d, z.conf_f)
     z.local_file_root_d = pkio.py_path("/var/www/facades")
     return z
+
+
+def _install_perl_rpms(compt, j2_ctx, rpms):
+    c = j2_ctx.bop.setdefault("perl_rpm_channel", j2_ctx.rsconf_db.channel)
+    return [compt.install_perl_rpm(j2_ctx, r, channel=c) for r in rpms]
 
 
 def _domain(j2_ctx, vh):

@@ -5,6 +5,7 @@ rsconf_require network
 rsconf_require base_users
 rsconf_require logrotate
 rsconf_require base_all
+rsconf_require bop_perl
 rsconf_require postgrey
 rsconf_require spamd
 rsconf_require postfix

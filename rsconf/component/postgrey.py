@@ -14,7 +14,7 @@ class T(component.T):
         from rsconf import systemd
         from rsconf.component import network
 
-        self.buildt.require_component("base_all")
+        self.buildt.require_component("base_all", "bop_perl")
         jc, z = self.j2_ctx_init()
         z.run_d = systemd.unit_run_d(jc, self.name)
         z.update(

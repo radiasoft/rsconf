@@ -15,7 +15,7 @@ class T(component.T):
         from rsconf import systemd
         from rsconf.component import network
 
-        self.buildt.require_component("base_all")
+        self.buildt.require_component("base_all", "bop_perl")
         jc, z = self.j2_ctx_init()
         z.conf_d = pkio.py_path("/etc/mail/spamassassin")
         z.sa_update_keys_d = z.conf_d.join("sa-update-keys")
