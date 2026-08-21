@@ -21,9 +21,7 @@ class T(component.T):
         jc, z = self.j2_ctx_init()
         self.buildt.require_component("postfix")
         self.append_root_bash("rsconf_yum_install opendkim")
-        # TODO: remove port config. the milter changed to use a unix socket. Accepted so hosts
-        # that still set it don't fail to build.
-        z.pksetdefault(port=8891, smtp_clients=[])
+        z.pksetdefault(smtp_clients=[])
         z.update(
             external_ignore_list_f=_CONF_D.join("ExternalIgnoreList"),
             internal_hosts_f=_CONF_D.join("InternalHosts"),
