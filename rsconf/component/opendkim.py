@@ -12,6 +12,7 @@ from rsconf import component
 
 _CONF_D = pkio.py_path("/etc/opendkim")
 _CONF_F = _CONF_D.new(ext=".conf")
+_RUN_D = pkio.py_path("/run/opendkim")
 _SECRET_SUBDIR = "opendkim"
 
 
@@ -20,14 +21,19 @@ class T(component.T):
         jc, z = self.j2_ctx_init()
         self.buildt.require_component("postfix")
         self.append_root_bash("rsconf_yum_install opendkim")
+        # TODO: remove port config. the milter changed to use a unix socket. Accepted so hosts
+        # that still set it don't fail to build.
         z.pksetdefault(port=8891, smtp_clients=[])
         z.update(
             external_ignore_list_f=_CONF_D.join("ExternalIgnoreList"),
             internal_hosts_f=_CONF_D.join("InternalHosts"),
             key_table_f=_CONF_D.join("KeyTable"),
             keys_d=_CONF_D.join("keys"),
+            # postfix connects to socket_f so must be able to write it
+            run_g="postfix",
             run_u="opendkim",
             signing_table_f=_CONF_D.join("SigningTable"),
+            socket_f=_RUN_D.join("opendkim.sock"),
         )
         self._read_keys(jc, z)
         self.buildt.get_component("postfix").setup_opendkim(self)

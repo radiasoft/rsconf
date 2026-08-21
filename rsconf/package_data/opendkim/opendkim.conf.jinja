@@ -10,9 +10,9 @@ PidFile /run/opendkim/opendkim.pid
 SendReports no
 SignHeaders Cc,Content-Type,Date,From,In-Reply-To,Message-Id,Mime-Version,References,Reply-To,Subject,To
 SigningTable refile:{{ opendkim.signing_table_f }}
-Socket inet:{{ opendkim.port }}@localhost
+Socket local:{{ opendkim.socket_f }}
 SoftwareHeader no
 Syslog yes
 SyslogSuccess yes
 Umask 007
-UserID {{ opendkim.run_u }}:{{ opendkim.run_u }}
+UserID {{ opendkim.run_u }}:{{ opendkim.run_g }}
