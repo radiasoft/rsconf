@@ -19,7 +19,7 @@ class T(component.T):
         from rsconf import db
         from rsconf.component import bop
 
-        self.buildt.require_component("postgresql", "postfix", "bop_perl")
+        self.buildt.require_component("postgresql", "postfix", "perl_rpms")
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.btest
         z.run_u = j2_ctx.rsconf_db.run_u
