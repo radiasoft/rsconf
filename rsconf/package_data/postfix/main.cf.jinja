@@ -92,11 +92,11 @@ smtpd_sender_restrictions =
 {#
     Conditional Custom Config: alphabetical by conditional
 #}
-{% if postfix.opendkim_port %}
+{% if postfix.opendkim_socket_f %}
 milter_default_action = tempfail
 milter_protocol = 2
-smtpd_milters = inet:localhost:{{ postfix.opendkim_port }}
-non_smtpd_milters = inet:localhost:{{ postfix.opendkim_port }}
+smtpd_milters = unix:{{ postfix.opendkim_socket_f }}
+non_smtpd_milters = unix:{{ postfix.opendkim_socket_f }}
 internal_mail_filter_classes = bounce, notify
 {% endif %}
 {% if not postfix.have_public_smtp %}
