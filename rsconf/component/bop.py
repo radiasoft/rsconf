@@ -153,14 +153,21 @@ class T(component.T):
 
 
 def install_perl_rpms(compt, j2_ctx, perl_root=None):
-    """Returns the rpms to watch; `perl_rpms` installs `COMMON_RPMS`"""
+    """Installs the app's rpms
+
+    Returns:
+        list: rpm files to watch
+    """
     from rsconf.component import perl_rpms
 
-    todo = list(perl_rpms.COMMON_RPMS)
+    todo = []
     if perl_root and perl_root != PETSHOP_ROOT:
         todo.append("perl-{}".format(perl_root))
     todo.extend(j2_ctx[compt.name].get("aux_perl_rpms", []))
-    return perl_rpms.install_rpms(compt, j2_ctx, todo)
+    c = perl_rpms.rpm_channel(compt)
+    return perl_rpms.watch_files(compt) + [
+        compt.install_perl_rpm(j2_ctx, r, channel=c) for r in todo
+    ]
 
 
 def merge_app_vars(j2_ctx, app_name):

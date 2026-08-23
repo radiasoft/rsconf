@@ -27,8 +27,8 @@ class T(component.T):
         )
 
     def internal_build_write(self):
-        from rsconf.component import perl_rpms
         from rsconf import systemd
+        from rsconf.component import perl_rpms
 
         jc = self.j2_ctx
         z = jc[self.name]
