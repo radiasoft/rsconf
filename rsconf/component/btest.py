@@ -103,9 +103,8 @@ class T(component.T):
                 z.app_run_f,
             )
             z.run_app_cmds += "{}\n".format(z.app_run_f)
-            bop.install_perl_rpms(
-                self,
-                j2_ctx,
+            self.buildt.get_component("perl_rpms").add_rpms(
+                rpms=z.get("aux_perl_rpms", ()),
                 perl_root=z.perl_root,
             )
         self.install_access(mode="500", owner=z.run_u)

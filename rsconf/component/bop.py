@@ -58,11 +58,13 @@ class T(component.T):
             return
         j2_ctx = self.hdb.j2_ctx_copy()
         z = merge_app_vars(j2_ctx, self.name)
-        watch = install_perl_rpms(self, j2_ctx, perl_root=z.perl_root)
         systemd.custom_unit_prepare(
             self,
             j2_ctx,
-            watch_files=watch,
+            watch_files=self.buildt.get_component("perl_rpms").add_rpms(
+                rpms=j2_ctx[self.name].get("aux_perl_rpms", ()),
+                perl_root=z.perl_root,
+            ),
             scripts=("start", "stop", "reload"),
         )
         systemd.custom_unit_enable(
@@ -150,24 +152,6 @@ class T(component.T):
                     vh.mail_domains = [h]
             for m in vh.get("mail_domains", []):
                 self.bopt.hdb.bop.mail_domains[m] = z.listen_base
-
-
-def install_perl_rpms(compt, j2_ctx, perl_root=None):
-    """Installs the app's rpms
-
-    Returns:
-        list: rpm files to watch
-    """
-    from rsconf.component import perl_rpms
-
-    todo = []
-    if perl_root and perl_root != PETSHOP_ROOT:
-        todo.append("perl-{}".format(perl_root))
-    todo.extend(j2_ctx[compt.name].get("aux_perl_rpms", []))
-    c = perl_rpms.rpm_channel(compt)
-    return perl_rpms.watch_files(compt) + [
-        compt.install_perl_rpm(j2_ctx, r, channel=c) for r in todo
-    ]
 
 
 def merge_app_vars(j2_ctx, app_name):
