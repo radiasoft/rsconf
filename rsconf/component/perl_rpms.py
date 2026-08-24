@@ -17,7 +17,7 @@ class T(component.T):
         """Adds `rpms` and the rpm for `perl_root` to the rpms to install
 
         Args:
-            rpms (iterable): rpms in addition to `COMMON_RPMS` [()]
+            rpms (iterable): to be installed
             perl_root (str): perl root of an app, e.g. Bivio::PetShop [None]
         Returns:
             tuple: rpm files to watch
