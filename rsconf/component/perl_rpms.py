@@ -20,7 +20,7 @@ class T(component.T):
 
         Args:
             rpms (iterable): rpms in addition to `COMMON_RPMS` [()]
-            perl_root (str): perl root of an app, e.g. Bivio::BOP [None]
+            perl_root (str): perl root of an app, e.g. Bivio::PetShop [None]
         Returns:
             tuple: rpm files to watch
         """
