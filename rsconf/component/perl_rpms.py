@@ -4,6 +4,8 @@
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 
+from pykern.pkcollections import PKDict
+from pykern.pkdebug import pkdc, pkdlog, pkdp
 from rsconf import component
 
 #: Petshop doesn't have a separate RPM so needs to be excluded below
@@ -31,7 +33,10 @@ class T(component.T):
     def internal_build_compile(self):
         self.buildt.require_component("base_all")
         jc, z = self.j2_ctx_init()
-        self._rpm_channel = z.setdefault("rpm_channel", jc.rsconf_db.channel)
+        self.j2_ctx_pksetdefault(
+            PKDict(perl_rpms=PKDict(rpm_channel=jc.rsconf_db.channel)),
+        )
+        self._rpm_channel = z.rpm_channel
         self._todo = set()
 
     def internal_build_write(self):
