@@ -22,7 +22,6 @@ class T(component.T):
         Returns:
             tuple: rpm files to watch
         """
-        assert self._todo is not None, "{}: rpms already installed".format(self.name)
         r = tuple(rpms)
         if perl_root and perl_root != _BIVIO_PETSHOP:
             r += (f"perl-{perl_root}",)
