@@ -16,7 +16,7 @@ class T(component.T):
         from rsconf.component import network
 
         self.buildt.require_component("base_all", "perl_rpms")
-        self.perl_rpm_files = self.buildt.get_component("perl_rpms").add_rpms()
+        self._perl_rpm_files = self.buildt.get_component("perl_rpms").add_rpms()
         jc, z = self.j2_ctx_init()
         z.conf_d = pkio.py_path("/etc/mail/spamassassin")
         z.sa_update_keys_d = z.conf_d.join("sa-update-keys")
@@ -35,7 +35,7 @@ class T(component.T):
         jc = self.j2_ctx
         z = jc[self.name]
         systemd.custom_unit_prepare(
-            self, jc, watch_files=self.perl_rpm_files + [z.conf_d]
+            self, jc, watch_files=self._perl_rpm_files + (z.conf_d,)
         )
         self.install_access(mode="755", owner=jc.rsconf_db.run_u)
         self.install_directory(z.conf_d)

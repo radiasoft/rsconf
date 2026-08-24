@@ -6,9 +6,9 @@
 
 from rsconf import component
 
-COMMON_RPMS = ("bivio-perl", "perl-Bivio")
 
 _COMMON_PERL_ROOTS = ("Bivio::PetShop",)
+_COMMON_RPMS = ("bivio-perl", "perl-Bivio")
 
 
 class T(component.T):
@@ -38,7 +38,7 @@ class T(component.T):
 
     def internal_build_write(self):
         self.append_root_bash("install_repo_eval biviosoftware/container-perl base")
-        for r in COMMON_RPMS + tuple(sorted(self._todo)):
+        for r in _COMMON_RPMS + tuple(sorted(self._todo)):
             self.install_perl_rpm(self.j2_ctx, r, channel=self._rpm_channel)
         self._todo = None
 
