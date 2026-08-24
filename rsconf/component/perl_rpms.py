@@ -21,14 +21,14 @@ class T(component.T):
             rpms (iterable): rpms in addition to `COMMON_RPMS` [()]
             perl_root (str): perl root of an app, e.g. Bivio::BOP [None]
         Returns:
-            list: rpm files to watch
+            tuple: rpm files to watch
         """
         assert self._todo is not None, "{}: rpms already installed".format(self.name)
         r = tuple(rpms)
         if perl_root and perl_root not in _COMMON_PERL_ROOTS:
             r += ("perl-{}".format(perl_root),)
         self._todo.update(r)
-        return [self._rpm_file(x) for x in COMMON_RPMS + r]
+        return tuple(self._rpm_file(x) for x in _COMMON_RPMS + r)
 
     def internal_build_compile(self):
         self.buildt.require_component("base_all")
