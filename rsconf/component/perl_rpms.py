@@ -6,8 +6,9 @@
 
 from rsconf import component
 
+#: Petshop doesn't have a separate RPM so needs to be excluded below
+_BIVIO_PETSHOP = "Bivio::PetShop"
 
-_COMMON_PERL_ROOTS = ("Bivio::PetShop",)
 _COMMON_RPMS = ("bivio-perl", "perl-Bivio")
 
 
@@ -25,8 +26,8 @@ class T(component.T):
         """
         assert self._todo is not None, "{}: rpms already installed".format(self.name)
         r = tuple(rpms)
-        if perl_root and perl_root not in _COMMON_PERL_ROOTS:
-            r += ("perl-{}".format(perl_root),)
+        if perl_root and perl_root != _BIVIO_PETSHOP:
+            r += (f"perl-{perl_root}",)
         self._todo.update(r)
         return tuple(self._rpm_file(x) for x in _COMMON_RPMS + r)
 
