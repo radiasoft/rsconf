@@ -16,8 +16,6 @@ class T(component.T):
     def add_rpms(self, rpms=(), perl_root=None):
         """Adds `rpms` and the rpm for `perl_root` to the rpms to install
 
-        Must be called during build_compile.
-
         Args:
             rpms (iterable): rpms in addition to `COMMON_RPMS` [()]
             perl_root (str): perl root of an app, e.g. Bivio::PetShop [None]
