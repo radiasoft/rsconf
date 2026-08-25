@@ -45,6 +45,9 @@ class T(component.T):
         z = jc[self.name]
         systemd.unit_prepare(self, jc, watch_files=(_CONF_D, _CONF_F))
         self._install_conf(jc, z, self._install_keys(jc, z))
+        # the unit sets Group so opendkim starts unprivileged and cannot honor
+        # UserID's group, which is what gives the socket its group
+        systemd.install_unit_override(self, jc)
         systemd.unit_enable(self, jc)
 
     def _install_conf(self, jc, z, key_list):
