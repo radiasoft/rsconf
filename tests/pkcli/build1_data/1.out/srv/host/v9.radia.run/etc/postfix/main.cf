@@ -72,8 +72,8 @@ smtpd_sender_restrictions =
     reject_unknown_sender_domain
 milter_default_action = tempfail
 milter_protocol = 2
-smtpd_milters = unix:/run/opendkim/opendkim.sock
-non_smtpd_milters = unix:/run/opendkim/opendkim.sock
+smtpd_milters = inet:localhost:8891
+non_smtpd_milters = inet:localhost:8891
 internal_mail_filter_classes = bounce, notify
 smtpd_tls_security_level = may
 local_recipient_maps =
