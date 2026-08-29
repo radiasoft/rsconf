@@ -139,12 +139,12 @@ rsconf_group() {
         fi
         return
     fi
-    declare flags=()
+    declare system_flag=
     #POSIT: <1000 is system
-        flags+=( -r )
     if (( gid < 1000 )); then
+        system_flag=-r
     fi
-    groupadd "${flags[@]}" -g "$gid" "$group"
+    groupadd $system_flag -g "$gid" "$group"
 }
 
 rsconf_install_access() {
