@@ -141,8 +141,8 @@ rsconf_group() {
     fi
     declare flags=()
     #POSIT: <1000 is system
-    if [[ $gid < 1000 ]]; then
         flags+=( -r )
+    if (( gid < 1000 )); then
     fi
     groupadd "${flags[@]}" -g "$gid" "$group"
 }
