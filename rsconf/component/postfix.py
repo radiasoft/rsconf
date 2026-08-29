@@ -58,7 +58,7 @@ class T(component.T):
             sasl_host_users=[],
         )
         z.have_sasl = bool(z.get("sasl_users") or z.get("sasl_host_users"))
-        z.opendkim_socket_f = None
+        z.opendkim_milter = None
         z.local_host_names = []
         self._setup_mynames(jc, z)
 
@@ -109,7 +109,7 @@ class T(component.T):
 
     def setup_opendkim(self, opendkim):
         z = self.j2_ctx.postfix
-        z.opendkim_socket_f = opendkim.j2_ctx.opendkim.socket_f
+        z.opendkim_milter = opendkim.j2_ctx.opendkim.milter
 
     def _setup_mynames(self, jc, z):
         jc = self.j2_ctx

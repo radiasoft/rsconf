@@ -9,6 +9,7 @@ rsconf_require postgrey
 rsconf_require spamd
 rsconf_require postfix
 rsconf_require nfs_server
+rsconf_require opendkim
 rsconf_require db_bkp
 rsconf_require docker
 rsconf_require nginx

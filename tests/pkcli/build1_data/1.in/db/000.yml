@@ -368,7 +368,7 @@ host:
         #components: [ rsconf, docker_registry, btest ]
 #        components: [ bop ]
         #components: [ bkp, jupyterhub, jupyterhub_proxy ]
-        components: [ postfix, nfs_server, sirepo, script ]
+        components: [ postfix, nfs_server, opendkim, sirepo, script ]
       script:
         rsconf_bash: |
           echo hello
@@ -549,6 +549,7 @@ host:
           /exports/foo: [ 10.10.10.0/24, localhost ]
       opendkim:
         smtp_clients: [ v4.radia.run ]
+        want_unix_socket: true
       postfix:
         postfix_base():
         # if you do not set this, you'll get to test the SLD matching:

@@ -10,7 +10,7 @@ PidFile /run/opendkim/opendkim.pid
 SendReports no
 SignHeaders Cc,Content-Type,Date,From,In-Reply-To,Message-Id,Mime-Version,References,Reply-To,Subject,To
 SigningTable refile:{{ opendkim.signing_table_f }}
-Socket local:{{ opendkim.socket_f }}
+Socket {{ opendkim.socket }}
 SoftwareHeader no
 Syslog yes
 SyslogSuccess yes
