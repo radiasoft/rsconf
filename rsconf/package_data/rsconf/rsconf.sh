@@ -275,7 +275,7 @@ rsconf_install_perl_rpm() {
     declare rpm_base=$1
     declare rpm_file=$2
     declare rpm_version=$3
-    declare prev_version=$(rpm -q "$rpm_base" 2>&1 || true)
+    declare prev_version=$(rpm --query "$rpm_base" 2>&1 || true)
     # Yum is wonky with update/install. We have to handle
     # both fresh install and update, which install does, but
     # it doesn't return an error if the update isn't done.
@@ -299,8 +299,8 @@ rsconf_install_perl_rpm() {
         install_err "$rpm_file: not found or not a valid RPM"
     fi
     rsconf_yum_install_cmd=$install_cmd rsconf_yum_install "$tmp"
-    rm -f "$tmp"
-    declare curr_rpm=$(rpm -q "$rpm_base")
+    rm --force "$tmp"
+    declare curr_rpm=$(rpm --query "$rpm_base")
     if [[ $curr_rpm != $rpm_version ]]; then
         install_err "$curr_rpm: did not get installed, new=$rpm_version"
     fi
@@ -686,7 +686,7 @@ _rsconf_yum_install() {
     if [[ ! $cmd =~ ^((re)?install|downgrade)$ ]]; then
         install_err "unexpected value rsconf_yum_install_cmd=$cmd"
     fi
-    if ! yum "$cmd" --color=never -y -q "${todo[@]}"; then
+    if ! yum "$cmd" --color=never --assumeyes --quiet "${todo[@]}"; then
         install_err "FAILED: yum $cmd ${todo[*]}";
     fi
 }
