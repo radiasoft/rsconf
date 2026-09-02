@@ -293,11 +293,6 @@ rsconf_install_perl_rpm() {
     fi
     declare tmp=$rpm_file
     install_download "$rpm_file" > "$tmp"
-    if [[ ! $(file "$tmp" 2>/dev/null) =~ RPM ]]; then
-        # Error messages from rpm -qp are strange:
-        # "error: open of <html> failed: No such file or directory"
-        install_err "$rpm_file: not found or not a valid RPM"
-    fi
     rsconf_yum_install_cmd=$install_cmd rsconf_yum_install "$tmp"
     rm --force "$tmp"
     declare curr_rpm=$(rpm --query "$rpm_base")
@@ -662,7 +657,7 @@ rsconf_user() {
 rsconf_yum_install() {
     declare x todo=()
     for x in "$@"; do
-        if ! rpm -q "$x" >& /dev/null; then
+        if _rsconf_need_yum_install "$x"; then
             todo+=( "$x" )
         fi
     done
@@ -674,10 +669,26 @@ rsconf_yum_install() {
 rsconf_yum_install_url() {
     declare base=$1
     declare url=$2
-    if rpm -q "$base" >& /dev/null; then
+    if ! _rsconf_need_yum_install "$base"; then
         return
     fi
     _rsconf_yum_install "$url"
+}
+
+_rsconf_need_yum_install() {
+    declare name=$1
+    if [[ -e $name ]]; then
+        # in rpm v4.14.0+, rpm -q treats an extant file arg as installed; query version instead.
+        # --nomanifest prevents a non-rpm file from being treated as a list of file names.
+        name=$(rpm --query --package --nomanifest "$name" 2>/dev/null)
+        if [[ ! $name ]]; then
+            install_err "$1: not found or not a valid RPM"
+        fi
+    fi
+    if [[ ${rsconf_yum_install_cmd:-} == reinstall ]]; then
+        return 0
+    fi
+    ! rpm --query "$name" >& /dev/null
 }
 
 _rsconf_yum_install() {
