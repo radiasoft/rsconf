@@ -1,0 +1,135 @@
+== _rsconf_need_yum_install ==
+unset name-installed               rc=1
+unset name-missing                 rc=0
+unset nevra-installed              rc=1
+unset group                        rc=0
+unset empty                        rc=0
+unset file-older                   rc=0
+unset file-same                    rc=1
+unset file-newer                   rc=0
+unset file-other                   rc=0
+unset file-invalid                 rc=1 install_err: perl-dev.rpm: not found or not a valid RPM
+unset file-abspath                 rc=0
+install name-installed             rc=1
+install name-missing               rc=0
+install nevra-installed            rc=1
+install group                      rc=0
+install empty                      rc=0
+install file-older                 rc=0
+install file-same                  rc=1
+install file-newer                 rc=0
+install file-other                 rc=0
+install file-invalid               rc=1 install_err: perl-dev.rpm: not found or not a valid RPM
+install file-abspath               rc=0
+reinstall name-installed           rc=0
+reinstall name-missing             rc=0
+reinstall nevra-installed          rc=0
+reinstall group                    rc=0
+reinstall empty                    rc=0
+reinstall file-older               rc=0
+reinstall file-same                rc=0
+reinstall file-newer               rc=0
+reinstall file-other               rc=0
+reinstall file-invalid             rc=1 install_err: perl-dev.rpm: not found or not a valid RPM
+reinstall file-abspath             rc=0
+downgrade name-installed           rc=1
+downgrade name-missing             rc=0
+downgrade nevra-installed          rc=1
+downgrade group                    rc=0
+downgrade empty                    rc=0
+downgrade file-older               rc=0
+downgrade file-same                rc=1
+downgrade file-newer               rc=0
+downgrade file-other               rc=0
+downgrade file-invalid             rc=1 install_err: perl-dev.rpm: not found or not a valid RPM
+downgrade file-abspath             rc=0
+bogus name-installed               rc=1
+bogus name-missing                 rc=0
+bogus nevra-installed              rc=1
+bogus group                        rc=0
+bogus empty                        rc=0
+bogus file-older                   rc=0
+bogus file-same                    rc=1
+bogus file-newer                   rc=0
+bogus file-other                   rc=0
+bogus file-invalid                 rc=1 install_err: perl-dev.rpm: not found or not a valid RPM
+bogus file-abspath                 rc=0
+
+== rsconf_yum_install ==
+unset name-installed               rc=0
+unset name-missing                 rc=0 yum [install] [--color=never] [--assumeyes] [--quiet] [missing]
+unset nevra-installed              rc=0
+unset group                        rc=0 yum [install] [--color=never] [--assumeyes] [--quiet] [@Development Tools]
+unset empty                        rc=0 yum [install] [--color=never] [--assumeyes] [--quiet] []
+unset file-older                   rc=0 yum [install] [--color=never] [--assumeyes] [--quiet] [perl-dev.rpm]
+unset file-same                    rc=0
+unset file-newer                   rc=0 yum [install] [--color=never] [--assumeyes] [--quiet] [perl-dev.rpm]
+unset file-other                   rc=0 yum [install] [--color=never] [--assumeyes] [--quiet] [perl-dev.rpm]
+unset file-invalid                 rc=1 install_err: perl-dev.rpm: not found or not a valid RPM
+unset file-abspath                 rc=0 yum [install] [--color=never] [--assumeyes] [--quiet] [perl-dev.rpm]
+install name-installed             rc=0
+install name-missing               rc=0 yum [install] [--color=never] [--assumeyes] [--quiet] [missing]
+install nevra-installed            rc=0
+install group                      rc=0 yum [install] [--color=never] [--assumeyes] [--quiet] [@Development Tools]
+install empty                      rc=0 yum [install] [--color=never] [--assumeyes] [--quiet] []
+install file-older                 rc=0 yum [install] [--color=never] [--assumeyes] [--quiet] [perl-dev.rpm]
+install file-same                  rc=0
+install file-newer                 rc=0 yum [install] [--color=never] [--assumeyes] [--quiet] [perl-dev.rpm]
+install file-other                 rc=0 yum [install] [--color=never] [--assumeyes] [--quiet] [perl-dev.rpm]
+install file-invalid               rc=1 install_err: perl-dev.rpm: not found or not a valid RPM
+install file-abspath               rc=0 yum [install] [--color=never] [--assumeyes] [--quiet] [perl-dev.rpm]
+reinstall name-installed           rc=0 yum [reinstall] [--color=never] [--assumeyes] [--quiet] [installed]
+reinstall name-missing             rc=0 yum [reinstall] [--color=never] [--assumeyes] [--quiet] [missing]
+reinstall nevra-installed          rc=0 yum [reinstall] [--color=never] [--assumeyes] [--quiet] [installed-1.0-1.x86_64]
+reinstall group                    rc=0 yum [reinstall] [--color=never] [--assumeyes] [--quiet] [@Development Tools]
+reinstall empty                    rc=0 yum [reinstall] [--color=never] [--assumeyes] [--quiet] []
+reinstall file-older               rc=0 yum [reinstall] [--color=never] [--assumeyes] [--quiet] [perl-dev.rpm]
+reinstall file-same                rc=0 yum [reinstall] [--color=never] [--assumeyes] [--quiet] [perl-dev.rpm]
+reinstall file-newer               rc=0 yum [reinstall] [--color=never] [--assumeyes] [--quiet] [perl-dev.rpm]
+reinstall file-other               rc=0 yum [reinstall] [--color=never] [--assumeyes] [--quiet] [perl-dev.rpm]
+reinstall file-invalid             rc=1 install_err: perl-dev.rpm: not found or not a valid RPM
+reinstall file-abspath             rc=0 yum [reinstall] [--color=never] [--assumeyes] [--quiet] [perl-dev.rpm]
+downgrade name-installed           rc=0
+downgrade name-missing             rc=0 yum [downgrade] [--color=never] [--assumeyes] [--quiet] [missing]
+downgrade nevra-installed          rc=0
+downgrade group                    rc=0 yum [downgrade] [--color=never] [--assumeyes] [--quiet] [@Development Tools]
+downgrade empty                    rc=0 yum [downgrade] [--color=never] [--assumeyes] [--quiet] []
+downgrade file-older               rc=0 yum [downgrade] [--color=never] [--assumeyes] [--quiet] [perl-dev.rpm]
+downgrade file-same                rc=0
+downgrade file-newer               rc=0 yum [downgrade] [--color=never] [--assumeyes] [--quiet] [perl-dev.rpm]
+downgrade file-other               rc=0 yum [downgrade] [--color=never] [--assumeyes] [--quiet] [perl-dev.rpm]
+downgrade file-invalid             rc=1 install_err: perl-dev.rpm: not found or not a valid RPM
+downgrade file-abspath             rc=0 yum [downgrade] [--color=never] [--assumeyes] [--quiet] [perl-dev.rpm]
+bogus name-installed               rc=0
+bogus name-missing                 rc=1 install_err: unexpected value rsconf_yum_install_cmd=bogus
+bogus nevra-installed              rc=0
+bogus group                        rc=1 install_err: unexpected value rsconf_yum_install_cmd=bogus
+bogus empty                        rc=1 install_err: unexpected value rsconf_yum_install_cmd=bogus
+bogus file-older                   rc=1 install_err: unexpected value rsconf_yum_install_cmd=bogus
+bogus file-same                    rc=0
+bogus file-newer                   rc=1 install_err: unexpected value rsconf_yum_install_cmd=bogus
+bogus file-other                   rc=1 install_err: unexpected value rsconf_yum_install_cmd=bogus
+bogus file-invalid                 rc=1 install_err: perl-dev.rpm: not found or not a valid RPM
+bogus file-abspath                 rc=1 install_err: unexpected value rsconf_yum_install_cmd=bogus
+
+== rsconf_yum_install_url ==
+unset name-installed               rc=0
+unset name-missing                 rc=0 yum [install] [--color=never] [--assumeyes] [--quiet] [http://x/u.rpm]
+unset nevra-installed              rc=0
+unset empty                        rc=0 yum [install] [--color=never] [--assumeyes] [--quiet] [http://x/u.rpm]
+install name-installed             rc=0
+install name-missing               rc=0 yum [install] [--color=never] [--assumeyes] [--quiet] [http://x/u.rpm]
+install nevra-installed            rc=0
+install empty                      rc=0 yum [install] [--color=never] [--assumeyes] [--quiet] [http://x/u.rpm]
+reinstall name-installed           rc=0 yum [reinstall] [--color=never] [--assumeyes] [--quiet] [http://x/u.rpm]
+reinstall name-missing             rc=0 yum [reinstall] [--color=never] [--assumeyes] [--quiet] [http://x/u.rpm]
+reinstall nevra-installed          rc=0 yum [reinstall] [--color=never] [--assumeyes] [--quiet] [http://x/u.rpm]
+reinstall empty                    rc=0 yum [reinstall] [--color=never] [--assumeyes] [--quiet] [http://x/u.rpm]
+downgrade name-installed           rc=0
+downgrade name-missing             rc=0 yum [downgrade] [--color=never] [--assumeyes] [--quiet] [http://x/u.rpm]
+downgrade nevra-installed          rc=0
+downgrade empty                    rc=0 yum [downgrade] [--color=never] [--assumeyes] [--quiet] [http://x/u.rpm]
+bogus name-installed               rc=0
+bogus name-missing                 rc=1 install_err: unexpected value rsconf_yum_install_cmd=bogus
+bogus nevra-installed              rc=0
+bogus empty                        rc=1 install_err: unexpected value rsconf_yum_install_cmd=bogus
