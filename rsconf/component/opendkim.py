@@ -14,7 +14,7 @@ _CONF_D = pkio.py_path("/etc/opendkim")
 _CONF_F = _CONF_D.new(ext=".conf")
 _RUN_D = pkio.py_path("/run/opendkim")
 _SECRET_SUBDIR = "opendkim"
-_SOCKET_G = "dkimsocket"
+_SOCKET_G = "opendkimsocket"
 
 
 class T(component.T):
