@@ -47,13 +47,14 @@ class T(component.T):
             # TODO(robnagler) wanted by nginx
             volumes=[jc.sirepo.srdb.root],
         )
-        docker.setup_cluster(
-            self,
-            _hosts(jc.sirepo.job_driver.docker),
-            jc.sirepo.job_driver.docker.tls_dir,
-            run_u=self.__run_u,
-            j2_ctx=self.j2_ctx,
-        )
+        if "docker" in jc.sirepo.job_driver.modules:
+            docker.setup_cluster(
+                self,
+                _hosts(jc.sirepo.job_driver.docker),
+                jc.sirepo.job_driver.docker.tls_dir,
+                run_u=self.__run_u,
+                j2_ctx=self.j2_ctx,
+            )
         for v in sorted(self._vhosts):
             nginx.install_vhost(
                 self,
