@@ -1,0 +1,13 @@
+#!/bin/bash
+
+opendkim_main() {
+    rsconf_group '{{ opendkim.run_g }}' '{{ opendkim.socket_gid }}'
+    if id -nG '{{ opendkim.socket_client_u }}' \
+        | grep -F -q -w -- '{{ opendkim.run_g }}'; then
+        return
+    fi
+    usermod --append --groups '{{ opendkim.run_g }}' '{{ opendkim.socket_client_u }}'
+    # supplementary groups are read at startup so the running master and the
+    # cleanup daemons it forks do not have the new group
+    rsconf_service_trigger_restart postfix
+}

@@ -141,10 +141,10 @@ rsconf_group() {
     fi
     declare flags=()
     #POSIT: <1000 is system
-    if [[ $gid < 1000 ]]; then
+    if (( gid < 1000 )); then
         flags+=( -r )
     fi
-    groupadd "${flags[@]}" -g "$gid" "$group"
+    groupadd ${flags[@]+"${flags[@]}"} -g "$gid" "$group"
 }
 
 rsconf_install_access() {
@@ -638,25 +638,6 @@ rsconf_systemctl_clean_unit() {
     fi
     # POSIT: rsconf_service_restart runs systemctl daemon-reload
     rm -f "/etc/systemd/system/$basename$x.service"
-}
-
-rsconf_user() {
-    declare user=$1
-    declare uid=$2
-    declare exist_uid=$(id -u "$user" 2>/dev/null || true)
-    rsconf_group "$user" "$gid"
-    if [[ $exist_uid ]]; then
-        if [[ $exist_uid != $uid ]]; then
-            install_err "$exist_uid: unexpected uid (expect=$uid) for user $user"
-        fi
-        return
-    fi
-    declare flags=()
-    #POSIT: <1000 is system
-    if [[ $gid < 1000 ]]; then
-        flags+=( -r )
-    fi
-    useradd "${flags[@]}" -g "$user" -u "$uid" "$user"
 }
 
 rsconf_yum_install() {
