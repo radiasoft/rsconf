@@ -22,12 +22,7 @@ class T(component.T):
         jc, z = self.j2_ctx_init()
         self.buildt.require_component("postfix")
         self.append_root_bash("rsconf_yum_install opendkim")
-        z.pksetdefault(
-            port=8891,
-            smtp_clients=[],
-            socket_gid=3000,
-            want_unix_socket=False,
-        )
+        z.pksetdefault(smtp_clients=[], want_unix_socket=False)
         z.update(
             external_ignore_list_f=_CONF_D.join("ExternalIgnoreList"),
             internal_hosts_f=_CONF_D.join("InternalHosts"),
@@ -134,25 +129,34 @@ class T(component.T):
                 k.subdomain = opendkim.public_key_info(k.txt_f)
 
     def _setup_socket(self, z):
-        if not z.want_unix_socket:
-            z.update(
+        def _inet():
+            return PKDict(
                 milter=f"inet:localhost:{z.port}",
                 run_g=z.run_u,
-                socket=f"inet:{z.port}@localhost",
-                socket_f=None,
+                _socket=f"inet:{z.port}@localhost",
+                _socket_f=None,
             )
-            return
-        f = _RUN_D.join("opendkim.sock")
-        # f is created with run_g so socket_client_u can connect to it. A group
-        # of its own keeps socket_client_u out of the group that owns keys_d,
-        # and run_u out of the group that owns the postfix queue.
-        z.update(
-            milter=f"unix:{f}",
-            run_g=_SOCKET_G,
-            socket=f"local:{f}",
-            socket_client_u="postfix",
-            socket_f=f,
-        )
+
+        def _unix():
+            f = _RUN_D.join("opendkim.sock")
+            # f is created with run_g so _socket_client_u can connect to it. A
+            # group of its own keeps _socket_client_u out of the group that
+            # owns keys_d, and run_u out of the group that owns the postfix
+            # queue.
+            return PKDict(
+                milter=f"unix:{f}",
+                run_g=_SOCKET_G,
+                _socket=f"local:{f}",
+                _socket_client_u="postfix",
+                _socket_f=f,
+            )
+
+        if z.want_unix_socket:
+            d, v = ("socket_gid", 3000), _unix
+        else:
+            d, v = ("port", 8891), _inet
+        z.pksetdefault(*d)
+        z.update(v())
 
     def _trusted_hosts(self, jc, z):
         from rsconf import db
