@@ -10,5 +10,5 @@ opendkim_main() {
     fi
     usermod --append --groups "$group" "$user"
     # MTA needs the new group
-    rsconf_service_trigger_restart postfix
+    rsconf_service_trigger_restart '{{ opendkim._mta_service }}'
 }
