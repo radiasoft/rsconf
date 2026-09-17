@@ -46,8 +46,6 @@ class T(component.T):
         self._install_conf(jc, z, self._install_keys(jc, z))
         if z.want_unix_socket:
             self.append_root_bash_with_main(jc)
-            # the unit sets Group so opendkim starts unprivileged and cannot
-            # honor UserID's group, which is what gives the socket its group
             systemd.install_unit_override(self, jc)
         systemd.unit_enable(self, jc)
 
