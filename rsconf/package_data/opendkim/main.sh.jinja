@@ -2,13 +2,9 @@
 
 opendkim_main() {
     declare group='{{ opendkim.run_g }}'
-    declare user='{{ opendkim._socket_client_u }}'
     rsconf_group "$group" '{{ opendkim.socket_gid }}'
-    declare curr_groups=" $(id --name --groups "$user") "
-    if [[ $curr_groups == *" $group "* ]]; then
-        return
+    if rsconf_group_add_user "$group" '{{ opendkim._socket_client_u }}'; then
+        # MTA needs the new group
+        rsconf_service_trigger_restart '{{ opendkim._mta_service }}'
     fi
-    usermod --append --groups "$group" "$user"
-    # MTA needs the new group
-    rsconf_service_trigger_restart '{{ opendkim._mta_service }}'
 }

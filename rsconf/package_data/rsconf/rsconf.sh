@@ -147,6 +147,17 @@ rsconf_group() {
     groupadd ${flags[@]+"${flags[@]}"} -g "$gid" "$group"
 }
 
+rsconf_group_add_user() {
+    declare group=$1
+    declare user=$2
+    declare curr_groups=" $(id --name --groups "$user") "
+    if [[ $curr_groups == *" $group "* ]]; then
+        return ${rsconf_no_change_res:-1}
+    fi
+    usermod --append --groups "$group" "$user"
+    return 0
+}
+
 rsconf_install_access() {
     if [[ ! $1 =~ ^[[:digit:]]{1,4}$ ]]; then
         install_err "$1: invalid or empty mode"
