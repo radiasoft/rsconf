@@ -678,12 +678,15 @@ rsconf_yum_install_url() {
 _rsconf_need_yum_install() {
     declare name=$1
     if [[ -e $name ]]; then
-        # in rpm v4.14.0+, rpm -q treats an extant file arg as installed; query version instead.
-        # --nomanifest prevents a non-rpm file from being treated as a list of file names.
-        name=$(rpm --query --package --nomanifest "$name" 2>/dev/null)
-        if [[ ! $name ]]; then
-            install_err "$1: not found or not a valid RPM"
+        # --package is required to validate a file before rpm 4.14; after, querying an existing file
+        # doesn't tell us if it's installed, so we need to query with the file's package version.
+        # --nomanifest keeps a non-rpm from being read as a list of names.
+        declare n=$(rpm --query --package --nomanifest "$name" || true)
+        if [[ ! $n ]]; then
+            install_err "not found or invalid rpm=$name (see previous error)"
         fi
+        # rpm --query returns version-qualified package, which is a better value to check than the file
+        name=$n
     fi
     if [[ ${rsconf_yum_install_cmd:-} == reinstall ]]; then
         return 0
