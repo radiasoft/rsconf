@@ -19,7 +19,7 @@ class T(component.T):
         from rsconf import db
         from rsconf.component import bop
 
-        self.buildt.require_component("postgresql", "postfix")
+        self.buildt.require_component("postgresql", "postfix", "perl_rpms")
         j2_ctx = self.hdb.j2_ctx_copy()
         z = j2_ctx.btest
         z.run_u = j2_ctx.rsconf_db.run_u
@@ -103,9 +103,8 @@ class T(component.T):
                 z.app_run_f,
             )
             z.run_app_cmds += "{}\n".format(z.app_run_f)
-            bop.install_perl_rpms(
-                self,
-                j2_ctx,
+            self.buildt.get_component("perl_rpms").add_rpms(
+                rpms=z.get("aux_perl_rpms", ()),
                 perl_root=z.perl_root,
             )
         self.install_access(mode="500", owner=z.run_u)

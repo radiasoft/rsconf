@@ -1,0 +1,74 @@
+---
+default:
+  base_os:
+    volume_groups: {}
+  base_users:
+    add:
+      - vagrant
+    spec:
+      vagrant:
+        uid: 1000
+        email: vagrant@v1.radia.run
+        want_shell: true
+  bkp:
+    ssh_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIB3mhGsrxFV4KnHjDtBaaU7ZdlNhwxIEPZ3/+Bv1xZY v1.radia.run"
+  component:
+    tls_crt_create: true
+  db_bkp:
+    max_copies: 2
+    on_calendar: "6:30"
+  docker:
+    iptables: false
+  docker_registry:
+    host: ''
+  logrotate:
+    on_calendar: "7:30"
+  network:
+    devices: {}
+    trusted: {}
+  nginx:
+    worker_processes: 1
+  rsconf: {}
+  rsconf_db:
+    host_run_d: /srv
+    install_server: http://v1.radia.run:2916
+    root_u: root
+    run_u: vagrant
+    run_uid: 1000
+  sirepo:
+    auth:
+      methods:
+        - guest
+    docker_image: radiasoft/sirepo
+    job_driver:
+      modules: [ local ]
+    num_api_servers: 1
+    pkcli:
+      job_supervisor:
+        port: 7001
+      service_port: 7000
+  systemd:
+    timezone: America/Phoenix
+
+channel:
+  dev:
+    network:
+      trusted:
+        10.10.10.0/24:
+          gateway: 10.10.10.2
+      untrusted: {}
+    sirepo:
+      vhost: sirepo.v1.radia.run
+
+host:
+  dev:
+    v1.radia.run:
+      docker:
+        tls_host: v1.radia.run
+      rsconf_db:
+        components:
+          - sirepo
+
+#Local Variables:
+#mode:yaml
+#End:

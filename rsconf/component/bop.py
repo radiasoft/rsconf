@@ -19,8 +19,6 @@ SOURCE_CODE_D = "/usr/share/Bivio-bOP-src"
 
 PETSHOP_ROOT = "Bivio::PetShop"
 
-COMMON_RPMS = ("bivio-perl", "perl-Bivio")
-
 _DEFAULT_CLIENT_MAX_BODY_SIZE = "50M"
 
 
@@ -30,6 +28,7 @@ class T(component.T):
         from rsconf.component import logrotate
         from rsconf.component import nginx
 
+        self.buildt.require_component("perl_rpms")
         if self.name == "bop":
             self.hdb.bop.update(
                 pkcollections.Dict(
@@ -59,11 +58,13 @@ class T(component.T):
             return
         j2_ctx = self.hdb.j2_ctx_copy()
         z = merge_app_vars(j2_ctx, self.name)
-        watch = install_perl_rpms(self, j2_ctx, perl_root=z.perl_root)
         systemd.custom_unit_prepare(
             self,
             j2_ctx,
-            watch_files=watch,
+            watch_files=self.buildt.get_component("perl_rpms").add_rpms(
+                rpms=j2_ctx[self.name].get("aux_perl_rpms", ()),
+                perl_root=z.perl_root,
+            ),
             scripts=("start", "stop", "reload"),
         )
         systemd.custom_unit_enable(
@@ -151,23 +152,6 @@ class T(component.T):
                     vh.mail_domains = [h]
             for m in vh.get("mail_domains", []):
                 self.bopt.hdb.bop.mail_domains[m] = z.listen_base
-
-
-def install_perl_rpms(compt, j2_ctx, perl_root=None):
-    from rsconf import systemd
-
-    if not compt.hdb.bop.setdefault("_perl_installed", False):
-        compt.hdb.bop._perl_installed = True
-        compt.append_root_bash("install_repo_eval biviosoftware/container-perl base")
-    todo = list(COMMON_RPMS)
-    if perl_root and perl_root != PETSHOP_ROOT:
-        todo.append("perl-{}".format(perl_root))
-    todo.extend(j2_ctx[compt.name].get("aux_perl_rpms", []))
-    watch = []
-    c = j2_ctx.bop.setdefault("perl_rpm_channel", j2_ctx.rsconf_db.channel)
-    for r in todo:
-        watch.append(compt.install_perl_rpm(j2_ctx, r, channel=c))
-    return watch
 
 
 def merge_app_vars(j2_ctx, app_name):
