@@ -286,7 +286,7 @@ rsconf_install_perl_rpm() {
     declare rpm_base=$1
     declare rpm_file=$2
     declare rpm_version=$3
-    declare prev_version=$(rpm -q "$rpm_base" 2>&1 || true)
+    declare prev_version=$(rpm --query "$rpm_base" 2>&1 || true)
     # Yum is wonky with update/install. We have to handle
     # both fresh install and update, which install does, but
     # it doesn't return an error if the update isn't done.
@@ -304,14 +304,9 @@ rsconf_install_perl_rpm() {
     fi
     declare tmp=$rpm_file
     install_download "$rpm_file" > "$tmp"
-    if [[ ! $(file "$tmp" 2>/dev/null) =~ RPM ]]; then
-        # Error messages from rpm -qp are strange:
-        # "error: open of <html> failed: No such file or directory"
-        install_err "$rpm_file: not found or not a valid RPM"
-    fi
     rsconf_yum_install_cmd=$install_cmd rsconf_yum_install "$tmp"
-    rm -f "$tmp"
-    declare curr_rpm=$(rpm -q "$rpm_base")
+    rm --force "$tmp"
+    declare curr_rpm=$(rpm --query "$rpm_base")
     if [[ $curr_rpm != $rpm_version ]]; then
         install_err "$curr_rpm: did not get installed, new=$rpm_version"
     fi
@@ -654,7 +649,7 @@ rsconf_systemctl_clean_unit() {
 rsconf_yum_install() {
     declare x todo=()
     for x in "$@"; do
-        if ! rpm -q "$x" >& /dev/null; then
+        if _rsconf_need_yum_install "$x"; then
             todo+=( "$x" )
         fi
     done
@@ -666,10 +661,29 @@ rsconf_yum_install() {
 rsconf_yum_install_url() {
     declare base=$1
     declare url=$2
-    if rpm -q "$base" >& /dev/null; then
+    if ! _rsconf_need_yum_install "$base"; then
         return
     fi
     _rsconf_yum_install "$url"
+}
+
+_rsconf_need_yum_install() {
+    declare name=$1
+    if [[ -e $name ]]; then
+        # --package is required to validate a file before rpm 4.14; after, querying an existing file
+        # doesn't tell us if it's installed, so we need to query with the file's package version.
+        # --nomanifest keeps a non-rpm from being read as a list of names.
+        declare n=$(rpm --query --package --nomanifest "$name" || true)
+        if [[ ! $n ]]; then
+            install_err "not found or invalid rpm=$name (see previous error)"
+        fi
+        # rpm --query returns version-qualified package, which is a better value to check than the file
+        name=$n
+    fi
+    if [[ ${rsconf_yum_install_cmd:-} == reinstall ]]; then
+        return 0
+    fi
+    ! rpm --query "$name" >& /dev/null
 }
 
 _rsconf_yum_install() {
@@ -678,7 +692,7 @@ _rsconf_yum_install() {
     if [[ ! $cmd =~ ^((re)?install|downgrade)$ ]]; then
         install_err "unexpected value rsconf_yum_install_cmd=$cmd"
     fi
-    if ! yum "$cmd" --color=never -y -q "${todo[@]}"; then
+    if ! yum "$cmd" --color=never --assumeyes --quiet "${todo[@]}"; then
         install_err "FAILED: yum $cmd ${todo[*]}";
     fi
 }
