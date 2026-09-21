@@ -70,6 +70,11 @@ smtpd_sender_restrictions =
     check_sender_access texthash:/etc/postfix/sender_access,
     reject_non_fqdn_sender,
     reject_unknown_sender_domain
+milter_default_action = tempfail
+milter_protocol = 2
+smtpd_milters = inet:localhost:8891
+non_smtpd_milters = inet:localhost:8891
+internal_mail_filter_classes = bounce, notify
 smtpd_tls_security_level = may
 smtpd_delay_reject = yes
 smtpd_sasl_path = smtpd-sasldb

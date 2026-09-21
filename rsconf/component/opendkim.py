@@ -12,7 +12,9 @@ from rsconf import component
 
 _CONF_D = pkio.py_path("/etc/opendkim")
 _CONF_F = _CONF_D.new(ext=".conf")
+_RUN_D = pkio.py_path("/run/opendkim")
 _SECRET_SUBDIR = "opendkim"
+_SOCKET_G = "opendkimsocket"
 
 
 class T(component.T):
@@ -20,7 +22,7 @@ class T(component.T):
         jc, z = self.j2_ctx_init()
         self.buildt.require_component("postfix")
         self.append_root_bash("rsconf_yum_install opendkim")
-        z.pksetdefault(port=8891, smtp_clients=[])
+        z.pksetdefault(smtp_clients=[], want_unix_socket=False)
         z.update(
             external_ignore_list_f=_CONF_D.join("ExternalIgnoreList"),
             internal_hosts_f=_CONF_D.join("InternalHosts"),
@@ -29,6 +31,7 @@ class T(component.T):
             run_u="opendkim",
             signing_table_f=_CONF_D.join("SigningTable"),
         )
+        self._setup_socket(z)
         self._read_keys(jc, z)
         self.buildt.get_component("postfix").setup_opendkim(self)
         self._trusted_hosts(jc, z)
@@ -41,6 +44,9 @@ class T(component.T):
         z = jc[self.name]
         systemd.unit_prepare(self, jc, watch_files=(_CONF_D, _CONF_F))
         self._install_conf(jc, z, self._install_keys(jc, z))
+        if z.want_unix_socket:
+            self.append_root_bash_with_main(jc)
+            systemd.install_unit_override(self, jc)
         systemd.unit_enable(self, jc)
 
     def _install_conf(self, jc, z, key_list):
@@ -119,6 +125,37 @@ class T(component.T):
                 raise AssertionError(f"missing keys for domain={d}")
             for k in v.rows:
                 k.subdomain = opendkim.public_key_info(k.txt_f)
+
+    def _setup_socket(self, z):
+        def _inet():
+            return PKDict(
+                milter=f"inet:localhost:{z.port}",
+                run_g=z.run_u,
+                _socket=f"inet:{z.port}@localhost",
+                _socket_f=None,
+            )
+
+        def _unix():
+            f = _RUN_D.join("opendkim.sock")
+            # f is created with run_g so _socket_client_u can connect to it. A
+            # group of its own keeps _socket_client_u out of the group that
+            # owns keys_d, and run_u out of the group that owns the postfix
+            # queue.
+            return PKDict(
+                milter=f"unix:{f}",
+                run_g=_SOCKET_G,
+                _mta_service="postfix",
+                _socket=f"local:{f}",
+                _socket_client_u="postfix",
+                _socket_f=f,
+            )
+
+        if z.want_unix_socket:
+            d, v = ("socket_gid", 3000), _unix
+        else:
+            d, v = ("port", 8891), _inet
+        z.pksetdefault(*d)
+        z.update(v())
 
     def _trusted_hosts(self, jc, z):
         from rsconf import db

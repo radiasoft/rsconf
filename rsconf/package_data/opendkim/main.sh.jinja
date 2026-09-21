@@ -1,0 +1,10 @@
+#!/bin/bash
+
+opendkim_main() {
+    declare group='{{ opendkim.run_g }}'
+    rsconf_group "$group" '{{ opendkim.socket_gid }}'
+    if rsconf_group_add_user "$group" '{{ opendkim._socket_client_u }}'; then
+        # MTA needs the new group
+        rsconf_service_trigger_restart '{{ opendkim._mta_service }}'
+    fi
+}

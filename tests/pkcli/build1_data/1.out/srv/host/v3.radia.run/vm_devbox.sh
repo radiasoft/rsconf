@@ -16,6 +16,6 @@ vm_devbox_main() {
     rsconf_yum_install vagrant
     systemctl enable --now libvirtd
     systemctl start libvirtd
-    usermod --append --groups libvirt 'vagrant'
+    rsconf_no_change_res=0 rsconf_group_add_user libvirt 'vagrant'
 }
 
