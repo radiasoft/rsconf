@@ -145,6 +145,7 @@ class T(component.T):
                 milter=f"unix:{f}",
                 run_g=_SOCKET_G,
                 _mta_service="postfix",
+                _run_d=_RUN_D,
                 _socket=f"local:{f}",
                 _socket_client_u="postfix",
                 _socket_f=f,
