@@ -7,7 +7,7 @@ rsconf_install_access '600' 'root' 'root'
 rsconf_install_file '/etc/NetworkManager/system-connections/eth0.nmconnection' '27c26a73da560fb07b6a83610701baf9'
 rsconf_install_file '/etc/NetworkManager/system-connections/eth1.nmconnection' '7360e07b6d648895eab4029adb5a8162'
 rsconf_install_access '444' 'root' 'root'
-rsconf_install_file '/etc/sysconfig/iptables' 'c37b29b17e21479ffac43b7829d24f4a'
+rsconf_install_file '/etc/sysconfig/iptables' 'f2c1da187c46e1580b09677fb436ceab'
 network_main
 }
 #!/bin/bash
