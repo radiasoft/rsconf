@@ -9,22 +9,11 @@ data_directory = /var/lib/postfix
 mail_owner = postfix
 inet_interfaces = all
 unknown_local_recipient_reject_code = 550
-{% if rsconf_db.is_centos7 %}
-alias_maps = hash:/etc/aliases
-alias_database = hash:/etc/aliases
-{% elif rsconf_db.os_release_id == 'almalinux' and rsconf_db.os_release_version_id == '9' %}
-compatibility_level = 2
-alias_maps = hash:/etc/aliases
-alias_database = hash:/etc/aliases
-{% elif rsconf_db.os_release_id == 'almalinux' and rsconf_db.os_release_version_id == '10' %}
-compatibility_level = 3.8
-alias_maps = lmdb:/etc/aliases
-alias_database = lmdb:/etc/aliases
-default_database_type = lmdb
-{% else %}
-{# POSIT: strict_undefined=true; error thrown here #}
-{{ postfix_unexpected_os_release }}
+{% if postfix.compatibility_level %}
+compatibility_level = {{ postfix.compatibility_level }}
 {% endif %}
+alias_maps = {{ postfix.database_type }}:/etc/aliases
+alias_database = {{ postfix.database_type }}:/etc/aliases
 debug_peer_level = 2
 debugger_command =
          PATH=/bin:/usr/bin:/usr/local/bin:/usr/X11R6/bin
