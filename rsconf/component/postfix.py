@@ -125,7 +125,6 @@ class T(component.T):
         k = "{}-{}".format(
             jc.rsconf_db.os_release_id, jc.rsconf_db.os_release_version_id
         )
-        assert k in _OS_CONFIG, "unexpected os_release={}".format(k)
         z.update(_OS_CONFIG[k])
 
     def _setup_mynames(self, jc, z):
