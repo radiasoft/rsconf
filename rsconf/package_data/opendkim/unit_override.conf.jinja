@@ -2,6 +2,10 @@
 While opendkim conf has a user:group setting, the unit user:group gets set first and
 won't have perms to apply the conf setting. So, the default unit group needs to be
 overridden so that the opendkim process can create the socket with the shared group.
+RuntimeDirectory and RuntimeDirectoryMode are set so the unit creates the run dir
+with needed socket group ownership and mode instead of package defaults.
 #}
 [Service]
 Group={{ opendkim.run_g }}
+RuntimeDirectory={{ opendkim._run_d.basename }}
+RuntimeDirectoryMode=0750
