@@ -57,7 +57,7 @@ class T(component.T):
         z.have_bop = False
         self._setup_os_config(jc, z)
         p = "postfix procmail cyrus-sasl cyrus-sasl-plain"
-        if not jc.rsconf_db.is_centos7:
+        if z.database_type == "lmdb":
             p += " postfix-lmdb"
         self.append_root_bash("rsconf_yum_install " + p)
         systemd.unit_prepare(self, jc, [_CONF_D])
