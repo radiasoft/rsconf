@@ -10,3 +10,4 @@ rsconf_require docker
 rsconf_require nfs_client
 rsconf_require mpi_worker
 rsconf_require postgresql
+rsconf_require postfix

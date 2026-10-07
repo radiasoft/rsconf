@@ -429,9 +429,11 @@ host:
             defroute: True
       postfix:
         postfix_base():
+        # avoids reverse dns lookup of the public ip on eth1
+        myhostname: 'v5.radia.run'
         smart_host: v4.radia.run
       rsconf_db:
-        components: [ mpi_worker, postgresql ]
+        components: [ mpi_worker, postgresql, postfix ]
     v6.radia.run:
       docker:
         tls_host: v6.radia.run
