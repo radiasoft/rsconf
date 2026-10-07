@@ -26,6 +26,10 @@ _SASL_PASSWORD_JSON_F = "postfix_host_sasl_password.json"
 
 _SASL_PASSWORD_PREFIX = "postfix@"
 
+_ALIASES_F = "/etc/aliases"
+
+_DATABASE_SUFFIX = PKDict(hash="db", lmdb="lmdb")
+
 _OS_CONFIG = PKDict(
     {
         "centos-7": PKDict(database_type="hash", compatibility_level=None),
@@ -103,7 +107,7 @@ class T(component.T):
         self.install_resource(
             "postfix/aliases",
             jc,
-            "/etc/aliases",
+            z.aliases_f,
         )
         self.append_root_bash_with_main(jc)
         systemd.unit_enable(self, jc)
@@ -122,10 +126,13 @@ class T(component.T):
         z.opendkim_milter = opendkim.j2_ctx.opendkim.milter
 
     def _setup_os_config(self, jc, z):
-        k = "{}-{}".format(
-            jc.rsconf_db.os_release_id, jc.rsconf_db.os_release_version_id
+        z.update(
+            _OS_CONFIG[
+                f"{jc.rsconf_db.os_release_id}-{jc.rsconf_db.os_release_version_id}"
+            ]
         )
-        z.update(_OS_CONFIG[k])
+        z.aliases_f = _ALIASES_F
+        z.aliases_db_f = f"{_ALIASES_F}.{_DATABASE_SUFFIX[z.database_type]}"
 
     def _setup_mynames(self, jc, z):
         jc = self.j2_ctx

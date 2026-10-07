@@ -4,8 +4,9 @@ postfix_main() {
     {% if postfix.have_sasl %}
         postfix_setup_sasl
     {% endif %}
-    # never hurts
-    newaliases
+    if [[ ${rsconf_service_file_changed[{{ postfix.aliases_f }}]:-} || {{ postfix.aliases_f }} -nt {{ postfix.aliases_db_f }} ]]; then
+        newaliases
+    fi
 }
 
 {% if postfix.have_sasl %}

@@ -23,8 +23,9 @@ rsconf_service_restart_at_end 'postfix'
 
 postfix_main() {
         postfix_setup_sasl
-    # never hurts
-    newaliases
+    if [[ ${rsconf_service_file_changed[/etc/aliases]:-} || /etc/aliases -nt /etc/aliases.db ]]; then
+        newaliases
+    fi
 }
 
 postfix_setup_sasl() {
