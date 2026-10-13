@@ -18,7 +18,7 @@ rsconf_service_restart_at_end 'postfix'
 #!/bin/bash
 
 postfix_main() {
-    if [[ ${rsconf_service_file_changed[/etc/aliases]:-} || /etc/aliases -nt /etc/aliases.lmdb ]]; then
+    if [[ /etc/aliases -nt /etc/aliases.lmdb ]]; then
         newaliases
     fi
 }
