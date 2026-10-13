@@ -19,6 +19,7 @@ setgid_group = postdrop
 html_directory = no
 manpage_directory = /usr/share/man
 biff = no
+disable_vrfy_command = yes
 inet_protocols = ipv4
 mailbox_command = /usr/bin/procmail -t -Y -a "$EXTENSION" -d "$USER"
 mailbox_size_limit = 0

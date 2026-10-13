@@ -33,9 +33,6 @@ postfix_setup_sasl() {
     #   You'll see:
     #   235 2.7.0 Authentication successful
     #
-    #	Can try:
-    #   VRFY test1@v3.radia.run
-    #
     # db_dump -p /etc/sasldb2
     # regenerate sasl_users:
     # db_dump -p /etc/sasldb2 | perl -n -e 's{ ([^\\]+)\\00([^\\]+).*user}{} && print "$1\@$2: "; m{ (\S{10,24})} && print "$1\n"'

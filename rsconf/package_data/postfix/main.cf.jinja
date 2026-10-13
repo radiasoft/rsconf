@@ -29,6 +29,8 @@ manpage_directory = /usr/share/man
 #}
 {# https://help.ubuntu.com/community/PostfixGreylisting #}
 biff = no
+{# PCI compliance: VRFY allows user enumeration #}
+disable_vrfy_command = yes
 {# https://codinfox.github.io/dev/2015/04/08/postfix-cannot-start/ #}
 inet_protocols = ipv4
 mailbox_command = /usr/bin/procmail -t -Y -a "$EXTENSION" -d "$USER"
