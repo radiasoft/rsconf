@@ -1,0 +1,75 @@
+queue_directory = /var/spool/postfix
+command_directory = /usr/sbin
+daemon_directory = /usr/libexec/postfix
+data_directory = /var/lib/postfix
+mail_owner = postfix
+inet_interfaces = all
+unknown_local_recipient_reject_code = 550
+compatibility_level = 2
+alias_maps = lmdb:/etc/aliases
+alias_database = lmdb:/etc/aliases
+debug_peer_level = 2
+debugger_command =
+         PATH=/bin:/usr/bin:/usr/local/bin:/usr/X11R6/bin
+         ddd $daemon_directory/$process_name $process_id & sleep 5
+sendmail_path = /usr/sbin/sendmail.postfix
+newaliases_path = /usr/bin/newaliases.postfix
+mailq_path = /usr/bin/mailq.postfix
+setgid_group = postdrop
+html_directory = no
+manpage_directory = /usr/share/man
+biff = no
+inet_protocols = ipv4
+mailbox_command = /usr/bin/procmail -t -Y -a "$EXTENSION" -d "$USER"
+mailbox_size_limit = 0
+message_size_limit = 50000000
+mydestination = v5.radia.run,localhost
+mydomain = radia.run
+myhostname = v5.radia.run
+mynetworks = 10.10.10.0/24,216.17.132.32/27
+myorigin = v5.radia.run
+smtp_tls_CAfile = /etc/pki/tls/certs/ca-bundle.crt
+smtp_tls_cert_file = /etc/postfix/v5.radia.run.crt
+smtp_tls_ciphers = high
+smtp_tls_exclude_ciphers = EXP, MEDIUM, LOW, DES, 3DES, SSLv2
+smtp_tls_key_file = /etc/postfix/v5.radia.run.key
+smtp_tls_mandatory_ciphers = high
+smtp_tls_mandatory_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1
+smtp_tls_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1
+smtp_tls_security_level = may
+smtpd_banner = v5.radia.run ESMTP
+smtpd_client_restrictions =
+    permit_mynetworks,
+    sleep 8
+smtpd_data_restrictions = reject_unauth_pipelining
+smtpd_recipient_restrictions =
+    reject_unauth_pipelining,
+    permit_sasl_authenticated,
+    reject_unauth_destination,
+    reject_non_fqdn_recipient,
+    reject_unknown_recipient_domain
+smtpd_relay_restrictions =
+    permit_sasl_authenticated,
+    reject_unauth_destination
+smtpd_tls_CAfile = /etc/pki/tls/certs/ca-bundle.crt
+smtpd_tls_cert_file = /etc/postfix/v5.radia.run.crt
+smtpd_tls_ciphers = high
+smtpd_tls_eecdh_grade = ultra
+smtpd_tls_exclude_ciphers = EXP, MEDIUM, LOW, DES, 3DES, SSLv2
+smtpd_tls_key_file = /etc/postfix/v5.radia.run.key
+smtpd_tls_mandatory_ciphers = high
+smtpd_tls_mandatory_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1
+smtpd_tls_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1
+smtpd_tls_security_level = may
+tls_high_cipherlist = EDH+CAMELLIA:EDH+aRSA:EECDH+aRSA+AESGCM:EECDH+aRSA+SHA384:EECDH+aRSA+SHA256:EECDH:+CAMELLIA256:+AES256:+CAMELLIA128:+AES128:+SSLv3:!aNULL:!eNULL:!LOW:!3DES:!MD5:!EXP:!PSK:!DSS:!RC4:!SEED:!ECDSA:CAMELLIA256-SHA:AES256-SHA:CAMELLIA128-SHA:AES128-SHA
+recipient_delimiter = +
+smtpd_sender_restrictions =
+    reject_unauth_pipelining,
+    check_sender_access texthash:/etc/postfix/sender_access,
+    reject_non_fqdn_sender,
+    reject_unknown_sender_domain
+relayhost = [v4.radia.run]:submission
+smtp_sasl_auth_enable = yes
+smtp_sasl_password_maps = texthash:/etc/postfix/sasl_password
+smtp_sasl_security_options = noanonymous
+smtp_tls_security_level = encrypt
